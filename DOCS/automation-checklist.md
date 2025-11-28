@@ -36,5 +36,8 @@ Use this to wire automation tasks into `DOCS/ai_agent_execution_v2_corrected.md`
 
 ## Post-Launch (Flagged/Deferred)
 - [ ] Scraper behind feature flag; QA sample ≥10 listings/run; confidence metrics
+- [ ] AI-assisted QA for scraper: LLM compares scraped fields to source URLs/screenshots, enforces enums, flags dupes (ABN/phone/email/name+address), and fails batch if accuracy <95% or required contact fields missing
+- [ ] Human gate for flagged items; keep scraped entries unverified/unclaimed and monetization off until QA passes
+- [ ] QA runner script: input (scraped JSON + source URLs/screenshots), steps (LLM field compare, enum enforcement, contact validation, dedupe), outputs (per-listing verdicts, batch accuracy, reasons), storage (run log with samples checked and human approvals)
 - [ ] Monetization flag disabled until Phase 4+ criteria met (≥50 claimed trainers, stable ABN verifications)
 - [ ] Weekly automated audits: SSOT immutability, CSV checksum, ABN re-verification schedule

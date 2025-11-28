@@ -1224,6 +1224,20 @@ Once Phase 5 approved:
 - ✅ Scaffolded profiles (unclaimed, discoverable)
 - ✅ "Claim Your Business" CTA
 - ✅ Weekly scrape schedule
+- ✅ Guardrails:
+  - Feature-flagged; scraping stays off in prod until explicitly enabled
+  - QA sample ≥10 listings/run with accuracy target ≥95% before publish
+  - AI-assisted QA: LLM compares scraped fields vs source URLs/screenshots, enforces locked enums, flags missing/invalid contact data; human gate approves flagged items before publish
+  - Deduplicate on ABN (if present), phone, email, and name+address
+  - Use locked enums only (no free-text categories); validate phones/emails; derive LGA from suburb→council CSV
+  - Mark scraped entries unverified (blue badge); do not auto-claim; keep monetization off
+  - Public data only (trainer sites/GBusiness/social); honor privacy/disclaimer posture
+  - Log runs and metrics; keep rollback path via the feature flag
+  - QA runner outline (make actionable):
+    - Inputs: scraped JSON + source URLs/screenshots
+    - Steps: LLM field comparison, enum enforcement, contact validation, dedupe checks (ABN/phone/email/name+address), confidence scoring
+    - Outputs: per-listing verdicts, batch accuracy %, reasons for failures; fail batch if accuracy <95% or required contact fields missing
+    - Storage: persist run log (samples checked, issues found, human approvals) for audit and rollback
 
 **Data Enrichment:**
 - ✅ Geocode claimed trainer addresses (validate council assignments)
