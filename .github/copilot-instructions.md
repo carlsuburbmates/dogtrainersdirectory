@@ -38,7 +38,9 @@ Project-specific patterns & constraints (do not change unless spec updates)
   - Start Supabase locally for functions/DB tests:
     - `supabase start`
   - Test Stripe webhooks locally with the Stripe CLI:
-    - `stripe listen --forward-to http://localhost:3000/api/webhooks/stripe`
+    - Prefer using the repo's dedicated webhook dev harness so you don't accidentally forward events to another local project (for example something bound to :3000). The repo provides `webhook/server_dtd.py` which defaults to port **4243** and endpoint `/api/webhooks/stripe-dtd`.
+    - Example (recommended for dogtrainersdirectory development):
+      - `stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd`
 
 Risk & governance reminders
 - Treat `DOCS/blueprint_ssot_v1.1.md`, `DOCS/suburbs_councils_mapping.csv`, and `DOCS/FILE_MANIFEST.md` as immutable; any geography change needs an approved RFC plus manifest note, and CI should fail if council/suburb counts drift.
@@ -55,5 +57,7 @@ When you need to change something
 
 If you can't find infra details
 - Secrets, credentials, and runtime endpoints are intentionally absent — contact a repo maintainer or check the deployment repository/environment for: ABR GUID, Stripe keys, DeepAgent webhook URL, and any Supabase/DB connection info.
+ - Secrets, credentials, and runtime endpoints are intentionally absent — contact a repo maintainer or check the deployment repository/environment for: ABR GUID, Stripe keys, DeepAgent webhook URL, and any Supabase/DB connection info.
+ - CI/security guardrail: Do NOT commit Stripe secret keys or webhook signing secrets. CI should include a secrets-scan (fail on `sk_live_|sk_test_|whsec_` patterns) — developers should store secrets in CI secrets manager or local `.env` files excluded from the repo.
 
 Follow-up: ask maintainers if you'd like a runnable example app or seed scripts; current repo contains authoritative design & data only.

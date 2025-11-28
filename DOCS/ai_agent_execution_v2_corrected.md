@@ -926,7 +926,7 @@ When done, say: "PHASE 4 COMPLETE - Trainer onboarding and dashboard working (ma
 **Output:** Complete emergency pathways, admin dashboard  
 **Checkpoint:** Core system complete, ready for launch
 
-**NOTE:** Monetization (featured slots, Stripe) deferred to Phase 4-5 post-launch per master plan.
+**NOTE:** Featured placements (Stripe — $20 / 30-day slots, FIFO per LGA) are part of **Phase 1** (locked) and should be implemented during Phase 1 deliverables. Premium subscriptions and other monetization flows remain deferred to Phase 1.5 / Phase 2+ per the STRIPE master spec.
 
 ---
 
@@ -1068,7 +1068,7 @@ Access: /admin (restricted to admin accounts, separate authentication)
 Overview:
 - Total trainers: 50 claimed, 0 unclaimed (no scraper yet)
 - Emergency resources: 50+ active
-- Featured slots: 0 active (monetization deferred to Phase 4-5)
+ - Featured slots: Phase 1 monetization (Featured placements - $20 AUD / 30-day FIFO per LGA). Implement checkout + webhook flow, DB columns, and queue logic (see STRIPE/phase1_mvp_master_spec.md). Default 0 active until purchases are made.
 - Recent activity: Profile edits, review submissions, ABN verifications
 
 ---
@@ -1119,7 +1119,7 @@ NOTES FOR AI AGENT:
 - Do NOT modify database or logic from Phases 1–4
 - Emergency resources: Pre-populate with realistic Melbourne venues across 28 councils
 - Admin dashboard: Simple UI (function over form)
-- NO monetization features (Stripe, featured slots) - deferred to Phase 4-5 post-launch
+- NOTE: Featured placements (Stripe — $20 / 30-day slots) are implemented as Phase 1. Premium subscriptions and other monetization flows remain deferred to Phase 1.5+.
 - NO web scraper management (scraper is Phase 2 post-launch)
 
 When done, say: "PHASE 5 COMPLETE - Emergency pathways and admin dashboard working. Core system ready for launch."
@@ -1154,7 +1154,7 @@ NEXT STEP: Provide custom domain (dogtrainersdirectory.com.au) to AI agent for o
 - [ ] Admin can view analytics (search trends, region stats)
 - [ ] All validation rules still enforced (enums, age mandatory, etc.)
 - [ ] Performance: Emergency pages <1s, admin dashboard <2s
-- [ ] NO monetization features present (deferred to Phase 4-5)
+ - [ ] Featured placements (Stripe $20/30-day) present in Phase 1 — ensure checkout + webhook handling + DB fields are present and tested
 - [ ] NO web scraper management present (scraper is Phase 2)
 
 **Decision:**
@@ -1241,10 +1241,16 @@ Once Phase 5 approved:
 - ✅ Review responses (trainers reply to reviews)
 - ✅ Save/favorite trainers (dog owner accounts)
 
-**Monetization (Phase 4-5):**
-- ✅ Featured slots (Stripe payments)
-- ✅ Subscription tiers (Basic, Mid, Premium)
-- ✅ Analytics dashboard for trainers
+**Monetization (Phase 1 + Phase 1.5 planned):**
+- ✅ Featured slots (Stripe payments) — Phase 1 (current): $20 AUD / 30-day FIFO per LGA, webhook-driven lifecycle
+- ✅ Subscription / premium tiers — Phase 1.5 (deferred): monthly recurring flows, invoice handling, invoice.payment_succeeded/failed webhooks
+- ✅ Analytics dashboard for trainers — Phase 1 (metrics from clicks/inquiries); expand for subscription analytics in Phase 1.5+
+
+### Dev / webhook testing notes (avoid collisions)
+
+- Use the repo's dedicated local webhook harness for dogtrainersdirectory to avoid collisions with other local applications (for example, any dev server already listening on `localhost:3000`). The harness is `webhook/server_dtd.py` and defaults to port **4243** and endpoint `/api/webhooks/stripe-dtd`.
+- Local forward command example: `stripe listen --forward-to localhost:4243/api/webhooks/stripe-dtd` and use `stripe trigger checkout.session.completed` to test the purchase lifecycle.
+- Always verify `Stripe-Signature` and persist `event.id` in an ingestion audit table to protect against duplicated/retried webhook events.
 
 ---
 

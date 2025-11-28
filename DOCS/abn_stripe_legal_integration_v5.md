@@ -531,13 +531,30 @@ DISPUTE/CHARGEBACK FLOW:
 6. Action: Manual review required
 
 Webhook endpoint URL: [AI AGENT WILL PROVIDE]
-Events to listen for: charge.succeeded, charge.failed, 
-                      invoice.payment_succeeded, invoice.payment_failed,
-                      customer.subscription.deleted, charge.refunded,
-                      charge.dispute.created
+Events to listen for (Phase 1 recommended):
+- checkout.session.completed (Checkout sessions - canonical for hosted flows)
+- payment_intent.succeeded (PaymentIntent success - canonical for Checkout)
+- charge.succeeded (legacy Charge event, if your flow uses charges)
+- invoice.payment_succeeded (for subscription flows - Phase 1.5 planned)
+- invoice.payment_failed
+- customer.subscription.deleted
+- charge.refunded
+- charge.dispute.created
 
 All payments to connected account: dogtrainersdirectory Stripe account.
-All webhooks signed with secret: [I'll provide Stripe webhook secret]"
+All webhooks signed with secret: [I'll provide Stripe webhook secret]
+
+IMPORTANT: Developer / testing notes
+- Avoid tunnelling collisions with other local projects. Use the repository's dedicated test harness `webhook/server_dtd.py` which listens on **port 4243** and endpoint **/api/webhooks/stripe-dtd** by default. Example:
+   - `stripe listen --forward-to localhost:4243/api/webhooks/stripe-dtd`
+
+- Prefer handling `checkout.session.completed` and `payment_intent.succeeded` for Checkout flows — these are reliably fired when the payment completes. Checkout uses PaymentIntent under the hood, so building logic around PaymentIntent / Checkout events is more robust than relying only on `charge.succeeded`.
+
+- Always verify incoming webhooks with Stripe's signature header (use the signing secret) and store `event.id` to guarantee idempotent processing (skip duplicated event ids). Keep the secret out of the repository — use environment variables or a secrets manager in CI/CD/production.
+
+- Use separate test and production webhook endpoints in the Stripe dashboard. Do not forward development tunnels to a production webhook URL. For testing locally prefer `server_dtd.py` on :4243 to avoid conflicts with other local services (for example, apps bound to :3000).
+
+AI AGENT WILL:
 
 AI AGENT WILL:
 ├─ Create webhook receiver endpoint
