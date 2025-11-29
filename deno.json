@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true,
+    "target": "ES2022",
+    "module": "ES2022"
+  },
+  "importMap": "import_map.json",
+  "tasks": {
+    "start": "deno run --allow-net --allow-env supabase/functions/triage/index.ts"
+  }
+}

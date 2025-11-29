@@ -1,0 +1,23 @@
+TASK: Implement Phase 2 scraper + QA guardrails for dogtrainersdirectory.com.au
+
+REFERENCE DOCUMENTS:
+- `DOCS/blueprint_ssot_v1.1.md` (authoritative SSOT for councils, suburbs, taxonomies)
+- `DOCS/implementation/master_plan.md` (Phase 2 roadmap, web scraper strategy, risk mitigations)
+- `DOCS/ai_agent_execution_v2_corrected.md` (Phase 1 status + Phase 2 success criteria)
+- `DOCS/automation-checklist.md` (scraper QA runner, CI guardrails, feature flags)
+- `DOCS/abn_stripe_legal_integration_v5.md` (Stripe event expectations, Phase 1.5 gating)
+
+OBJECTIVE:
+1. Build the web scraper pipeline (LLM + structured output) that ingests 50–100 trainer URLs, maps each page to locked enums (age, issue, service, resource), sanitizes contact info, and writes scaffolded “unclaimed” listings with `is_scaffolded = true`.
+2. Run the QA runner stub (sample ≥10 listings or 10% of batch) to compare scraped fields vs source URLs/screenshots, enforce enums, validate contact fields, detect duplicates (ABN/phone/email/name+address), and log per-listing verdicts plus a batch accuracy score.
+3. Fail the batch if overall accuracy <95% or required contact fields are missing; only publish listings after a human has reviewed flagged items and approved them via the admin UI.
+4. Ensure all scrubbed entries honor the geographical SSOT (28 councils, 138 suburbs) and only use locked enums from the blueprint; enrich with postcodes/coordinates as needed.
+5. Log QA results (confidence, sample list, human approvals) and store them in a run log for future audits.
+6. Keep the scraper behind the `SCRAPER_ENABLED` feature flag; monetization remains hidden until Phase 4+.
+
+DELIVERABLES:
+- Coordinator script or workflow that runs the scraper → QA runner → human review → DB insert.
+- Updated admin UI or report showing QA batch accuracy, duplicate detection, and pending approvals.
+- Documentation referencing the QA guardrails and linking to `DOCS/PHASE_1_FINAL_COMPLETION_REPORT.md` for Phase 1 baseline.
+
+Once Phase 2 is complete, confirm the new data matches the SSOT, QA proofs are logged, and the AI agent can declare “PHASE 2 COMPLETE – Scraper QA validated.” 
