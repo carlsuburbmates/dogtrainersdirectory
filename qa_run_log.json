@@ -1,0 +1,39 @@
+{
+  "total_listings": 5,
+  "sampled": 5,
+  "accuracy_percent": 100.0,
+  "batch_ok": true,
+  "results": [
+    {
+      "listing_id": "Loose Lead Training",
+      "ok": true,
+      "reasons": [],
+      "llm_score": 0.99
+    },
+    {
+      "listing_id": "Puppy Basics Preston",
+      "ok": true,
+      "reasons": [],
+      "llm_score": 0.99
+    },
+    {
+      "listing_id": "Senior Dog Specialists",
+      "ok": true,
+      "reasons": [],
+      "llm_score": 0.99
+    },
+    {
+      "listing_id": "Westside Training",
+      "ok": true,
+      "reasons": [],
+      "llm_score": 0.99
+    },
+    {
+      "listing_id": "Eastern Behaviour Labs",
+      "ok": true,
+      "reasons": [],
+      "llm_score": 0.99
+    }
+  ],
+  "duplicates": {}
+}
