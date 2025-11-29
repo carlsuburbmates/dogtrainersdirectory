@@ -1,0 +1,117 @@
+[
+  {
+    "source_url": "https://example.com/data-loose-lead",
+    "name": "Loose Lead Training",
+    "phone": "0411000101",
+    "email": "hello@looselead.com",
+    "suburb": "Fitzroy",
+    "lga": "City of Yarra",
+    "age_specialties": [
+      "adolescent_6_18m"
+    ],
+    "behavior_issues": [
+      "leash_reactivity"
+    ],
+    "primary_service": "behaviour_consultations",
+    "secondary_services": [
+      "puppy_training",
+      "obedience_training"
+    ],
+    "abn": "12345678901",
+    "resource_type": "trainer",
+    "is_scaffolded": true,
+    "is_claimed": false
+  },
+  {
+    "source_url": "https://example.com/data-puppy-basics",
+    "name": "Puppy Basics Preston",
+    "phone": "0411000102",
+    "email": "info@puppybasicspreston.com",
+    "suburb": "Preston",
+    "lga": "City of Darebin",
+    "age_specialties": [
+      "puppies_0_6m"
+    ],
+    "behavior_issues": [
+      "recall_issues"
+    ],
+    "primary_service": "group_classes",
+    "secondary_services": [
+      "puppy_training",
+      "obedience_training"
+    ],
+    "abn": "12345678902",
+    "resource_type": "trainer",
+    "is_scaffolded": true,
+    "is_claimed": false
+  },
+  {
+    "source_url": "https://example.com/data-senior-dog",
+    "name": "Senior Dog Specialists",
+    "phone": "0411000103",
+    "email": "contact@senior-dog.com",
+    "suburb": "Box Hill",
+    "lga": "City of Whitehorse",
+    "age_specialties": [
+      "senior_7y_plus"
+    ],
+    "behavior_issues": [
+      "anxiety_general"
+    ],
+    "primary_service": "private_training",
+    "secondary_services": [
+      "puppy_training",
+      "obedience_training"
+    ],
+    "abn": "12345678903",
+    "resource_type": "trainer",
+    "is_scaffolded": true,
+    "is_claimed": false
+  },
+  {
+    "source_url": "https://example.com/data-westside",
+    "name": "Westside Training",
+    "phone": "0411000104",
+    "email": "westside@example.com",
+    "suburb": "Sunshine",
+    "lga": "Brimbank",
+    "age_specialties": [
+      "adult_18m_7y"
+    ],
+    "behavior_issues": [
+      "destructive_behaviour"
+    ],
+    "primary_service": "obedience_training",
+    "secondary_services": [
+      "puppy_training",
+      "behaviour_consultations"
+    ],
+    "abn": "12345678904",
+    "resource_type": "trainer",
+    "is_scaffolded": true,
+    "is_claimed": false
+  },
+  {
+    "source_url": "https://example.com/data-eastern-behaviour",
+    "name": "Eastern Behaviour Labs",
+    "phone": "0411000105",
+    "email": "lab@example.com",
+    "suburb": "Croydon",
+    "lga": "City of Maroondah",
+    "age_specialties": [
+      "adolescent_6_18m"
+    ],
+    "behavior_issues": [
+      "resource_guarding"
+    ],
+    "primary_service": "behaviour_consultations",
+    "secondary_services": [
+      "puppy_training",
+      "obedience_training"
+    ],
+    "abn": "12345678905",
+    "resource_type": "trainer",
+    "is_scaffolded": true,
+    "is_claimed": false
+  }
+]
