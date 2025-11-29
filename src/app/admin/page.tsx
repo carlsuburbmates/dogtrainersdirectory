@@ -59,12 +59,26 @@ export default function AdminQueuesPage() {
               meta: `Rating ${item.rating} • Business ${item.business_id}`,
               body: item.content || 'No message provided'
             }))} />
-            <QueueCard title="ABN Manual Reviews" items={queues.abn_verifications.map((item) => ({
-              id: item.id,
-              title: item.abn,
-              meta: `Business ${item.business_id} • Score ${item.similarity_score}`,
-              body: `Status: ${item.status}`
-            }))} />
+            <QueueCard
+              title="ABN Manual Reviews"
+              items={queues.abn_verifications.map((item) => ({
+                id: item.id,
+                title: item.abn,
+                meta: `Business ${item.business_id} • Score ${item.similarity_score}`,
+                body: `Status: ${item.status}`,
+                action: 'review'
+              }))}
+              onReview={async (id, action) => {
+                const res = await fetch(`/api/admin/abn/${id}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action })
+                })
+                if (res.ok) {
+                  window.location.reload()
+                }
+              }}
+            />
             <QueueCard title="Flagged Profiles" items={queues.flagged_businesses.map((item) => ({
               id: item.id,
               title: item.name,
@@ -80,24 +94,43 @@ export default function AdminQueuesPage() {
 
 type QueueCardProps = {
   title: string
-  items: { id: number; title: string; meta: string; body: string }[]
+  items: { id: number; title: string; meta: string; body: string; action?: 'review' }[]
+  onReview?: (id: number, action: 'approve' | 'reject') => Promise<void>
 }
 
 function QueueCard({ title, items }: QueueCardProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
       <h2 className="text-2xl font-semibold">{title}</h2>
-      {items.length === 0 ? (
-        <p className="text-sm text-gray-500">Nothing pending at the moment.</p>
-      ) : (
-        items.map((item) => (
-          <article key={item.id} className="rounded-lg border border-dashed border-gray-200 p-4 space-y-1">
-            <h3 className="font-semibold text-lg">{item.title}</h3>
-            <p className="text-xs text-gray-500 uppercase">{item.meta}</p>
-            <p className="text-sm text-gray-600">{item.body}</p>
-          </article>
-        ))
-      )}
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-500">Nothing pending at the moment.</p>
+        ) : (
+          items.map((item) => (
+            <article key={item.id} className="rounded-lg border border-dashed border-gray-200 p-4 space-y-1">
+              <h3 className="font-semibold text-lg">{item.title}</h3>
+              <p className="text-xs text-gray-500 uppercase">{item.meta}</p>
+              <p className="text-sm text-gray-600">{item.body}</p>
+              {item.action === 'review' && onReview && (
+                <div className="flex gap-3 mt-2">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => onReview(item.id, 'approve')}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => onReview(item.id, 'reject')}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
+            </article>
+          ))
+        )}
     </div>
   )
 }

@@ -49,21 +49,53 @@ export async function POST(req: Request) {
   }
 
   try {
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session
-      const metadata = session.metadata ?? {}
-      const businessId = metadata.business_id ? Number(metadata.business_id) : null
-      const lgaId = metadata.lga_id ? Number(metadata.lga_id) : null
+    const metadata = (event.data.object as any)?.metadata ?? {}
+    const businessId = metadata?.business_id ? Number(metadata.business_id) : null
+    const lgaId = metadata?.lga_id ? Number(metadata.lga_id) : null
+
+    if (['checkout.session.completed', 'charge.succeeded'].includes(event.type)) {
       if (businessId && lgaId) {
         await supabaseAdmin.from('featured_placements').insert({
           business_id: businessId,
           lga_id: lgaId,
-          stripe_checkout_session_id: session.id,
+          stripe_checkout_session_id:
+            (event.data.object as Stripe.Checkout.Session).id ??
+            (event.data.object as Stripe.Charge).id,
+          stripe_payment_intent_id: (event.data.object as any)?.payment_intent ?? null,
           start_date: new Date().toISOString(),
           end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           status: 'active'
         })
       }
+    }
+
+    if (event.type === 'invoice.payment_succeeded') {
+      await supabaseAdmin.from('featured_placements').update({
+        status: 'active',
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      }).eq('stripe_payment_intent_id', metadata?.payment_intent ?? '')
+    }
+
+    if (event.type === 'invoice.payment_failed') {
+      await supabaseAdmin.from('featured_placements').update({
+        status: 'cancelled'
+      }).eq('stripe_payment_intent_id', metadata?.payment_intent ?? '')
+    }
+
+    if (event.type === 'charge.refunded') {
+      await supabaseAdmin.from('featured_placements').update({
+        status: 'cancelled'
+      }).eq('stripe_payment_intent_id', metadata?.payment_intent ?? '')
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      await supabaseAdmin.from('featured_placements').update({
+        status: 'cancelled'
+      }).eq('stripe_payment_intent_id', metadata?.payment_intent ?? '')
+    }
+
+    if (event.type === 'charge.dispute.created') {
+      console.warn('charge dispute received:', event.id)
     }
   } catch (error) {
     console.error('Webhook handler error', error)
