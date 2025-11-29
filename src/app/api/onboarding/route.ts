@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { encryptValue } from '@/lib/encryption'
 
 type RequestBody = {
   email: string
@@ -80,8 +81,6 @@ export async function POST(request: Request) {
       .insert({
         profile_id: user.id,
         name: businessName,
-        phone: businessPhone,
-        email: businessEmail || email,
         website,
         address,
         suburb_id: suburbId,
@@ -90,7 +89,10 @@ export async function POST(request: Request) {
         abn,
         abn_verified: abnStatus === 'verified',
         verification_status: abnStatus,
-        resource_type: 'trainer'
+        resource_type: 'trainer',
+        phone_encrypted: businessPhone ? encryptValue(businessPhone) : null,
+        email_encrypted: businessEmail ? encryptValue(businessEmail) : encryptValue(email),
+        abn_encrypted: encryptValue(abn)
       })
       .select('id')
       .single()

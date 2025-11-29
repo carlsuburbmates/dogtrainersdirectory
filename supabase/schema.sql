@@ -25,6 +25,9 @@ DROP TYPE IF EXISTS verification_status CASCADE;
 DROP TYPE IF EXISTS user_role CASCADE;
 DROP TYPE IF EXISTS region CASCADE;
 
+-- Enable pgcrypto for AES-256 encryption
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Create Enums
 CREATE TYPE region AS ENUM (
     'Inner City',
@@ -86,6 +89,12 @@ CREATE TYPE resource_type AS ENUM (
     'emergency_shelter'
 );
 
+CREATE OR REPLACE FUNCTION decrypt_sensitive(text) RETURNS text AS $$
+BEGIN
+  RETURN pgp_sym_decrypt($1::text, current_setting('pgcrypto.key'));
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
 -- Core Tables
 
 -- Councils table (28 records)
@@ -134,6 +143,11 @@ CREATE TABLE businesses (
     abn_verified BOOLEAN DEFAULT FALSE,
     verification_status verification_status DEFAULT 'pending',
     resource_type resource_type NOT NULL DEFAULT 'trainer',
+    phone_encrypted TEXT,
+    email_encrypted TEXT,
+    abn_encrypted TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     featured_until TIMESTAMP WITH TIME ZONE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -302,8 +316,8 @@ BEGIN
     SELECT 
         b.id as business_id,
         b.name as business_name,
-        b.email as business_email,
-        b.phone as business_phone,
+        decrypt_sensitive(b.email_encrypted) as business_email,
+        decrypt_sensitive(b.phone_encrypted) as business_phone,
         b.website as business_website,
         b.address as business_address,
         b.bio as business_bio,
@@ -327,7 +341,7 @@ BEGIN
     LEFT JOIN trainer_behavior_issues tbi ON b.id = tbi.business_id
     LEFT JOIN trainer_services tsvc ON b.id = tsvc.business_id
     WHERE 
-        b.is_active = true
+        b.is_active = true AND b.is_deleted = false
         AND calculate_distance(user_lat, user_lng, s.latitude, s.longitude) <= radius_km
         AND (age_filter IS NULL OR age_filter = ANY(ARRAY_AGG(DISTINCT ts.age_specialty)))
         AND (issues_filter IS NULL OR tbi.behavior_issue = ANY(issues_filter))
