@@ -1,0 +1,6 @@
+url,name,phone,email,suburb,age_hint,issue_hint,service_hint,abn,lga
+https://example.com/data-loose-lead,Loose Lead Training,0411000101,hello@looselead.com,Fitzroy,adolescent_pull,leash_reactivity,behaviour_consultations,12345678901,City of Yarra
+https://example.com/data-puppy-basics,Puppy Basics Preston,0411000102,info@puppybasicspreston.com,Preston,puppies,recall_issues,group_classes,12345678902,City of Darebin
+https://example.com/data-senior-dog,Senior Dog Specialists,0411000103,contact@senior-dog.com,Box Hill,senior,anxiety_general,private_training,12345678903,City of Whitehorse
+https://example.com/data-westside,Westside Training,0411000104,westside@example.com,Sunshine,adult,destructive_behaviour,obedience_training,12345678904,Brimbank
+https://example.com/data-eastern-behaviour,Eastern Behaviour Labs,0411000105,lab@example.com,Croydon,adolescent,resource_guarding,behaviour_consultations,12345678905,City of Maroondah
