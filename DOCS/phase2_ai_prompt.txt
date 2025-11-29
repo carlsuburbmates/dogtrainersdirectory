@@ -16,8 +16,17 @@ OBJECTIVE:
 6. Keep the scraper behind the `SCRAPER_ENABLED` feature flag; monetization remains hidden until Phase 4+.
 
 DELIVERABLES:
-- Coordinator script or workflow that runs the scraper → QA runner → human review → DB insert.
+- Coordinator workflow that runs the scraper → QA runner → human review → DB insert.
 - Updated admin UI or report showing QA batch accuracy, duplicate detection, and pending approvals.
 - Documentation referencing the QA guardrails and linking to `DOCS/PHASE_1_FINAL_COMPLETION_REPORT.md` for Phase 1 baseline.
+
+To track progress, add this checklist to the bottom of `DOCS/phase2_ai_prompt.txt` and reference it as each step completes:
+
+1. [ ] Scraper pipeline implemented (seed URL ingest, LLM mapping to locked enums, scaffolded unclaimed listings).
+2. [ ] QA runner executed for each batch (≥10 samples or 10% of listings, LLM comparison, contact/enum validation, duplicate checks) with logs.
+3. [ ] Human review workflow tied to admin UI (flagged listings require approval before publishing).
+4. [ ] Scraper feature flag established and the workflow documented in automation/phase docs.
+5. [ ] QA log persisted (samples, accuracy %, approval statuses) plus reference to the Phase 1 completion report.
+6. [ ] Phase 2 completion statement added (“PHASE 2 COMPLETE – Scraper QA validated”) once all items verified.
 
 Once Phase 2 is complete, confirm the new data matches the SSOT, QA proofs are logged, and the AI agent can declare “PHASE 2 COMPLETE – Scraper QA validated.” 
