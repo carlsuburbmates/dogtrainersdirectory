@@ -1226,19 +1226,19 @@ Once Phase 5 approved:
 - ✅ "Claim Your Business" CTA
 - ✅ Weekly scrape schedule
 - ✅ Guardrails:
-  - Feature-flagged; scraping stays off in prod until explicitly enabled
-  - QA sample ≥10 listings/run with accuracy target ≥95% before publish
-  - AI-assisted QA: LLM compares scraped fields vs source URLs/screenshots, enforces locked enums, flags missing/invalid contact data; human gate approves flagged items before publish
+  - Feature-flagged via `SCRAPER_ENABLED`; scraping stays off in production until the flag is flipped and the toggle workflow is documented in `DOCS/automation-checklist.md`.
+  - QA sample ≥10 listings/run with accuracy target ≥95% before publish, logging sample sets and scores in `qa_run_log.json`.
+  - AI-assisted QA: LLM compares scraped fields vs source URLs/screenshots, enforces locked enums, flags missing/invalid contact data; human gate approves flagged items before publish and triggers Resend notifications using the API key stored in `.env.local`.
   - Deduplicate on ABN (if present), phone, email, and name+address
   - Use locked enums only (no free-text categories); validate phones/emails; derive LGA from suburb→council CSV
   - Mark scraped entries unverified (blue badge); do not auto-claim; keep monetization off
   - Public data only (trainer sites/GBusiness/social); honor privacy/disclaimer posture
-  - Log runs and metrics; keep rollback path via the feature flag
+  - Log runs and metrics to `qa_run_log.json`, including accuracy/batch verdicts and human approvals, with cross-checks against `DOCS/PHASE_1_FINAL_COMPLETION_REPORT.md` to ensure counts stay aligned with the SSOT
   - QA runner outline (make actionable):
     - Inputs: scraped JSON + source URLs/screenshots
     - Steps: LLM field comparison, enum enforcement, contact validation, dedupe checks (ABN/phone/email/name+address), confidence scoring
     - Outputs: per-listing verdicts, batch accuracy %, reasons for failures; fail batch if accuracy <95% or required contact fields missing
-    - Storage: persist run log (samples checked, issues found, human approvals) for audit and rollback
+    - Storage: persist run log (samples checked, issues found, human approvals) in `qa_run_log.json` for audit/rollback
 
 **Data Enrichment:**
 - ✅ Geocode claimed trainer addresses (validate council assignments)

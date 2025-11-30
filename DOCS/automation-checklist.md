@@ -35,9 +35,9 @@ Use this to wire automation tasks into `DOCS/ai_agent_execution_v2_corrected.md`
  - [ ] Webhook reliability: add monitoring that fails builds or creates alerts when webhook delivery errors exceed threshold (e.g., >1% failed deliveries over 24 hours)
 
 ## Post-Launch (Flagged/Deferred)
-- [ ] Scraper behind feature flag; QA sample ≥10 listings/run; confidence metrics
-- [ ] AI-assisted QA for scraper: LLM compares scraped fields to source URLs/screenshots, enforces enums, flags dupes (ABN/phone/email/name+address), and fails batch if accuracy <95% or required contact fields missing
-- [ ] Human gate for flagged items; keep scraped entries unverified/unclaimed and monetization off until QA passes
-- [ ] QA runner script: input (scraped JSON + source URLs/screenshots), steps (LLM field compare, enum enforcement, contact validation, dedupe), outputs (per-listing verdicts, batch accuracy, reasons), storage (run log with samples checked and human approvals)
+- [x] Scraper behind feature flag `SCRAPER_ENABLED`; QA sample ≥10 listings/run and feature-gated rollout documented to keep scraping disabled until explicitly allowed in production. Confidence metrics live in `qa_run_log.json` for every batch.
+- [x] AI-assisted QA for scraper: LLM compares scraped fields to source URLs/screenshots, enforces enums, flags dupes (ABN/phone/email/name+address), and fails batch if accuracy <95% or required contact fields missing, with results persisted in `qa_run_log.json` and audited against `DOCS/PHASE_1_FINAL_COMPLETION_REPORT.md`.
+- [x] Human gate for flagged items; keep scraped entries unverified/unclaimed and monetization off until QA passes, with Resend notifications triggered from `/api/admin/scaffolded` approvals (see `.env.local` Resend API key for the notification webhook).
+- [x] QA runner script: input (scraped JSON + source URLs/screenshots), steps (LLM field compare, enum enforcement, contact validation, dedupe), outputs (per-listing verdicts, batch accuracy, reasons), storage (run log `qa_run_log.json` with samples checked, scores, approval audit trail).
 - [ ] Monetization flag disabled until Phase 4+ criteria met (≥50 claimed trainers, stable ABN verifications)
 - [ ] Weekly automated audits: SSOT immutability, CSV checksum, ABN re-verification schedule
