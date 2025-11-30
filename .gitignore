@@ -6,3 +6,7 @@ supabase/.branches
 supabase/.temp
 .supabase
 tsconfig.tsbuildinfo
+
+# local DB backups
+backup-*.dump
+supabase/backups/
