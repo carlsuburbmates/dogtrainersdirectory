@@ -12,6 +12,8 @@ jobs:
       SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
       ABR_API_KEY: ${{ secrets.ABR_API_KEY }}
       ABR_GUID: ${{ secrets.ABR_GUID }}
+      # Optional: set AUTO_APPLY=true in repository secrets to allow the workflow to write verified/manual_review statuses
+      AUTO_APPLY: ${{ secrets.AUTO_APPLY }}
 
     steps:
       - name: Checkout

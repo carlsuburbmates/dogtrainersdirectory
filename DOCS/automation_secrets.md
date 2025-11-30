@@ -54,4 +54,12 @@ Logging
 
 - The script logs informational messages to stdout so scheduled runs in CI will capture outcomes and any errors. If a request to the ABR API fails, it will be logged and the row will be skipped for the run.
 
+Enabling writes / auto-apply
+
+- The script defaults to safe mode and will not write back to the database unless you explicitly enable writing. To enable automatic writing of verified/manual_review updates, set the repository secret `AUTO_APPLY` to a truthy value (`true`, `1`, `yes`). Without this set, the scheduled workflow will run in a dry-run mode — it will fetch ABR results and log what it would do, but it will not mutate the DB. This lets you validate behavior before enabling writes.
+
+Migration required (important)
+
+- The current ABN script stores the raw ABR payload in `abn_verifications.matched_json` (type jsonb). If your target DB does not yet include this column, apply the migration `supabase/migrations/20251130000001_add_abn_matched_json.sql` to add the column (nullable). Run this in staging first and ensure a backup is taken before applying to production.
+
 ```
