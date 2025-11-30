@@ -1,0 +1,38 @@
+name: ABN re-check
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # daily at 02:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  abn-recheck:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+      ABR_API_KEY: ${{ secrets.ABR_API_KEY }}
+      ABR_GUID: ${{ secrets.ABR_GUID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (psql, curl)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client curl
+
+      - name: Validate required secrets
+        run: |
+          if [[ -z "${SUPABASE_CONNECTION_STRING:-}" ]]; then
+            echo "Missing SUPABASE_CONNECTION_STRING secret" >&2
+            exit 1
+          fi
+          if [[ -z "${ABR_API_KEY:-}" && -z "${ABR_GUID:-}" ]]; then
+            echo "Missing ABR_API_KEY or ABR_GUID secret" >&2
+            exit 1
+          fi
+
+      - name: Run ABN re-check
+        run: |
+          ./scripts/abn_recheck.sh

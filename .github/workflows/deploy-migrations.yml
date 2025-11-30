@@ -1,0 +1,65 @@
+name: Deploy database migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Set to true to only preview the changes (will still create a backup)'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy-migrations:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: {}
+    env:
+      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install psql
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Validate required secrets
+        run: |
+          if [[ -z "${SUPABASE_CONNECTION_STRING:-}" ]]; then
+            echo "Missing SUPABASE_CONNECTION_STRING secret" >&2
+            exit 1
+          fi
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+            echo "Missing SUPABASE_SERVICE_ROLE_KEY secret" >&2
+            exit 1
+          fi
+
+      - name: Create DB backup artifact
+        id: backup
+        run: |
+          ts=$(date -u +%Y%m%dT%H%M%SZ)
+          dumpfile="supabase-backup-${ts}.dump"
+          PGPASSWORD=$(python -c "import os,urllib.parse as u; print(u.urlparse(os.environ['SUPABASE_CONNECTION_STRING']).password)") pg_dump -Fc "$SUPABASE_CONNECTION_STRING" -f "$dumpfile"
+          echo "dumpfile=$dumpfile" >> $GITHUB_OUTPUT
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup
+          path: ${{ steps.backup.outputs.dumpfile }}
+
+      - name: Apply migrations (manual)
+        if: ${{ inputs.dry_run == 'false' }}
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "Applying migration $f"
+            psql "$SUPABASE_CONNECTION_STRING" -f "$f"
+          done
+
+      - name: Dry-run preview (no apply)
+        if: ${{ inputs.dry_run == 'true' }}
+        run: |
+          echo "Dry run requested — the backup has been created and can be downloaded from artifacts. No migrations were applied."
