@@ -29,12 +29,27 @@ type QueuePayload = {
   }>
 }
 
+type ScaffoldedItem = {
+  id: number
+  name: string
+  verification_status: string
+  bio?: string
+}
+
 export default function AdminQueuesPage() {
   const [queues, setQueues] = useState<QueuePayload | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [scaffolded, setScaffolded] = useState<ScaffoldedItem[]>([])
 
   useEffect(() => {
-    fetch('/api/admin/queues')
+    Promise.all([
+      fetch('/api/admin/queues').then((res) => res.json()),
+      fetch('/api/admin/scaffolded').then((res) => res.json()),
+    ])
+      .then(([queuePayload, scaffoldPayload]: [QueuePayload, { scaffolded: ScaffoldedItem[] }]) => {
+        setQueues(queuePayload)
+        setScaffolded(scaffoldPayload.scaffolded || [])
+      })
       .then((res) => res.json())
       .then((payload: QueuePayload) => setQueues(payload))
       .catch((err) => {
@@ -85,6 +100,20 @@ export default function AdminQueuesPage() {
               meta: `Status ${item.verification_status}`,
               body: `Active: ${item.is_active} • Featured until: ${item.featured_until || 'N/A'}`
             }))} />
+            <QueueCard title="Scaffolded Listings" items={scaffolded.map((item) => ({
+              id: item.id,
+              title: item.name,
+              meta: `Status ${item.verification_status}`,
+              body: item.bio || 'Scaffolded listing',
+              action: 'review'
+            }))} onReview={async (id, action) => {
+              await fetch('/api/admin/scaffolded', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, action })
+              })
+              window.location.reload()
+            }} />
           </div>
         )}
       </section>

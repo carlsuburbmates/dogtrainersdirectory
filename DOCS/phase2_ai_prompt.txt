@@ -24,7 +24,7 @@ To track progress, add this checklist to the bottom of `DOCS/phase2_ai_prompt.tx
 
 1. [x] Scraper pipeline implemented (seed URL ingest, LLM mapping to locked enums, scaffolded unclaimed listings). See `scripts/run_phase2_scraper.py`, `scripts/apply_phase2_scaffolded.py`, and `DOCS/phase2_scraper_targets.csv`.
 2. [x] QA runner executed for each batch (≥10 samples or 10% of listings, LLM comparison, contact/enum validation, duplicate checks) with logs—see `scripts/scrape_qa_runner_stub.py` output at `qa_run_log.json`.
-3. [ ] Human review workflow tied to admin UI (flagged listings require approval before publishing).
+3. [x] Human review workflow tied to admin UI (flagged listings require approval before publishing) via `/api/admin/scaffolded`.
 4. [ ] Scraper feature flag established and the workflow documented in automation/phase docs.
 5. [ ] QA log persisted (samples, accuracy %, approval statuses) plus reference to the Phase 1 completion report.
 6. [ ] Phase 2 completion statement added (“PHASE 2 COMPLETE – Scraper QA validated”) once all items verified.
