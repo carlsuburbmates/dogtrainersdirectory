@@ -14,6 +14,9 @@ jobs:
       ABR_GUID: ${{ secrets.ABR_GUID }}
       # Optional: set AUTO_APPLY=true in repository secrets to allow the workflow to write verified/manual_review statuses
       AUTO_APPLY: ${{ secrets.AUTO_APPLY }}
+      # Admin REST access used to read/update rows remotely (preferred)
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
 
     steps:
       - name: Checkout
