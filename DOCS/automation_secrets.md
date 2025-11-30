@@ -42,6 +42,25 @@ To run the unit tests for the ABN lookup logic (no secrets required):
 ```bash
 python3 scripts/test_abn_recheck.py
 
+Quick setup helper (one-line, low-effort)
+
+If you'd rather avoid the GitHub UI, you can use the `gh` CLI to configure repository secrets quickly. This repo contains a helper script you can run from your machine (you must be a repo admin and authenticated in `gh`):
+
+```bash
+# interactive
+./scripts/setup_github_secrets.sh
+
+# OR provide values directly
+./scripts/setup_github_secrets.sh \
+	--supabase-conn 'postgresql://user:pass@host:5432/postgres' \
+	--abr-guid 'YOUR-ABR-GUID' --auto-apply true
+```
+
+Notes:
+- `gh` must be installed and authenticated (`gh auth login`).
+- The script will set `SUPABASE_CONNECTION_STRING`, `ABR_API_KEY`/`ABR_GUID` and `AUTO_APPLY`.
+- After secrets are set, the GitHub Actions workflow can be run manually (dispatch) or will run on schedule.
+
 Behaviour & thresholds
 
 - The new ABN re-check implementation performs a fuzzy string comparison (SequenceMatcher) between the database business name and the name returned from ABR.
