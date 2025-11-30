@@ -25,3 +25,20 @@ How to add secrets (short)
 3. Paste the value and name it exactly (e.g., SUPABASE_CONNECTION_STRING)
 
 Once added, scheduled workflows will use the values from ${'{'}{ secrets.VARIABLE_NAME }{'}'} and will run with the appropriate permissions.
+
+Testing locally
+
+To run the ABN re-check script locally (use with care — it will attempt to update the DB):
+
+```bash
+# set required env vars in your shell
+export SUPABASE_CONNECTION_STRING="postgresql://user:pass@host:5432/postgres"
+export ABR_API_KEY="<your-abn-api-key>" # or ABR_GUID
+python3 scripts/abn_recheck.py
+```
+
+To run the unit tests for the ABN lookup logic (no secrets required):
+
+```bash
+python3 scripts/test_abn_recheck.py
+```
