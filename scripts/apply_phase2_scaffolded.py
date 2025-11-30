@@ -23,9 +23,10 @@ def main():
         email_expr = encrypt(entry["email"])
         abn_expr = encrypt(entry["abn"])
         suburb = escape(entry["suburb"])
+        # For scaffolded entries we don't create profiles yet: leave profile_id NULL
         lines.append(
             f"INSERT INTO businesses (profile_id, name, phone_encrypted, email_encrypted, suburb_id, bio, abn, abn_verified, verification_status, resource_type, is_scaffolded, is_claimed)"
-            f" VALUES (gen_random_uuid(), '{business_name}', {phone_expr}, {email_expr}, (SELECT id FROM suburbs WHERE name = '{suburb}' LIMIT 1), 'Scraped entry for {business_name}', '{entry['abn']}', false, 'manual_review', 'trainer', true, false);"
+            f" VALUES (NULL, '{business_name}', {phone_expr}, {email_expr}, (SELECT id FROM suburbs WHERE name = '{suburb}' LIMIT 1), 'Scraped entry for {business_name}', '{entry['abn']}', false, 'manual_review', 'trainer', true, false);"
         )
 
         ages = entry["age_specialties"]
@@ -46,9 +47,10 @@ def main():
                 f"INSERT INTO trainer_services (business_id, service_type, is_primary) VALUES (currval('businesses_id_seq'), '{service}', {str(service == entry['primary_service']).lower()});"
             )
 
+        # Use 'manual_upload' as verification_method for scaffolded imports (matches allowed enum values)
         lines.append(
             "INSERT INTO abn_verifications (business_id, abn, business_name, matched_name, similarity_score, verification_method, status)"
-            " VALUES (currval('businesses_id_seq'), '{abn}', '{business}', '{business}', 0.00, 'scraper', 'manual_review');".format(
+            " VALUES (currval('businesses_id_seq'), '{abn}', '{business}', '{business}', 0.00, 'manual_upload', 'manual_review');".format(
                 abn=entry["abn"], business=business_name
             )
         )

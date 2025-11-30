@@ -47,7 +47,7 @@ INSERT INTO suburbs (name, postcode, latitude, longitude, council_id) VALUES
 ('Abbotsford', 3067, -37.8045508, 144.9988542, (SELECT id FROM councils WHERE name = 'City of Yarra')),
 ('Collingwood', 3066, -37.8021040, 144.9881387, (SELECT id FROM councils WHERE name = 'City of Yarra')),
 ('Fitzroy', 3065, -37.8010382, 144.9792611, (SELECT id FROM councils WHERE name = 'City of Yarra')),
-('Richmond', NULL, -37.8074500, 144.9907213, (SELECT id FROM councils WHERE name = 'City of Yarra')),
+('Richmond', 3121, -37.8074500, 144.9907213, (SELECT id FROM councils WHERE name = 'City of Yarra')),
 ('Heidelberg', 3084, -37.7524788, 145.0701284, (SELECT id FROM councils WHERE name = 'City of Banyule')),
 ('Ivanhoe', 3079, -37.7688774, 145.0454487, (SELECT id FROM councils WHERE name = 'City of Banyule')),
 ('Watsonia', 3087, -37.7109468, 145.0837808, (SELECT id FROM councils WHERE name = 'City of Banyule')),

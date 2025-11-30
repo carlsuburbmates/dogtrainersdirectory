@@ -44,10 +44,53 @@ This guide will help you set up the development environment for the Dog Trainers
    psql -h your-project-ref.supabase.co -U postgres -d postgres < supabase/data-import.sql
    ```
 
-   Alternatively, use the Supabase Dashboard:
+   Alternatively, use the Supabase Dashboard (recommended if direct admin connections are blocked):
    - Go to SQL Editor
    - Copy and paste the contents of `supabase/schema.sql`
    - Then copy and paste the contents of `supabase/data-import.sql`
+
+Local helper scripts:
+
+If your environment prevents direct connections to the hosted Postgres (common when the DB host is restricted to selected IPs), you can use the repo helpers to either run locally or attempt a remote run.
+
+- Start a disposable local Postgres and apply schema & seeds (Docker required):
+
+```bash
+./scripts/local_db_start_apply.sh [POSTGRES_PASSWORD] [PG_PORT]
+# example: ./scripts/local_db_start_apply.sh local_pass 5433
+```
+
+- Verify the local DB:
+
+```bash
+./scripts/local_db_verify.sh [POSTGRES_PASSWORD] [PG_PORT]
+```
+
+- Stop the local DB:
+
+```bash
+./scripts/local_db_stop.sh
+```
+
+- Try to apply the repo schema to the remote Supabase using the admin-style connection string in `.env.local` (attempts a plain psql apply):
+
+```bash
+./scripts/try_remote_apply.sh
+```
+
+If the remote host refuses direct admin connections, the `try_remote_apply.sh` script will explain next steps — typically the safest approach is to copy/paste `supabase/schema.sql` and `supabase/data-import.sql` into the Supabase Dashboard SQL editor and run them there (that editor executes with admin privileges).
+
+Pre-import validation (CI)
+
+We added a validator that runs automatically on PRs and pushes that touch `supabase/schema.sql` or `supabase/data-import.sql`. The validator checks for common issues (NULL postcodes, invalid region enum values) and fails CI if problems are found.
+
+Locally you can run the validator with:
+
+```bash
+npm run validate-import
+# or
+python3 scripts/validate_import.py
+```
 
 ## 2. Running the Development Server
 

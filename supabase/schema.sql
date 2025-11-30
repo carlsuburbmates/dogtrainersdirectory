@@ -146,6 +146,8 @@ CREATE TABLE businesses (
     phone_encrypted TEXT,
     email_encrypted TEXT,
     abn_encrypted TEXT,
+    is_scaffolded BOOLEAN DEFAULT FALSE,
+    is_claimed BOOLEAN DEFAULT FALSE,
     is_deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE,
     featured_until TIMESTAMP WITH TIME ZONE,
@@ -179,16 +181,39 @@ CREATE TABLE trainer_services (
     UNIQUE(business_id, service_type)
 );
 
-ALTER TABLE businesses
-    ADD CONSTRAINT trainer_requires_specialization
-    CHECK (
-        resource_type != 'trainer'
-        OR EXISTS (
-            SELECT 1 FROM trainer_specializations ts
-            WHERE ts.business_id = businesses.id
-        )
-    )
-    DEFERRABLE INITIALLY DEFERRED;
+-- The previous approach used a DEFERRABLE CHECK that referenced another table.
+-- Some Postgres / managed environments (Supabase) reject DEFERRABLE on CHECK
+-- constraints (error 0A000). Instead we implement this as a deferred
+-- CONSTRAINT TRIGGER — it allows the check to reference other tables and be
+-- evaluated at transaction commit, which lets a single transaction insert a
+-- business and its specializations together.
+
+-- Clean up (if re-running schema in dev)
+DROP TRIGGER IF EXISTS trainer_requires_specialization_trg ON businesses;
+DROP FUNCTION IF EXISTS enforce_trainer_requires_specialization();
+
+CREATE OR REPLACE FUNCTION enforce_trainer_requires_specialization()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only enforce when resource_type indicates a trainer
+    IF (NEW.resource_type = 'trainer') THEN
+        -- If there are no specializations for this business, raise an error
+        PERFORM 1 FROM trainer_specializations ts WHERE ts.business_id = NEW.id;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Trainer businesses must have at least one specialization.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Constraint trigger is DEFERRABLE and runs at the end of transaction so
+-- business + specialization rows inserted in the same transaction pass.
+CREATE CONSTRAINT TRIGGER trainer_requires_specialization_trg
+AFTER INSERT OR UPDATE ON businesses
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION enforce_trainer_requires_specialization();
 
 -- Reviews table
 CREATE TABLE reviews (
