@@ -41,4 +41,17 @@ To run the unit tests for the ABN lookup logic (no secrets required):
 
 ```bash
 python3 scripts/test_abn_recheck.py
+
+Behaviour & thresholds
+
+- The new ABN re-check implementation performs a fuzzy string comparison (SequenceMatcher) between the database business name and the name returned from ABR.
+- Matching thresholds in the current implementation:
+	- verified: similarity >= 0.85
+	- manual_review: similarity >= 0.60 and < 0.85
+- The script stores the matched_name, similarity_score, and the raw JSON response into `abn_verifications.matched_json` to aid debugging.
+
+Logging
+
+- The script logs informational messages to stdout so scheduled runs in CI will capture outcomes and any errors. If a request to the ABR API fails, it will be logged and the row will be skipped for the run.
+
 ```
