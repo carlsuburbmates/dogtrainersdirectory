@@ -30,3 +30,7 @@ jobs:
       - name: Run import validator
         run: |
           python3 scripts/validate_import.py
+
+      - name: Run Phase2 generator unit tests
+        run: |
+          python3 scripts/test_phase2_generator.py
