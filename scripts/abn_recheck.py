@@ -24,6 +24,7 @@ import urllib.request
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any, Dict, Iterable, Optional, Tuple
+import argparse
 
 LOG = logging.getLogger("abn_recheck")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -154,7 +155,7 @@ def fetch_rows(conn: str, limit: int = 50) -> Iterable[Row]:
     return out
 
 
-def update_row_verified(conn: str, row_id: int, status: str, matched_name: str, score: float, raw_json: str) -> bool:
+def update_row_verified(conn: str, row_id: int, status: str, matched_name: str, score: float, raw_json: str, dry_run: bool = False) -> bool:
     """Update the abn_verifications row using psql safely via dollar quoting.
 
     Returns True on success, False otherwise.
@@ -168,6 +169,9 @@ def update_row_verified(conn: str, row_id: int, status: str, matched_name: str, 
     )
     cmd = ["psql", conn, "-c", sql]
     LOG.debug("Applying update: %s", sql)
+    if dry_run:
+        LOG.info("Dry-run enabled: would run: %s", sql)
+        return True
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         return True
@@ -176,7 +180,16 @@ def update_row_verified(conn: str, row_id: int, status: str, matched_name: str, 
         return False
 
 
-def process_row(conn: str, row: Row, api_key: Optional[str], guid: Optional[str], threshold_verified: float = 0.85, threshold_manual: float = 0.60) -> None:
+def process_row(
+    conn: str,
+    row: Row,
+    api_key: Optional[str],
+    guid: Optional[str],
+    threshold_verified: float = 0.85,
+    threshold_manual: float = 0.60,
+    dry_run: bool = False,
+    auto_apply: bool = False,
+) -> None:
     LOG.info("Checking ABN=%s (id=%s) for '%s'", row.abn, row.id, row.business_name)
     status, body = call_abr(row.abn, api_key, guid)
     if status == 0 or not body:
@@ -196,11 +209,17 @@ def process_row(conn: str, row: Row, api_key: Optional[str], guid: Optional[str]
         LOG.info("Found ABR candidate name: %r (score=%.3f)", candidate_name, score)
         if score >= threshold_verified:
             LOG.info("Marking id=%s verified (score %.3f)", row.id, score)
-            update_row_verified(conn, row.id, "verified", candidate_name, score, json.dumps(parsed))
+            if dry_run or not auto_apply:
+                LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
+            else:
+                update_row_verified(conn, row.id, "verified", candidate_name, score, json.dumps(parsed), dry_run=dry_run)
         elif score >= threshold_manual:
             LOG.info("Marking id=%s for manual_review (score %.3f)", row.id, score)
             # Update lower-confidence matches to manual_review and store details
-            update_row_verified(conn, row.id, "manual_review", candidate_name, score, json.dumps(parsed))
+            if dry_run or not auto_apply:
+                LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
+            else:
+                update_row_verified(conn, row.id, "manual_review", candidate_name, score, json.dumps(parsed), dry_run=dry_run)
         else:
             LOG.info("No confident match for id=%s (score %.3f) — leaving status", row.id, score)
     else:
@@ -223,9 +242,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 0
 
     LOG.info("Processing %d ABN rows", len(rows))
+    parser = argparse.ArgumentParser(description="ABN re-check script")
+    parser.add_argument("--dry-run", action="store_true", help="Do not write updates to the DB")
+    args = parser.parse_args(argv)
+
+    env_auto = os.environ.get("AUTO_APPLY", "false").lower() in ("1", "true", "yes")
+    dry_run = args.dry_run
     for row in rows:
         try:
-            process_row(conn, row, api_key, guid)
+            process_row(conn, row, api_key, guid, dry_run=dry_run, auto_apply=env_auto)
             # Be polite to ABR endpoint
             time.sleep(0.35)
         except Exception:
