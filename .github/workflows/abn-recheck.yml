@@ -33,6 +33,6 @@ jobs:
             exit 1
           fi
 
-      - name: Run ABN re-check
+      - name: Run ABN re-check (python)
         run: |
-          ./scripts/abn_recheck.sh
+          python3 scripts/abn_recheck.py

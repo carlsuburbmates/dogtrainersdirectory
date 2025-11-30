@@ -34,3 +34,7 @@ jobs:
       - name: Run Phase2 generator unit tests
         run: |
           python3 scripts/test_phase2_generator.py
+
+      - name: Run ABN re-check unit tests
+        run: |
+          python3 scripts/test_abn_recheck.py
