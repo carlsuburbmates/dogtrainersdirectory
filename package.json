@@ -4,7 +4,7 @@
   "description": "Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 14 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run db:start && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,6 +12,10 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+
+    "db:start": "bash ./scripts/local_db_start_apply.sh --reset",
+    "db:seed": "bash ./scripts/local_db_start_apply.sh --seed-only",
+    "dev:local": "npm run db:start & sleep 1 && next dev",
 
     "allowlist:staging": "python3 scripts/generate_allowlist.py staging",
     "allowlist:prod": "python3 scripts/generate_allowlist.py prod",
@@ -27,7 +31,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "bugs": {
     "url": "https://github.com/carlsuburbmates/dogtrainersdirectory/issues"
