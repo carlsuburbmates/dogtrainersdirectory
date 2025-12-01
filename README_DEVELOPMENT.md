@@ -247,6 +247,8 @@ const FEATURE_FLAGS = {
   AI_MODERATION_ENABLED: false,     // Optional in Phase 1
   PREMIUM_PROFILES_ENABLED: false  // Deferred to Phase 1.5+
 }
+
+> **Phase 2 scraper note:** When you’re ready to run the Phase 2 scraper/QA pipeline, set `SCRAPER_ENABLED=true` in your `.env.local` (or export the env var). Both `scripts/run_phase2_scraper.py` and `scripts/apply_phase2_scaffolded.py` refuse to generate new data unless this flag is truthy, so nothing is inserted or encrypted unless the flag is intentionally enabled.
 ```
 
 ## 10. Performance Targets

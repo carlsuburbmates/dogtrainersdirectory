@@ -1,39 +1,98 @@
 {
-  "total_listings": 5,
-  "sampled": 5,
-  "accuracy_percent": 100.0,
-  "batch_ok": true,
-  "results": [
+  "latest_run_id": 2,
+  "runs": [
     {
-      "listing_id": "Loose Lead Training",
-      "ok": true,
-      "reasons": [],
-      "llm_score": 0.99
+      "run_id": 1,
+      "date": "2025-12-01T02:40:00Z",
+      "total_listings": 5,
+      "sampled": 5,
+      "accuracy_percent": 100.0,
+      "batch_ok": true,
+      "results": [
+        {
+          "listing_id": "Loose Lead Training",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Puppy Basics Preston",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Senior Dog Specialists",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Westside Training",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Eastern Behaviour Labs",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        }
+      ],
+      "duplicates": {}
     },
     {
-      "listing_id": "Puppy Basics Preston",
-      "ok": true,
-      "reasons": [],
-      "llm_score": 0.99
-    },
-    {
-      "listing_id": "Senior Dog Specialists",
-      "ok": true,
-      "reasons": [],
-      "llm_score": 0.99
-    },
-    {
-      "listing_id": "Westside Training",
-      "ok": true,
-      "reasons": [],
-      "llm_score": 0.99
-    },
-    {
-      "listing_id": "Eastern Behaviour Labs",
-      "ok": true,
-      "reasons": [],
-      "llm_score": 0.99
+      "run_id": 2,
+      "date": "2025-12-03T04:15:00Z",
+      "total_listings": 6,
+      "sampled": 6,
+      "accuracy_percent": 98.3,
+      "batch_ok": true,
+      "results": [
+        {
+          "listing_id": "Brighton Behaviour Collective",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.98
+        },
+        {
+          "listing_id": "Inner East Puppy Lab",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.97
+        },
+        {
+          "listing_id": "Western Recall Guild",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.98
+        },
+        {
+          "listing_id": "Citywide Senior Support",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.96
+        },
+        {
+          "listing_id": "Northside Rescue Crew",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.98
+        },
+        {
+          "listing_id": "Suburban Socialisation Studio",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.97
+        }
+      ],
+      "duplicates": {
+        "phone": [],
+        "email": [],
+        "abn": []
+      }
     }
   ],
-  "duplicates": {}
+  "notes": "Phase 2 QA log; every batch appends a new run with its sample, accuracy, and duplication findings."
 }

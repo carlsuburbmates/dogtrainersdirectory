@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 INPUT = Path("supabase/phase2_scraped.json")
@@ -11,6 +12,9 @@ def encrypt(expr: str) -> str:
     return f"pgp_sym_encrypt('{escape(expr)}', current_setting('pgcrypto.key'))"
 
 def main():
+    flag = os.environ.get("SCRAPER_ENABLED", "false").lower()
+    if flag not in {"1", "true", "yes"}:
+        raise SystemExit("SCRAPER_ENABLED flag is not enabled. Set SCRAPER_ENABLED=true before rendering scaffolded SQL.")
     if not INPUT.exists():
         raise FileNotFoundError("Run scripts/run_phase2_scraper.py first")
 

@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 from pathlib import Path
 
 AGE_ENUM = [
@@ -37,6 +38,8 @@ SERVICE_ENUM = [
 TARGETS = Path("DOCS/phase2_scraper_targets.csv")
 OUTPUT = Path("supabase/phase2_scraped.json")
 
+SCRAPER_FLAG = os.environ.get("SCRAPER_ENABLED", "false").lower()
+
 def map_age(hint: str):
     return [value for value in AGE_ENUM if hint.lower().split("_")[0] in value]
 
@@ -50,6 +53,8 @@ def map_service(hint: str):
     return SERVICE_ENUM[0]
 
 def run():
+    if SCRAPER_FLAG not in {"1", "true", "yes"}:
+        raise SystemExit("SCRAPER_ENABLED flag is not enabled. Set SCRAPER_ENABLED=true before running the scraper output generator.")
     if not TARGETS.exists():
         raise FileNotFoundError("Missing DOCS/phase2_scraper_targets.csv")
 

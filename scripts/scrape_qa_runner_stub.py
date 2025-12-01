@@ -17,8 +17,9 @@ import argparse
 import json
 import random
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -189,6 +190,7 @@ def main():
     total_ok = sum(1 for r in results if r.ok)
     accuracy = total_ok / len(results) * 100
     batch_ok = accuracy >= 95 and all(r.ok for r in results)
+    dupes_dict = {key: list(values) for key, values in dupes.items()}
 
     summary = {
         "total_listings": len(listings),
@@ -196,11 +198,40 @@ def main():
         "accuracy_percent": round(accuracy, 2),
         "batch_ok": batch_ok,
         "results": [r.__dict__ for r in results],
-        "duplicates": dupes,
+        "duplicates": dupes_dict,
     }
 
-    args.output.write_text(json.dumps(summary, indent=2))
-    print(json.dumps({"accuracy_percent": summary["accuracy_percent"], "batch_ok": batch_ok}, indent=2))
+    existing = {}
+    if args.output.exists():
+        try:
+            existing = json.loads(args.output.read_text())
+        except Exception:
+            existing = {}
+    runs: List[Dict] = existing.get("runs") or []
+    notes = existing.get("notes") or "Phase 2 scraper QA log."
+    run_ids = [run.get("run_id", 0) for run in runs if isinstance(run.get("run_id"), int)]
+    next_run_id = max(run_ids, default=0) + 1
+
+    run_entry = {
+        "run_id": next_run_id,
+        "date": datetime.now(timezone.utc).isoformat(),
+        "total_listings": summary["total_listings"],
+        "sampled": summary["sampled"],
+        "accuracy_percent": summary["accuracy_percent"],
+        "batch_ok": summary["batch_ok"],
+        "results": summary["results"],
+        "duplicates": summary["duplicates"],
+    }
+
+    runs.append(run_entry)
+    log_data = {
+        "runs": runs,
+        "latest_run_id": next_run_id,
+        "notes": notes,
+    }
+
+    args.output.write_text(json.dumps(log_data, indent=2))
+    print(json.dumps({"run_id": next_run_id, "accuracy_percent": summary["accuracy_percent"], "batch_ok": batch_ok}, indent=2))
     if not batch_ok:
         sys.exit(1)
 
