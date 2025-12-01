@@ -11,10 +11,34 @@ Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, b
 ## Core Features (per SSOT)
 - Age-first triage (age → issue → suburb), locked enums (ages, 13 issues, 5 service types)
 - Suburb-to-council mapping (28 councils, 138 suburb rows with postcode/lat/lon)
-- ABN verification (GUID-based, ≥85% match), verified badge
+- ABN verification (GUID-based, canonical contract, ≥85% auto-match), verified badge
 - Emergency routing (medical vets, shelters, crisis trainers)
 - Admin/moderation queues (reviews, profiles) with automation hooks
 - Stripe webhooks design for featured slots + subscriptions (post-launch)
+
+### ABN verification — quick overview
+This project implements a single canonical ABN/ABR verification behaviour across all code paths (onboarding, API verification endpoint, scheduled re-check job, and ops-only controlled batch). The authoritative source is the ABR API and we only mark an ABN as "verified" when:
+
+- ABN exists in the ABR response AND
+- ABNStatus === "Active"
+
+Full developer and runbook guidance is in `DOCS/ABR-ABN-Lookup.md` (contract + parsing rules). Key operational artefacts are:
+
+- CSV templates (for ops): `DOCS/abn_allowlist.staging.csv` and `DOCS/abn_allowlist.prod.csv` — use these to maintain curated allowlists for controlled batch runs.
+- Generator script: `scripts/generate_allowlist.py` — reads CSV templates, validates rows, and writes `scripts/controlled_abn_list.staging.json` or `scripts/controlled_abn_list.prod.json`.
+- Controlled batch runner: `scripts/abn_controlled_batch.py` — intended for ops-only manual or one-off write runs (dry-run by default). Use the `--apply` flag plus environment variables (`SUPABASE_SERVICE_ROLE_KEY`, `ABR_GUID`, and `SUPABASE_CONNECTION_STRING`) to perform writes.
+- Scheduled re-check automation: `.github/workflows/abn-recheck.yml` & `scripts/abn_recheck.py` (dry-run gated by AUTO_APPLY). The re-check job can be configured to automatically apply changes in production only after careful staging sign-off.
+
+Convenience npm scripts (wrappers) have been added so maintainers can quickly generate allowlists and run dry-run/apply workflows:
+
+- `npm run allowlist:staging` — generate `scripts/controlled_abn_list.staging.json` from `DOCS/abn_allowlist.staging.csv`
+- `npm run allowlist:prod` — generate `scripts/controlled_abn_list.prod.json` from `DOCS/abn_allowlist.prod.csv`
+- `npm run abn:batch:staging` — dry-run against `scripts/controlled_abn_list.staging.json`
+- `npm run abn:batch:staging:apply` — apply with AUTO_APPLY=true (use only after sign-off)
+- `npm run abn:batch:prod` — dry-run against `scripts/controlled_abn_list.prod.json`
+- `npm run abn:batch:prod:apply` — apply with AUTO_APPLY=true (production apply requires service-role and backups)
+
+See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → production runbook with safety checks, DB queries, and monitoring guidance.
 
 ## Stack
 - Next.js 14 (App Router), React (latest supported), TypeScript recommended

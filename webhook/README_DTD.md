@@ -35,3 +35,9 @@ All requests log to `webhook/server.log` and stdout. The harness does not verify
 - Host/port: `127.0.0.1:4243`
 - Dependencies: standard library only (no extra installs)
 - If you change port/path, update your `stripe listen --forward-to` command accordingly.
+
+## ABN re-check workflow & notifications
+- The repo contains a scheduled `ABN re-check` workflow (`.github/workflows/abn-recheck.yml`) and `scripts/abn_recheck.py` for periodic ABR lookups.
+- CI supports an optional, minimal notification step when a secret `ABN_ALERT_WEBHOOK` is set in the repository (e.g., a Slack/Teams webhook). This is guarded and will not run unless explicitly configured.
+- For local testing and quick dry-runs, use the CSV → generator → controlled batch workflow documented in the main README and `DOCS/ABN-Rollout-Checklist.md`. 
+

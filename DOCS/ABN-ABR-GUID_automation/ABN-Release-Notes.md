@@ -9,6 +9,7 @@ Version: 2025-12-01
   - ABNStatus === 'Active' → verification_status = 'verified'
   - otherwise → verification_status = 'manual_review'
 - matched_json now stores parsed ABR JSON when available; if parsing fails but the ABR returned a raw payload we store it as `{ "raw": "<payload>" }`.
+- For detailed behaviour and canonical flow, see DOCS/ABR-ABN-Lookup.md (section “1.1 Canonical ABN Verification Flow (Owner Contract)”).
 
 ## Migration checklist (for DB owners / product owners)
 Prerequisites
@@ -32,10 +33,26 @@ Notes
 - If an ABN status looks wrong, inspect the `abn_verifications` row — fields to check: `status`, `matched_json`, `similarity_score`, `updated_at`.
 - Keep the ABR GUID secret; do not expose it to client code or public logs.
 
+## How to prepare allowlists (CSV → JSON)
+For controlled ops or one-off writes we prefer a human-curated CSV workflow. Two CSV templates exist in the repo:
+
+- `DOCS/abn_allowlist.staging.csv` — staging allowlist template
+- `DOCS/abn_allowlist.prod.csv` — production allowlist template
+
+Use the generator to validate and produce the JSON file used by the controlled batch runner:
+
+```bash
+# generate staging JSON
+npm run allowlist:staging
+# generate prod JSON
+npm run allowlist:prod
+# the generator writes -> scripts/controlled_abn_list.staging.json / scripts/controlled_abn_list.prod.json
+```
+
 ## Tests to run before enabling automated writes
 - `npm test` (TypeScript unit/integration tests)
 - `python3 scripts/test_abn_recheck.py -q`
 
 ---
 
-If you want, I can also add a short integration test that validates `matched_json` shapes into `abn_verifications` in a mocked Supabase flow; tell me if you'd like that added as part of this release.
+Note: Integration tests that assert `matched_json` shapes are encouraged; if you want to add such a test, add it to the onboarding/integration test harness or a mocked Supabase flow and run during CI.

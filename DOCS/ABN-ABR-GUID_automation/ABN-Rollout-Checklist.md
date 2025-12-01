@@ -45,27 +45,38 @@ Context / assumptions:
    - Tests must be green before proceeding.
 
 3) Prepare a small controlled allowlist for staging
-   - Create a tiny JSON allowlist (2–3 entries) with known ABNs (non-sensitive test data) and corresponding staging business IDs.
-   - Example: `staging_allowlist.json`
-     ```json
-     [
-       { "business_id": 1000, "abn": "53004085616" },
-       { "business_id": 1010, "abn": "00000000000" }
-     ]
-     ```
+   - Option A (quick JSON): create a tiny JSON allowlist (2–3 entries) with known ABNs (non-sensitive test data) and corresponding staging business IDs, e.g. `staging_allowlist.json` — same format as below.
+   - Option B (CSV → JSON generator, preferred for repeatability): edit `DOCS/abn_allowlist.staging.csv` (CSV template provided in the repo), then generate the JSON file used by the batch with the included helper scripts:
+
+     - Edit the CSV `DOCS/abn_allowlist.staging.csv` and add 2–3 rows (header present). When ready, run:
+       ```bash
+       npm run allowlist:staging
+       # writes -> scripts/controlled_abn_list.staging.json
+       ```
+
+     - The generator validates CSV values and writes `scripts/controlled_abn_list.staging.json`. Use that file for the controlled batch runner.
 
 4) Controlled batch in staging — dry-run then single apply
-   - Dry-run first (no writes):
+   - Dry-run first (no writes). If using the generated file, run the convenience script:
      ```bash
+     # dry-run (no writes)
+     npm run abn:batch:staging
+     # or the explicit command
      SUPABASE_CONNECTION_STRING="<staging_conn>" ABR_GUID="<staging_guid>" \
-       python3 scripts/abn_controlled_batch.py --file=staging_allowlist.json
+       python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.staging.json
      ```
    - Inspect the printed JSON summary and logs for parsing / ABNStatus values & planned actions.
    - Apply single small write with service-role and AUTO_APPLY enabled (one-off):
      ```bash
+     # explicit apply using the generated file
      AUTO_APPLY=true SUPABASE_CONNECTION_STRING="<staging_conn>" \
        SUPABASE_SERVICE_ROLE_KEY="<staging_srk>" ABR_GUID="<staging_guid>" \
-       python3 scripts/abn_controlled_batch.py --apply --file=staging_allowlist.json
+       python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.staging.json
+
+     # or using the npm convenience helper
+     AUTO_APPLY=true SUPABASE_CONNECTION_STRING="<staging_conn>" \
+       SUPABASE_SERVICE_ROLE_KEY="<staging_srk>" ABR_GUID="<staging_guid>" \
+       npm run abn:batch:staging:apply
      ```
    - Confirm upserts completed and reply is successful.
 
@@ -128,16 +139,33 @@ Preconditions (must be satisfied before proceeding):
 
 4) Very small initial controlled apply in production (one-off)
    - Prepare a tiny selected allowlist (1–5 low-risk businessId/ABN pairs) — ideally entries under a test organization or specially flagged owners.
-   - Run dry-run first to see the planned actions:
+   - Option A (quick JSON) : prepare `prod_small_allowlist.json` with 1–5 entries and run the dry-run as shown below.
+   - Option B (CSV → JSON generator, preferred): edit `DOCS/abn_allowlist.prod.csv`, then run the generator to produce `scripts/controlled_abn_list.prod.json`:
+
      ```bash
+     npm run allowlist:prod
+     # writes -> scripts/controlled_abn_list.prod.json
+     ```
+
+   - Run dry-run first to see the planned actions (generated file example):
+     ```bash
+     # dry-run via convenience script
+     npm run abn:batch:prod
+     # or explicit command using the generated JSON
      SUPABASE_CONNECTION_STRING="<prod_conn>" ABR_GUID="<prod_guid>" \
-       python3 scripts/abn_controlled_batch.py --file=prod_small_allowlist.json
+       python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.prod.json
      ```
    - If results look good, run a single small apply (explicit flags required):
      ```bash
+     # explicit apply using the generated file
      AUTO_APPLY=true SUPABASE_CONNECTION_STRING="<prod_conn>" \
        SUPABASE_SERVICE_ROLE_KEY="<prod_srk>" ABR_GUID="<prod_guid>" \
-       python3 scripts/abn_controlled_batch.py --apply --file=prod_small_allowlist.json
+       python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.prod.json
+
+     # or using the npm convenience helper
+     AUTO_APPLY=true SUPABASE_CONNECTION_STRING="<prod_conn>" \
+       SUPABASE_SERVICE_ROLE_KEY="<prod_srk>" ABR_GUID="<prod_guid>" \
+       npm run abn:batch:prod:apply
      ```
    - Confirm updated rows in `abn_verifications` for those business IDs.
 

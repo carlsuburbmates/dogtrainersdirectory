@@ -31,6 +31,12 @@ Project-specific patterns & constraints (do not change unless spec updates)
 - Quick data checks for CSV:
   - `wc -l DOCS/suburbs_councils_mapping.csv` # expect header + 138 rows
   - `cut -d',' -f2 DOCS/suburbs_councils_mapping.csv | sort -u | wc -l` # expect header + 28 councils
+
+- ABN allowlists & ops helpers:
+  - `DOCS/abn_allowlist.staging.csv` & `DOCS/abn_allowlist.prod.csv` are CSV templates to maintain curated allowlists for controlled writes
+  - `scripts/generate_allowlist.py` converts the CSV to `scripts/controlled_abn_list.{staging,prod}.json` and validates entries
+  - convenient npm scripts are available: `npm run allowlist:staging|prod`, `npm run abn:batch:staging|prod` (dry-run), `npm run abn:batch:staging:apply|prod:apply` (applies changes with AUTO_APPLY and service-role)
+
 - Recommended local dev setup (aligned to stack & tooling):
   - Use Node.js v24 everywhere:
     - `nvm install 24 && nvm use 24`
