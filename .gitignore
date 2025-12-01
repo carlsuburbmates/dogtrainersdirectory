@@ -10,3 +10,11 @@ tsconfig.tsbuildinfo
 # local DB backups
 backup-*.dump
 supabase/backups/
+.vercel
+
+# Python environment & caches
+.venv/
+__pycache__/
+*.pyc
+# Ignore generated controlled allowlists (use generator script to produce these)
+scripts/controlled_abn_list.*.json
