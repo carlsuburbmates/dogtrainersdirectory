@@ -1,4 +1,6 @@
 // Database types based on our schema design
+// ABR types used for strong-typing ABR responses
+import type { AbrSearchResponse } from '../../types/abr'
 
 // Import enum definitions from shared validation to ensure consistency
 export type AgeSpecialty =
@@ -437,7 +439,7 @@ export interface AbnVerificationRequest {
 export interface AbnVerificationResponse {
   verified: boolean
   similarity?: number
-  abnData?: any
+  abnData?: AbrSearchResponse | any
   requiresManualReview?: boolean
 }
 // Type guards for API parameters

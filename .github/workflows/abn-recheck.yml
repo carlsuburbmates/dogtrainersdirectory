@@ -17,6 +17,8 @@ jobs:
       # Admin REST access used to read/update rows remotely (preferred)
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      # Optional webhook secret name for minimal run notifications (if you want Slack/Teams): set `ABN_ALERT_WEBHOOK` in repo secrets
+      ABN_ALERT_WEBHOOK: ${{ secrets.ABN_ALERT_WEBHOOK }}
 
     steps:
       - name: Checkout
@@ -25,7 +27,7 @@ jobs:
       - name: Install dependencies (psql, curl)
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client curl
+          sudo apt-get install -y postgresql-client curl jq
 
       - name: Validate required secrets
         run: |
@@ -41,3 +43,12 @@ jobs:
       - name: Run ABN re-check (python)
         run: |
           python3 scripts/abn_recheck.py
+
+      # Optional notification: if `ABN_ALERT_WEBHOOK` secret is configured (e.g., Slack/Teams webhook), the workflow will POST a small run-summary.
+      # This step is intentionally guarded and will not run unless the secret is present.
+      - name: Optional: notify on completion
+        if: env.ABN_ALERT_WEBHOOK != ''
+        run: |
+          echo "Sending minimal notification to ALERT_WEBHOOK"
+          payload=$(jq -n --arg txt "ABN re-check workflow completed — inspect logs/artifacts." '{text:$txt}')
+          curl -sS -X POST -H 'Content-type: application/json' -d "$payload" "$ABN_ALERT_WEBHOOK" || echo "notification failed (non-fatal)"
