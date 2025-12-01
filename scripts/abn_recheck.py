@@ -1,5 +1,28 @@
 #!/usr/bin/env python3
-"""Hardened ABN re-check
+"""
+/*
+ *  ABR / ABN Lookup integration — developer note
+ *
+ *  Source: Australian Business Register ABRXMLSearch Web Services
+ *  ---------------------------------------------------------------
+ *  - We use the SOAP method “SearchByABNv202001” for ABN validation.
+ *  - Requests require an authentication GUID (secret, do not expose to clients).
+ *  - ABR data is public-only. Returned fields beyond ABN & ABNStatus are optional:
+ *      • businessName(s), GST status, address (state/postcode), ACN/ASIC, historical names, etc.
+ *      • Full street address, contact info, private data are NOT provided.
+ *  - ABR is read-only: we cannot update business records via API.
+ *  - ABR registry is updated hourly — treat cached/ stored data as potentially stale after ~1 hr.
+ *
+ *  Usage guidelines:
+ *  - Only mark ABN “verified” when ABN exists AND ABNStatus === 'Active'.
+ *  - Always treat all non-required fields as optional. Use optional chaining / null checks.
+ *  - Persist raw API payload (XML or JSON) for audit / future re-verification (e.g. in matched_json column).
+ *  - Do not rely on businessName or address for mandatory profile completeness or user onboarding approval.
+ *
+ *  If ABR returns minimal or no data (suppressed entry):
+ *  - Fallback to manual review or require user-supplied documentation/verification.
+ */
+Hardened ABN re-check
 
 Connects to Postgres using SUPABASE_CONNECTION_STRING (env) and re-checks
 recent ABN verification rows against the ABR API. Uses JSON parsing and a
@@ -14,6 +37,7 @@ and run: python3 scripts/abn_recheck.py
 from __future__ import annotations
 
 import json
+import xml.etree.ElementTree as ET
 import logging
 import os
 import shlex
@@ -24,6 +48,7 @@ import urllib.request
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Any, Dict, Iterable, Optional, Tuple
+from datetime import datetime, timezone, timedelta
 import argparse
 
 LOG = logging.getLogger("abn_recheck")
@@ -96,6 +121,30 @@ def call_abr(abn: str, api_key: Optional[str], guid: Optional[str]) -> Tuple[int
     abr.business.gov.au JSON endpoint; include GUID if provided. If an API
     key is present it's sent as a Bearer token (some endpoints accept this).
     """
+    # Prefer SOAP/XML when a GUID is available (richer payload). Fall back
+    # to the JSON/JSONP endpoint if SOAP is unavailable or the request fails.
+    if guid:
+        soap_url = 'https://abr.business.gov.au/abrxmlsearch/AbrXmlSearch.asmx/ABRSearchByABN'
+        soap_body = f'''<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:abr="http://abr.business.gov.au/abrxmlsearch/">
+  <soap:Body>
+    <abr:ABRSearchByABN>
+      <abr:searchString>{abn}</abr:searchString>
+      <abr:includeHistoricalDetails>N</abr:includeHistoricalDetails>
+      <abr:authenticationGuid>{guid}</abr:authenticationGuid>
+    </abr:ABRSearchByABN>
+  </soap:Body>
+</soap:Envelope>'''
+        req = urllib.request.Request(soap_url, data=soap_body.encode('utf-8'))
+        req.add_header('Content-Type', 'text/xml; charset=utf-8')
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                body = resp.read().decode('utf-8')
+                return resp.getcode(), body
+        except Exception:
+            # fall through to JSON endpoint below
+            pass
+
     base = f"https://abr.business.gov.au/json/AbnDetails.aspx?abn={abn}"
     if guid:
         base += f"&guid={shlex.quote(guid)}"
@@ -130,6 +179,43 @@ def fetch_rows(conn: str, limit: int = 50) -> Iterable[Row]:
         "FROM abn_verifications WHERE status IN ('pending','manual_review') "
         "AND created_at >= now() - interval '30 days' LIMIT %s;" % limit
     )
+
+    # If a Supabase service role key and SUPABASE_URL are present, prefer
+    # using the HTTP REST API (avoids outbound TCP connection issues in
+    # hosted runners). Otherwise fall back to using psql.
+    supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+    srk = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if supabase_url and srk:
+        # compute ISO date for 30 days ago
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).replace(microsecond=0).isoformat()
+        # PostgREST query: status=in.(pending,manual_review)&created_at=gte.<cutoff>
+        # We URL-encode the query parameters
+        import urllib.parse as up
+
+        q = (
+            f"status=in.(pending,manual_review)&created_at=gte.{up.quote(cutoff)}"
+            f"&select=id,abn,business_name&limit={limit}"
+        )
+        url = f"{supabase_url.rstrip('/')}/rest/v1/abn_verifications?{q}"
+        req = urllib.request.Request(url)
+        req.add_header("apikey", srk)
+        req.add_header("Authorization", f"Bearer {srk}")
+        req.add_header("Accept", "application/json")
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                body = resp.read().decode("utf-8")
+                data = json.loads(body)
+        except Exception as exc:
+            LOG.error("http fetch failed: %s", exc)
+            return []
+
+        out = []
+        for item in data:
+            try:
+                out.append(Row(id=int(item.get("id")), abn=item.get("abn", ""), business_name=item.get("business_name", "")))
+            except Exception:
+                LOG.warning("invalid row in http response: %r", item)
+        return out
 
     cmd = ["psql", conn, "-tA", "-F", "|", "-c", query]
     LOG.debug("Running psql to fetch rows: %s", cmd)
@@ -167,6 +253,37 @@ def update_row_verified(conn: str, row_id: int, status: str, matched_name: str, 
         "matched_name=" + dq + matched_name + dq + ", "
         "similarity_score=%s, matched_json=%s::jsonb, updated_at=now() WHERE id=%s;" % (score, dq + raw_json + dq + "", row_id)
     )
+    # If we have a Supabase service role key, use HTTP PATCH instead of psql
+    supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+    srk = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if srk and supabase_url:
+        if dry_run:
+            LOG.info("Dry-run enabled: would PATCH %s/abn_verifications?id=eq.%s with payload", supabase_url, row_id)
+            return True
+        url = f"{supabase_url.rstrip('/')}/rest/v1/abn_verifications?id=eq.{row_id}"
+        payload = {
+            "status": status,
+            "matched_name": matched_name,
+            "similarity_score": float(score),
+            "matched_json": json.loads(raw_json) if raw_json else None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        data_bytes = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data_bytes, method="PATCH")
+        req.add_header("apikey", srk)
+        req.add_header("Authorization", f"Bearer {srk}")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Prefer", "return=representation")
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                if 200 <= resp.getcode() < 300:
+                    return True
+                LOG.error("PATCH failed: status=%s body=%s", resp.getcode(), resp.read())
+                return False
+        except Exception as exc:
+            LOG.error("HTTP update failed for id=%s: %s", row_id, exc)
+            return False
+
     cmd = ["psql", conn, "-c", sql]
     LOG.debug("Applying update: %s", sql)
     if dry_run:
@@ -197,33 +314,91 @@ def process_row(
         return
 
     # attempt to parse JSON - ABR endpoint responds with JSON-ish payloads
+    parsed = None
     try:
         parsed = json.loads(body)
     except Exception:
-        LOG.warning("ABR response not JSON for abn %s; raw: %s", row.abn, body[:500])
-        parsed = None
+        # might be SOAP XML — try to parse relevant fields and map to a
+        # minimal dict shape that our downstream logic understands.
+        if body and body.strip().startswith('<'):
+            try:
+                root = ET.fromstring(body)
+
+                def find_local(el, name_candidates):
+                    for e in el.iter():
+                        tag = e.tag
+                        if isinstance(tag, str) and '}' in tag:
+                            local = tag.split('}')[-1]
+                        else:
+                            local = tag
+                        if local in name_candidates and e.text and e.text.strip():
+                            return e.text.strip()
+                    return None
+
+                entity_name = find_local(root, ['EntityName', 'entityName', 'BusinessName', 'businessName', 'LegalName'])
+                abn_status = find_local(root, ['ABNStatus', 'abnStatus'])
+
+                parsed = {
+                    'Response': {
+                        'ResponseBody': {
+                            'ABN': row.abn,
+                            'ABNStatus': abn_status,
+                            'EntityName': entity_name,
+                            'BusinessName': [entity_name] if entity_name else []
+                        }
+                    }
+                }
+            except Exception:
+                LOG.warning("ABR SOAP/XML parse failed for abn %s; raw: %s", row.abn, body[:500])
+                parsed = None
+        else:
+            LOG.warning("ABR response not JSON for abn %s; raw: %s", row.abn, body[:500])
 
     candidate_name = find_name_in_json(parsed) if parsed is not None else None
-    if candidate_name:
-        score = similarity(row.business_name or "", candidate_name)
-        LOG.info("Found ABR candidate name: %r (score=%.3f)", candidate_name, score)
-        if score >= threshold_verified:
-            LOG.info("Marking id=%s verified (score %.3f)", row.id, score)
-            if dry_run or not auto_apply:
-                LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
-            else:
-                update_row_verified(conn, row.id, "verified", candidate_name, score, json.dumps(parsed), dry_run=dry_run)
-        elif score >= threshold_manual:
-            LOG.info("Marking id=%s for manual_review (score %.3f)", row.id, score)
-            # Update lower-confidence matches to manual_review and store details
-            if dry_run or not auto_apply:
-                LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
-            else:
-                update_row_verified(conn, row.id, "manual_review", candidate_name, score, json.dumps(parsed), dry_run=dry_run)
+    # Extract authoritative ABNStatus if present
+    abn_status = None
+    try:
+        abn_status = parsed.get('Response', {}).get('ResponseBody', {}).get('ABNStatus') if parsed else None
+    except Exception:
+        abn_status = None
+
+    # Canonical mapping (single source of truth):
+    # - no entity / no useful payload => 'rejected'
+    # - ABNStatus === 'Active' => 'verified'
+    # - otherwise => 'manual_review'
+    entity_present = bool(parsed and parsed.get('Response') and parsed.get('Response').get('ResponseBody'))
+
+    if not entity_present:
+        # ABR returned no entity — mark as rejected (invalid ABN)
+        state = 'rejected'
+        score = 0.0
+        LOG.info("ABR returned no entity for id=%s abn=%s — marking rejected", row.id, row.abn)
+        if dry_run or not auto_apply:
+            LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
         else:
-            LOG.info("No confident match for id=%s (score %.3f) — leaving status", row.id, score)
+            update_row_verified(conn, row.id, state, candidate_name or row.business_name or "", score, json.dumps(parsed) if parsed else json.dumps({ 'raw': body }))
+
     else:
-        LOG.info("No candidate name found in ABR response for abn %s", row.abn)
+        # entity exists — consult ABNStatus
+        if abn_status == 'Active':
+            state = 'verified'
+            score = similarity(row.business_name or "", candidate_name or "")
+            LOG.info("ABNStatus Active for id=%s abn=%s — marking verified (score=%.3f)", row.id, row.abn, score)
+            if dry_run or not auto_apply:
+                LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
+            else:
+                update_row_verified(conn, row.id, state, candidate_name or row.business_name or "", score, json.dumps(parsed))
+        else:
+            state = 'manual_review'
+            if candidate_name:
+                score = similarity(row.business_name or "", candidate_name)
+            else:
+                score = 0.0
+            LOG.info("ABNStatus not active for id=%s abn=%s — marking manual_review (score=%.3f)", row.id, row.abn, score)
+            if dry_run or not auto_apply:
+                LOG.info("(not applying update - dry_run=%s auto_apply=%s)", dry_run, auto_apply)
+            else:
+                update_row_verified(conn, row.id, state, candidate_name or row.business_name or "", score, json.dumps(parsed))
 
 
 def main(argv: Optional[list[str]] = None) -> int:
