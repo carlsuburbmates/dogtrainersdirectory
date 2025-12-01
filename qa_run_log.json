@@ -1,5 +1,4 @@
 {
-  "latest_run_id": 2,
   "runs": [
     {
       "run_id": 1,
@@ -92,7 +91,49 @@
         "email": [],
         "abn": []
       }
+    },
+    {
+      "run_id": 3,
+      "date": "2025-12-01T15:22:40.540472+00:00",
+      "total_listings": 5,
+      "sampled": 5,
+      "accuracy_percent": 100.0,
+      "batch_ok": true,
+      "results": [
+        {
+          "listing_id": "Loose Lead Training",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Puppy Basics Preston",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Senior Dog Specialists",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Westside Training",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        },
+        {
+          "listing_id": "Eastern Behaviour Labs",
+          "ok": true,
+          "reasons": [],
+          "llm_score": 0.99
+        }
+      ],
+      "duplicates": {}
     }
   ],
+  "latest_run_id": 3,
   "notes": "Phase 2 QA log; every batch appends a new run with its sample, accuracy, and duplication findings."
 }
