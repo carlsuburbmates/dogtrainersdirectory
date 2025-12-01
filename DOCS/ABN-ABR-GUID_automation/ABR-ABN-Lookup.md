@@ -38,7 +38,7 @@ This section describes the non-negotiable behaviour of ABN verification in the p
      - Runs in dry-run mode by default in new environments and in apply mode once validated.
 
 4. Ops-only batch script
-   - The controlled batch runner (`scripts/abn_controlled_batch.py` + `scripts/controlled_abn_list.json`) is **operations-only**:
+   - The controlled batch runner (`scripts/abn_controlled_batch.py`) uses a generated allowlist file (scripts/controlled_abn_list.{staging,prod}.json) — example archived at `scripts/examples/controlled_abn_list.example.json`. This runner is **operations-only**:
      - Used for small backfills, audits, or owner-approved batches.
      - Defaults to dry-run, requires `AUTO_APPLY=true` + service-role key + explicit flags for writes.
      - Must never be used as the primary user-facing verification path.
@@ -167,7 +167,7 @@ Quick checklist:
   - ABR credentials available (ABR_GUID) and SUPABASE_SERVICE_ROLE_KEY present for writes.
 
 - Dry run (recommended first):
-  1. Add or review your small list of `businessId` + `abn` pairs in `scripts/controlled_abn_list.json` OR edit `scripts/abn_controlled_batch.py` DEFAULT_ALLOWLIST.
+  1. Add or review your small list of `businessId` + `abn` pairs by running the generator to produce `scripts/controlled_abn_list.staging.json` or `scripts/controlled_abn_list.prod.json`, or edit `scripts/abn_controlled_batch.py` DEFAULT_ALLOWLIST. An archived example is at `scripts/examples/controlled_abn_list.example.json`.
   2. Run:
      ```bash
      SUPABASE_CONNECTION_STRING="<your_conn>" ABR_GUID="<your_guid>" python3 scripts/abn_controlled_batch.py
@@ -219,7 +219,7 @@ How to prepare the allowlist file
 ]
 ```
 
-- Save it somewhere safe (for example, `scripts/controlled_abn_list.json`) and pass `--file` to the script, or edit `DEFAULT_ALLOWLIST` carefully. You must manually provide/verify the real values — **do not** rely on the repository to populate this list for you.
+- Save it somewhere safe (for example, create `scripts/controlled_abn_list.staging.json` or `scripts/controlled_abn_list.prod.json`, or consult the archived example at `scripts/examples/controlled_abn_list.example.json`) and pass `--file` to the script, or edit `DEFAULT_ALLOWLIST` carefully. You must manually provide/verify the real values — **do not** rely on the repository to populate this list for you.
 
 Interpreting the output
 -----------------------

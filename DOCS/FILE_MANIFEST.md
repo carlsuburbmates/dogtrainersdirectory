@@ -178,6 +178,7 @@ This manifest documents the final file structure for the dogtrainersdirectory.co
 | **Geographic coordinates (lat/long)** | `suburbs_councils_mapping.csv` (columns: latitude, longitude) |
 | **Postcode data** | `suburbs_councils_mapping.csv` (column: postcode) |
 | **ABN validation technical guide** | `implementation/abn_validation_implementation.md` |
+| **Example allowlist (archived)** | `scripts/examples/controlled_abn_list.example.json` (generated allowlists are git-ignored) |
 | **AI/automation feasibility** | `implementation/ai_automation_assessment.md` |
 | **Implementation roadmap** | `implementation/master_plan.md` |
 | **Phase-by-phase execution plan** | `implementation/master_plan.md` § Implementation Phases |

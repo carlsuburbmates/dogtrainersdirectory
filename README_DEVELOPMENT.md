@@ -148,7 +148,7 @@ The project implements a canonical ABN/ABR verification flow (see `DOCS/ABR-ABN-
 
 Core developer files and scripts
 - `DOCS/abn_allowlist.staging.csv`, `DOCS/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
-- `scripts/generate_allowlist.py` — validate CSVs and write `scripts/controlled_abn_list.{staging,prod}.json`.
+- `scripts/generate_allowlist.py` — validate CSVs and write `scripts/controlled_abn_list.{staging,prod}.json`. Example (archived) at `scripts/examples/controlled_abn_list.example.json`. Generated files are git-ignored; use the generator when needed.
 - `scripts/abn_controlled_batch.py` — ops-only controlled batch runner (dry-run default; `--apply` required to write). Requires `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING` and `ABR_GUID` environment variables for applied runs.
 - `scripts/abn_recheck.py` — scheduled re-check implementation used by `.github/workflows/abn-recheck.yml`.
 

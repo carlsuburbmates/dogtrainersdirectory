@@ -26,6 +26,7 @@ Full developer and runbook guidance is in `DOCS/ABR-ABN-Lookup.md` (contract + p
 
 - CSV templates (for ops): `DOCS/abn_allowlist.staging.csv` and `DOCS/abn_allowlist.prod.csv` — use these to maintain curated allowlists for controlled batch runs.
 - Generator script: `scripts/generate_allowlist.py` — reads CSV templates, validates rows, and writes `scripts/controlled_abn_list.staging.json` or `scripts/controlled_abn_list.prod.json`.
+- Example (archived): `scripts/examples/controlled_abn_list.example.json`. Generated allowlists are git-ignored and should be produced by the generator when needed.
 - Controlled batch runner: `scripts/abn_controlled_batch.py` — intended for ops-only manual or one-off write runs (dry-run by default). Use the `--apply` flag plus environment variables (`SUPABASE_SERVICE_ROLE_KEY`, `ABR_GUID`, and `SUPABASE_CONNECTION_STRING`) to perform writes.
 - Scheduled re-check automation: `.github/workflows/abn-recheck.yml` & `scripts/abn_recheck.py` (dry-run gated by AUTO_APPLY). The re-check job can be configured to automatically apply changes in production only after careful staging sign-off.
 
