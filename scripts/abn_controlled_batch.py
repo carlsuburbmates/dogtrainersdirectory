@@ -3,9 +3,15 @@
 Controlled ABN/ABR write test — manual use only
 
 This script runs ABR lookups for a small allowlist of (businessId, abn)
-pairs and optionally writes results to `abn_verifications` (matched_json)
-when run with --apply AND the environment variable AUTO_APPLY is enabled
-and a SUPABASE_SERVICE_ROLE_KEY is present.
+pairs and optionally writes results to the `abn_verifications` table.
+
+Tables / columns used:
+- `abn_verifications` (id, business_id, abn, business_name, matched_name, matched_json, similarity_score, status, updated_at)
+
+How the script chooses the database target:
+- It prefers SUPABASE_CONNECTION_STRING (admin-style connection string) when present.
+- Alternatively it will use SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (REST API) where possible.
+- Use distinct secrets for staging vs production; do NOT point a local run at production secrets.
 
 Safety rules:
  - Default behaviour is dry-run; nothing is written unless --apply is explicitly passed.
@@ -115,6 +121,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="ABN controlled batch writer")
     parser.add_argument("--file", help="JSON file with [{business_id,abn}, ...] entries", default=None)
     parser.add_argument("--apply", action="store_true", help="Apply writes (default dry-run)")
+    parser.add_argument("--dry-run", action="store_true", help="Explicit dry-run; do not write updates even if AUTO_APPLY is set")
     parser.add_argument("--allow-bulk", action="store_true", help="Allow more than MAX_ITEMS (explicit conscious override). NOT recommended")
     args = parser.parse_args(argv)
 
@@ -138,6 +145,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     guid = os.environ.get("ABR_GUID")
 
     apply_mode = args.apply
+    if args.dry_run:
+        LOG.info("--dry-run requested: will not write updates (overrides --apply if present)")
+        apply_mode = False
+
     env_auto = os.environ.get("AUTO_APPLY", "false").lower() in ("1", "true", "yes")
 
     if apply_mode and not env_auto:

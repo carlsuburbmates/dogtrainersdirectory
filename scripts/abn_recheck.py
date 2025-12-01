@@ -30,6 +30,14 @@ fuzzy similarity check (difflib) to decide verification, with simple
 logging. The script is intentionally dependency-free (stdlib only) so it's
 easy to run and test in CI.
 
+Tables / columns used:
+- `abn_verifications` (id, business_id, abn, business_name, matched_name, matched_json, similarity_score, status, updated_at)
+
+How the script chooses the database target:
+- If SUPABASE_SERVICE_ROLE_KEY and SUPABASE_URL are present it prefers the REST API (safe for hosted runners).
+- Otherwise it uses SUPABASE_CONNECTION_STRING to connect to the DB via psql.
+- Use distinct secrets for staging vs production and run with `--dry-run` frequently.
+
 Usage: set SUPABASE_CONNECTION_STRING and ABR_API_KEY or ABR_GUID in env
 and run: python3 scripts/abn_recheck.py
 """

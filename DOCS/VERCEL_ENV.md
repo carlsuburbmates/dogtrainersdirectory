@@ -2,52 +2,35 @@
 
 This document lists the environment variables used in the repo and recommended Vercel environment targets. DO NOT store live secrets in the repository. The examples below are sanitized placeholders — use values from your secure vault or `.env.local` when running the import script.
 
-## Public (client-exposed)
-- NEXT_PUBLIC_SUPABASE_URL
-  - Purpose: Supabase instance URL for client SDKs
-  - Where: Production, Preview, Development
-  - Example: https://xyzabc.supabase.co
+## Supabase-related environment variables (required)
 
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
-  - Purpose: Public anon key for client usage
-  - Where: Production, Preview, Development
-  - Example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+| Name | What it is | Where to set (Local / Staging / Production) | Used by |
+|------|------------|----------------------------------------------|--------|
+| NEXT_PUBLIC_SUPABASE_URL | Public Supabase URL used by client SDKs and Edge Functions | Local `.env.local` / Vercel Preview / Vercel Production | Next.js client, Edge Functions, frontend SDKs |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Public anon key used by browser clients | Local `.env.local` / Vercel Preview / Vercel Production | Next.js client, integrations that run in-browser |
+| SUPABASE_URL | Canonical Supabase URL for server runtime | Local `.env.local` / Vercel Preview / Vercel Production | Next.js server runtime, Edge Functions, server helpers |
+| SUPABASE_SERVICE_ROLE_KEY | Admin service-role key (sensitive — server-only) | Local `.env.local` (trusted devs only) / GitHub Actions staging secret / Vercel Preview (sensitive) / Vercel Production (sensitive) | Server-only operations: ABN scripts, migrations helpers, admin endpoints — NEVER exposed to browser |
+| SUPABASE_CONNECTION_STRING | Admin Postgres connection string used for migrations & backups | Local `.env.local` (trusted devs) / GitHub Actions staging secret / GitHub Actions production secret (required for CI-driven migrations & backups) | CI workflows (migrations, backups), ops scripts (db migrations, backups) — **server/admin usage only** |
 
-## Server-only / Secrets (must not be public)
-- SUPABASE_SERVICE_ROLE_KEY
-  - Purpose: Supabase service role (admin) key — server only
-  - Where: Production, Preview
-  - Warning: Rotate immediately if accidentally leaked
+Notes:
+- Use distinct secrets for staging vs production in both Vercel and GitHub Actions (e.g. SUPABASE_CONNECTION_STRING_STAGING, SUPABASE_CONNECTION_STRING_PROD) so CI and runtime never cross targets accidentally.
+- For CI, store connection strings & service-role keys in GitHub Actions secrets and never log them. CI workflows should select the correct secret per target environment.
+- For local development, developers should prefer `NEXT_PUBLIC_*` and local anon keys in `.env.local`. Only trusted contributors should set `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_CONNECTION_STRING` in their local env (do not commit these files).
 
-- SUPABASE_URL
-  - Purpose: Canonical Supabase URL used by some server scripts
-  - Where: Production, Preview
+---
 
-- SUPABASE_CONNECTION_STRING
-  - Purpose: Admin Postgres connection string (used by maintenance scripts)
-  - Where: Production (and Preview staging if needed)
-  - Warning: Keep off dev machines that sync to public services without access restrictions
+*Quick mapping summary (one line per environment):*
+- Local dev: `.env.local` — mainly frontend keys (`NEXT_PUBLIC_*`); service-role/connection-string only for trusted local testing.
+- Staging/Preview: Vercel preview envs + GitHub Actions staging secrets — used for integration tests and staging canaries.
+- Production: Vercel Production envs + GitHub Actions production secrets — only sensitive keys belong here and CI applies migrations/backups against this target.
 
-- PGCRYPTO_KEY
-  - Purpose: Encryption key for server-side helpers
-  - Where: Production, Preview
+---
 
-- ABR_GUID
-  - Purpose: ABR API GUID used for ABN verification
-  - Where: Production, Preview
 
-- STRIPE_SECRET_KEY
-  - Purpose: Stripe secret key for payments (sk_test or sk_live)
-  - Where: Production, Preview (for testing only)
-  - Warning: Use test keys in Preview — never test live keys in preview or public forks
-
-- STRIPE_WEBHOOK_SECRET
-  - Purpose: Stripe webhook signing secret for verifying events
-  - Where: Production, Preview (the webhook servers must read this server-side)
-
-- RESEND_API_KEY / SMTP_HOST / SMTP_USER / SMTP_PASS
-  - Purpose: Email delivery credentials. Use either RESEND_API_KEY (preferred) or SMTP_* fields
-  - Where: Production, Preview
+Notes:
+- Put public values (NEXT_PUBLIC_*) in both local `.env.local` and Vercel so the runtime client and functions have parity.
+- Put highly sensitive credentials (service role, connection string) ONLY in secure locations (Vercel environment variables for production/preview and GitHub Actions repository secrets). Never commit these to the repo.
+- For CI workflows we recommend using distinct secrets for staging vs production (e.g., SUPABASE_CONNECTION_STRING_STAGING and SUPABASE_SERVICE_ROLE_KEY_STAGING). Ensure the `Deploy database migrations` workflow selects the appropriate secret per target.
 
 ## Optional / Observability / AI
 - SENTRY_DSN — Errors monitoring (Production, Preview)

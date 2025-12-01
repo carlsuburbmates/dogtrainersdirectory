@@ -1,21 +1,36 @@
 name: Deploy database migrations
+# Performs migration applies against remote Supabase environments (staging/production)
+# This workflow uses repo secrets with environment-specific connection strings and will create a backup before applying.
 
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Target environment (staging or production)'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
       dry_run:
         description: 'Set to true to only preview the changes (will still create a backup)'
+        required: false
+        default: 'true'
+      confirm_production:
+        description: 'Set to true to confirm you really want to apply to production (required when target=production and dry_run=false)'
         required: false
         default: 'false'
 
 jobs:
   deploy-migrations:
     runs-on: ubuntu-latest
-    environment: production
+    # The workflow is intentionally manual. Target defaults to staging, set target=production to run against production.
+    environment: ${{ inputs.target }}
     permissions: {}
     env:
-      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_CONNECTION_STRING: ${{ (inputs.target == 'production' && secrets.SUPABASE_CONNECTION_STRING_PROD) || (inputs.target == 'staging' && secrets.SUPABASE_CONNECTION_STRING_STAGING) || secrets.SUPABASE_CONNECTION_STRING }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ (inputs.target == 'production' && secrets.SUPABASE_SERVICE_ROLE_KEY_PROD) || (inputs.target == 'staging' && secrets.SUPABASE_SERVICE_ROLE_KEY_STAGING) || secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
@@ -52,9 +67,10 @@ jobs:
           path: ${{ steps.backup.outputs.dumpfile }}
 
       - name: Apply migrations (manual)
-        if: ${{ inputs.dry_run == 'false' }}
+        if: ${{ inputs.dry_run == 'false' && (inputs.target != 'production' || inputs.confirm_production == 'true') }}
         run: |
-          for f in supabase/migrations/*.sql; do
+          echo "Applying migrations from supabase/migrations/ — files will be applied in lexical order"
+          for f in $(ls supabase/migrations/*.sql | sort); do
             echo "Applying migration $f"
             psql "$SUPABASE_CONNECTION_STRING" -f "$f"
           done

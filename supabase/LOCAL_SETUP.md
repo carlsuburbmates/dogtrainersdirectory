@@ -1,36 +1,38 @@
-# Local Postgres dev + apply schema (for contributors)
+# Supabase setup — remote-first developer Quickstart (no Docker required)
 
-This repository includes the project schema and seed SQL in `supabase/schema.sql` and `supabase/data-import.sql`.
+This repository assumes a remote Supabase dev/staging project is used by default for development. Docker/local Postgres is available as an advanced, optional path for contributors who need isolated offline testing.
 
-If you can't run the schema directly on the hosted Supabase (for example: firewall/whitelist prevents direct admin connections) you can run a local Postgres instance and apply the SQL files locally for development. These scripts are simple helpers using Docker.
+Important: the primary, recommended flow is "remote-first" — no Docker required for normal development.
 
-Files
-- `scripts/local_db_start_apply.sh` — start a local Postgres container and apply `supabase/schema.sql` + `supabase/data-import.sql`.
-- `scripts/local_db_verify.sh` — run a few checks and show counts for common tables.
-- `scripts/local_db_stop.sh` — stop and remove the local container.
+Files you will use (remote-first)
+- `.env.local` — set these keys for a remote dev/staging Supabase project (do NOT commit this file):
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - SUPABASE_URL
+  - SUPABASE_SERVICE_ROLE_KEY
+  - (Optional) SUPABASE_CONNECTION_STRING — used by some admin scripts and CI when needed.
 
-Usage
-1. Ensure Docker is installed and running on your machine.
-2. From the repo root, run:
-
-```bash
-./scripts/local_db_start_apply.sh [POSTGRES_PASSWORD] [PG_PORT]
-# e.g. ./scripts/local_db_start_apply.sh local_pass 5433
-```
-
-3. Verify schema + seed applied:
+Quick start (remote dev / default)
+1) Create or reuse a Supabase project for development/staging in the Supabase cloud.
+2) Configure `.env.local` with the keys above (do not commit).
+3) Install deps and run the app locally; the app will talk to the remote Supabase project over HTTPS:
 
 ```bash
-./scripts/local_db_verify.sh [POSTGRES_PASSWORD] [PG_PORT]
+npm install
+npm run dev
 ```
 
-4. Stop the local DB when finished:
+Notes & safety
+- This remote path provides the full Supabase service surface (auth, functions, storage) without needing Docker locally.
+- Keep sensitive values (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_CONNECTION_STRING) in secure storage and never commit them.
 
-```bash
-./scripts/local_db_stop.sh
-```
+Advanced (optional): local Postgres / offline migration testing with Docker
 
-Notes
-- The helper uses `postgres:15-alpine` and `sslmode=disable` for the local connection.
-- Some Supabase-specific extensions or Postgres features used in the hosted project may not be available locally. If the schema includes extensions, the local image needs the appropriate extensions installed — adjust or replace the Docker tag accordingly.
-- Use this for local development and testing if the remote Supabase admin host isn't accessible or if you prefer a disposable local instance.
+If you require an isolated local Postgres for tough migration-edge testing or for running scripts against synthetic data, this repo contains helper scripts and schema snapshots — these are optional and for advanced contributors only.
+
+Optional Docker/local helpers (advanced only):
+- `scripts/local_db_start_apply.sh` — advanced helper: start/reuse a local Postgres container and apply `supabase/schema.sql` + `supabase/data-import.sql`. Supports `--reset`, `--no-seed`, and `--seed-only`.
+- `scripts/local_db_stop.sh` — advanced helper to stop and remove the local test container.
+- `scripts/test_apply_migrations.sh` — optional helper that starts a local Postgres container, creates a minimal `auth.users` stub, and applies migrations in order.
+
+If you'd prefer to run a local Supabase emulator for full parity (auth/functions/storage), use the Supabase CLI approach documented in `supabase/README.md` (optional).

@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Optional/advanced helper: verify and inspect local Postgres helper container
+# Purpose: Run basic sanity checks for the local test Postgres started by
+# `scripts/local_db_start_apply.sh`. This is optional and intended for
+# advanced/local testing only. Normal development uses a remote Supabase dev/staging project.
+
 PG_PASS=${1:-local_pass}
 PG_PORT=${2:-5433}
 
