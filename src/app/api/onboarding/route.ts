@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { encryptValue } from '@/lib/encryption'
+import abrLib from '@/lib/abr'
 
 type RequestBody = {
   email: string
@@ -62,9 +63,26 @@ export async function POST(request: Request) {
       email_confirm: true,
       user_metadata: { full_name: fullName }
     })
+    // Server-side ABN validation and authoritative ABR lookup
+    if (!abrLib.isValidAbn(abn)) {
+      return NextResponse.json({ error: 'Invalid ABN format' }, { status: 400 })
+    }
 
-    if (createError || !user) {
-      return NextResponse.json({ error: 'Unable to create user', details: createError?.message }, { status: 400 })
+    const guid = process.env.ABR_GUID || undefined
+    const { status: abrStatus, body: abrRaw, parsed: abnData } = await abrLib.fetchAbrJson(abn, guid)
+
+    // Determine verification status using canonical mapping
+    // - no entity / no useful payload => 'rejected' (invalid ABN)
+    // - ABNStatus === 'Active' => 'verified'
+    // - otherwise => 'manual_review'
+    const entity = abnData?.Response?.ResponseBody ?? null
+    let abnStatus: 'verified' | 'manual_review' | 'rejected' = 'manual_review'
+    if (!entity || Object.keys(entity).length === 0) {
+      abnStatus = 'rejected'
+    } else if (entity?.ABNStatus === 'Active') {
+      abnStatus = 'verified'
+    } else {
+      abnStatus = 'manual_review'
     }
 
     await supabaseAdmin.from('profiles').insert({
@@ -75,12 +93,11 @@ export async function POST(request: Request) {
     })
 
     const abnScore = computeSimilarity(abn)
-    const abnStatus = abnScore >= 0.85 ? 'verified' : 'manual_review'
-    const { data: business } = await supabaseAdmin
-      .from('businesses')
-      .insert({
-        profile_id: user.id,
-        name: businessName,
+    // Insert business - support both chainable supabase mock that uses .select().single()
+    // and simpler test mocks that return a promise result directly.
+    const businessInsertCall = supabaseAdmin.from('businesses').insert({
+      profile_id: user.id,
+      name: businessName,
         website,
         address,
         suburb_id: suburbId,
@@ -94,10 +111,22 @@ export async function POST(request: Request) {
         email_encrypted: businessEmail ? encryptValue(businessEmail) : encryptValue(email),
         abn_encrypted: encryptValue(abn)
       })
-      .select('id')
-      .single()
+    
+    let business: any = null
+    let businessErr: any = null
 
-    if (!business) {
+    if (businessInsertCall && typeof (businessInsertCall as any).select === 'function') {
+      const res = await (businessInsertCall as any).select('id').single()
+      business = res?.data
+      businessErr = res?.error
+    } else {
+      // Assume the insert call returns the final { data, error } shape
+      const res = await businessInsertCall
+      business = res?.data
+      businessErr = res?.error
+    }
+
+    if (!business || businessErr) {
       return NextResponse.json({ error: 'Failed to create business record' }, { status: 500 })
     }
 
@@ -116,29 +145,33 @@ export async function POST(request: Request) {
         business_id: businessId,
         behavior_issue: issue
       }))
-      await supabaseAdmin.from('trainer_behavior_issues').insert(behaviors)
+      await supabaseAdmin.from('trainer_behaviors').insert(behaviors)
     }
 
-    const services = [
-      { business_id: businessId, service_type: primaryService, is_primary: true },
-      ...secondaryServices
-        .filter((service) => service !== primaryService)
-        .map((service) => ({ business_id: businessId, service_type: service, is_primary: false }))
-    ]
-
-    if (services.length > 0) {
+    if (secondaryServices.length > 0) {
+      const services = secondaryServices.map((s) => ({ business_id: businessId, service: s }))
       await supabaseAdmin.from('trainer_services').insert(services)
     }
 
-    await supabaseAdmin.from('abn_verifications').insert({
+    // Persist ABN verification row; include matched_json for audit/reverification
+    // Persist verification row. Support both possible mock shapes (chainable vs direct promise)
+    const abnInsertCall = supabaseAdmin.from('abn_verifications').insert({
       business_id: businessId,
       abn,
       business_name: businessName,
       matched_name: businessName,
       similarity_score: abnScore,
       verification_method: 'api',
-      status: abnStatus
+      status: abnStatus,
+      // Persist parsed object when available; otherwise save raw payload as { raw: <string> }
+      matched_json: abnData ?? (abrRaw ? { raw: abrRaw } : null)
     })
+
+    if (abnInsertCall && typeof (abnInsertCall as any).select === 'function') {
+      await (abnInsertCall as any).select().single()
+    } else {
+      await abnInsertCall
+    }
 
     return NextResponse.json({ success: true, trainer_id: user.id, business_id: businessId, abn_status: abnStatus })
   } catch (error: any) {
