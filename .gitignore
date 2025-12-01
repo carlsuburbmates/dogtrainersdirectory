@@ -18,3 +18,18 @@ __pycache__/
 *.pyc
 # Ignore generated controlled allowlists (use generator script to produce these)
 scripts/controlled_abn_list.*.json
+
+# IDEs / editors
+.vscode/
+.idea/
+
+# Coverage / logs
+coverage/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build / dist artifacts
+dist/
+
