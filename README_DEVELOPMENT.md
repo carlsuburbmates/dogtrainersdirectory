@@ -11,7 +11,9 @@ This guide will help you set up the development environment for the Dog Trainers
 - Git
 - Supabase account (free tier is sufficient for development)
 
-## 1. Environment Setup
+## 1. Environment Setup (remote-first)
+
+We recommend using a remote Supabase dev/staging project as the default development environment — Docker/local Postgres is available as an advanced option but not required for normal contributor workflows.
 
 1. **Clone the repository**
    ```bash
@@ -24,61 +26,64 @@ This guide will help you set up the development environment for the Dog Trainers
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Set up environment variables (point to remote dev/staging Supabase)**
    ```bash
    cp .env.example .env.local
    ```
-   
-   Edit `.env.local` with your actual values:
-   - Create a new Supabase project at https://supabase.com
+
+   Edit `.env.local` with your actual values (do NOT commit this file):
+   - Create a remote Supabase project at https://supabase.com (dev or staging)
    - Copy the Project URL and Anon Key from Settings > API
    - Generate a Service Role Key from Settings > API
-   - Get ABR GUID from Australian Business Register
+   - Get ABR GUID from Australian Business Register (for ABN workflows)
+   - Optional (admin tasks / CI): SUPABASE_CONNECTION_STRING — secure secret for migrations and backups
 
-4. **Database Setup**
+4. **Recommended remote DB / dashboard approach (default — no Docker required)**
+
+   For normal development, prefer using the remote dev/staging project. That gives you full parity with hosted services (Auth, Edge Functions, Storage) without running local services.
+
+   - Use the Supabase dashboard SQL editor or CI-driven migrations for schema changes — DO NOT treat `supabase/schema.sql` as a primary CI apply path. Instead, create incremental migrations under `supabase/migrations/` and let CI apply them.
+
+   Example: run the app locally against the remote project (no Docker):
    ```bash
-   # Apply the database schema
-   psql -h your-project-ref.supabase.co -U postgres -d postgres < supabase/schema.sql
-   
-   # Import geographic data
-   psql -h your-project-ref.supabase.co -U postgres -d postgres < supabase/data-import.sql
+   npm run dev
    ```
 
-   Alternatively, use the Supabase Dashboard (recommended if direct admin connections are blocked):
-   - Go to SQL Editor
-   - Copy and paste the contents of `supabase/schema.sql`
-   - Then copy and paste the contents of `supabase/data-import.sql`
+### Advanced (optional): local Postgres / offline testing (Docker)
 
-Local helper scripts:
-
-If your environment prevents direct connections to the hosted Postgres (common when the DB host is restricted to selected IPs), you can use the repo helpers to either run locally or attempt a remote run.
+If you cannot connect to the remote Supabase service (for example due to corporate firewall rules) or you want to test migration edge-cases offline, the repo includes helper scripts for running a disposable local Postgres instance. These are OPTIONAL and intended for advanced use.
 
 - Start a disposable local Postgres and apply schema & seeds (Docker required):
 
 ```bash
+# optional, advanced-only
 ./scripts/local_db_start_apply.sh [POSTGRES_PASSWORD] [PG_PORT]
 # example: ./scripts/local_db_start_apply.sh local_pass 5433
 ```
 
-- Verify the local DB:
+- Verify the local DB (optional):
 
 ```bash
 ./scripts/local_db_verify.sh [POSTGRES_PASSWORD] [PG_PORT]
 ```
 
-- Stop the local DB:
+- Stop the local DB (optional):
 
 ```bash
 ./scripts/local_db_stop.sh
 ```
 
-- Try to apply the repo schema to the remote Supabase using the admin-style connection string in `.env.local` (attempts a plain psql apply):
+- Admin/ops helper: attempt a remote apply using `SUPABASE_CONNECTION_STRING` (advanced/operator use only):
 
 ```bash
 ./scripts/try_remote_apply.sh
 ```
 
-If the remote host refuses direct admin connections, the `try_remote_apply.sh` script will explain next steps — typically the safest approach is to copy/paste `supabase/schema.sql` and `supabase/data-import.sql` into the Supabase Dashboard SQL editor and run them there (that editor executes with admin privileges).
+If you cannot connect to hosted admin endpoints, use the Supabase Dashboard SQL editor to run schema + seeds there.
+
+Notes:
+- The preferred, default workflow uses a remote Supabase dev/staging project; only advanced contributors should use local Docker helpers.
+- Rely on `supabase/migrations/` + the `Check schema vs migrations` PR check to keep schemas in sync.
 
 Pre-import validation (CI)
 

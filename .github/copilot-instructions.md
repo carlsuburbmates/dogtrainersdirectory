@@ -37,17 +37,19 @@ Project-specific patterns & constraints (do not change unless spec updates)
   - `scripts/generate_allowlist.py` converts the CSV to `scripts/controlled_abn_list.{staging,prod}.json` and validates entries
   - convenient npm scripts are available: `npm run allowlist:staging|prod`, `npm run abn:batch:staging|prod` (dry-run), `npm run abn:batch:staging:apply|prod:apply` (applies changes with AUTO_APPLY and service-role)
 
-- Recommended local dev setup (aligned to stack & tooling):
+- Recommended development setup — REMOTE-FIRST (default):
   - Use Node.js v24 everywhere:
     - `nvm install 24 && nvm use 24`
   - Next.js 14 App Router + TypeScript (matching blueprint expectations).
-  - Start Supabase locally for functions/DB tests:
+  - Default workflow: use a remote Supabase dev/staging project for local app development (this provides Auth, Edge Functions, and Storage without needing to run local services). Configure `.env.local` to point at the remote project.
+  - Optional/local (advanced): Start Supabase locally for functions/DB tests using the Supabase CLI if you specifically need local emulation:
     - `supabase start`
-  - Test Stripe webhooks locally with the Stripe CLI:
+  - Test Stripe webhooks locally with the Stripe CLI (optional):
     - Prefer using the repo's dedicated webhook dev harness so you don't accidentally forward events to another local project (for example something bound to :3000). The repo provides `webhook/server_dtd.py` which defaults to port **4243** and endpoint `/api/webhooks/stripe-dtd`.
     - Example (recommended for dogtrainersdirectory development):
       - `stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd`
-
++  
++  - CI safety: A new pre-merge CI check named `Check schema vs migrations` runs on pull requests. It applies `supabase/migrations/*.sql` to a throwaway Postgres, dumps the schema, and verifies `supabase/schema.sql` matches. If the check fails, update `supabase/schema.sql` to match the migrations and re-run (maintainer rule).
 Risk & governance reminders
 - Treat `DOCS/blueprint_ssot_v1.1.md`, `DOCS/suburbs_councils_mapping.csv`, and `DOCS/FILE_MANIFEST.md` as immutable; any geography change needs an approved RFC plus manifest note, and CI should fail if council/suburb counts drift.
 - Phase 2+ ingestion (web scrapers, bulk imports) must remain behind feature flags with QA sampling (≥10 scaffolded listings/run) until accuracy >95% and product sign-off.
