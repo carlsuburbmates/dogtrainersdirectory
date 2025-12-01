@@ -55,23 +55,32 @@ See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → product
 - `DOCS/implementation/master_plan.md` — phased rollout, governance
 - `DOCS/ai_agent_execution_v2_corrected.md` — phase prompts/checklists
 
-## Getting Started (local)
-Prereqs: `nvm install 24 && nvm use 24`, Supabase CLI, Stripe CLI (local testing), Yarn/PNPM/NPM.
+## Getting started (remote Supabase — default)
+Prereqs: `nvm install 24 && nvm use 24`, Yarn/PNPM/NPM.
+
+This repository uses a remote Supabase dev/staging project as the default development environment. Docker/local Postgres is optional and intended for advanced testing only.
+
+1. Create or reuse a Supabase project in the Supabase cloud for dev/staging.
+2. Configure `.env.local` (do not commit) with these values:
+   - NEXT_PUBLIC_SUPABASE_URL
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY
+   - SUPABASE_URL
+   - SUPABASE_SERVICE_ROLE_KEY
+   - (Optional) SUPABASE_CONNECTION_STRING — only required for certain admin scripts.
+
+Run the app locally (no Docker required):
 
 ```bash
-# install deps (once code exists)
 npm install
-
-# start Supabase locally
-supabase start
-
-# run dev server (once app exists)
 npm run dev
-
-# Stripe webhook testing (when monetization enabled locally)
-# Prefer the repo's dedicated dev harness to avoid colliding with other local projects:
-stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd
 ```
+
+Advanced/optional — local emulation (Docker / Supabase CLI)
+
+If you specifically need an isolated local dev environment for migration testing or to run the full Supabase emulator (auth/functions/storage), use one of the optional approaches below.
+
+- Supabase CLI (preferred for full parity): `supabase start` (see `supabase/README.md`)
+- Lightweight Docker helpers: `scripts/local_db_start_apply.sh` and `scripts/test_apply_migrations.sh` (see `supabase/LOCAL_SETUP.md`)
 
 ## Env / Supabase config
 Create `.env.local` (and `.env` for Supabase functions) with:
@@ -107,6 +116,21 @@ OPENAI_API_KEY=<key>   # or ANTHROPIC_API_KEY=<key>
 - Build single-operator mode dashboard aggregating KPIs, alerts, and action buttons in one view (admin).
 - Add CI checks for CSV counts/enums and distance calculations.
 - Wire automation checklist (see `docs/automation-checklist.md`) into phase prompts.
+
+## Maintainer checklist — rolling schema changes into migrations
+When you need to change the database schema follow these steps to keep `supabase/migrations/` canonical and avoid drift:
+
+1. Create a new timestamped migration file in `supabase/migrations/` (e.g. `YYYYMMDDHHMMSS_add_new_column.sql`) with *idempotent* SQL where possible (use `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`). Avoid destructive `DROP` statements unless coordinated with ops.
+2. Test the migration locally or in a disposable dev/staging project:
+   - For quick isolated checks (advanced): use `scripts/test_apply_migrations.sh` to run on a temporary local Postgres container (optional).
+   - For full parity: spin up a remote dev/staging Supabase project, set `.env.local` to point to it, and run CI or `psql` against the remote `SUPABASE_CONNECTION_STRING` (use caution).
+3. Verify migrations apply in order and do not introduce incompatibilities; use the CI pre-merge check `Check schema vs migrations` which will ensure `supabase/schema.sql` matches the migrations-applied DB.
+4. If desired, update `supabase/schema.sql` snapshot using a schema-only dump from a DB that has migrations applied (e.g., `pg_dump -s --no-owner --no-privileges`) and confirm with the pre-merge check.
+5. Commit the migration file and tests; open a PR and wait for the CI pre-merge `Check schema vs migrations` to pass before merging.
+
+Notes:
+- Never rely on `supabase/schema.sql` as the primary apply path in CI/production — use `supabase/migrations/`.
+- If you must perform a destructive change, coordinate with the ops team and use a carefully staged migration with backups in CI.
 
 ## Governance & Disclaimers
 - No SLAs: no uptime/delivery/quality guarantees; best-effort only.

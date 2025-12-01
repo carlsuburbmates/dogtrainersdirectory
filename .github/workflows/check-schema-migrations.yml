@@ -1,0 +1,97 @@
+name: Check schema vs migrations
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  verify-migrations-apply-and-schema:
+    name: Apply migrations and validate schema.sql
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval=5s --health-timeout=2s --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install psql
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U postgres >/dev/null 2>&1; then
+              echo "Postgres ready"
+              break
+            fi
+            sleep 1
+            echo -n '.'
+            if [ $i -eq 30 ]; then
+              echo "Postgres did not start in time" >&2
+              exit 1
+            fi
+          done
+
+      - name: Create auth stub (required for FKs referencing auth.users)
+        run: |
+          psql "postgresql://postgres:test_pass@localhost:5432/postgres" -v ON_ERROR_STOP=1 <<SQL
+          CREATE SCHEMA IF NOT EXISTS auth;
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+          CREATE TABLE IF NOT EXISTS auth.users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            email TEXT UNIQUE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+          );
+          SQL
+
+      - name: Apply migrations in order
+        run: |
+          set -euo pipefail
+          CONN=postgresql://postgres:test_pass@localhost:5432/postgres
+          echo "Applying migrations from supabase/migrations (sorted)"
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Applying $f"
+            psql "$CONN" -v ON_ERROR_STOP=1 -f "$f" || { echo "Migration $f failed" >&2; exit 1; }
+          done
+
+      - name: Dump current DB schema
+        run: |
+          CONN=postgresql://postgres:test_pass@localhost:5432/postgres
+          pg_dump -s --no-owner --no-privileges "$CONN" > /tmp/db_schema_dump.sql
+
+      - name: Normalize and compare schema
+        run: |
+          set -euo pipefail
+          # Normalize by removing SQL comments, owner declarations, whitespace differences.
+          normalize() {
+            sed -E 's/^(--.*)$//g' "$1" | sed '/^\s*$/d' | sed -E 's/OWNER TO .*;//g' | sed 's/\r//g' | sed -E 's/\s+/ /g' | tr '[:upper:]' '[:lower:]'
+          }
+
+          normalize /tmp/db_schema_dump.sql > /tmp/db_norm.sql
+          normalize supabase/schema.sql > /tmp/schema_norm.sql
+
+          if ! diff -u /tmp/schema_norm.sql /tmp/db_norm.sql >/tmp/schema_diff.txt; then
+            echo "Schema mismatch detected between supabase/schema.sql and migrations-applied DB. See /tmp/schema_diff.txt for details."
+            echo "--- diff start ---"
+            sed -n '1,200p' /tmp/schema_diff.txt || true
+            echo "--- diff end ---"
+            exit 1
+          else
+            echo "schema.sql matches migrations-applied DB schema"
+          fi
+
+      - name: Success
+        run: echo "Migrations applied and schema validated successfully."
