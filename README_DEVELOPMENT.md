@@ -6,7 +6,7 @@ This guide will help you set up the development environment for the Dog Trainers
 
 ## Prerequisites
 
-- Node.js 18+ (Active LTS recommended)
+- Node.js 24 (Active LTS — matches deployment/runtime)
 - npm or yarn
 - Git
 - Supabase account (free tier is sufficient for development)
@@ -47,6 +47,20 @@ We recommend using a remote Supabase dev/staging project as the default developm
    Example: run the app locally against the remote project (no Docker):
    ```bash
    npm run dev
+   ```
+
+   Note: Default developer workflow is remote-first — `npm run dev` starts Next.js and connects to your configured remote Supabase project.
+
+   If you explicitly want a local Postgres container (advanced), start it with:
+
+   ```bash
+   npm run db:start
+   ```
+
+   You can also run the local convenience flow (start DB then dev server):
+
+   ```bash
+   npm run dev:local
    ```
 
 ### Advanced (optional): local Postgres / offline testing (Docker)
@@ -112,11 +126,11 @@ src/
 ├── app/                    # Next.js 14 App Router pages
 │   ├── globals.css         # Global styles
 │   ├── layout.tsx          # Root layout
-│   └── page.tsx           # Home page (triage)
+│   └── page.tsx            # Home page (age-first triage)
 ├── components/              # Reusable React components
-├── lib/                   # Utility libraries
-│   └── supabase.ts       # Supabase client configuration
-└── types/                  # TypeScript type definitions
+├── lib/                     # Utility libraries
+│   └── supabase.ts          # Supabase client configuration
+└── types/                   # TypeScript type definitions
     └── database.ts          # Database schema types
 
 supabase/
@@ -126,25 +140,29 @@ supabase/
 
 ## 4. Key Features Implemented
 
-### ✅ Completed
-- Next.js 14 with TypeScript and Tailwind CSS
-- Database schema with locked enums
-- Geographic data (28 councils, 138 suburbs)
-- Age-first triage interface
-- Basic project structure and configuration
+### ✅ Completed (Phases 1–5)
+- Next.js 14 with TypeScript/Tailwind + Supabase Auth/Edge Functions wiring
+- Database schema with locked enums + enriched suburb data (28 councils / 138 suburbs)
+- Age-first triage interface + suburb autocomplete/distance filters backed by the `search_trainers` RPC
+- Directory browse + trainer profile pages with featured badge surfacing and search autocomplete
+- Manual trainer onboarding + ABN verification (Phase 4)
+- Emergency help flows (medical vets, stray shelters, crisis trainers) with AI-assisted triage logging + weekly accuracy summaries
+- Emergency resource dataset (50+ entries) with council contacts, verification timestamps/statuses, and scheduled verification job endpoint (`/api/emergency/verify`)
+- Admin dashboard upgrades: moderation queues, emergency verification queue, Emergency Triage watchlist, and the AI-generated “Daily Ops Digest” fed by `/api/admin/overview`
+- AI moderation for reviews — auto-approve safe feedback, auto-reject obvious spam, log borderline cases with explanations in `ai_review_decisions`
 
-### 🚧 In Progress
-- Supabase integration and authentication
-- API endpoints for trainer search
-- Suburb autocomplete functionality
-- Trainer profile pages
+### 🚧 Deferred / Next
+- Stripe webhook infrastructure & monetization flows (stay dark until go-live criteria)
+- Web scraper & onboarding automation (Phase 2+ per SSOT)
+- Additional CI automation (CSV/enums, Haversine regression tests)
 
-### 📋 Planned
-- Trainer onboarding flow
-- ABN verification system
-- Admin dashboard
-- Stripe webhook infrastructure
-- Comprehensive testing
+> **Lint note:** `npm run lint` now runs the ESLint CLI directly (`eslint .` via `eslint.config.mjs`) — `next lint` was removed upstream in Next.js 16.
+
+## Automation & schedulers
+
+- `/api/emergency/verify` — runs the emergency resource verification sweep (phone + website). Wire this to Vercel Cron or Supabase Scheduler daily; the endpoint writes to `emergency_resource_verification_runs` + `emergency_resource_verification_events`.
+- `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
+- `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
 ---
 
