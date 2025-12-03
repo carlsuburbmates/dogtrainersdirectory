@@ -10,7 +10,7 @@ type DirectoryRegion = {
   trainers: SearchResult[]
 }
 
-async function fetchDirectoryRegions(): Promise<DirectoryRegion[]> {
+export async function fetchDirectoryRegions(): Promise<DirectoryRegion[]> {
   const { data, error } = await supabaseAdmin.rpc('search_trainers', {
     user_lat: null,
     user_lng: null,
