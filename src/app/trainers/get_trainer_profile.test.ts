@@ -9,6 +9,7 @@ describe('getTrainerProfile RPC call', () => {
     process.env.SUPABASE_PGCRYPTO_KEY = 'my-secret-key'
 
     const rpcMock = vi.fn().mockResolvedValue({ data: [{ business_id: 1 }], error: null })
+    await vi.doMock('@/components/ReviewList', () => ({ ReviewList: () => null }))
     await vi.doMock('@/lib/supabase', () => ({ supabaseAdmin: { rpc: rpcMock } }))
 
     const { getTrainerProfile } = await import('./[id]/page')
@@ -24,6 +25,7 @@ describe('getTrainerProfile RPC call', () => {
     delete process.env.SUPABASE_PGCRYPTO_KEY
 
     const rpcMock = vi.fn().mockResolvedValue({ data: [{ business_id: 2 }], error: null })
+    await vi.doMock('@/components/ReviewList', () => ({ ReviewList: () => null }))
     await vi.doMock('@/lib/supabase', () => ({ supabaseAdmin: { rpc: rpcMock } }))
 
     const { getTrainerProfile } = await import('./[id]/page')

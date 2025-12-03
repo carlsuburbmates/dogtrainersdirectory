@@ -7,6 +7,7 @@ describe('fetchDirectoryRegions RPC call', () => {
     process.env.SUPABASE_PGCRYPTO_KEY = 'dir-secret'
 
     const rpcMock = vi.fn().mockResolvedValue({ data: [], error: null })
+    await vi.doMock('@/components/SearchAutocomplete', () => ({ SearchAutocomplete: () => null }))
     await vi.doMock('@/lib/supabase', () => ({ supabaseAdmin: { rpc: rpcMock } }))
 
     const { fetchDirectoryRegions } = await import('./page')
@@ -22,6 +23,7 @@ describe('fetchDirectoryRegions RPC call', () => {
     delete process.env.SUPABASE_PGCRYPTO_KEY
 
     const rpcMock = vi.fn().mockResolvedValue({ data: [], error: null })
+    await vi.doMock('@/components/SearchAutocomplete', () => ({ SearchAutocomplete: () => null }))
     await vi.doMock('@/lib/supabase', () => ({ supabaseAdmin: { rpc: rpcMock } }))
 
     const { fetchDirectoryRegions } = await import('./page')
