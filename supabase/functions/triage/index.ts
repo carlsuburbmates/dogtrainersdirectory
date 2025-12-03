@@ -180,7 +180,8 @@ serve(async (req) => {
         price_max: priceMax ?? null,
         search_term: sanitizedSearchTerm,
         result_limit: Math.min(Math.max(limit, 1), 100),
-        result_offset: Math.max(offset, 0)
+        result_offset: Math.max(offset, 0),
+        p_key: Deno.env.get('SUPABASE_PGCRYPTO_KEY') ?? null
       })
 
     if (searchError) {
