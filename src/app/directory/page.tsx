@@ -16,7 +16,8 @@ async function fetchDirectoryRegions(): Promise<DirectoryRegion[]> {
     user_lng: null,
     distance_filter: 'any',
     result_limit: 500,
-    result_offset: 0
+    result_offset: 0,
+    p_key: process.env.SUPABASE_PGCRYPTO_KEY ?? null
   })
 
   if (error) {
