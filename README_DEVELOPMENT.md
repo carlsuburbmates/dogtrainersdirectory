@@ -357,3 +357,9 @@ After completing the basic setup:
 ---
 
 **Note**: This is a Phase 1 implementation focused on manual trainer onboarding and core directory functionality. Advanced features like scraping and monetization are deferred to later phases.
+
+## PGCrypto decryption key (server-side only)
+
+If you wish to enable database-side PGP decryption at runtime, set a server-only env var  to the symmetric key used to encrypt PGP payloads. This key is only read by server-side code / functions and is never committed into the repo.
+
+Note: we intentionally don't store keys in plaintext in the repository — set this in your host or CI secret store.
