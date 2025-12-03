@@ -138,7 +138,7 @@ export async function lookupABN(abn: string, guid: string): Promise<AbrBusinessI
 
 ## 8. Suggested Project Placement
 
-- Put this file at `/DOCS/ABR-ABN-Lookup.md` so developer onboarding and audits reference it.
+- Canonical path: `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md` so developer onboarding and audits reference it.
 - Implement a service module in your backend (e.g. `/lib/abr-lookup.ts`) and keep GUID in env/secrets.
   - Ensure `matched_json` (jsonb) is added to `abn_verifications` before enabling automated writes. See `supabase/migrations/20251130000001_add_abn_matched_json.sql`.
   - Runbook for manually applying the migration (Supabase Dashboard) is available at `DOCS/ABR-migration-matched_json.md`.

@@ -1164,142 +1164,778 @@ NEXT STEP: Provide custom domain (dogtrainersdirectory.com.au) to AI agent for o
 
 ---
 
+
+
+
+----------------------
+Below is a drop-in extension for `ai_agent_execution_v2_corrected.md` that: (a) keeps Phases 1–5 intact, (b) adds a structured “Automation Phases A–F” section, and (c) bakes in the low-oversight, AI-first behaviour  (ops digest, triage classifier, ABN fallback, moderation, emergency freshness, scraper QA, dashboard v2 as an AI ops co-pilot). Infra is kept cheap: Supabase, your existing Next.js app, one LLM provider, Resend/email, and simple scheduled jobs.
+
+
+
+## PART II — AI AUTOMATION & SINGLE-OPERATOR MODE (POST-LAUNCH)
+
+> This part assumes Phases 1–5 from the original document are complete and deployed.
+> The goal is to move dogtrainersdirectory.com.au toward AI-first, low-oversight operations using minimal additional infrastructure.
+
+### Post-Launch Automation Overview
+
+OBJECTIVE:
+Turn the platform into an AI-assisted, near-hands-off system where:
+
+* AI manages emergency triage routing and measures its own accuracy.
+* AI moderates most content (reviews, profile bios) and only escalates edge cases.
+* ABN verification and emergency roster freshness are largely self-healing.
+* Web scraper backfill (future Phase 2) is QA’d and monitored by AI.
+* The admin dashboard becomes an *ops digest + incident console*, not a raw control panel.
+* Human role shrinks to:
+
+  * Approving a small queue of ambiguous cases.
+  * Responding to AI-surfaced incidents.
+  * Tweaking high-level rules, not hand-processing every item.
+
+CONSTRAINTS (COST / INFRA):
+
+* Reuse existing stack:
+
+  * Next.js app + existing API routes.
+  * Supabase/Postgres for all logs, automation tables, and metrics.
+  * Resend / SMTP for notifications.
+* Exactly one LLM provider (e.g. OpenAI or Anthropic) configured via existing `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` envs. 
+* Use platform’s built-in schedulers (cron / background jobs) for recurring tasks. No new paid infra (no new queues, no external observability SaaS required beyond what already exists in the spec).
+
+---
+
+## AUTOMATION PHASE A — Observability Foundations + Ops Digest
+
+**Duration:** 15–30 minutes (AI agent)
+**Complexity:** Medium
+**Output:** Unified ops events tables + daily AI-written ops digest + simple admin display
+**Checkpoint:** All later phases can log into these tables without schema changes.
+
+### Prompt for AI Agent
+
+```text
+TASK: Add observability foundations and a daily AI-written ops digest.
+
+CONTEXT:
+Phases 1–5 are complete: database, triage, profiles, onboarding, emergency flows, and a basic admin dashboard exist.
+You are now building the automation foundation to support low-oversight operations.
+
+OBJECTIVE:
+1. Create core ops/metrics tables in the existing database (Supabase) to capture:
+   - Emergency triage events
+   - Review moderation decisions
+   - ABN verification results
+   - Webhook failures
+   - Scraper QA runs (placeholder for future Phase 2 backfill)
+2. Implement a daily scheduled job that:
+   - Aggregates key metrics for the last 24 hours
+   - Calls the configured LLM once
+   - Produces a short "Ops Digest" summary
+3. Expose the Ops Digest on the /admin dashboard and optionally email it to the operator.
+
+REQUIREMENTS:
+
+DATABASE TABLES:
+Create the following tables (or equivalent in the existing DB) without breaking existing schema:
+
+1) ops_emergency_triage_logs
+   - id (uuid, pk)
+   - created_at (timestamptz, default now())
+   - user_suburb_id (fk to localities, nullable)
+   - user_text (text, nullable)              -- free-text description if provided
+   - predicted_flow (enum: medical | stray | crisis | normal)
+   - chosen_flow (enum: medical | stray | crisis | normal)   -- what user actually clicked
+   - confidence_score (numeric, 0-1)
+   - source (text, e.g. "keyword_rules", "llm_v1")
+
+2) ops_review_moderation_logs
+   - id (uuid, pk)
+   - created_at (timestamptz)
+   - review_id (fk to reviews)
+   - decision (enum: auto_approve | auto_reject | needs_manual_review | manual_approve | manual_reject)
+   - reason_summary (text)      -- short natural language explanation
+   - ai_confidence (numeric, 0-1, nullable)
+   - moderator_user_id (fk to trainers or admins, nullable)
+
+3) ops_abn_verification_logs
+   - id (uuid, pk)
+   - created_at (timestamptz)
+   - business_id (fk to businesses)
+   - abn (text)
+   - result (enum: auto_verified | requires_evidence | failed | revoked | reverified_ok)
+   - match_score (numeric, 0-1, nullable)
+   - error_code (text, nullable)
+   - notes (text)
+
+4) ops_webhook_error_logs
+   - id (uuid, pk)
+   - created_at (timestamptz)
+   - provider (text, e.g. "stripe", "email", "other")
+   - event_type (text)
+   - payload_excerpt (text)
+   - error_message (text)
+   - retry_count (integer, default 0)
+   - resolved (boolean, default false)
+
+5) ops_scraper_qa_runs   -- placeholder for future scraper backfill
+   - id (uuid, pk)
+   - created_at (timestamptz)
+   - batch_id (text)                -- arbitrary string/uuid per scraper batch
+   - samples_checked (integer)
+   - accuracy_percent (numeric)     -- 0-100
+   - duplicates_found (integer)
+   - status (enum: pending | passed | failed)
+   - notes (text)
+
+SCHEDULED JOB:
+- Implement a daily job (e.g. at 09:00 local time) that:
+  - Queries stats from the last 24h:
+    - New trainers onboarded
+    - New reviews submitted
+    - Number of emergency triage events (by flow)
+    - Count of moderation decisions by type
+    - ABN verification successes/failures
+    - Webhook errors (grouped by provider)
+  - Creates a concise JSON "metrics bundle".
+  - Calls the configured LLM (OpenAI/Anthropic) once with a fixed prompt and the metrics bundle to generate a 3–6 sentence "Ops Digest" string.
+  - Inserts into a new table ops_daily_digest:
+      - id, date, summary_text, metrics_json (raw), created_at.
+
+ADMIN UI:
+- Add a panel at the top of /admin that shows:
+  - Today's Ops Digest summary_text (or the most recent digest).
+  - A link/button to view the underlying raw metrics JSON (for debugging).
+- Optionally add a button: "Email latest Ops Digest", which sends the digest to the operator via existing email provider.
+
+CONSTRAINTS:
+- Do NOT modify the existing Phase 1–5 schema beyond adding these new ops tables.
+- Use the existing AI provider environment variables (OPENAI_API_KEY or ANTHROPIC_API_KEY).
+- Schedule the job using the platform’s built-in scheduler; no new external services.
+- Keep LLM usage minimal (one call per digest).
+- If AI provider is not configured, gracefully degrade:
+  - Store metrics_json anyway.
+  - Use a static, non-AI summary like "AI provider not configured; metrics stored only."
+```
+
+### Success Criteria — Phase A
+
+* [ ] All ops_* tables created and reachable from the app.
+* [ ] Emergency triage, moderation, ABN, and webhook flows write at least one log entry each during test.
+* [ ] Daily job runs (can be triggered manually in dev) and inserts an ops_daily_digest record.
+* [ ] /admin shows the latest digest summary.
+* [ ] If AI provider is disabled, the job still succeeds with a fallback summary text.
+
+---
+
+## AUTOMATION PHASE B — Emergency Triage Classifier + Roster Freshness
+
+**Duration:** 20–30 minutes
+**Complexity:** Medium
+**Output:** AI-assisted emergency classifier + self-checking emergency resources
+**Checkpoint:** Emergency UX becomes AI-driven, with measurable accuracy and roster health.
+
+### Prompt for AI Agent
+
+```text
+TASK: Upgrade emergency triage and emergency resource freshness with AI support.
+
+CONTEXT:
+- Phases 1–5 complete: Emergency resources and basic triage paths already exist.
+- Phase A created ops_emergency_triage_logs and ops_daily_digest.
+You are now making emergency flows AI-driven and self-monitoring.
+
+OBJECTIVE:
+1. Add a free-text "What’s happening?" field to the Emergency Help flow.
+2. Use an AI-backed classifier to propose triage flow (medical | stray | crisis | normal) with a confidence score.
+3. Log every triage event in ops_emergency_triage_logs and measure classifier accuracy over time.
+4. Add freshness tracking for emergency resources and highlight stale/problem entries in /admin.
+
+EMERGENCY TRIAGE CLASSIFIER:
+
+UI/UX:
+- On Emergency Help entry page:
+  - Keep existing discrete options (Medical, Stray, Crisis, Not sure).
+  - Add optional textarea: "Describe what’s happening (optional, 1–2 sentences)".
+- When user clicks a triage option:
+  - If they provided text:
+    - Call AI classifier (single LLM call or deterministic rules) that returns:
+      - predicted_flow
+      - confidence_score
+    - Record:
+      - predicted_flow
+      - chosen_flow (what the user clicked)
+      - confidence_score
+      - user_text
+      - user_suburb_id (if known)
+    - Proceed with the user’s chosen flow.
+  - If no text:
+    - Record a log with predicted_flow = chosen_flow and confidence_score = null.
+
+Classifier implementation:
+- Implement a small server-side function (no client-side AI calls) that:
+  - Accepts: user_text, optional metadata.
+  - Returns: label in {medical, stray, crisis, normal}, confidence (0–1), explanation string (for internal debugging).
+- Use either:
+  - A prompt-based LLM call, or
+  - A simple keyword-based ruleset for low cost, with the option to upgrade to LLM later.
+- Always record the classifier’s decision in ops_emergency_triage_logs.
+
+ACCURACY MEASUREMENT:
+- Add a weekly job that:
+  - Analyzes the last N triage logs.
+  - Computes:
+    - % of cases where predicted_flow == chosen_flow (proxy for alignment).
+    - Distribution of flows (how many medical/stray/crisis/normal).
+    - Top phrases where prediction and choice diverged.
+  - Writes a short AI-written summary into ops_daily_digest (or a separate ops_weekly_digest table) about emergency triage accuracy.
+
+EMERGENCY RESOURCE FRESHNESS:
+
+SCHEMA:
+- Extend emergency resources (businesses rows with resource_type in emergency_*):
+  - last_verified_at (timestamptz, nullable)
+  - verification_status (enum: fresh | stale | needs_review)
+  - verification_source (text, e.g. "manual", "auto_link_check")
+
+SCHEDULED JOB:
+- Add a weekly job that:
+  - For each emergency resource with a website URL:
+    - Issues a simple HTTP GET.
+    - Records:
+      - HTTP status code
+      - Whether the page appears to be accessible.
+  - Optionally scrapes the page title and visible phone number (lightweight regex).
+  - Compares scraped data to stored name/phone:
+    - If only phone changed but name clearly matches:
+      - Auto-update emergency_phone and set verification_status = fresh, verification_source = 'auto_link_check', last_verified_at = now().
+    - If there is a large mismatch (e.g. 404, completely different title):
+      - Set verification_status = needs_review and do NOT auto-update.
+- Log a summary of how many resources were updated vs marked needs_review into ops_daily_digest.
+
+ADMIN UI:
+- In /admin, add an "Emergency Roster Health" section:
+  - Percentage of emergency resources with verification_status = fresh and last_verified_at within 90 days.
+  - Table of resources with verification_status = needs_review.
+  - Simple text summary (can reuse Ops Digest).
+
+CONSTRAINTS:
+- Do NOT remove or break existing emergency flows; only extend them.
+- All AI calls must be server-side using the existing AI provider.
+- If AI provider unavailable, fall back to a deterministic ruleset classifier and mark confidence_score accordingly.
+```
+
+### Success Criteria — Phase B
+
+* [ ] Emergency Help shows the free-text field and still routes correctly.
+* [ ] Each triage interaction logs a row in ops_emergency_triage_logs.
+* [ ] Weekly classifier job runs and updates an accuracy summary.
+* [ ] Emergency resources all have verification_status and last_verified_at fields populated.
+* [ ] Weekly freshness check job runs and changes some entries to fresh / needs_review in test.
+* [ ] /admin shows emergency roster health and lists entries needing review.
+
+---
+
+## AUTOMATION PHASE C — AI Moderation & Profile Cleanup
+
+**Duration:** 20–30 minutes
+**Complexity:** Medium
+**Output:** AI-driven review moderation + optional bio cleanup
+**Checkpoint:** Most reviews are auto-approved or auto-rejected; you see only edge cases.
+
+### Prompt for AI Agent
+
+```text
+TASK: Implement AI-assisted moderation for reviews and optional profile bio cleanup.
+
+CONTEXT:
+- Reviews and admin moderation UI exist from Phase 3.
+- ops_review_moderation_logs was created in Phase A.
+You are now shifting moderation to an "AI first, human exceptions" model.
+
+OBJECTIVE:
+1. Classify new reviews into: auto_approve, auto_reject, or needs_manual_review.
+2. Auto-apply decisions for high-confidence cases.
+3. Feed all decisions into ops_review_moderation_logs.
+4. Optionally add AI-based bio cleanup for trainer profiles.
+
+REVIEW MODERATION PIPELINE:
+
+- When a new review is submitted (rating + text):
+  - Call a server-side AI moderation function that returns:
+    - verdict: auto_approve | auto_reject | needs_manual_review
+    - reason_summary: short explanation
+    - ai_confidence: 0–1
+  - Logic:
+    - If verdict == auto_approve and ai_confidence >= 0.9:
+      - Set review.status = "approved".
+      - Insert log with decision = auto_approve.
+    - If verdict == auto_reject and ai_confidence >= 0.9:
+      - Set review.status = "rejected".
+      - Insert log with decision = auto_reject.
+    - Otherwise:
+      - Set review.status = "pending_manual".
+      - Insert log with decision = needs_manual_review.
+
+- In the admin moderation UI:
+  - Show a "Pending manual review" queue with:
+    - Review text
+    - Rating
+    - AI verdict + reason_summary
+  - When an admin approves/rejects a pending review:
+    - Update review.status accordingly.
+    - Insert log with decision = manual_approve or manual_reject and moderator_user_id.
+
+OPTIONAL BIO CLEANUP (profile "about" text):
+
+- When a trainer saves or updates their bio:
+  - Optionally run it through an AI rewriting function that:
+    - Enforces a neutral, non-medical tone.
+    - Removes dangerous or unrealistic claims.
+    - Limits length (e.g., 500 characters).
+  - Store:
+    - original_bio (text)
+    - canonical_bio (text) — AI-cleaned version actually displayed.
+- In the profile page, show canonical_bio.
+- In admin, allow toggling between original and canonical for auditing.
+
+CONSTRAINTS:
+- Keep all AI calls server-side.
+- If AI provider unavailable:
+  - Skip auto-approve/auto-reject and send all reviews to needs_manual_review.
+- Do not alter numeric rating values; only control visibility/approval state.
+```
+
+### Success Criteria — Phase C
+
+* [ ] New reviews are automatically classified and most clean reviews become approved without manual action.
+* [ ] Spam / clearly abusive reviews are auto-rejected in test scenarios.
+* [ ] Only a small subset of reviews land in the manual queue.
+* [ ] ops_review_moderation_logs records all decisions with verdict, reason_summary, and ai_confidence.
+* [ ] (If enabled) canonical bios appear on profile pages and are safer/cleaner than raw text.
+
+---
+
+## AUTOMATION PHASE D — ABN Fallback & Re-verification Automation
+
+**Duration:** 20–30 minutes
+**Complexity:** Medium
+**Output:** AI+OCR fallback for ABN, plus automated re-verification cycles
+**Checkpoint:** ABN handling largely self-healing; backlog small.
+
+### Prompt for AI Agent
+
+```text
+TASK: Automate ABN fallback verification and scheduled re-verification.
+
+CONTEXT:
+- Phase 4 already implemented ABN verification via ABR GUID.
+- ops_abn_verification_logs exists from Phase A.
+You are now reducing manual ABN review by using AI and scheduled checks.
+
+OBJECTIVE:
+1. Provide a fallback path when ABR match_score < threshold (e.g. <0.85).
+2. Use document upload + AI+OCR to auto-verify straightforward cases.
+3. Periodically re-verify ABNs and auto-handle simple status changes.
+
+ABN FALLBACK FLOW:
+
+- When initial ABR lookup returns match_score < 0.85:
+  - Show trainer a "Provide ABN evidence" step:
+    - Allow upload of existing official docs (e.g., ABN registration PDF, invoice, screenshot).
+- Server-side flow:
+  - Use OCR (either built-in through AI provider's vision models or a lightweight OCR library) to extract:
+    - ABN number
+    - Business/legal name
+    - Address (if available)
+  - Compare extracted data to:
+    - Trainer-entered details.
+    - ABR API response.
+  - Decision:
+    - If AI concludes "high-confidence match" (e.g. legal name matches, ABN matches, only trading name varies):
+      - Mark ABN as verified.
+      - Insert ops_abn_verification_logs with result = auto_verified and match_score.
+    - If ambiguous or conflicting:
+      - Insert log with result = requires_evidence and notes.
+      - Leave ABN in pending/manual state.
+
+ABN RE-VERIFICATION SCHEDULE:
+
+- Add a scheduled job (e.g. monthly) that:
+  - Finds all businesses with abn_verified = true and last_abn_checked_at older than threshold (e.g., 6 months).
+  - Calls ABR API again for each ABN.
+  - For each:
+    - If still active and unchanged:
+      - Update last_abn_checked_at.
+      - Log result = reverified_ok.
+    - If ABN now inactive or revoked:
+      - Mark listing as abn_verified = false (or downgraded status).
+      - Insert log with result = revoked and notes.
+      - Queue an email to the trainer explaining the status change and next steps.
+
+ADMIN UI:
+
+- In /admin, add an "ABN Health" widget:
+  - Number of verified ABNs.
+  - Number pending evidence.
+  - Number recently revoked.
+- Provide a small "ABN backlog" table showing:
+  - Entries with result = requires_evidence and no resolution yet.
+  - Ability to click through to the trainer profile for manual adjudication.
+
+CONSTRAINTS:
+- Preserve ABR GUID and existing ABN logic from Phase 4.
+- Do not expose ABR GUID to the client.
+- All AI/OCR processing must be done server-side; if AI is unavailable, fallback path should still allow manual upload and manual review (with logs).
+```
+
+### Success Criteria — Phase D
+
+* [ ] Trainers with marginal ABR matches can upload supporting docs and have some cases auto-verified.
+* [ ] ops_abn_verification_logs records auto_verified, requires_evidence, and revoked events.
+* [ ] Monthly re-verification job runs against test ABNs and updates statuses correctly.
+* [ ] /admin shows ABN Health metrics and a manageable backlog.
+
+---
+
+## AUTOMATION PHASE E — Scraper Backfill + AI QA (Post-launch Web Scraper)
+
+> This phase corresponds to the “Phase 2: Web scraper (backfill directory post-launch)” roadmap hinted in the original documents, but with full AI QA + logging.
+
+**Duration:** 30–45 minutes
+**Complexity:** High
+**Output:** CSV/JSON-driven scraper backfill with AI QA and `ops_scraper_qa_runs` logs
+**Checkpoint:** Scraped listings only go live after QA thresholds; pipeline is auditable.
+
+### Prompt for AI Agent
+
+```text
+TASK: Implement a CSV/JSON-driven scraper backfill pipeline with AI QA gating.
+
+CONTEXT:
+- Core manual onboarding and directory are live (Phases 1–5).
+- You now want to backfill the directory with scaffolded listings from external sources, with strict QA and no hallucinated data.
+- ops_scraper_qa_runs and other ops tables exist from Phase A.
+
+OBJECTIVE:
+1. Implement a scraper pipeline that reads a curated CSV (or JSON) of candidate trainers.
+2. Map fields into existing enums and database structure, marking new entries as scaffolded, unclaimed, and unverified.
+3. Run an AI-assisted QA pass over each batch and record results in ops_scraper_qa_runs.
+4. Expose batches + QA results in /admin so only high-quality batches are approved.
+
+PIPELINE DESIGN:
+
+1) INPUT:
+- Expect a structured CSV (or JSON) with fields:
+  - name, phone, email, suburb, council, age_hint, issue_hint, service_hint, abn, source_url.
+- Treat this as the ONLY source of truth for scraper batches (no uncontrolled crawling in this phase).
+
+2) MAPPING:
+- Write a server-side script or job that:
+  - Reads the CSV/JSON.
+  - Normalizes text (trim, case).
+  - Maps age_hint, issue_hint, service_hint into locked enums from Phase 1.
+  - Validates ABN format if present.
+  - Encrypts contact details consistent with existing schema.
+- Insert mapped records into businesses as:
+  - is_scaffolded = true
+  - is_claimed = false
+  - verification_status = 'pending'
+  - source_url populated.
+
+3) AI QA:
+- For each batch (CSV file):
+  - Take a sample of >=10 scaffolded records (or all if small).
+  - For each sample record:
+    - Use AI to compare:
+      - Structured fields (name, suburb, services) against the source_url HTML (if accessible) or the original CSV line.
+      - Check for:
+        - Inconsistent age/issue/service mapping.
+        - Broken or suspicious contact details.
+    - Compute:
+      - accuracy_percent for the sample.
+      - duplicates_found (based on phone, ABN, fuzzy name/address).
+  - If accuracy_percent >= 95 and no severe issues:
+    - Set ops_scraper_qa_runs.status = "passed".
+  - Otherwise:
+    - status = "failed" and do NOT mark these scaffolded listings as visible.
+
+4) ADMIN APPROVAL:
+- In /admin, add a "Scraper Batches" section:
+  - List all ops_scraper_qa_runs with:
+    - batch_id, accuracy_percent, duplicates_found, status, notes.
+  - For passed batches:
+    - Provide an "Approve batch" action that:
+      - Marks listings in that batch as visible in search (still unclaimed/unverified).
+  - For failed batches:
+    - Show notes and provide "Discard batch" (soft delete or keep invisible).
+
+CONSTRAINTS:
+- Scraped listings must never override claimed trainers.
+- All new entries begin as unclaimed, unverified, and clearly labelled as scaffolded.
+- Web scraper logic must respect target sites' ToS and robots.txt (user will manage CSV sourcing; your job is loading + QA, not uncontrolled crawling).
+- AI calls should be batched and minimized; consider sampling rather than checking every row.
+```
+
+### Success Criteria — Phase E
+
+* [ ] Import script creates scaffolded businesses from a test CSV/JSON.
+* [ ] ops_scraper_qa_runs records a run with accuracy_percent and duplicates_found.
+* [ ] Failed batches are blocked from going live.
+* [ ] Passed batches can be approved from /admin and become searchable.
+* [ ] Claimed trainers remain authoritative if duplicates exist.
+
+---
+
+## AUTOMATION PHASE F — Admin Dashboard V2 (AI Ops Co-Pilot)
+
+**Duration:** 25–40 minutes
+**Complexity:** Medium–High
+**Output:** Refined admin dashboard focused on AI-summarised incidents and key KPIs
+**Checkpoint:** Single-operator mode becomes realistic: 1 person + AI can run the platform.
+
+### Prompt for AI Agent
+
+```text
+TASK: Upgrade the admin dashboard to V2, turning it into an AI-assisted ops console.
+
+CONTEXT:
+- Phase 5 created a basic admin dashboard for stats, moderation, and emergency resources.
+- Automation Phases A–E added ops tables, AI digest, triage classifier, moderation, ABN automation, and scraper QA.
+You are now redesigning /admin to surface the right information and AI suggestions.
+
+OBJECTIVE:
+1. Make /admin the single landing page for operator oversight.
+2. Surface the daily Ops Digest at the top.
+3. Group functionality into clear sections with AI "Explain" buttons where useful.
+4. Minimize the number of clicks required to resolve typical incidents.
+
+DASHBOARD LAYOUT:
+
+Top section: "Today at a Glance"
+- Show:
+  - Latest Ops Digest summary_text.
+  - Key KPIs:
+    - New trainers today
+    - New reviews today
+    - Emergency triage events (by flow)
+    - ABN changes (verified, pending, revoked)
+    - Scraper batches (passed/failed)
+- Add a "Explain these KPIs" button:
+  - When clicked, call the AI provider with current metrics and display a short narrative:
+    - e.g., "Emergency triage skewed toward 'crisis' today vs last week; consider reviewing triage wording."
+
+Section 1: "Alerts & Incidents"
+- Show a unified list of items needing attention:
+  - Reviews with decision = needs_manual_review.
+  - Emergency resources with verification_status = needs_review.
+  - ABN entries with result = requires_evidence.
+  - Scraper batches with status = failed.
+  - Webhook errors unresolved in ops_webhook_error_logs.
+- Each row should show:
+  - Type (review, emergency, ABN, scraper, webhook).
+  - Short description.
+  - AI-generated recommendation string, when available (e.g., "Likely outdated council link; re-check URL").
+- Provide direct links from each item to the relevant detailed view (review, trainer profile, emergency resource, batch QA details).
+
+Section 2: "Moderation"
+- Provide:
+  - Pending reviews list (from Phase C).
+  - Simple filters, bulk approve/reject where appropriate.
+  - For each review, show AI verdict + reason_summary.
+
+Section 3: "Emergency & Triage"
+- Show:
+  - Emergency roster health metrics (from Phase B).
+  - List of resources needing review.
+  - Mini chart of emergency triage counts by flow over last 7 days.
+- Optionally provide an "Analyze triage trends" button:
+  - Calls AI to summarise unusual patterns observed in ops_emergency_triage_logs.
+
+Section 4: "ABN & Onboarding"
+- Show:
+  - Counts of verified/pending/revoked ABNs.
+  - Entries in ABN backlog (requires_evidence).
+- Actions:
+  - For each backlog entry, link to see ABN logs + trainer profile.
+
+Section 5: "Scraper & Backfill"
+- From Phase E:
+  - List recent ops_scraper_qa_runs.
+  - Provide Approve/Discard actions for passed batches.
+  - Provide an AI-written note summarising why a batch failed when applicable.
+
+CONSTRAINTS:
+- Keep layout functional over fancy; v2 is about information architecture and AI assistance, not heavy visual design.
+- Do not break existing routes or auth; /admin must stay restricted to admin users.
+- All AI-driven "Explain" buttons should handle failure gracefully (show a clear error/fallback message if AI call fails).
+```
+
+### Success Criteria — Phase F
+
+* [ ] /admin loads with the new layout and shows the latest Ops Digest at the top.
+* [ ] Alerts & Incidents section aggregates items from moderation, emergency, ABN, scraper, and webhooks.
+* [ ] Clicking an incident takes the operator directly to the relevant detail view.
+* [ ] At least one "Explain" button (for KPIs or triage trends) calls the AI provider and shows a reasonable narrative.
+* [ ] It is plausible for a single operator to oversee the system by:
+
+  * Visiting /admin once per day.
+  * Skimming the digest and incidents.
+  * Handling only a small list of manual decisions.
+
+---
+
 ## FINAL DEPLOYMENT
 
-Once Phase 5 approved:
+Once Phase 5 is approved and passing its success checklist:
 
 1. **Connect custom domain** (dogtrainersdirectory.com.au)
-   - Provide domain to Abacus AI agent
-   - One-click integration
-   - App goes live at custom URL in minutes
+   - Decide hosting for the app (Abacus environment vs exported Next.js + Supabase on Vercel/other).
+   - Configure `dogtrainersdirectory.com.au` at the registrar (VentraIP) to point to your chosen host:
+     - Either change nameservers to the host’s NS, or
+     - Keep VentraIP DNS and add the required A/ALIAS/CNAME records from the host’s custom-domain wizard.
+   - Ensure:
+     - `https://dogtrainersdirectory.com.au` and `https://www.dogtrainersdirectory.com.au` both resolve correctly.
+     - Existing MX/SPF/DKIM/DMARC records for email remain intact (no accidental breakage).
+   - Only mark “domain connected” once SSL is active and both root + `www` work without redirects/loops.
 
-2. **Enable production database** (if using separate prod/test)
-   - Use enriched data from Phase 1 (28 councils, 138 suburbs with coordinates)
-   - 50 test trainers can remain or be cleared for production
+2. **Promote the database to production**
+   - If you are using separate dev/staging and prod Supabase projects:
+     - Apply all migrations to the production project.
+     - Seed 28 councils and 138 suburbs (with coordinates) from the authoritative CSV.
+     - Optionally:
+       - Keep 50 test trainers (clearly flagged as test/demo), or
+       - Clear them and import only real/approved trainers.
+   - Confirm:
+     - RLS policies, enums, and constraints match the schema snapshot.
+     - ABN verification, emergency resources, and Stripe metadata exist and function against the production DB.
 
-3. **ABN production credentials** (already using provided GUID)
-   - GUID: 9c72aac8-8cfc-4a77-b4c9-18aa308669ed (production-ready)
+3. **ABN production credentials**
+   - Ensure `ABR_GUID=9c72aac8-8cfc-4a77-b4c9-18aa308669ed` is set in the **production** environment (server-side only; never exposed to the client).
+   - Follow `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md` and `DOCS/ABN-Rollout-Checklist.md` for:
+     - Safe staging → production rollout.
+     - Controlled batch runs using the allowlist CSVs and `scripts/abn_controlled_batch.py`.
+   - Confirm:
+     - Live ABN lookups succeed for known valid ABNs.
+     - Re-check job (.github/workflows/abn-recheck.yml) is configured for production with appropriate AUTO_APPLY settings.
 
-4. **Email production** (if simulated so far)
-   - Connect SendGrid (email) for verification emails
-   - Test real verification flow
+4. **Email in production**
+   - Configure one production email provider according to `README.md`:
+     - SMTP (`SMTP_HOST` / `SMTP_USER` / `SMTP_PASS`), **or**
+     - Resend (`RESEND_API_KEY`), **or**
+     - Another provider wired through the same env pattern.
+   - Verify in production:
+     - Signup/verification emails send and arrive.
+     - Admin notifications (e.g., emergency/critical alerts, future Resend workflows) deliver reliably.
+   - Keep environment-specific keys separate (dev/staging vs prod) and out of git.
 
 5. **Launch**
-   - Monitor admin dashboard
-   - Respond to trainer onboarding
-   - Plan Phase 2: Web scraper (backfill directory post-launch)
+   - Turn on public access:
+     - Confirm landing page, search, triage, onboarding, and emergency flows all work end-to-end on `dogtrainersdirectory.com.au`.
+   - Monitor:
+     - Admin dashboard (Phase 5) for early signals:
+       - New trainers, reviews, emergency queries.
+       - Any errors in ABN verification or email/webhooks.
+     - Logs/observability (Supabase logs, Sentry/Logflare if configured).
+   - Defer the web scraper and heavier automation to the **Post-Launch Automation Phases (A–F)** once you are comfortable with baseline stability.
 
 ---
 
-## Execution Timeline
+## Execution Timeline (High-Level)
 
-| Phase | Duration | Cumulative | Checkpoint |
-|----|----|----|----|
-| **1** | 5–15m | 5–15m | Database locked (28 councils, 138 suburbs with coordinates) |
-| **2** | 10–20m | 15–35m | Triage working (distance calculations) |
-| **3** | 10–20m | 25–55m | Profiles + search (138 suburbs) |
-| **4** | 15–20m | 40–75m | Onboarding (manual only, ABN with GUID) |
-| **5** | 10–20m | 50–95m | Emergency + admin (core system complete) |
+These timings describe **Abacus AI agent build time**, not human review or production hardening. Real-world elapsed time will include your manual QA, content work, DNS, and rollout.
 
-**Total:** 50–95 minutes (AI agent execution) + 30–60 minutes (review + testing per phase) = **2–3 days elapsed**
+| Phase | Duration (agent) | Cumulative (agent) | Checkpoint |
+|------|-------------------|--------------------|-----------|
+| **1** | 5–15m | 5–15m  | Database locked (28 councils, 138 suburbs with coordinates, enums fixed) |
+| **2** | 10–20m | 15–35m | Triage working (distance calculations, suburb filters) |
+| **3** | 10–20m | 25–55m | Profiles + search working (manual trainers across 138 suburbs) |
+| **4** | 15–20m | 40–75m | Onboarding + ABN verification (manual only, using GUID) |
+| **5** | 10–20m | 50–95m | Emergency flows + admin v0 (core system feature-complete) |
 
----
-
-## Key AI agent Alignment
-
-✅ **Database + Auth built-in** → No external setup; Phases 1–2 leverage this  
-✅ **Checkpointing** → Each phase auto-saved; deploy specific checkpoint  
-✅ **Versioning** → Rollback to earlier phase if needed  
-✅ **Custom domain** → One-click publishing at end  
-✅ **Iterative** → Phase 1 MVP (manual only), Phase 2+ adds scraper/monetization  
-✅ **Workflow automation** → Emergency triage fully automated
+**Total (agent execution only):** ~50–95 minutes  
+**Realistic elapsed:** 2–3 days including human review, content tweaks, DNS, and basic production checks per phase.
 
 ---
 
-## Post-Launch Roadmap (Phase 2+)
+## Key AI Agent Alignment
 
-### Phase 2 (2-6 months post-launch)
-**Web Scraper (Backfill Directory):**
-- ✅ Collect seed list (50-100 trainer URLs)
-- ✅ LLM extraction + enum mapping
-- ✅ Scaffolded profiles (unclaimed, discoverable)
-- ✅ "Claim Your Business" CTA
-- ✅ Weekly scrape schedule
-- ✅ Guardrails:
-  - Feature-flagged via `SCRAPER_ENABLED`; scraping stays off in production until the flag is flipped and the toggle workflow is documented in `DOCS/automation-checklist.md`.
-  - QA sample ≥10 listings/run with accuracy target ≥95% before publish, logging sample sets and scores in `qa_run_log.json`.
-  - AI-assisted QA: LLM compares scraped fields vs source URLs/screenshots, enforces locked enums, flags missing/invalid contact data; human gate approves flagged items before publish and triggers Resend notifications using the API key stored in `.env.local`.
-  - Deduplicate on ABN (if present), phone, email, and name+address
-  - Use locked enums only (no free-text categories); validate phones/emails; derive LGA from suburb→council CSV
-  - Mark scraped entries unverified (blue badge); do not auto-claim; keep monetization off
-  - Public data only (trainer sites/GBusiness/social); honor privacy/disclaimer posture
-  - Log runs and metrics to `qa_run_log.json`, including accuracy/batch verdicts and human approvals, with cross-checks against `DOCS/PHASE_1_FINAL_COMPLETION_REPORT.md` to ensure counts stay aligned with the SSOT
-  - QA runner outline (make actionable):
-    - Inputs: scraped JSON + source URLs/screenshots
-    - Steps: LLM field comparison, enum enforcement, contact validation, dedupe checks (ABN/phone/email/name+address), confidence scoring
-    - Outputs: per-listing verdicts, batch accuracy %, reasons for failures; fail batch if accuracy <95% or required contact fields missing
-    - Storage: persist run log (samples checked, issues found, human approvals) in `qa_run_log.json` for audit/rollback
+- ✅ **Database + Auth built-in**  
+  Supabase/Postgres + Next.js auth are established in Phase 1; phases 2–5 use this schema without further structural changes.  
 
-**Data Enrichment:**
-- ✅ Geocode claimed trainer addresses (validate council assignments)
-- ✅ Auto-correct council_id if mismatch detected
+- ✅ **Checkpointing and versioning**  
+  Each phase produces a checkpoint you can test before moving forward; changes should be merged into migrations and schema snapshots, not ad-hoc DB edits.
 
-**AI Automation Optimization:**
-- ✅ Review pre-filter (auto-approve 40% clean reviews)
-- ✅ Email/phone verification (reduce spam 80%)
-- ✅ ABN auto-retry (re-check failed ABNs after 48 hours)
+- ✅ **Custom domain ready**  
+  The app is designed to sit cleanly behind `dogtrainersdirectory.com.au` once DNS and SSL are configured; no hard-coded hostnames should block deployment.
 
-### Phase 3+ (6-12 months post-launch)
-**UX Enhancements:**
-- ✅ Map view (trainer pins, clustering)
-- ✅ Advanced filters (years in business, qualifications)
-- ✅ Review responses (trainers reply to reviews)
-- ✅ Save/favorite trainers (dog owner accounts)
+- ✅ **Iterative, layered automation**  
+  - Phases 1–5 deliver a fully usable manual directory with ABN verification, emergency flows, and an admin v0.  
+  - Post-Launch **Automation Phases A–F** add:
+    - Ops digest + observability.
+    - Emergency triage classifier + emergency roster freshness.
+    - AI moderation + ABN re-verification.
+    - Scraper backfill + QA gating (SCRAPER_ENABLED, qa_run_log.json).
+    - Admin Dashboard V2 as an AI ops console.  
 
-**Monetization (Phase 1 + Phase 1.5 planned):**
-- ✅ Featured slots (Stripe payments) — Phase 1 (current): $20 AUD / 30-day FIFO per LGA, webhook-driven lifecycle
-- ✅ Subscription / premium tiers — Phase 1.5 (deferred): monthly recurring flows, invoice handling, invoice.payment_succeeded/failed webhooks
-- ✅ Analytics dashboard for trainers — Phase 1 (metrics from clicks/inquiries); expand for subscription analytics in Phase 1.5+
-
-### Dev / webhook testing notes (avoid collisions)
-
-- Use the repo's dedicated local webhook harness for dogtrainersdirectory to avoid collisions with other local applications (for example, any dev server already listening on `localhost:3000`). The harness is `webhook/server_dtd.py` and defaults to port **4243** and endpoint `/api/webhooks/stripe-dtd`.
-- Local forward command example: `stripe listen --forward-to localhost:4243/api/webhooks/stripe-dtd` and use `stripe trigger checkout.session.completed` to test the purchase lifecycle.
-- Always verify `Stripe-Signature` and persist `event.id` in an ingestion audit table to protect against duplicated/retried webhook events.
+- ✅ **Workflow automation strategy**  
+  Immediate automation: ABN verification, basic emergency triage and admin tools in Phase 5.  
+  Deeper automation: triage self-monitoring, AI moderation, ABN batch jobs, scraper QA, and full single-operator mode are explicitly defined in Automation Phases A–F, not hand-waved.
 
 ---
 
-**Document Version:** 2.1 (CORRECTED)  
-**Alignment:** Abacus AI agent Official Documentation + Finalized User Decisions  
-**Status:** READY FOR EXECUTION
+## Post-Launch Roadmap (Automation & Growth)
+
+### Phase 2 — Automation Foundations (0–3 months post-launch)
+
+Focus: **stability + observability + low-touch operations**, using Automation Phases A–C.
+
+- **Automation Phase A — Ops tables + Daily Ops Digest**
+  - Implement `ops_*` tables (triage logs, moderation logs, ABN logs, webhook errors, scraper QA runs).
+  - Nightly/daily job producing an AI-written Ops Digest, shown on `/admin` and optionally emailed.  
+
+- **Automation Phase B — Emergency Triage Classifier & Roster Freshness**
+  - Free-text triage field + classifier (medical/stray/crisis/normal) with logging and weekly accuracy summaries.
+  - Emergency resources gain `last_verified_at` + `verification_status` with a weekly link/phone check that auto-fixes trivial changes and flags stale entries for review.
+
+- **Automation Phase C — AI Moderation**
+  - AI classifies new reviews as `auto_approve`, `auto_reject`, or `needs_manual_review`.
+  - Auto-approve/reject high-confidence cases; keep a small queue for humans.
+  - (Optional) AI-cleaned canonical bios for safer, clearer trainer profiles.
+
+### Phase 2.5 — ABN & Scraper Automation (3–6 months post-launch)
+
+Focus: **compliance + backfill**, using Automation Phases D–E.
+
+- **Automation Phase D — ABN Fallback & Re-verification**
+  - Evidence upload + AI/OCR fallback for edge-case ABNs.
+  - Scheduled ABN re-verification job using ABR GUID and the existing ABN rollout runbooks.
+
+- **Automation Phase E — Scraper Backfill + AI QA**
+  - CSV/JSON-driven scraper pipeline feeding scaffolded, unclaimed listings into the DB.
+  - Strict QA via `ops_scraper_qa_runs`, accuracy thresholds (≥95%), dedupe checks, and human approval in `/admin` before any batch goes live.
+  - Feature-flagged via `SCRAPER_ENABLED` and fully audited via `qa_run_log.json` and docs/Phase 2 completion notes.
+
+### Phase 3+ — UX + Monetization Enhancements (6–12 months)
+
+Focus: **owner experience + revenue**, building on everything above.  
+
+- **UX Enhancements**
+  - Map view with trainer pins and clustering.
+  - Advanced filters (years in business, qualifications, modalities).
+  - Review responses (trainers reply to reviews).
+  - Save/favourite trainers (dog-owner accounts).
+
+- **Monetization**
+  - **Featured slots (Phase 1 baseline):** $20 AUD / 30-day FIFO per LGA, Stripe-backed with webhook-driven lifecycle; surfaced in `/admin` and trainer dashboards.
+  - **Subscriptions / Premium tiers (Phase 1.5+ deferred):** recurring plans, invoices, `invoice.payment_succeeded/failed` handling.
+  - **Trainer analytics:** clicks, inquiries, and emergency hits, later tied to subscription tiers.
+
+- **Dev / Webhook testing**
+  - Use the dedicated local webhook harness (`webhook/server_dtd.py` on port 4243, `/api/webhooks/stripe-dtd`) and `stripe listen` to avoid collisions with other apps.
+  - Always verify `Stripe-Signature` and log `event.id` in an ingestion audit table to handle retries safely.
 
 ---
 
-## How to Start
-
-1. Copy **Phase 1 Prompt** (full text above)
-2. Paste into Abacus AI agent chat
-3. Click "Run Phase 1"
-4. Wait 5–15 minutes
-5. Review deliverable + test success criteria
-6. Approve or request fixes
-7. If approved, repeat for Phases 2–5
-
-**AI agent will manage all versioning, checkpointing, and deployment. You just review + approve each phase.**
-
----
-
-## Reference Documents
-
-All authoritative documents located at `/home/ubuntu/`:
-
-1. **blueprint_ssot_v1.1.md** - Blueprint SSOT (28 councils, locked taxonomies)
-2. **suburbs_councils_mapping.csv** - Enriched suburb data (138 rows, postcodes, coordinates)
-3. **implementation/master_plan.md** - Master implementation plan (phasing, decisions)
-4. **implementation/ai_automation_assessment.md** - AI automation capabilities and limitations
-5. **implementation/duplicate_suburb_resolution.md** - Duplicate suburb strategy
-6. **implementation/abn_validation_implementation.md** - ABN validation guide (ABR API, GUID)
-
----
-
-**END OF CORRECTED EXECUTION PLAN v2.1**
+If you want, your next move after the agent finishes current Phase 5 is: update this section in `ai_agent_execution_v2_corrected.md` with the block above, then add a short note at the top of the doc pointing to “Part II — Automation Phases A–F” as the post-launch path.
+::contentReference[oaicite:5]{index=5}

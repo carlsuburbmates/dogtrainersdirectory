@@ -69,3 +69,5 @@ SELECT COUNT(*) FROM daily_ops_digests;
 ---
 
 If you run into permission errors or missing objects, check the migration logs and re-run the migration steps in order. If unsure which migration is pending, use `supabase db migrate status` or review the `supabase/migrations` directory.
+
+> Note: The scheduled automation jobs in `vercel.json` (ops-digest, emergency/verify, emergency/triage/weekly) assume the Phase 5 migration is applied. If migration is missing, these jobs will still run but will not persist into the expected tables and will log errors. Apply the Phase 5 migration before enabling scheduling in production.

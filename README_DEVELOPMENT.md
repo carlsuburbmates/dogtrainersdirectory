@@ -177,15 +177,15 @@ supabase/
 - `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
 - `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
-> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `DOCS/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
+> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
 
 ---
 
 ## ABN verification — developer & ops workflow
-The project implements a canonical ABN/ABR verification flow (see `DOCS/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
+The project implements a canonical ABN/ABR verification flow (see `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
 
 Core developer files and scripts
-- `DOCS/abn_allowlist.staging.csv`, `DOCS/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
+- `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`, `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
 - `scripts/generate_allowlist.py` — validate CSVs and write `scripts/controlled_abn_list.{staging,prod}.json`. Example (archived) at `scripts/examples/controlled_abn_list.example.json`. Generated files are git-ignored; use the generator when needed.
 - `scripts/abn_controlled_batch.py` — ops-only controlled batch runner (dry-run default; `--apply` required to write). Requires `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING` and `ABR_GUID` environment variables for applied runs.
 - `scripts/abn_recheck.py` — scheduled re-check implementation used by `.github/workflows/abn-recheck.yml`.

@@ -30,6 +30,15 @@ Why remote dev is recommended:
 
 ## Schema changes / CI behaviour (remote-first)
 
+### Migrations & Archives
+
+For a short reference to which migration files are active vs archived, see `DOCS/db/MIGRATIONS_INDEX.md`. In short:
+
+- Keep incremental schema changes in `supabase/migrations/` so CI can pick them up via `supabase db push` / `supabase db migrate`.
+- Use `supabase/migrations_archive/` for large seeds and full-schema exports (these are **not** picked up automatically). Review archived SQL before applying manually.
+
+
+
 - Write and commit small, incremental migration files into `supabase/migrations/`.
 - CI deploys migrations to the chosen environment (staging/production) using `SUPABASE_CONNECTION_STRING_*` secrets; the `deploy-migrations.yml` workflow takes a backup and applies migrations in lexical order.
 - Never apply `supabase/schema.sql` in CI or production.

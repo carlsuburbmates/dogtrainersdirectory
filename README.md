@@ -3,7 +3,7 @@
 Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 14 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).
 
 ## Status
-- Pre-build; authoritative specs live in `/DOCS`
+- Phases 1–5 delivered (database/auth, triage/search, directory/profiles, manual onboarding with ABN verification, emergency ops + admin dashboard). Monetization and web-scraper automation remain deferred until post-launch criteria are met.
 - Scope: Melbourne metro only; suburb-first UX; age-first triage with locked enums
 - Monetization: Deferred until Phase 4+ criteria are met
 - Policy: No uptime/delivery/quality guarantees; best-effort only with explicit disclaimers
@@ -12,8 +12,9 @@ Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, b
 - Age-first triage (age → issue → suburb), locked enums (ages, 13 issues, 5 service types)
 - Suburb-to-council mapping (28 councils, 138 suburb rows with postcode/lat/lon)
 - ABN verification (GUID-based, canonical contract, ≥85% auto-match), verified badge
-- Emergency routing (medical vets, shelters, crisis trainers)
-- Admin/moderation queues (reviews, profiles) with automation hooks
+- Manual trainer onboarding (multi-step form, suburb autocomplete, ABN verification + email invite)
+- Emergency routing (medical vets, shelters, crisis trainers) with AI-assisted triage + logging
+- Admin/moderation queues (reviews, profiles, emergency verification) with automation hooks, Ops digest, and AI-based review gating
 - Stripe webhooks design for featured slots + subscriptions (post-launch)
 
 ### ABN verification — quick overview
@@ -22,9 +23,9 @@ This project implements a single canonical ABN/ABR verification behaviour across
 - ABN exists in the ABR response AND
 - ABNStatus === "Active"
 
-Full developer and runbook guidance is in `DOCS/ABR-ABN-Lookup.md` (contract + parsing rules). Key operational artefacts are:
+Full developer and runbook guidance is in `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md` (contract + parsing rules). Key operational artefacts are:
 
-- CSV templates (for ops): `DOCS/abn_allowlist.staging.csv` and `DOCS/abn_allowlist.prod.csv` — use these to maintain curated allowlists for controlled batch runs.
+- CSV templates (for ops): `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` and `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — use these to maintain curated allowlists for controlled batch runs.
 - Generator script: `scripts/generate_allowlist.py` — reads CSV templates, validates rows, and writes `scripts/controlled_abn_list.staging.json` or `scripts/controlled_abn_list.prod.json`.
 - Example (archived): `scripts/examples/controlled_abn_list.example.json`. Generated allowlists are git-ignored and should be produced by the generator when needed.
 - Controlled batch runner: `scripts/abn_controlled_batch.py` — intended for ops-only manual or one-off write runs (dry-run by default). Use the `--apply` flag plus environment variables (`SUPABASE_SERVICE_ROLE_KEY`, `ABR_GUID`, and `SUPABASE_CONNECTION_STRING`) to perform writes.
@@ -32,8 +33,8 @@ Full developer and runbook guidance is in `DOCS/ABR-ABN-Lookup.md` (contract + p
 
 Convenience npm scripts (wrappers) have been added so maintainers can quickly generate allowlists and run dry-run/apply workflows:
 
-- `npm run allowlist:staging` — generate `scripts/controlled_abn_list.staging.json` from `DOCS/abn_allowlist.staging.csv`
-- `npm run allowlist:prod` — generate `scripts/controlled_abn_list.prod.json` from `DOCS/abn_allowlist.prod.csv`
+- `npm run allowlist:staging` — generate `scripts/controlled_abn_list.staging.json` from `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`
+- `npm run allowlist:prod` — generate `scripts/controlled_abn_list.prod.json` from `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv`
 - `npm run abn:batch:staging` — dry-run against `scripts/controlled_abn_list.staging.json`
 - `npm run abn:batch:staging:apply` — apply with AUTO_APPLY=true (use only after sign-off)
 - `npm run abn:batch:prod` — dry-run against `scripts/controlled_abn_list.prod.json`
@@ -51,9 +52,9 @@ See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → product
 ## Data Sources
 - `DOCS/blueprint_ssot_v1.1.md` — product/UX rules, taxonomies, geography
 - `DOCS/suburbs_councils_mapping.csv` — 28 councils, 138 suburb rows with postcode/lat/lon
-- `DOCS/abn_stripe_legal_integration_v5.md` — ABN + Stripe flows
+- `DOCS/automation/ABN-ABR-GUID_automation/abn_stripe_legal_integration_v5.md` — ABN + Stripe flows
 - `DOCS/implementation/master_plan.md` — phased rollout, governance
-- `DOCS/ai_agent_execution_v2_corrected.md` — phase prompts/checklists
+- `DOCS/ai/ai_agent_execution_v2_corrected.md` — phase prompts/checklists
 
 ## Getting started (remote Supabase — default)
 Prereqs: `nvm install 24 && nvm use 24`, Yarn/PNPM/NPM.
@@ -73,6 +74,13 @@ Run the app locally (no Docker required):
 ```bash
 npm install
 npm run dev
+```
+
+Lint/QA helpers (Next.js 16 removed `next lint`):
+
+```
+npm run lint        # ESLint flat config via eslint.config.mjs
+npm run type-check  # tsc --noEmit
 ```
 
 Advanced/optional — local emulation (Docker / Supabase CLI)
@@ -113,9 +121,9 @@ OPENAI_API_KEY=<key>   # or ANTHROPIC_API_KEY=<key>
 ```
 
 ## TODO
-- Build single-operator mode dashboard aggregating KPIs, alerts, and action buttons in one view (admin).
+- Wire Vercel/Supabase cron to hit `/api/emergency/verify` daily and `/api/emergency/triage/weekly` weekly (currently invoked manually).
 - Add CI checks for CSV counts/enums and distance calculations.
-- Wire automation checklist (see `docs/automation-checklist.md`) into phase prompts.
+- Formalise ops runbooks for AI review moderation and emergency verification alerts (see `DOCS/automation/automation-checklist.md`).
 
 ## Maintainer checklist — rolling schema changes into migrations
 When you need to change the database schema follow these steps to keep `supabase/migrations/` canonical and avoid drift:

@@ -1,6 +1,6 @@
 # Automation Checklist (aligned to phases)
 
-“This checklist tracks implementation status for Phases 1–5 and Automation Phases A–F in DOCS/ai_agent_execution_v2_corrected.md.”
+“This checklist tracks implementation status for Phases 1–5 and Automation Phases A–F in DOCS/ai/ai_agent_execution_v2_corrected.md.”
 
 ## Phase 1: Backend/Data Foundations
 - [ ] CI: enforce CSV counts (28 councils, 138 suburbs) and enum validation
@@ -38,10 +38,10 @@ _Status:_ Manual onboarding UI + ABN verification API shipped (see `DOCS/PHASE_4
 
 ### Candidate scheduled jobs (phase 5 ops)
 - Daily Ops Digest (ready): POST `/api/admin/ops-digest` — schedule daily (example Cron: `0 23 * * *` UTC). This route calls the LLM adapter and persists `daily_ops_digests` when available.
-- Daily Emergency Verification (next): POST `/api/emergency/verify` — run daily to refresh emergency resource verification results.
-- Weekly Emergency Triage Summary (next): POST `/api/emergency/triage/weekly` — run weekly (Monday early morning) to aggregate triage metrics and write to `emergency_triage_weekly_metrics`.
+- Daily Emergency Verification (now scheduled): POST `/api/emergency/verify` — runs daily via Vercel Cron to refresh emergency resource verification results. The route is hardened for cron usage and uses SUPABASE_SERVICE_ROLE_KEY and best-effort writes to `emergency_resource_verification_runs` and `emergency_resource_verification_events`.
+- Weekly Emergency Triage Summary (now scheduled): POST `/api/emergency/triage/weekly` — runs weekly (Monday) to aggregate triage metrics into `emergency_triage_weekly_metrics` and returns a short LLM-written summary when AI is enabled.
 
-> Note: The `ops-digest` cron has been added to `vercel.json` as a daily job. The other candidate schedules are documented here for later activation.
+> Note: The `ops-digest` cron has been added to `vercel.json` as a daily job, and `verify`/`triage/weekly` are also now scheduled. All scheduled jobs rely on Phase 5 tables being present in the database and `SUPABASE_SERVICE_ROLE_KEY` configured in production.
 
  - [ ] CI/Secrets: add CI checks to ensure STRIPE keys or webhook signing secrets are not committed to the repo; fail CI if found
  - [ ] Webhook reliability: add monitoring that fails builds or creates alerts when webhook delivery errors exceed threshold (e.g., >1% failed deliveries over 24 hours)
