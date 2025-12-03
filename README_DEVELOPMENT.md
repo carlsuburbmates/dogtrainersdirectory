@@ -32,6 +32,19 @@ We recommend using a remote Supabase dev/staging project as the default developm
    ```
 
    Edit `.env.local` with your actual values (do NOT commit this file):
+
+   ### LLM configuration (optional)
+   If you plan to enable AI-backed automations (digest, triage, moderation), add these variables to your `.env.local`.
+
+   - LLM_PROVIDER — which provider to use by default: `zai` (recommended) or `openai`.
+   - ZAI_API_KEY — API key for Z.AI (automation / ops). When using Z.AI, set ZAI_BASE_URL to `https://api.z.ai/api/paas/v4`.
+   - LLM_DEFAULT_MODEL — the preferred Z.AI model (e.g. `glm-4.5-air`).
+   - OPENAI_API_KEY — (optional) a backup OpenAI key if you prefer OpenAI as a fallback provider.
+
+   Notes:
+   - The app uses a single adapter (`src/lib/llm.ts`) and reads `LLM_PROVIDER` at startup; change the provider and keys in your `.env.local` to switch providers.
+   - The repo also uses a separate Z.AI "coding" endpoint (`https://api.z.ai/api/coding/paas/v4`) in some offline tooling; the application itself uses the general `paas/v4` base path for automations.
+
    - Create a remote Supabase project at https://supabase.com (dev or staging)
    - Copy the Project URL and Anon Key from Settings > API
    - Generate a Service Role Key from Settings > API
@@ -164,6 +177,8 @@ supabase/
 - `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
 - `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
+> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `DOCS/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
+
 ---
 
 ## ABN verification — developer & ops workflow
@@ -216,6 +231,8 @@ Safety & governance
    npm run lint          # Check code style
    npm run type-check     # Verify TypeScript types
    ```
+
+   > **Note:** Vitest suites (`*.test.ts*` / `*.spec.ts*`) are excluded from the TypeScript project until their helper typings are refactored. `npm run type-check` covers application/runtime code only.
 
 ## 6. Testing
 
