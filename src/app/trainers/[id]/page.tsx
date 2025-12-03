@@ -34,7 +34,7 @@ const formatTag = (value: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 
-async function getTrainerProfile(id: number) {
+export async function getTrainerProfile(id: number) {
   const { data, error } = await supabaseAdmin.rpc('get_trainer_profile', {
     p_business_id: id,
     p_key: process.env.SUPABASE_PGCRYPTO_KEY ?? null
