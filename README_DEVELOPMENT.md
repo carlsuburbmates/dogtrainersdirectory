@@ -37,6 +37,8 @@ We recommend using a remote Supabase dev/staging project as the default developm
 
    Edit `.env.local` with your actual values (do NOT commit this file):
 
+> NOTE: A full `next build` requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to be set in `.env.local`. Server-side admin features and some API routes also expect `SUPABASE_SERVICE_ROLE_KEY` when used. If you only need local development (`npm run dev`) against a remote Supabase instance, populate the public keys and you should be able to run the app.
+
    ### LLM configuration (optional)
    If you plan to enable AI-backed automations (digest, triage, moderation), add these variables to your `.env.local`.
 

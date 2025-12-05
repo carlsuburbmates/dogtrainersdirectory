@@ -116,4 +116,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const config = { runtime: 'nodejs' }
+export const runtime = 'nodejs'

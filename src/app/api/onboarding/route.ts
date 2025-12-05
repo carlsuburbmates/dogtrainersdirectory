@@ -194,6 +194,4 @@ export async function POST(request: Request) {
   }
 }
 
-export const config = {
-  runtime: 'nodejs'
-}
+export const runtime = 'nodejs'

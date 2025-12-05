@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase'
 import { apiService } from './api'
-import { callLlm } from './llm'
+import { callLlm, runAiOperation, AiResult } from './llm'
 import type { SearchResult } from './api'
 import type { BehaviorIssue, DistanceFilter } from '../types/database'
 
@@ -39,59 +39,67 @@ const keywordScore = (text: string, keywords: string[]) => {
   return keywords.reduce((score, keyword) => (text.includes(keyword) ? score + 1 : score), 0)
 }
 
-export async function classifyEmergency(description: string): Promise<{ category: EmergencyFlow; confidence: number; reasoning: string }> {
+export async function classifyEmergency(description: string): Promise<{ category: EmergencyFlow; confidence: number; reasoning: string; ai_result?: AiResult<EmergencyFlow> }> {
   const normalized = description.trim().toLowerCase()
   if (!normalized) {
     return { category: 'normal', confidence: 0.2, reasoning: 'No description provided' }
   }
 
-  // Try AI classification first; if AI is disabled or errors, fall back to the keyword heuristic
-  try {
-    const llm = await callLlm({
-      purpose: 'triage',
-      systemPrompt:
-        'You are an emergency triage classifier. Given a short free-text description, classify the case into one of: medical, stray, crisis, normal. Return exactly a JSON object with { category: string, confidence: number, reasoning: string } where confidence is between 0 and 1.',
+  // Heuristic Logic (extracted)
+  const runKeywordHeuristic = () => {
+    const medicalScore = keywordScore(normalized, MEDICAL_KEYWORDS)
+    const strayScore = keywordScore(normalized, STRAY_KEYWORDS)
+    const crisisScore = keywordScore(normalized, CRISIS_KEYWORDS)
+  
+    const topScore = Math.max(medicalScore, strayScore, crisisScore)
+    if (topScore === 0) {
+      return { category: 'normal' as EmergencyFlow, confidence: 0.35, reasoning: 'No emergency keywords detected' }
+    }
+  
+    if (medicalScore === topScore) {
+      return { category: 'medical' as EmergencyFlow, confidence: Math.min(0.5 + medicalScore * 0.1, 0.95), reasoning: 'Matched medical emergency keywords' }
+    }
+    if (strayScore === topScore) {
+      return { category: 'stray' as EmergencyFlow, confidence: Math.min(0.5 + strayScore * 0.1, 0.9), reasoning: 'Matched stray/lost dog keywords' }
+    }
+    return { category: 'crisis' as EmergencyFlow, confidence: Math.min(0.5 + crisisScore * 0.1, 0.9), reasoning: 'Matched behaviour crisis keywords' }
+  }
+
+  // Use runAiOperation for robust execution
+  const aiResult = await runAiOperation<EmergencyFlow>({
+    purpose: 'triage',
+    llmArgs: {
+      systemPrompt: 'You are an emergency triage classifier. Given a short free-text description, classify the case into one of: medical, stray, crisis, normal. Return exactly a JSON object with { category: string, confidence: number, reasoning: string } where confidence is between 0 and 1.',
       userPrompt: `Description: ${description}`,
       responseFormat: 'json',
       temperature: 0,
       maxTokens: 300
-    })
-
-    if (llm.ok && llm.json && typeof llm.json === 'object') {
-      const parsed: any = llm.json as any
+    },
+    heuristicActions: async () => {
+      const h = runKeywordHeuristic()
+      return { action: h.category, confidence: h.confidence, reason: h.reasoning }
+    },
+    validator: (llm) => {
+      if (!llm.data || typeof llm.data !== 'object') return null
+      const parsed: any = llm.data as any
       const category = (parsed.category || '').toString().toLowerCase()
       if (category === 'medical' || category === 'stray' || category === 'crisis' || category === 'normal') {
-        const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5))
-        const reasoning = parsed.reasoning || parsed.reason || 'LLM classification'
-        return { category: category as EmergencyFlow, confidence, reasoning }
+        return {
+          action: category as EmergencyFlow,
+          confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5)),
+          reason: parsed.reasoning || parsed.reason || 'LLM classification'
+        }
       }
-      console.warn('classifyEmergency: unexpected LLM response shape — falling back to heuristic', parsed)
-    } else if (llm.reason === 'ai_disabled') {
-      // AI not available; we'll fall through to heuristic
-    } else if (!llm.ok) {
-      console.error('classifyEmergency: LLM call failed — falling back to heuristic', llm.errorMessage)
+      return null
     }
-  } catch (err) {
-    console.error('classifyEmergency: LLM call threw — falling back to heuristic', err)
-  }
+  })
 
-  // fallback heuristic (existing logic)
-  const medicalScore = keywordScore(normalized, MEDICAL_KEYWORDS)
-  const strayScore = keywordScore(normalized, STRAY_KEYWORDS)
-  const crisisScore = keywordScore(normalized, CRISIS_KEYWORDS)
-
-  const topScore = Math.max(medicalScore, strayScore, crisisScore)
-  if (topScore === 0) {
-    return { category: 'normal', confidence: 0.35, reasoning: 'No emergency keywords detected' }
+  return {
+    category: aiResult.action,
+    confidence: aiResult.confidence,
+    reasoning: aiResult.reason,
+    ai_result: aiResult
   }
-
-  if (medicalScore === topScore) {
-    return { category: 'medical', confidence: Math.min(0.5 + medicalScore * 0.1, 0.95), reasoning: 'Matched medical emergency keywords' }
-  }
-  if (strayScore === topScore) {
-    return { category: 'stray', confidence: Math.min(0.5 + strayScore * 0.1, 0.9), reasoning: 'Matched stray/lost dog keywords' }
-  }
-  return { category: 'crisis', confidence: Math.min(0.5 + crisisScore * 0.1, 0.9), reasoning: 'Matched behaviour crisis keywords' }
 }
 
 export async function logEmergencyClassification(payload: {
@@ -102,6 +110,11 @@ export async function logEmergencyClassification(payload: {
   suburbId?: number
   user_lat?: number
   user_lng?: number
+  // New AI Metadata
+  decision_source?: 'llm' | 'deterministic' | 'manual_override'
+  ai_mode?: string
+  ai_provider?: string
+  ai_model?: string
 }): Promise<number | null> {
   const { data, error } = await supabaseAdmin
     .from('emergency_triage_logs')
@@ -112,8 +125,13 @@ export async function logEmergencyClassification(payload: {
       confidence: payload.confidence ?? null,
       user_suburb_id: payload.suburbId ?? null,
       user_lat: payload.user_lat ?? null,
-      user_lng: payload.user_lng ?? null
-    })
+      user_lng: payload.user_lng ?? null,
+      // Metadata columns (cast to any as types might not be generated yet)
+      decision_source: payload.decision_source ?? 'deterministic',
+      ai_mode: payload.ai_mode ?? null,
+      ai_provider: payload.ai_provider ?? null,
+      ai_model: payload.ai_model ?? null
+    } as any)
     .select('id')
     .single()
 

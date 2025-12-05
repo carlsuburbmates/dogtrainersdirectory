@@ -56,9 +56,14 @@ export async function POST() {
           temperature: 0.3,
           maxTokens: 200
         })
-        if (resp.ok) summaryText = resp.text ?? null
-        else if (resp.reason === 'ai_disabled') aiEnabled = false
-        else console.warn('Weekly triage LLM failed (ignored):', resp.errorMessage)
+        if (resp.ok) {
+           const raw = resp.data
+           summaryText = typeof raw === 'string' ? raw : JSON.stringify(raw)
+        } else if (resp.meta?.mode === 'disabled') {
+           aiEnabled = false
+        } else {
+           console.warn('Weekly triage LLM failed (ignored):', resp.error)
+        }
       }
     } catch (e) {
       console.warn('Weekly triage LLM call threw (ignored)', e)
@@ -75,8 +80,9 @@ export async function POST() {
           total_logs: total,
           correct_predictions: correct,
           manual_reviews: manual,
-          accuracy_pct: accuracyPct
-        }, { onConflict: 'week_start' })
+          accuracy_pct: accuracyPct,
+          ai_mode: process.env.AI_GLOBAL_MODE || 'live' // Best effort capture
+        } as any, { onConflict: 'week_start' })
         .select('*')
         .single()
       saved = data

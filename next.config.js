@@ -1,15 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   images: {
-    domains: ['localhost', 'supabase.co'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'supabase.co', port: '', pathname: '/**' }
+    ]
   },
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  },
+  // NOTE: Avoid embedding secrets here. Use .env.local or your host's environment
+  // variables (NEXT_PUBLIC_* for client-safe envs and SUPABASE_SERVICE_ROLE_KEY for server-only).
 }
 
 export default nextConfig

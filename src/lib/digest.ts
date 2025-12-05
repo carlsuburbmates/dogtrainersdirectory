@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase'
 import { fetchDigestMetrics, DailyDigestMetrics } from './emergency'
-import { callLlm } from './llm'
+import { callLlm, runAiOperation } from './llm'
 
 export type DailyDigestRecord = {
   id: number
@@ -37,29 +37,37 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
 
   const metrics = await fetchDigestMetrics()
   const prompt = buildDigestPrompt(metrics)
-  const llm = await callLlm({
-    purpose: 'ops_digest',
-    systemPrompt: 'Summarise operational health for a solo operator keeping an eye on onboarding, emergency queries, and verification tooling.',
-    userPrompt: prompt,
-    responseFormat: 'text',
-    temperature: 0.3,
-    maxTokens: 400
-  })
 
-  // If AI disabled or there was an error, provide deterministic fallback
-  if (!llm.ok) {
-    if (llm.reason === 'ai_disabled') {
-      console.warn('getOrCreateDailyDigest: AI disabled — using deterministic fallback')
-      llm.text = `Ops digest: ${prompt.slice(0, 140)}...` // cheap fallback
-      llm.model = 'fallback'
-      llm.provider = llm.provider || 'deterministic'
-    } else {
-      console.error('getOrCreateDailyDigest: LLM call failed', llm.errorMessage)
-      llm.text = `Ops digest: ${prompt.slice(0, 140)}...` // fallback
-      llm.model = llm.model || 'error'
-      llm.provider = llm.provider || 'deterministic'
+  // Use runAiOperation for robustness
+  const aiResult = await runAiOperation<string>({
+    purpose: 'ops_digest',
+    llmArgs: {
+      systemPrompt: 'Summarise operational health for a solo operator keeping an eye on onboarding, emergency queries, and verification tooling.',
+      userPrompt: prompt,
+      responseFormat: 'text',
+      temperature: 0.3,
+      maxTokens: 400
+    },
+    heuristicActions: async () => {
+      // Deterministic fallback: just a raw list of metrics
+      return {
+        action: `Ops digest (fallback): ${prompt.replace('Summarise the operational situation for the admin in 3-5 sentences, highlight blockers, and end with one actionable next step.', '').trim()}`,
+        reason: 'Deterministic fallback (AI disabled or failed)',
+        confidence: 1.0
+      }
+    },
+    validator: (llm) => {
+      const text = typeof llm.data === 'string' ? llm.data : JSON.stringify(llm.data)
+      if (text && text.length > 10) {
+        return {
+          action: text,
+          reason: 'AI Generated',
+          confidence: 1.0
+        }
+      }
+      return null
     }
-  }
+  })
 
   // Store the digest — be tolerant to DB errors when running in a non-operator environment
   try {
@@ -68,11 +76,18 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
         .from('daily_ops_digests')
         .upsert({
           digest_date: today,
-          summary: llm.text ?? '' ,
+          summary: aiResult.action,
           metrics,
-          model: llm.model,
-          generated_by: llm.provider
-        })
+          model: aiResult.meta?.model || (aiResult.source === 'heuristic' ? 'fallback' : 'unknown'),
+          generated_by: aiResult.source, // Legacy
+          // New Metadata
+          decision_source: aiResult.source === 'heuristic' ? 'deterministic' : 
+                           aiResult.source === 'manual' ? 'manual_override' : 
+                           aiResult.source || 'deterministic',
+          ai_mode: aiResult.meta?.mode || 'live',
+          ai_provider: aiResult.meta?.llmProvider || 'unknown',
+          ai_confidence: aiResult.confidence
+        } as any)
         .select('id, digest_date, summary, metrics, model, generated_by, created_at')
         .single()
 
@@ -90,10 +105,10 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   return {
     id: -1,
     digest_date: today,
-    summary: llm.text ?? '',
+    summary: aiResult.action,
     metrics,
-    model: llm.model || 'fallback',
-    generated_by: llm.provider || 'deterministic',
+    model: aiResult.llm_log?.model || 'fallback',
+    generated_by: aiResult.source,
     created_at: new Date().toISOString()
   }
 }

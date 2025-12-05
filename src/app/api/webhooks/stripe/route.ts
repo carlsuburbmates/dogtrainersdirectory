@@ -3,9 +3,7 @@ import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export const runtime = 'nodejs'
-export const config = {
-  api: { bodyParser: false }
-}
+export const api = { bodyParser: false }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-08' as Stripe.LatestApiVersion

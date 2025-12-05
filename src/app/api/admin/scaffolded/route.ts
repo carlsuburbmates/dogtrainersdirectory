@@ -79,6 +79,4 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
-export const config = {
-  runtime: 'edge',
-}
+export const runtime = 'edge'

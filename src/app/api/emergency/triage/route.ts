@@ -23,7 +23,13 @@ export async function POST(request: Request) {
       confidence: result.confidence,
       suburbId,
       user_lat,
-      user_lng
+      user_lng,
+      decision_source: result.ai_result?.source === 'heuristic' ? 'deterministic' : 
+                       result.ai_result?.source === 'manual' ? 'manual_override' : 
+                       result.ai_result?.source || 'deterministic',
+      ai_mode: result.ai_result?.meta?.mode,
+      ai_provider: result.ai_result?.meta?.llmProvider,
+      ai_model: result.ai_result?.meta?.model
     })
 
     return NextResponse.json({

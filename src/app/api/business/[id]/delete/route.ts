@@ -20,4 +20,4 @@ export async function DELETE(request: Request, context: RouteContext) {
   return NextResponse.json({ success: true, business: data?.[0] })
 }
 
-export const config = { runtime: 'edge' }
+export const runtime = 'edge'

@@ -100,18 +100,18 @@ export async function POST() {
             maxTokens: 200
           })
 
-          llmProvider = llmResp.provider ?? null
-          llmModel = llmResp.model ?? null
+          llmProvider = llmResp.meta?.llmProvider ?? null
+          llmModel = llmResp.meta?.model ?? null
 
-          if (llmResp.ok && llmResp.json && typeof llmResp.json === 'object') {
-            const parsed: any = llmResp.json as any
+          if (llmResp.ok && llmResp.data && typeof llmResp.data === 'object') {
+            const parsed: any = llmResp.data as any
             if (parsed.action === 'verified' || parsed.action === 'manual_review') {
               statusAfter = parsed.action
             }
-          } else if (llmResp.reason === 'ai_disabled') {
+          } else if (llmResp.meta?.mode === 'disabled') {
             // AI disabled — leave heuristic decision
           } else if (!llmResp.ok) {
-            console.warn('LLM moderation guidance failed — falling back to deterministic checks', llmResp.errorMessage)
+            console.warn('LLM moderation guidance failed — falling back to deterministic checks', llmResp.error)
           }
         }
       } catch (err) {
