@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase'
 import { apiService } from './api'
+import { callLlm } from './llm'
 import type { SearchResult } from './api'
 import type { BehaviorIssue, DistanceFilter } from '../types/database'
 
@@ -38,12 +39,43 @@ const keywordScore = (text: string, keywords: string[]) => {
   return keywords.reduce((score, keyword) => (text.includes(keyword) ? score + 1 : score), 0)
 }
 
-export function classifyEmergency(description: string): { category: EmergencyFlow; confidence: number; reasoning: string } {
+export async function classifyEmergency(description: string): Promise<{ category: EmergencyFlow; confidence: number; reasoning: string }> {
   const normalized = description.trim().toLowerCase()
   if (!normalized) {
     return { category: 'normal', confidence: 0.2, reasoning: 'No description provided' }
   }
 
+  // Try AI classification first; if AI is disabled or errors, fall back to the keyword heuristic
+  try {
+    const llm = await callLlm({
+      purpose: 'triage',
+      systemPrompt:
+        'You are an emergency triage classifier. Given a short free-text description, classify the case into one of: medical, stray, crisis, normal. Return exactly a JSON object with { category: string, confidence: number, reasoning: string } where confidence is between 0 and 1.',
+      userPrompt: `Description: ${description}`,
+      responseFormat: 'json',
+      temperature: 0,
+      maxTokens: 300
+    })
+
+    if (llm.ok && llm.json && typeof llm.json === 'object') {
+      const parsed: any = llm.json as any
+      const category = (parsed.category || '').toString().toLowerCase()
+      if (category === 'medical' || category === 'stray' || category === 'crisis' || category === 'normal') {
+        const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0.5))
+        const reasoning = parsed.reasoning || parsed.reason || 'LLM classification'
+        return { category: category as EmergencyFlow, confidence, reasoning }
+      }
+      console.warn('classifyEmergency: unexpected LLM response shape — falling back to heuristic', parsed)
+    } else if (llm.reason === 'ai_disabled') {
+      // AI not available; we'll fall through to heuristic
+    } else if (!llm.ok) {
+      console.error('classifyEmergency: LLM call failed — falling back to heuristic', llm.errorMessage)
+    }
+  } catch (err) {
+    console.error('classifyEmergency: LLM call threw — falling back to heuristic', err)
+  }
+
+  // fallback heuristic (existing logic)
   const medicalScore = keywordScore(normalized, MEDICAL_KEYWORDS)
   const strayScore = keywordScore(normalized, STRAY_KEYWORDS)
   const crisisScore = keywordScore(normalized, CRISIS_KEYWORDS)

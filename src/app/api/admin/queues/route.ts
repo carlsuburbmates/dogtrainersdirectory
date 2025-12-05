@@ -1,9 +1,31 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { moderatePendingReviews } from '@/lib/moderation'
+import { isAiEnabled } from '@/lib/llm'
+
+type SupabaseReviewRow = {
+  id: number
+  business_id: number
+  reviewer_name: string
+  rating: number
+  title: string
+  content?: string | null
+  created_at: string
+}
+
+type ReviewDecisionRow = {
+  review_id: number
+  ai_decision: string | null
+  reason: string | null
+}
+
+type ReviewQueueItem = SupabaseReviewRow & {
+  ai_decision: string | null
+  ai_reason: string | null
+}
 
 export async function GET() {
-  const aiEnabled = Boolean(process.env.OPENAI_API_KEY)
+  const aiEnabled = isAiEnabled()
 
   try {
     // If server-side service-role key is not set, return a gracefully degraded response
@@ -26,7 +48,8 @@ export async function GET() {
       console.warn('moderatePendingReviews failed (continuing):', modErr)
     }
 
-    const [reviewsRes, abnRes, flaggedRes, emergencyRes] = await Promise.all([
+    // Use Promise.allSettled to avoid hard-failing when a single query errors
+    const settled = await Promise.allSettled([
       supabaseAdmin
         .from('reviews')
         .select('id, business_id, reviewer_name, rating, title, content, created_at')
@@ -56,27 +79,38 @@ export async function GET() {
         .limit(20)
     ])
 
-    if (reviewsRes.error || abnRes.error || flaggedRes.error || emergencyRes.error) {
-      return NextResponse.json(
-        { error: 'Failed to load admin queues' },
-        { status: 500 }
-      )
+    const getDataOrEmpty = (r: PromiseSettledResult<any>) => {
+      if (r.status === 'fulfilled') {
+        if (!r.value || r.value.error) {
+          console.warn('/api/admin/queues: supabase query returned error', r.value?.error)
+          return []
+        }
+        return r.value.data ?? []
+      }
+      console.warn('/api/admin/queues: supabase query failed', r.reason)
+      return []
     }
 
+    const reviewRows: SupabaseReviewRow[] = getDataOrEmpty(settled[0])
+    const abnData = getDataOrEmpty(settled[1])
+    const flaggedData = getDataOrEmpty(settled[2])
+    const emergencyData = getDataOrEmpty(settled[3])
+
     let reviewDecisions: Record<number, { ai_decision: string | null; reason: string | null }> = {}
-    const reviewIds = reviewsRes.data?.map((item) => item.id) ?? []
+    const reviewIds = reviewRows.map((item) => item.id)
     if (reviewIds.length > 0) {
       const { data: decisionRows } = await supabaseAdmin
         .from('ai_review_decisions')
         .select('review_id, ai_decision, reason')
         .in('review_id', reviewIds)
-      reviewDecisions = (decisionRows || []).reduce((acc, row) => {
+      const rows: ReviewDecisionRow[] = decisionRows ?? []
+      reviewDecisions = rows.reduce((acc, row) => {
         acc[row.review_id] = { ai_decision: row.ai_decision, reason: row.reason }
         return acc
       }, {} as Record<number, { ai_decision: string | null; reason: string | null }>)
     }
 
-    const reviews = (reviewsRes.data || []).map((item) => ({
+    const reviews: ReviewQueueItem[] = reviewRows.map((item): ReviewQueueItem => ({
       ...item,
       ai_decision: reviewDecisions[item.id]?.ai_decision ?? null,
       ai_reason: reviewDecisions[item.id]?.reason ?? null
@@ -84,9 +118,10 @@ export async function GET() {
 
     return NextResponse.json({
       reviews,
-      abn_verifications: abnRes.data,
-      flagged_businesses: flaggedRes.data,
-      emergency_verifications: emergencyRes.data || []
+      abn_verifications: abnData,
+      flagged_businesses: flaggedData,
+      emergency_verifications: emergencyData || [],
+      aiEnabled
     })
   } catch (error: any) {
     console.error('Admin queues error', error)

@@ -8,7 +8,7 @@ export const config = {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-08'
+  apiVersion: '2024-11-08' as Stripe.LatestApiVersion
 })
 
 const SIGNING_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''

@@ -107,7 +107,6 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       // Do not fail the request if persistence fails - log server-side only
       // (nextjs server runtime will log to platform logs). Keep endpoint behaviour unchanged.
-      // eslint-disable-next-line no-console
       console.error('abn verify persistence failed', err)
     }
 

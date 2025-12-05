@@ -6,11 +6,11 @@ export const AGE_SPECIALTIES = [
   'adolescent_6_18m',
   'adult_18m_7y',
   'senior_7y_plus',
-  'rescue_rehomed'
+  'rescue_dogs'
 ] as const;
 
 export const BEHAVIOR_ISSUES = [
-  'pulling_lead',
+  'pulling_on_lead',
   'separation_anxiety',
   'excessive_barking',
   'dog_aggression',
@@ -21,7 +21,7 @@ export const BEHAVIOR_ISSUES = [
   'anxiety_general',
   'resource_guarding',
   'mouthing_nipping_biting',
-  'rescue_support',
+  'rescue_dog_support',
   'socialisation'
 ] as const;
 
@@ -161,6 +161,19 @@ export const validateBehaviorIssuesArray = (issues: string[]): BehaviorIssue[] =
   }
   
   return validatedIssues;
+};
+
+export const validateAgeSpecialtiesArray = (ages: string[]): AgeSpecialty[] => {
+  if (!Array.isArray(ages)) {
+    throw new Error('Age specialties must be an array');
+  }
+
+  const validatedAges: AgeSpecialty[] = [];
+  for (const age of ages) {
+    validatedAges.push(validateAgeSpecialty(age));
+  }
+
+  return validatedAges;
 };
 
 // Numeric validation

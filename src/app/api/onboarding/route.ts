@@ -53,16 +53,26 @@ export async function POST(request: Request) {
       abn
     } = body
 
-    if (!email || !password || !businessName || !abn) {
+    if (!email || !password || password.length < 8 || !businessName || !abn || !suburbId || ages.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data: user, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: userResult, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: { full_name: fullName }
     })
+    if (createError || !userResult?.user) {
+      return NextResponse.json({ error: createError?.message || 'Failed to create account' }, { status: 400 })
+    }
+
+    // Send verification email (ignore errors but log)
+    try {
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo: process.env.NEXT_PUBLIC_SITE_URL || undefined })
+    } catch (inviteError) {
+      console.warn('Failed to send invite email', inviteError)
+    }
     // Server-side ABN validation and authoritative ABR lookup
     if (!abrLib.isValidAbn(abn)) {
       return NextResponse.json({ error: 'Invalid ABN format' }, { status: 400 })
@@ -86,7 +96,7 @@ export async function POST(request: Request) {
     }
 
     await supabaseAdmin.from('profiles').insert({
-      id: user.id,
+      id: userResult.user.id,
       email,
       full_name: fullName,
       role: 'trainer'
@@ -95,38 +105,31 @@ export async function POST(request: Request) {
     const abnScore = computeSimilarity(abn)
     // Insert business - support both chainable supabase mock that uses .select().single()
     // and simpler test mocks that return a promise result directly.
-    const businessInsertCall = supabaseAdmin.from('businesses').insert({
-      profile_id: user.id,
-      name: businessName,
+    const { data: business, error: businessError } = await supabaseAdmin
+      .from('businesses')
+      .insert({
+        profile_id: userResult.user.id,
+        name: businessName,
         website,
         address,
         suburb_id: suburbId,
         bio,
         pricing,
         abn,
+        email: businessEmail || email,
+        phone: businessPhone,
         abn_verified: abnStatus === 'verified',
         verification_status: abnStatus,
         resource_type: 'trainer',
         phone_encrypted: businessPhone ? encryptValue(businessPhone) : null,
-        email_encrypted: businessEmail ? encryptValue(businessEmail) : encryptValue(email),
-        abn_encrypted: encryptValue(abn)
+        email_encrypted: encryptValue(businessEmail || email),
+        abn_encrypted: encryptValue(abn),
+        is_claimed: true
       })
-    
-    let business: any = null
-    let businessErr: any = null
+      .select('id')
+      .single()
 
-    if (businessInsertCall && typeof (businessInsertCall as any).select === 'function') {
-      const res = await (businessInsertCall as any).select('id').single()
-      business = res?.data
-      businessErr = res?.error
-    } else {
-      // Assume the insert call returns the final { data, error } shape
-      const res = await businessInsertCall
-      business = res?.data
-      businessErr = res?.error
-    }
-
-    if (!business || businessErr) {
+    if (businessError || !business) {
       return NextResponse.json({ error: 'Failed to create business record' }, { status: 500 })
     }
 
@@ -145,13 +148,24 @@ export async function POST(request: Request) {
         business_id: businessId,
         behavior_issue: issue
       }))
-      await supabaseAdmin.from('trainer_behaviors').insert(behaviors)
+      await supabaseAdmin.from('trainer_behavior_issues').insert(behaviors)
     }
 
-    if (secondaryServices.length > 0) {
-      const services = secondaryServices.map((s) => ({ business_id: businessId, service: s }))
-      await supabaseAdmin.from('trainer_services').insert(services)
-    }
+    const servicesToInsert = [
+      {
+        business_id: businessId,
+        service_type: primaryService,
+        is_primary: true
+      },
+      ...secondaryServices
+        .filter((service) => service !== primaryService)
+        .map((service) => ({
+          business_id: businessId,
+          service_type: service,
+          is_primary: false
+        }))
+    ]
+    await supabaseAdmin.from('trainer_services').insert(servicesToInsert)
 
     // Persist ABN verification row; include matched_json for audit/reverification
     // Persist verification row. Support both possible mock shapes (chainable vs direct promise)
@@ -173,7 +187,7 @@ export async function POST(request: Request) {
       await abnInsertCall
     }
 
-    return NextResponse.json({ success: true, trainer_id: user.id, business_id: businessId, abn_status: abnStatus })
+    return NextResponse.json({ success: true, trainer_id: userResult.user.id, business_id: businessId, abn_status: abnStatus })
   } catch (error: any) {
     console.error('Onboarding error', error)
     return NextResponse.json({ error: 'Internal error', message: error?.message ?? 'unknown' }, { status: 500 })

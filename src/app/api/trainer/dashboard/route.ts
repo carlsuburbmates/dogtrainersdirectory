@@ -18,6 +18,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   }
 
+  type RatingRow = { rating: number }
+
   const { data: reviews } = await supabaseAdmin
     .from('reviews')
     .select('rating')
@@ -34,7 +36,9 @@ export async function GET(request: Request) {
       totalViews,
       totalProfileClicks,
       totalInquiries,
-      averageRating: reviews?.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A',
+      averageRating: reviews?.length
+        ? ((reviews as RatingRow[]).reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+        : 'N/A',
       reviewCount: reviews?.length || 0
     }
   })

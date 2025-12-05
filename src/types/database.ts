@@ -59,7 +59,7 @@ export const isValidBehaviorIssue = (value: string): value is BehaviorIssue => {
 // Runtime validation function for age specialties
 export const validateAgeSpecialty = (value: string): AgeSpecialty => {
   if (!isValidAgeSpecialty(value)) {
-    throw new Error(`Invalid age specialty: ${value}. Must be one of: puppies_0_6m, adolescent_6_18m, adult_18m_7y, senior_7y_plus, rescue_rehomed`)
+    throw new Error('Invalid age specialty')
   }
   return value as AgeSpecialty
 }
@@ -67,7 +67,7 @@ export const validateAgeSpecialty = (value: string): AgeSpecialty => {
 // Runtime validation function for behavior issues
 export const validateBehaviorIssue = (value: string): BehaviorIssue => {
   if (!isValidBehaviorIssue(value)) {
-    throw new Error(`Invalid behavior issue: ${value}. Must be one of: pulling_lead, separation_anxiety, excessive_barking, dog_aggression, leash_reactivity, jumping_up, destructive_behaviour, recall_issues, anxiety_general, resource_guarding, mouthing_nipping_biting, rescue_support, socialisation`)
+    throw new Error('Invalid behavior issue')
   }
   return value as BehaviorIssue
 }
@@ -396,23 +396,23 @@ export interface TrainerSearchResult {
 }
 
 // API Request/Response types
+export type DistanceFilter = 'any' | '0-5' | '5-15' | 'greater'
+
 export interface TriageRequest {
-  age: AgeSpecialty
-  issues: BehaviorIssue[]
-  suburbId: number
-  radius?: number
+  ageFilters?: AgeSpecialty[]
+  includeRescue?: boolean
+  issues?: BehaviorIssue[]
+  suburbId?: number
+  distanceFilter?: DistanceFilter
+  serviceType?: ServiceType | null
+  verifiedOnly?: boolean
+  priceMax?: number
+  searchTerm?: string
+  limit?: number
+  offset?: number
 }
 
-export interface SearchRequest {
-  suburbId: number
-  radius?: number
-  ageFilter?: AgeSpecialty
-  issuesFilter?: BehaviorIssue[]
-  serviceTypeFilter?: ServiceType
-  verifiedOnly?: boolean
-  priceRange?: [number, number]
-  sortBy?: 'distance' | 'rating' | 'verified'
-}
+export type SearchRequest = TriageRequest
 
 export interface TrainerOnboardingData {
   businessName: string
@@ -443,36 +443,63 @@ export interface AbnVerificationResponse {
   requiresManualReview?: boolean
 }
 // Type guards for API parameters
+const DISTANCE_FILTER_VALUES: DistanceFilter[] = ['any', '0-5', '5-15', 'greater']
+
 export const isValidTriageRequest = (obj: any): obj is TriageRequest => {
-  return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.age === 'string' &&
-    isValidAgeSpecialty(obj.age) &&
-    (!obj.issues || Array.isArray(obj.issues)) &&
-    typeof obj.suburbId === 'number' &&
-    obj.suburbId > 0 &&
-    (!obj.radius || (typeof obj.radius === 'number' && obj.radius > 0 && obj.radius <= 500))
-  )
+  if (!obj || typeof obj !== 'object') return false
+
+  if (obj.ageFilters && (!Array.isArray(obj.ageFilters) || !obj.ageFilters.every((age: any) => typeof age === 'string' && isValidAgeSpecialty(age)))) {
+    return false
+  }
+
+  if (obj.includeRescue !== undefined && typeof obj.includeRescue !== 'boolean') {
+    return false
+  }
+
+  if (obj.issues && (!Array.isArray(obj.issues) || !obj.issues.every((issue: any) => typeof issue === 'string' && isValidBehaviorIssue(issue)))) {
+    return false
+  }
+
+  if (obj.suburbId !== undefined) {
+    if (typeof obj.suburbId !== 'number' || !Number.isInteger(obj.suburbId) || obj.suburbId <= 0) {
+      return false
+    }
+  }
+
+  if (obj.distanceFilter && !DISTANCE_FILTER_VALUES.includes(obj.distanceFilter)) {
+    return false
+  }
+
+  if (obj.serviceType !== undefined && obj.serviceType !== null) {
+    if (typeof obj.serviceType !== 'string' || !isValidServiceType(obj.serviceType)) {
+      return false
+    }
+  }
+
+  if (obj.verifiedOnly !== undefined && typeof obj.verifiedOnly !== 'boolean') {
+    return false
+  }
+
+  if (obj.priceMax !== undefined && (typeof obj.priceMax !== 'number' || Number.isNaN(obj.priceMax))) {
+    return false
+  }
+
+  if (obj.searchTerm !== undefined && typeof obj.searchTerm !== 'string') {
+    return false
+  }
+
+  if (obj.limit !== undefined && (typeof obj.limit !== 'number' || !Number.isInteger(obj.limit))) {
+    return false
+  }
+
+  if (obj.offset !== undefined && (typeof obj.offset !== 'number' || !Number.isInteger(obj.offset))) {
+    return false
+  }
+
+  return true
 }
 
-export const isValidSearchRequest = (obj: any): obj is SearchRequest => {
-  return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.suburbId === 'number' &&
-    obj.suburbId > 0 &&
-    (!obj.radius || (typeof obj.radius === 'number' && obj.radius > 0 && obj.radius <= 500)) &&
-    (!obj.ageFilter || (typeof obj.ageFilter === 'string' && isValidAgeSpecialty(obj.ageFilter))) &&
-    (!obj.issuesFilter || (Array.isArray(obj.issuesFilter) && obj.issuesFilter.every((issue: any) => typeof issue === 'string' && isValidBehaviorIssue(issue)))) &&
-    (!obj.serviceTypeFilter || (typeof obj.serviceTypeFilter === 'string' && isValidServiceType(obj.serviceTypeFilter))) &&
-    (!obj.verifiedOnly || typeof obj.verifiedOnly === 'boolean') &&
-    (!obj.priceRange || (Array.isArray(obj.priceRange) && obj.priceRange.length === 2 && 
-      typeof obj.priceRange[0] === 'number' && typeof obj.priceRange[1] === 'number' && 
-      obj.priceRange[0] >= 0 && obj.priceRange[1] >= obj.priceRange[0])) &&
-    (!obj.sortBy || ['distance', 'rating', 'verified'].includes(obj.sortBy))
-  )
-}
+export const isValidSearchRequest = (obj: any): obj is SearchRequest => isValidTriageRequest(obj)
 
 export const isValidTrainerOnboardingData = (obj: any): obj is TrainerOnboardingData => {
   return (
@@ -577,13 +604,6 @@ export const validateRating = (rating: any): number => {
   return rating
 }
 
-export const validateRadius = (radius: any): number => {
-  if (typeof radius !== 'number' || radius < 1 || radius > 500) {
-    throw new Error('Radius must be a number between 1 and 500 kilometers')
-  }
-  return radius
-}
-
 export const validateCoordinates = (latitude: any, longitude: any): { latitude: number; longitude: number } => {
   if (typeof latitude !== 'number' || latitude < -90 || latitude > 90) {
     throw new Error('Latitude must be a number between -90 and 90')
@@ -599,28 +619,55 @@ export const validateTriageRequest = (obj: any): TriageRequest => {
   if (!isValidTriageRequest(obj)) {
     throw new Error('Invalid triage request format')
   }
-  
-  return {
-    age: validateAgeSpecialty(obj.age),
-    issues: obj.issues ? validateBehaviorIssuesArray(obj.issues) : [],
-    suburbId: validateNumericId(obj.suburbId, 'Suburb ID'),
-    radius: obj.radius ? validateRadius(obj.radius) : 50
+
+  const sanitized: TriageRequest = {}
+
+  if (obj.ageFilters) {
+    sanitized.ageFilters = validateAgeSpecialtiesArray(obj.ageFilters)
   }
+
+  if (obj.includeRescue !== undefined) {
+    sanitized.includeRescue = Boolean(obj.includeRescue)
+  }
+
+  if (obj.issues) {
+    sanitized.issues = validateBehaviorIssuesArray(obj.issues)
+  }
+
+  if (obj.suburbId !== undefined) {
+    sanitized.suburbId = validateNumericId(obj.suburbId, 'Suburb ID')
+  }
+
+  if (obj.distanceFilter) {
+    sanitized.distanceFilter = obj.distanceFilter as DistanceFilter
+  }
+
+  if (obj.serviceType !== undefined) {
+    sanitized.serviceType = obj.serviceType === null ? null : validateServiceType(obj.serviceType)
+  }
+
+  if (obj.verifiedOnly !== undefined) {
+    sanitized.verifiedOnly = Boolean(obj.verifiedOnly)
+  }
+
+  if (obj.priceMax !== undefined) {
+    const clamped = Math.min(Math.max(Number(obj.priceMax), 0), 500)
+    sanitized.priceMax = clamped
+  }
+
+  if (obj.searchTerm) {
+    sanitized.searchTerm = validateStringField(obj.searchTerm, 'Search term', 1, 100)
+  }
+
+  if (obj.limit !== undefined) {
+    sanitized.limit = Math.min(Math.max(Number(obj.limit), 1), 100)
+  }
+
+  if (obj.offset !== undefined) {
+    sanitized.offset = Math.max(Number(obj.offset), 0)
+  }
+
+  return sanitized
 }
 
-export const validateSearchRequest = (obj: any): SearchRequest => {
-  if (!isValidSearchRequest(obj)) {
-    throw new Error('Invalid search request format')
-  }
-  
-  return {
-    suburbId: validateNumericId(obj.suburbId, 'Suburb ID'),
-    radius: obj.radius ? validateRadius(obj.radius) : undefined,
-    ageFilter: obj.ageFilter ? validateAgeSpecialty(obj.ageFilter) : undefined,
-    issuesFilter: obj.issuesFilter ? validateBehaviorIssuesArray(obj.issuesFilter) : undefined,
-    serviceTypeFilter: obj.serviceTypeFilter ? validateServiceType(obj.serviceTypeFilter) : undefined,
-    verifiedOnly: obj.verifiedOnly,
-    priceRange: obj.priceRange ? [obj.priceRange[0], obj.priceRange[1]] as [number, number] : undefined,
-    sortBy: obj.sortBy as 'distance' | 'rating' | 'verified' || undefined
-  }
-}
+export const validateSearchRequest = (obj: any): SearchRequest => validateTriageRequest(obj)
