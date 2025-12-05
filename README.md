@@ -1,5 +1,9 @@
 # dogtrainersdirectory.com.au
 
+Docs home: `DOCS/README.md` — single place to discover authoritative design, automation runbooks, DB/migration index, and AI playbooks.
+
+
+
 Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 14 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).
 
 ## Status

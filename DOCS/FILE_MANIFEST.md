@@ -9,10 +9,31 @@
 
 This manifest documents the final file structure for the dogtrainersdirectory.com.au modernization project after consolidation and cleanup. All obsolete, duplicate, and intermediate files have been removed, leaving only the authoritative final versions.
 
-**Final File Count:** 6 files (5 project files + 1 original source PDF)  
+**Final File Count:** 10 files (9 project files + 1 original source PDF)  
 **Files Deleted:** 20 files (obsolete versions, analysis documents, PDFs, temporary files)
 
+> **Phase 2 update (February 2026):** The application source now lives under `/Users/carlg/Documents/PROJECTS/Project-dev/DTD`. The canonical docs listed below remain unchanged, but new execution reports are stored alongside them. The most recent addition is `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md`, which captures the triage/filtering milestone; treat it as read-only evidence that Phase 2 is approved.
+>
+> **Phase 5 update (February 2026):** Emergency ops + admin automation are complete. `DOCS/PHASE_5_FINAL_COMPLETION_REPORT.md` and updated README/plan/checklist files live alongside the other phase reports in `/Users/carlg/Documents/PROJECTS/Project-dev/DTD/DOCS`.
+
 ---
+
+## 🔒 Canonical (SSOT)
+
+The following files are the canonical Single Source Of Truth (SSOT) for this project — changes to these files must follow the governance described in `DOCS/PLAN_REVIEW.md` and should be coordinated with maintainers / CI checks:
+
+- `DOCS/blueprint_ssot_v1.1.md` — product & systems SSOT (architecture, UX rules, taxonomies)
+- `DOCS/FILE_MANIFEST.md` — this manifest (SSOT for file map & doc status)
+- `DOCS/PLAN_REVIEW.md` — project plan + phase-state (SSOT for roadmap & approvals)
+- `DOCS/PHASE_1_FINAL_COMPLETION_REPORT.md` … `DOCS/PHASE_5_FINAL_COMPLETION_REPORT.md` — phase evidence (SSOT audit trail)
+- `DOCS/automation/automation-checklist.md` — ops & automation runbook (SSOT)
+- `DOCS/automation/automation_secrets.md` — secrets handling guidance (SSOT policy)
+- `DOCS/automation/REMOTE_DB_MIGRATIONS.md` — remote DB migration runbook (SSOT)
+- `DOCS/automation/ABN-ABR-GUID_automation/` — ABN/ABR rollout & allowlists (SSOT)
+- `DOCS/ai/ai_agent_execution_v2_corrected.md` — AI agent playbook (SSOT)
+- `DOCS/ai/ai_automation_assessment.md` — AI automation assessment (SSOT)
+- `DOCS/db/MIGRATIONS_INDEX.md` — canonical migrations index (SSOT)
+- `supabase/schema.sql` — canonical schema snapshot (referenced by MIGRATIONS_INDEX.md)
 
 ## 📁 Final File Structure
 
@@ -21,10 +42,29 @@ This manifest documents the final file structure for the dogtrainersdirectory.co
 ├── FILE_MANIFEST.md                          (This file - audit trail & quick reference)
 ├── blueprint_ssot_v1.1.md                    (THE authoritative blueprint - 45K)
 ├── suburbs_councils_mapping.csv              (THE authoritative suburb data - 18K)
+├── DOCS/
+│   ├── README.md                             (Docs entrypoint — top-level index)
+│   ├── FILE_MANIFEST.md                      (Doc manifest / SSOT)
+│   ├── PLAN_REVIEW.md                        (Project plan + approvals)
+│   ├── PHASE_1_FINAL_COMPLETION_REPORT.md
+│   ├── PHASE_2_FINAL_COMPLETION_REPORT.md
+│   ├── PHASE_3_FINAL_COMPLETION_REPORT.md
+│   ├── PHASE_4_FINAL_COMPLETION_REPORT.md
+│   ├── PHASE_5_FINAL_COMPLETION_REPORT.md
+│   ├── automation/                           (Ops & runbooks — SSOT for ops)
+│   │   ├── automation-checklist.md
+│   │   ├── automation_secrets.md
+│   │   ├── REMOTE_DB_MIGRATIONS.md
+│   │   └── ABN-ABR-GUID_automation/
+│   ├── ai/                                   (AI playbooks + assessments)
+│   │   ├── ai_agent_execution_v2_corrected.md
+│   │   └── ai_automation_assessment.md
+│   └── db/
+│       └── MIGRATIONS_INDEX.md               (Canonical migrations index)
 ├── implementation/
-│   ├── abn_validation_implementation.md      (ABN validation guide - 27K)
-│   ├── ai_automation_assessment.md           (AI automation assessment - 33K)
-│   └── master_plan.md                        (Master implementation plan - 26K)
+│   ├── abn_validation_implementation.md
+│   ├── ai_automation_assessment.md
+│   └── master_plan.md
 └── Uploads/
     └── Suburbs-councils-catchment.pdf        (Original source PDF - 38K) ⚠️ NEVER DELETE
 ```
@@ -94,9 +134,33 @@ This manifest documents the final file structure for the dogtrainersdirectory.co
 - **Why Kept:** Primary project management reference
 - **Consolidates:** Data enrichment plan + duplicate resolution docs
 
+#### 6. **PHASE_2_FINAL_COMPLETION_REPORT.md**
+- **Description:** Evidence pack confirming the Phase 2 triage + filtering deliverable
+- **Contents:**
+  - Summary of UI/API work
+  - Success criteria checklist mapped to code locations
+  - Manual QA notes (Fitzroy↔Brighton distance, verified-only, price slider, etc.)
+  - Residual risks + next-phase readiness statement
+- **Why Kept:** Serves as the audit artifact proving Phase 2 is complete and locking the triage/filtering behavior going into Phase 3.
+
+#### 7. **PHASE_3_FINAL_COMPLETION_REPORT.md**
+- **Description:** Evidence pack for Phase 3 (directory, profiles, autocomplete)
+- **Contents:** Summary of new UI/API work, success-criteria verification, QA notes, lint caveat, Phase 4 readiness
+- **Why Kept:** Locks the Phase 3 deliverable; reference this before onboarding (Phase 4) tasks.
+
+#### 8. **PHASE_4_FINAL_COMPLETION_REPORT.md**
+- **Description:** Evidence pack confirming Phase 4 manual onboarding + ABN verification
+- **Contents:** Multi-step onboarding UI summary, `/api/onboarding` ABR integration, success-criteria mapping, QA notes, residual risks
+- **Why Kept:** Serves as the audit artifact proving Phase 4 is complete before monetization/automation work begins.
+
+#### 9. **PHASE_5_FINAL_COMPLETION_REPORT.md**
+- **Description:** Evidence pack confirming Phase 5 emergency triage, AI logging, admin digest, and review moderation automation.
+- **Contents:** Summary of `/emergency` UI, emergency schema + RPC changes, verification job endpoints, admin dashboard upgrades, lint/test status, residual risks.
+- **Why Kept:** Locks Phase 5 deliverables and serves as proof before moving to monetization/web-scraper work.
+
 ### Original Source
 
-#### 6. **Uploads/Suburbs-councils-catchment.pdf** (38K)
+#### 10. **Uploads/Suburbs-councils-catchment.pdf** (38K)
 - **Status:** 🔒 ORIGINAL SOURCE - NEVER DELETE
 - **Description:** Original catchment area data from client
 - **Why Kept:** Authoritative source document; reference for verification

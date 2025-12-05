@@ -1,5 +1,9 @@
 # Dog Trainers Directory - Development Setup Guide
 
+Documentation home: `DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
+
+
+
 ## Quick Start
 
 This guide will help you set up the development environment for the Dog Trainers Directory project.
@@ -363,3 +367,35 @@ After completing the basic setup:
 If you wish to enable database-side PGP decryption at runtime, set a server-only env var  to the symmetric key used to encrypt PGP payloads. This key is only read by server-side code / functions and is never committed into the repo.
 
 Note: we intentionally don't store keys in plaintext in the repository — set this in your host or CI secret store.
+
+### Enabling DB-side PGP decryption (SUPABASE_PGCRYPTO_KEY)
+
+We added a small refactor to pass an explicit decryption key from server into DB RPCs (search_trainers, get_trainer_profile, etc.). To enable decryption on staging or production, set the same symmetric key used when data was encrypted into the following places:
+
+- Vercel / Host for server-side & API routes: Set `SUPABASE_PGCRYPTO_KEY` as a server-only environment variable.
+- Supabase Functions (Edge): set `SUPABASE_PGCRYPTO_KEY` in the functions secrets and redeploy the function.
+
+Examples:
+
+Vercel (interactive):
+```bash
+vercel env add SUPABASE_PGCRYPTO_KEY production
+# then redeploy using your normal flow
+```
+
+Supabase Functions (CLI):
+```bash
+supabase secrets set SUPABASE_PGCRYPTO_KEY="${YOUR_KEY}"
+supabase functions deploy triage
+```
+
+Quick local verification:
+```bash
+export SUPABASE_CONNECTION_STRING="postgres://..."
+export SUPABASE_PGCRYPTO_KEY="your_key_here"
+node scripts/verify_decryption.js
+```
+
+Integration tests (CI/local):
+- The repo now contains a vitest integration test at `src/tests/integration/decrypt.integration.test.ts`.
+- This test is skipped unless both `SUPABASE_CONNECTION_STRING` and `SUPABASE_PGCRYPTO_KEY` are present in the environment. It uses `pg` to insert an encrypted test record, validates `get_trainer_profile(id, p_key)` returns decrypted fields, and validates `get_trainer_profile(id, NULL)` returns NULL.

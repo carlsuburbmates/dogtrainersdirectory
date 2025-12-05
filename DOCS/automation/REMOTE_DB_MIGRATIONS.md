@@ -19,6 +19,10 @@ Always double-check the host URL (the domain after `https://`) so you don't targ
 
 ## 2) How to apply all pending migrations to the remote project
 
+Refer to the canonical migrations index for an exact list of active migrations and archived files: `DOCS/db/MIGRATIONS_INDEX.md`. The index lists which files live in `supabase/migrations/` (active) and which are kept in `supabase/migrations_archive/` (archive — DO NOT apply automatically).
+
+
+
 Option A — Supabase CLI (recommended if you use the CLI tool):
 
 1. Install and authenticate the Supabase CLI (see https://supabase.com/docs/guides/cli)
