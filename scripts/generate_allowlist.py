@@ -29,8 +29,8 @@ import re
 import sys
 
 SRC_MAP = {
-    'staging': 'DOCS/abn_allowlist.staging.csv',
-    'prod': 'DOCS/abn_allowlist.prod.csv'
+    'staging': 'DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv',
+    'prod': 'DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv'
 }
 OUT_MAP = {
     'staging': 'scripts/controlled_abn_list.staging.json',

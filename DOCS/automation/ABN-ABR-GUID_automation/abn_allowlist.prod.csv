@@ -1,0 +1,9 @@
+# PROD allowlist — replace placeholders before use
+# This CSV is the single source of truth for production allowlist generation.
+# Columns: business_id,abn,label
+# IMPORTANT: Replace these placeholder rows with real production business_id + ABN pairs
+# Do not edit the generated JSON under scripts/ — edit ONLY this CSV.
+
+business_id,abn,label
+2001,00000000000,REPLACE_ME_PROD_1
+2002,00000000000,REPLACE_ME_PROD_2

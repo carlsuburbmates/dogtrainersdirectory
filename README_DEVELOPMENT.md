@@ -1,5 +1,9 @@
 # Dog Trainers Directory - Development Setup Guide
 
+Documentation home: `DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
+
+
+
 ## Quick Start
 
 This guide will help you set up the development environment for the Dog Trainers Directory project.
@@ -32,6 +36,19 @@ We recommend using a remote Supabase dev/staging project as the default developm
    ```
 
    Edit `.env.local` with your actual values (do NOT commit this file):
+
+   ### LLM configuration (optional)
+   If you plan to enable AI-backed automations (digest, triage, moderation), add these variables to your `.env.local`.
+
+   - LLM_PROVIDER — which provider to use by default: `zai` (recommended) or `openai`.
+   - ZAI_API_KEY — API key for Z.AI (automation / ops). When using Z.AI, set ZAI_BASE_URL to `https://api.z.ai/api/paas/v4`.
+   - LLM_DEFAULT_MODEL — the preferred Z.AI model (e.g. `glm-4.5-air`).
+   - OPENAI_API_KEY — (optional) a backup OpenAI key if you prefer OpenAI as a fallback provider.
+
+   Notes:
+   - The app uses a single adapter (`src/lib/llm.ts`) and reads `LLM_PROVIDER` at startup; change the provider and keys in your `.env.local` to switch providers.
+   - The repo also uses a separate Z.AI "coding" endpoint (`https://api.z.ai/api/coding/paas/v4`) in some offline tooling; the application itself uses the general `paas/v4` base path for automations.
+
    - Create a remote Supabase project at https://supabase.com (dev or staging)
    - Copy the Project URL and Anon Key from Settings > API
    - Generate a Service Role Key from Settings > API
@@ -164,13 +181,15 @@ supabase/
 - `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
 - `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
+> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
+
 ---
 
 ## ABN verification — developer & ops workflow
-The project implements a canonical ABN/ABR verification flow (see `DOCS/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
+The project implements a canonical ABN/ABR verification flow (see `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
 
 Core developer files and scripts
-- `DOCS/abn_allowlist.staging.csv`, `DOCS/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
+- `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`, `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
 - `scripts/generate_allowlist.py` — validate CSVs and write `scripts/controlled_abn_list.{staging,prod}.json`. Example (archived) at `scripts/examples/controlled_abn_list.example.json`. Generated files are git-ignored; use the generator when needed.
 - `scripts/abn_controlled_batch.py` — ops-only controlled batch runner (dry-run default; `--apply` required to write). Requires `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING` and `ABR_GUID` environment variables for applied runs.
 - `scripts/abn_recheck.py` — scheduled re-check implementation used by `.github/workflows/abn-recheck.yml`.
@@ -216,6 +235,8 @@ Safety & governance
    npm run lint          # Check code style
    npm run type-check     # Verify TypeScript types
    ```
+
+   > **Note:** Vitest suites (`*.test.ts*` / `*.spec.ts*`) are excluded from the TypeScript project until their helper typings are refactored. `npm run type-check` covers application/runtime code only.
 
 ## 6. Testing
 
@@ -340,3 +361,41 @@ After completing the basic setup:
 ---
 
 **Note**: This is a Phase 1 implementation focused on manual trainer onboarding and core directory functionality. Advanced features like scraping and monetization are deferred to later phases.
+
+## PGCrypto decryption key (server-side only)
+
+If you wish to enable database-side PGP decryption at runtime, set a server-only env var  to the symmetric key used to encrypt PGP payloads. This key is only read by server-side code / functions and is never committed into the repo.
+
+Note: we intentionally don't store keys in plaintext in the repository — set this in your host or CI secret store.
+
+### Enabling DB-side PGP decryption (SUPABASE_PGCRYPTO_KEY)
+
+We added a small refactor to pass an explicit decryption key from server into DB RPCs (search_trainers, get_trainer_profile, etc.). To enable decryption on staging or production, set the same symmetric key used when data was encrypted into the following places:
+
+- Vercel / Host for server-side & API routes: Set `SUPABASE_PGCRYPTO_KEY` as a server-only environment variable.
+- Supabase Functions (Edge): set `SUPABASE_PGCRYPTO_KEY` in the functions secrets and redeploy the function.
+
+Examples:
+
+Vercel (interactive):
+```bash
+vercel env add SUPABASE_PGCRYPTO_KEY production
+# then redeploy using your normal flow
+```
+
+Supabase Functions (CLI):
+```bash
+supabase secrets set SUPABASE_PGCRYPTO_KEY="${YOUR_KEY}"
+supabase functions deploy triage
+```
+
+Quick local verification:
+```bash
+export SUPABASE_CONNECTION_STRING="postgres://..."
+export SUPABASE_PGCRYPTO_KEY="your_key_here"
+node scripts/verify_decryption.js
+```
+
+Integration tests (CI/local):
+- The repo now contains a vitest integration test at `src/tests/integration/decrypt.integration.test.ts`.
+- This test is skipped unless both `SUPABASE_CONNECTION_STRING` and `SUPABASE_PGCRYPTO_KEY` are present in the environment. It uses `pg` to insert an encrypted test record, validates `get_trainer_profile(id, p_key)` returns decrypted fields, and validates `get_trainer_profile(id, NULL)` returns NULL.

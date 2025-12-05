@@ -2,12 +2,12 @@
 
 Version: 2025-12-01
 
-This checklist is an operational runbook for safely rolling out the canonical ABN verification changes introduced in this release (see DOCS/ABN-Release-Notes.md and DOCS/ABR-ABN-Lookup.md). It is aimed at product owners, SREs, and DB owners and is intentionally implementation-agnostic.
+This checklist is an operational runbook for safely rolling out the canonical ABN verification changes introduced in this release (see DOCS/ABN-Release-Notes.md and DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md). It is aimed at product owners, SREs, and DB owners and is intentionally implementation-agnostic.
 
 ---
 
 ## Links
-- Canonical contract / owner contract: DOCS/ABR-ABN-Lookup.md
+- Canonical contract / owner contract: DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md
 - Release summary & migration notes: DOCS/ABN-Release-Notes.md
 - Re-check automation workflow: `.github/workflows/abn-recheck.yml`
 - Scripts:
@@ -23,7 +23,7 @@ Context / assumptions:
 - The code on `main` contains the canonical ABN mapping + `matched_json` behaviour.
 
 1) Confirm `matched_json` migration applied in staging
-   - Migration reference: `supabase/migrations/20251130000001_add_abn_matched_json.sql` (see DOCS/ABR-ABN-Lookup.md runbook).
+   - Migration reference: `supabase/migrations/20251130000001_add_abn_matched_json.sql` (see DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md runbook).
    - If not applied: follow the runbook to apply via Supabase Dashboard or CLI. Confirm column present:
      ```sql
      -- connect to staging DB and run
@@ -46,9 +46,9 @@ Context / assumptions:
 
 3) Prepare a small controlled allowlist for staging
    - Option A (quick JSON): create a tiny JSON allowlist (2–3 entries) with known ABNs (non-sensitive test data) and corresponding staging business IDs, e.g. `staging_allowlist.json` — same format as below.
-   - Option B (CSV → JSON generator, preferred for repeatability): edit `DOCS/abn_allowlist.staging.csv` (CSV template provided in the repo), then generate the JSON file used by the batch with the included helper scripts:
+   - Option B (CSV → JSON generator, preferred for repeatability): edit `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` (CSV template provided in the repo), then generate the JSON file used by the batch with the included helper scripts:
 
-     - Edit the CSV `DOCS/abn_allowlist.staging.csv` and add 2–3 rows (header present). When ready, run:
+     - Edit the CSV `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` and add 2–3 rows (header present). When ready, run:
        ```bash
        npm run allowlist:staging
        # writes -> scripts/controlled_abn_list.staging.json
@@ -140,7 +140,7 @@ Preconditions (must be satisfied before proceeding):
 4) Very small initial controlled apply in production (one-off)
    - Prepare a tiny selected allowlist (1–5 low-risk businessId/ABN pairs) — ideally entries under a test organization or specially flagged owners.
    - Option A (quick JSON) : prepare `prod_small_allowlist.json` with 1–5 entries and run the dry-run as shown below.
-   - Option B (CSV → JSON generator, preferred): edit `DOCS/abn_allowlist.prod.csv`, then run the generator to produce `scripts/controlled_abn_list.prod.json`:
+   - Option B (CSV → JSON generator, preferred): edit `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv`, then run the generator to produce `scripts/controlled_abn_list.prod.json`:
 
      ```bash
      npm run allowlist:prod
@@ -206,6 +206,6 @@ Preconditions (must be satisfied before proceeding):
 ---
 
 This checklist is saved in:
-- `DOCS/ABN-Rollout-Checklist.md` (this file) — cross-references: `DOCS/ABR-ABN-Lookup.md`, `DOCS/ABN-Release-Notes.md`.
+- `DOCS/ABN-Rollout-Checklist.md` (this file) — cross-references: `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`, `DOCS/ABN-Release-Notes.md`.
 
 If you want, I can also add a short templated allowlist file for staging + prod to make the small-apply steps easier — tell me and I’ll add it (dry-run default, sensitive values left blank).

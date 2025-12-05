@@ -6,10 +6,11 @@ Focus: be precise and make only changes that align with the single-source-of-tru
 Core summary
 - Purpose: hyperlocal trainer directory for 28 Melbourne councils (see `blueprint_ssot_v1.1.md`).
 - Stack (official / repo-aligned): **Next.js 14 App Router**, **Node.js v24 (Active LTS)** for dev/CI/prod, and **React at the latest stable version supported by Next.js** (React 19 once GA). Supabase (Postgres + Edge Functions + CLI) is the canonical backend; treat Supabase DB as the only source of persisted state.
+- Phase 2 (triage + filtering) is **complete and locked**. The UI (`src/app/page.tsx`, `src/app/search/page.tsx`), shared helpers (`src/lib/triage.ts`), and RPC (`search_trainers`) must not be rewritten back to the pre-fix “radius only” implementation. Reference `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md` for the accepted behavior and QA evidence.
 
 High-value files to read first
 - `DOCS/blueprint_ssot_v1.1.md` — architecture, domain model, taxonomies, and UX rules.
-- `DOCS/abn_stripe_legal_integration_v5.md` — ABN verification, Stripe webhooks, and payment flows (includes example endpoints and DB table shapes).
+- `DOCS/automation/ABN-ABR-GUID_automation/abn_stripe_legal_integration_v5.md` — ABN verification, Stripe webhooks, and payment flows (includes example endpoints and DB table shapes).
 - `DOCS/implementation/master_plan.md` — rollout phases, priorities, and constraints.
 - `suburbs_councils_mapping.csv` — authoritative geographic dataset (used for seeding and lookup).
 
@@ -22,7 +23,7 @@ Project-specific patterns & constraints (do not change unless spec updates)
 
 -Integration & infra notes (discoverable here — secrets are not in repo)
 - ABR (ATO) API: example usage shown in ABN doc: GET /abr/abn/{ABN}?businessName={name}. A GUID credential is required (not in repo).
-- Stripe: webhook-driven flows — expect webhook endpoints that create/renew featured_placements and subscriptions; **always verify signatures**, return a 2xx as soon as persistence succeeds, and make handlers idempotent. Test locally with the Stripe CLI (`stripe listen`) before deploying. See webhook flow and sample events in `DOCS/abn_stripe_legal_integration_v5.md`.
+- Stripe: webhook-driven flows — expect webhook endpoints that create/renew featured_placements and subscriptions; **always verify signatures**, return a 2xx as soon as persistence succeeds, and make handlers idempotent. Test locally with the Stripe CLI (`stripe listen`) before deploying. See webhook flow and sample events in `DOCS/automation/ABN-ABR-GUID_automation/abn_stripe_legal_integration_v5.md`.
 - DeepAgent / LLM orchestration: design references exist in the docs (webhook parsing, LLM-triggered workflows). Confirm runtime endpoints and secrets with maintainers.
 
 -Practical dev tasks & commands (docs-driven)
@@ -33,7 +34,7 @@ Project-specific patterns & constraints (do not change unless spec updates)
   - `cut -d',' -f2 DOCS/suburbs_councils_mapping.csv | sort -u | wc -l` # expect header + 28 councils
 
 - ABN allowlists & ops helpers:
-  - `DOCS/abn_allowlist.staging.csv` & `DOCS/abn_allowlist.prod.csv` are CSV templates to maintain curated allowlists for controlled writes
+  - `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` & `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` are CSV templates to maintain curated allowlists for controlled writes
   - `scripts/generate_allowlist.py` converts the CSV to `scripts/controlled_abn_list.{staging,prod}.json` and validates entries
   - convenient npm scripts are available: `npm run allowlist:staging|prod`, `npm run abn:batch:staging|prod` (dry-run), `npm run abn:batch:staging:apply|prod:apply` (applies changes with AUTO_APPLY and service-role)
 
@@ -48,15 +49,16 @@ Project-specific patterns & constraints (do not change unless spec updates)
     - Prefer using the repo's dedicated webhook dev harness so you don't accidentally forward events to another local project (for example something bound to :3000). The repo provides `webhook/server_dtd.py` which defaults to port **4243** and endpoint `/api/webhooks/stripe-dtd`.
     - Example (recommended for dogtrainersdirectory development):
       - `stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd`
-+  
-+  - CI safety: A new pre-merge CI check named `Check schema vs migrations` runs on pull requests. It applies `supabase/migrations/*.sql` to a throwaway Postgres, dumps the schema, and verifies `supabase/schema.sql` matches. If the check fails, update `supabase/schema.sql` to match the migrations and re-run (maintainer rule).
+
+- Linting: `npm run lint` now invokes the ESLint CLI directly (`eslint .` via `eslint.config.mjs`) because `next lint` was removed in Next.js 16.
+- CI safety: The `Check schema vs migrations` PR check applies every migration to a scratch Postgres and diffs `supabase/schema.sql`. Keep the snapshot aligned with migrations before opening PRs.
 Risk & governance reminders
 - Treat `DOCS/blueprint_ssot_v1.1.md`, `DOCS/suburbs_councils_mapping.csv`, and `DOCS/FILE_MANIFEST.md` as immutable; any geography change needs an approved RFC plus manifest note, and CI should fail if council/suburb counts drift.
 - Phase 2+ ingestion (web scrapers, bulk imports) must remain behind feature flags with QA sampling (≥10 scaffolded listings/run) until accuracy >95% and product sign-off.
 - Keep Stripe/monetization features dark until master-plan metrics are met (≥50 claimed trainers, stable ABN verification rate, review volume). Reference the master plan before exposing paid UI.
 - AI moderation only flags—humans approve/reject reviews and profiles. Track false positives and add transparency copy when touching moderation flows.
 - Maintain the ≥85% ABN auto-match rule, review mismatches within 24 hours, log ABR responses, and schedule yearly re-verification jobs.
-- Assign ownership for emergency vet/shelter data; verify contacts quarterly and highlight records older than 90 days in admin tooling before relying on them in UX.
+- Assign ownership for emergency vet/shelter data; verify contacts quarterly via `/api/emergency/verify` + admin queue surfacing, and highlight records older than 90 days in admin tooling before relying on them in UX.
 
 When you need to change something
 - If a change affects product invariants (taxonomies, age-first rules, geography mapping), update `DOCS/blueprint_ssot_v1.1.md` or `implementation/master_plan.md` first — those are the SSOT.

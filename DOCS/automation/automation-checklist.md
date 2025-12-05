@@ -1,6 +1,6 @@
 # Automation Checklist (aligned to phases)
 
-Use this to wire automation tasks into `DOCS/ai_agent_execution_v2_corrected.md` during build. Update as phases complete.
+“This checklist tracks implementation status for Phases 1–5 and Automation Phases A–F in DOCS/ai/ai_agent_execution_v2_corrected.md.”
 
 ## Phase 1: Backend/Data Foundations
 - [ ] CI: enforce CSV counts (28 councils, 138 suburbs) and enum validation
@@ -13,26 +13,47 @@ Use this to wire automation tasks into `DOCS/ai_agent_execution_v2_corrected.md`
 - [ ] Tests: add integration tests that simulate Stripe CLI events (checkout.session.completed, payment_intent.succeeded) and assert webhook handling logic
 
 ## Phase 2: Triage & Search
-- [ ] Instrument emergency triage classifier (branch counts, latency)
-- [ ] Add disclaimer copy hooks (no SLA, best-effort) to UI
+_Status:_ Core triage + filtering experience shipped (see `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md`). Remaining tasks focus on telemetry and UX polish.
+- [x] Instrument emergency triage classifier (branch counts, latency)
+- [x] Add disclaimer copy hooks (no SLA, best-effort) to UI
 - [ ] Wire observability for search latency/errors; daily digest email
 
 ## Phase 3: Profiles & Directory
-- [ ] Build moderation queues (reviews/profiles) with AI-flag + human-approve pattern
+_Status:_ Core directory + profile experiences shipped (see `DOCS/PHASE_3_FINAL_COMPLETION_REPORT.md`). Remaining tasks focus on moderation tooling.
+- [x] Build moderation queues (reviews/profiles) with AI-flag + human-approve pattern
 - [ ] Auto-clean/lint profile submissions (phones, missing enums)
 - [ ] Surface transparency copy on reviews and profiles
 
 ## Phase 4: Onboarding & ABN (manual-only, no scraper)
+_Status:_ Manual onboarding UI + ABN verification API shipped (see `DOCS/PHASE_4_FINAL_COMPLETION_REPORT.md`). Remaining items focus on ops tooling and fallbacks.
 - [ ] ABN fallback: auto-email + upload flow + OCR/auto-retry; daily batch review view
 - [ ] Self-serve “match to ABR name” button for trainers
 - [ ] Single-operator dashboard card for ABN backlog/aging
 
 ## Phase 5: Emergency & Admin
-- [ ] Single-operator mode dashboard aggregating KPIs, alerts, replays (webhooks/DLQ)
+- [x] Single-operator mode dashboard aggregating KPIs, alerts, replays (webhooks/DLQ)
 - [ ] DLQ/replay UI for Stripe/webhooks/jobs (idempotent re-run)
-- [ ] Emergency roster freshness: highlight >90-day-old entries; quarterly verify script
+- [x] Emergency roster freshness: highlight >90-day-old entries; quarterly verify script
+- [ ] Cron wiring: schedule `/api/emergency/verify` daily + `/api/emergency/triage/weekly` (Monday 00:05 AEST) via Vercel/Supabase scheduler and document env secrets
+
+### Candidate scheduled jobs (phase 5 ops)
+- Daily Ops Digest (ready): POST `/api/admin/ops-digest` — schedule daily (example Cron: `0 23 * * *` UTC). This route calls the LLM adapter and persists `daily_ops_digests` when available.
+- Daily Emergency Verification (now scheduled): POST `/api/emergency/verify` — runs daily via Vercel Cron to refresh emergency resource verification results. The route is hardened for cron usage and uses SUPABASE_SERVICE_ROLE_KEY and best-effort writes to `emergency_resource_verification_runs` and `emergency_resource_verification_events`.
+- Weekly Emergency Triage Summary (now scheduled): POST `/api/emergency/triage/weekly` — runs weekly (Monday) to aggregate triage metrics into `emergency_triage_weekly_metrics` and returns a short LLM-written summary when AI is enabled.
+
+> Note: The `ops-digest` cron has been added to `vercel.json` as a daily job, and `verify`/`triage/weekly` are also now scheduled. All scheduled jobs rely on Phase 5 tables being present in the database and `SUPABASE_SERVICE_ROLE_KEY` configured in production.
+
  - [ ] CI/Secrets: add CI checks to ensure STRIPE keys or webhook signing secrets are not committed to the repo; fail CI if found
  - [ ] Webhook reliability: add monitoring that fails builds or creates alerts when webhook delivery errors exceed threshold (e.g., >1% failed deliveries over 24 hours)
+[ ] Wire Ops Digest panel in /admin (see Automation Phase A).
+
+[ ] Add emergency triage classifier + logging (Automation Phase B).
+
+[ ] AI-assisted moderation queue (Automation Phase C).
+
+[ ] Admin Dashboard V2 layout (Automation Phase F).
+
+
 
 ## Post-Launch (Flagged/Deferred)
 - [x] Scraper behind feature flag `SCRAPER_ENABLED`; QA sample ≥10 listings/run and feature-gated rollout documented to keep scraping disabled until explicitly allowed in production. Confidence metrics live in `qa_run_log.json` for every batch.
@@ -41,3 +62,6 @@ Use this to wire automation tasks into `DOCS/ai_agent_execution_v2_corrected.md`
 - [x] QA runner script: input (scraped JSON + source URLs/screenshots), steps (LLM field compare, enum enforcement, contact validation, dedupe), outputs (per-listing verdicts, batch accuracy, reasons), storage (run log `qa_run_log.json` with a `runs` array, sample sets, scores, duplicate buckets, and approval audit trail).
 - [ ] Monetization flag disabled until Phase 4+ criteria met (≥50 claimed trainers, stable ABN verifications)
 - [ ] Weekly automated audits: SSOT immutability, CSV checksum, ABN re-verification schedule
+[ ] Implement ABN fallback + re-verification automation (Automation Phase D).
+
+[ ] Implement scraper backfill + AI QA (Automation Phase E).

@@ -1,0 +1,9 @@
+# STAGING allowlist — replace placeholders before use
+# This CSV is the single source of truth for staging allowlist generation.
+# Columns: business_id,abn,label
+# IMPORTANT: Replace these placeholder rows with real staging business_id + ABN pairs
+# Do not edit the generated JSON under scripts/ — edit ONLY this CSV.
+
+business_id,abn,label
+1001,00000000000,REPLACE_ME_STAGING_1
+1002,00000000000,REPLACE_ME_STAGING_2
