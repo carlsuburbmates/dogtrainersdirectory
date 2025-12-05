@@ -32,7 +32,7 @@ We recommend using a remote Supabase dev/staging project as the default developm
 
 3. **Set up environment variables (point to remote dev/staging Supabase)**
    ```bash
-   cp .env.example .env.local
+   cp .env.example .env.local   # .env.example is included in the repo — copy and fill with your values (do NOT commit secrets)
    ```
 
    Edit `.env.local` with your actual values (do NOT commit this file):
@@ -140,7 +140,7 @@ The application will be available at `http://localhost:3000`.
 
 ```
 src/
-├── app/                    # Next.js 14 App Router pages
+├── app/                    # Next.js 16 App Router pages
 │   ├── globals.css         # Global styles
 │   ├── layout.tsx          # Root layout
 │   └── page.tsx            # Home page (age-first triage)
@@ -158,7 +158,7 @@ supabase/
 ## 4. Key Features Implemented
 
 ### ✅ Completed (Phases 1–5)
-- Next.js 14 with TypeScript/Tailwind + Supabase Auth/Edge Functions wiring
+- Next.js 16 with TypeScript/Tailwind + Supabase Auth/Edge Functions wiring
 - Database schema with locked enums + enriched suburb data (28 councils / 138 suburbs)
 - Age-first triage interface + suburb autocomplete/distance filters backed by the `search_trainers` RPC
 - Directory browse + trainer profile pages with featured badge surfacing and search autocomplete

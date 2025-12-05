@@ -930,7 +930,7 @@ This section prescribes a minimal-maintenance, low-cost architecture and admin U
 Principles
 - Automate everything safe to automate (emergency triage, ABN checks, scraper ingestion, basic spam filtering).
 - Queue only genuinely ambiguous items (reviews and moderation edge-cases) for human attention.
-- Keep tooling and hosting low-cost: Supabase Postgres + Edge Functions, Next.js 14 on Vercel, small LLMs for classification and prompt-based mapping where necessary.
+- Keep tooling and hosting low-cost: Supabase Postgres + Edge Functions, Next.js 16 on Vercel, small LLMs for classification and prompt-based mapping where necessary.
 - Prefer single-click admin actions and audit logs so the operator can process queues quickly.
 
 Architecture & cost controls
@@ -982,7 +982,7 @@ Concrete automation workflows (solo-operator optimised)
     - Webhook handler returns 2xx immediately; a background worker processes the event and records featured_placements or subscription state.
     - Dashboard shows latest webhook events with retry status and a retry button for any failed idempotent transaction.
 
-Example minimal API endpoints (for Next.js 14 / Edge Functions)
+Example minimal API endpoints (for Next.js 16 / Edge Functions)
 - POST /api/webhooks/stripe  → quick 2xx + enqueue processing
 - POST /api/reviews        → input point, runs classifier, returns pending|approved
 - GET  /api/admin/queues   → paginated queue list with filters
@@ -998,7 +998,7 @@ Logging & audit
 - Store recent AI evidence (highlighted snippets and matching tokens) so operator understands why the model decided.
 
 Implementation checklist (phase 1, minimal viable solo runbook)
-1. Implement Next.js 14 admin UI + basic pages for queues and details
+1. Implement Next.js 16 admin UI + basic pages for queues and details
 2. Implement Supabase Postgres schema for queues, audit logs, and embeddings (pgvector)
 3. Build Edge Functions / serverless webhook endpoints for Stripe and ABR
 4. Add batch scraper + LLM mapping (nightly) with failure routing

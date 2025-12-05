@@ -4,7 +4,7 @@ Docs home: `DOCS/README.md` — single place to discover authoritative design, a
 
 
 
-Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 14 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).
+Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 16 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).
 
 ## Status
 - Phases 1–5 delivered (database/auth, triage/search, directory/profiles, manual onboarding with ABN verification, emergency ops + admin dashboard). Monetization and web-scraper automation remain deferred until post-launch criteria are met.
@@ -47,7 +47,7 @@ Convenience npm scripts (wrappers) have been added so maintainers can quickly ge
 See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → production runbook with safety checks, DB queries, and monitoring guidance.
 
 ## Stack
-- Next.js 14 (App Router), React (latest supported), TypeScript recommended
+- Next.js 16 (App Router), React (latest supported), TypeScript recommended
 - Node.js v24 (dev/CI/prod)
 - Supabase (Postgres, Auth, Edge Functions, Storage)
 - Stripe (webhooks, idempotent handlers) — disabled until go-live criteria met

@@ -5,7 +5,7 @@ Focus: be precise and make only changes that align with the single-source-of-tru
 
 Core summary
 - Purpose: hyperlocal trainer directory for 28 Melbourne councils (see `blueprint_ssot_v1.1.md`).
-- Stack (official / repo-aligned): **Next.js 14 App Router**, **Node.js v24 (Active LTS)** for dev/CI/prod, and **React at the latest stable version supported by Next.js** (React 19 once GA). Supabase (Postgres + Edge Functions + CLI) is the canonical backend; treat Supabase DB as the only source of persisted state.
+- Stack (official / repo-aligned): **Next.js 16 App Router**, **Node.js v24 (Active LTS)** for dev/CI/prod, and **React at the latest stable version supported by Next.js** (React 19 once GA). Supabase (Postgres + Edge Functions + CLI) is the canonical backend; treat Supabase DB as the only source of persisted state.
 - Phase 2 (triage + filtering) is **complete and locked**. The UI (`src/app/page.tsx`, `src/app/search/page.tsx`), shared helpers (`src/lib/triage.ts`), and RPC (`search_trainers`) must not be rewritten back to the pre-fix “radius only” implementation. Reference `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md` for the accepted behavior and QA evidence.
 
 High-value files to read first
@@ -41,7 +41,7 @@ Project-specific patterns & constraints (do not change unless spec updates)
 - Recommended development setup — REMOTE-FIRST (default):
   - Use Node.js v24 everywhere:
     - `nvm install 24 && nvm use 24`
-  - Next.js 14 App Router + TypeScript (matching blueprint expectations).
+  - Next.js 16 App Router + TypeScript (matching blueprint expectations).
   - Default workflow: use a remote Supabase dev/staging project for local app development (this provides Auth, Edge Functions, and Storage without needing to run local services). Configure `.env.local` to point at the remote project.
   - Optional/local (advanced): Start Supabase locally for functions/DB tests using the Supabase CLI if you specifically need local emulation:
     - `supabase start`

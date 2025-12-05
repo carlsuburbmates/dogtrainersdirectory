@@ -81,7 +81,7 @@ The following files are the canonical Single Source Of Truth (SSOT) for this pro
 - **Description:** Complete blueprint for platform modernization
 - **Contents:**
   - Current state analysis (WordPress + WooCommerce)
-  - Modern stack recommendations (Next.js 14 + Supabase)
+  - Modern stack recommendations (Next.js 16 + Supabase)
   - 28 council catchment areas (corrected from original 31)
   - Security, performance, and SEO architecture
   - Implementation phases and technical specifications
