@@ -701,7 +701,7 @@ Post-Launch Roadmap Added:
 - Confirm: All corrections understood (28 councils, 138 suburbs, coordinates)
 
 **Step 2: Launch AI agent**
-- Navigate to: Abacus AI agent interface
+- Navigate to: AI agent interface
 - Start new conversation: "dogtrainersdirectory.com.au - Phase 1"
 
 **Step 3: Execute Phase 1**
