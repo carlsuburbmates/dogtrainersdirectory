@@ -67,6 +67,17 @@ This repository uses a remote Supabase dev/staging project as the default develo
 
 1. Create or reuse a Supabase project in the Supabase cloud for dev/staging.
 2. Configure `.env.local` (do not commit) with these values:
+
+> NOTE: `.env.local` is a persistent local file — do not delete it or commit it. Use `.env.example` as a template and the repo helper `scripts/safe_copy_env.sh` to create `.env.local` without overwriting any existing values.
+
+**Optional (recommended):** enable the local pre-commit hook to avoid accidentally adding `.env.local` to commits by running:
+
+```bash
+# enable hooks for this repo (one-time per-machine):
+ git config core.hooksPath .githooks
+```
+
+The repo also contains a CI check that rejects PRs containing `.env.local` or other env files.
    - NEXT_PUBLIC_SUPABASE_URL
    - NEXT_PUBLIC_SUPABASE_ANON_KEY
    - SUPABASE_URL

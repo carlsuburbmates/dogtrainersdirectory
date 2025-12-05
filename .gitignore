@@ -1,6 +1,8 @@
 node_modules
 .next
-.env*
+.env*  # ignore all env files; keep .env.example tracked as a non-secret template
+# Explicitly ignore local env override to avoid accidental commits
+.env.local
 .DS_Store
 supabase/.branches
 supabase/.temp

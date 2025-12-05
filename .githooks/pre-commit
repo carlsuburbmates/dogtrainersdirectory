@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Prevent accidentally committing .env.local
+STAGED=$(git diff --name-only --cached || true)
+if echo "$STAGED" | grep -qE "(^|/)\.env\.local$"; then
+  echo "ERROR: .env.local is staged for commit — do NOT commit local environment files." >&2
+  echo "Please restore .env.local to the working tree only and remove it from the commit: git restore --staged .env.local" >&2
+  exit 1
+fi
+
+# Continue with other pre-commit checks (if any)
+exit 0

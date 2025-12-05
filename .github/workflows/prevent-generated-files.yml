@@ -55,6 +55,7 @@ jobs:
             "(^|/)__pycache__/"
             "^\.venv(/|$)"
             "(^|\.)env(\.|$)"  # simple .env detection
+            "^\.env\.local$"  # prevent accidental committing of .env.local
           )
 
           matches=()

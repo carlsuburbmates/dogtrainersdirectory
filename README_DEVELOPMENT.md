@@ -32,7 +32,28 @@ We recommend using a remote Supabase dev/staging project as the default developm
 
 3. **Set up environment variables (point to remote dev/staging Supabase)**
    ```bash
-   cp .env.example .env.local   # .env.example is included in the repo — copy and fill with your values (do NOT commit secrets)
+   # Create your local env safely
+
+Use the safe helper to create `.env.local` without overwriting an existing file:
+
+```bash
+scripts/safe_copy_env.sh
+# or
+./scripts/safe_copy_env.sh .env.example .env.local
+```
+
+> IMPORTANT: `.env.local` is a persistent, local-only file (never commit it). Treat it as your per-machine configuration — do not delete or overwrite it during routine edits. If your .env.local is missing, restore it from `.env.example` using the script above.
+
+### Optional (recommended): enable local git hooks
+
+We provide a small local pre-commit hook at `.githooks/pre-commit` which prevents staging/committing `.env.local`. To enable on your machine:
+
+```bash
+# set hooks path for this repo (one-time per-machine):
+git config core.hooksPath .githooks
+```
+
+This is a local convenience to reduce accidental commits of local env files. CI will also reject PRs that include `.env.local` automatically (see `.github/workflows/prevent-generated-files.yml`).
    ```
 
    Edit `.env.local` with your actual values (do NOT commit this file):
