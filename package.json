@@ -20,7 +20,8 @@
     "abn:batch:staging": "python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.staging.json",
     "abn:batch:staging:apply": "AUTO_APPLY=true python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.staging.json",
     "abn:batch:prod": "python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.prod.json",
-    "abn:batch:prod:apply": "AUTO_APPLY=true python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.prod.json"
+    "abn:batch:prod:apply": "AUTO_APPLY=true python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.prod.json",
+    "test:integration": "vitest run src/tests/integration --threads=false"
   },
   "repository": {
     "type": "git",
