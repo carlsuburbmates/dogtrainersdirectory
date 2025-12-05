@@ -12,14 +12,11 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-
     "db:start": "bash ./scripts/local_db_start_apply.sh --reset",
     "db:seed": "bash ./scripts/local_db_start_apply.sh --seed-only",
     "dev:local": "npm run db:start & sleep 1 && next dev",
-
     "allowlist:staging": "python3 scripts/generate_allowlist.py staging",
     "allowlist:prod": "python3 scripts/generate_allowlist.py prod",
-
     "abn:batch:staging": "python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.staging.json",
     "abn:batch:staging:apply": "AUTO_APPLY=true python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.staging.json",
     "abn:batch:prod": "python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.prod.json",
@@ -56,6 +53,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "pg": "^8.16.3",
     "vitest": "^4.0.14"
   }
 }
