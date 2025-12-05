@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase'
+import { callLlm } from './llm'
 
 export type ReviewRecord = {
   id: number
@@ -74,46 +75,117 @@ export async function moderatePendingReviews(limit = 30) {
     return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
   }
 
-  const existingIds = reviews.map((review) => review.id)
+  const pendingReviews: ReviewRecord[] = reviews as ReviewRecord[]
+  const existingIds = pendingReviews.map((review) => review.id)
   const { data: existingDecisions } = await supabaseAdmin
     .from('ai_review_decisions')
     .select('review_id')
     .in('review_id', existingIds)
 
-  const alreadyDecided = new Set(existingDecisions?.map((item) => item.review_id))
+  type ExistingDecisionRow = { review_id: number }
+  const decisionRows: ExistingDecisionRow[] = existingDecisions ?? []
+  const alreadyDecided = new Set(decisionRows.map((item) => item.review_id))
 
   let autoApproved = 0
   let autoRejected = 0
   let manualFlagged = 0
 
-  for (const review of reviews) {
+  for (const review of pendingReviews) {
     if (alreadyDecided.has(review.id)) continue
-    const decision = evaluateReview(review)
 
-    if (decision.action === 'auto_approve') {
-      await supabaseAdmin
-        .from('reviews')
-        .update({ is_approved: true, rejection_reason: null, is_rejected: false })
-        .eq('id', review.id)
-      autoApproved += 1
-    } else if (decision.action === 'auto_reject') {
-      await supabaseAdmin
-        .from('reviews')
-        .update({ is_rejected: true, rejection_reason: decision.reason })
-        .eq('id', review.id)
-      autoRejected += 1
-    } else {
-      manualFlagged += 1
+    // Default heuristic decision (fallback)
+    let decision = evaluateReview(review)
+    let usedLlm = false
+    let llmRaw: unknown = null
+    let llmProvider: string | null = null
+    let llmModel: string | null = null
+
+    // Only attempt LLM moderation if a provider is configured and keys are present
+    try {
+      const prompt = `Review title: ${review.title ?? ''}\nReview content: ${review.content ?? ''}\nRating: ${review.rating}\nReviewer: ${review.reviewer_name}\n
+Return a JSON object with shape { action: 'auto_approve'|'auto_reject'|'manual', reason: string, confidence: number } where confidence is 0.0-1.0 and a short explanation in reason.`
+
+      const llm = await callLlm({
+        purpose: 'moderation',
+        systemPrompt:
+          'You are a concise content moderation assistant that classifies user product/service reviews into one of: auto_approve, auto_reject, or manual. Be strict with spam/bad content. Output exactly a JSON object as described.',
+        userPrompt: prompt,
+        responseFormat: 'json',
+        temperature: 0,
+        maxTokens: 400
+      })
+
+      llmRaw = llm.raw
+      llmProvider = llm.provider ?? null
+      llmModel = llm.model ?? null
+
+      if (llm.ok && llm.json && typeof llm.json === 'object') {
+        // Expecting { action, reason, confidence }
+        const parsed: any = llm.json as any
+        if (
+          parsed.action &&
+          (parsed.action === 'auto_approve' || parsed.action === 'auto_reject' || parsed.action === 'manual')
+        ) {
+          decision = {
+            action: parsed.action,
+            reason: parsed.reason || 'LLM moderation',
+            confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.6))
+          }
+          usedLlm = true
+        } else {
+          console.warn('moderatePendingReviews: unexpected LLM moderation shape, falling back to heuristic', parsed)
+        }
+      } else if (llm.reason === 'ai_disabled') {
+        // AI not available — fall back to heuristic and continue
+        // Nothing to do — decision stays as heuristic
+      } else if (!llm.ok) {
+        console.error('moderatePendingReviews: LLM call failed, falling back to heuristics', llm.errorMessage)
+      }
+    } catch (err) {
+      console.error('moderatePendingReviews: LLM moderation attempt threw — using heuristic', err)
     }
 
-    await supabaseAdmin
-      .from('ai_review_decisions')
-      .upsert({
+    // Perform the DB updates but be tolerant — don't let DB shape issues crash the loop
+    try {
+      if (decision.action === 'auto_approve') {
+        await supabaseAdmin
+          .from('reviews')
+          .update({ is_approved: true, rejection_reason: null, is_rejected: false })
+          .eq('id', review.id)
+        autoApproved += 1
+      } else if (decision.action === 'auto_reject') {
+        await supabaseAdmin
+          .from('reviews')
+          .update({ is_rejected: true, rejection_reason: decision.reason })
+          .eq('id', review.id)
+        autoRejected += 1
+      } else {
+        manualFlagged += 1
+      }
+    } catch (err) {
+      console.warn('moderatePendingReviews: write to reviews table failed (ignored)', err)
+    }
+
+    try {
+      // Try to persist AI decision metadata — if schema missing, ignore and move on
+      const upsertBody: any = {
         review_id: review.id,
         ai_decision: decision.action,
         confidence: decision.confidence,
         reason: decision.reason
-      }, { onConflict: 'review_id' })
+      }
+
+      // If we used the LLM, include provider/model/raw if available (best-effort)
+      if (usedLlm) {
+        upsertBody.ai_provider = llmProvider
+        upsertBody.ai_model = llmModel
+        upsertBody.raw_response = llmRaw ?? null
+      }
+
+      await supabaseAdmin.from('ai_review_decisions').upsert(upsertBody, { onConflict: 'review_id' })
+    } catch (err) {
+      console.warn('moderatePendingReviews: upsert to ai_review_decisions failed (ignored)', err)
+    }
   }
 
   return {

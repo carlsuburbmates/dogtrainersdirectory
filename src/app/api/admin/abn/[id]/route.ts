@@ -6,12 +6,15 @@ type RequestBody = {
   notes?: string
 }
 
+type RouteContext = { params: Promise<{ id: string }> }
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ) {
   try {
-    const id = Number(params.id)
+    const { id: rawId } = await context.params
+    const id = Number(rawId)
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid ABN ID' }, { status: 400 })
     }

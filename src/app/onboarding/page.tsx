@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { apiService } from '@/lib/api'
+import { useEffect, useMemo, useState } from 'react'
+import { apiService, SuburbResult } from '@/lib/api'
 import { AgeSpecialty, BehaviorIssue } from '@/types/database'
 
 const ageOptions: { value: AgeSpecialty; label: string }[] = [
@@ -42,9 +42,23 @@ const formatLabel = (value: string) =>
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
 export default function OnboardingPage() {
+  const steps = [
+    { title: 'Account', description: 'Create your trainer login' },
+    { title: 'Business details', description: 'Business contact, address, and suburb' },
+    { title: 'Age specialties', description: 'Select the dog life stages you serve' },
+    { title: 'Service types', description: 'Choose primary and secondary services' },
+    { title: 'Behaviour focus', description: 'Highlight the issues you solve' },
+    { title: 'Bio, pricing & ABN', description: 'Tell us about your practice and verify your ABN' }
+  ]
+
+  const [currentStep, setCurrentStep] = useState(0)
+  const [suburbSuggestions, setSuburbSuggestions] = useState<SuburbResult[]>([])
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [form, setForm] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     fullName: '',
     businessName: '',
     businessPhone: '',
@@ -55,14 +69,33 @@ export default function OnboardingPage() {
     suburbId: 0,
     bio: '',
     pricing: '',
-    ages: [] as AgeSpecialty[],
+    ages: ageOptions.map((option) => option.value as AgeSpecialty),
     issues: [] as BehaviorIssue[],
     primaryService: 'puppy_training',
     secondaryServices: [] as string[],
     abn: ''
   })
-  const [message, setMessage] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (form.suburbQuery.trim().length < 2) {
+      setSuburbSuggestions([])
+      return
+    }
+
+    let isCurrent = true
+    apiService
+      .searchSuburbs(form.suburbQuery.trim())
+      .then((results) => {
+        if (isCurrent) setSuburbSuggestions(results)
+      })
+      .catch(() => {
+        if (isCurrent) setSuburbSuggestions([])
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [form.suburbQuery])
 
   const handleToggleAge = (value: AgeSpecialty) => {
     setForm((prev) => ({
@@ -91,18 +124,62 @@ export default function OnboardingPage() {
     }))
   }
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setMessage(null)
-    if (!form.ages.length) {
-      setMessage('Please select at least one age specialty.')
+  const handleSuburbSelect = (suburb: SuburbResult) => {
+    setForm((prev) => ({
+      ...prev,
+      suburbQuery: `${suburb.name} (${suburb.postcode})`,
+      suburbId: suburb.id
+    }))
+    setSuburbSuggestions([])
+  }
+
+  const validateStep = (step: number): string | null => {
+    switch (step) {
+      case 0:
+        if (!form.email || !form.password || !form.fullName) return 'Please complete all account fields.'
+        if (form.password.length < 8) return 'Password must be at least 8 characters.'
+        if (form.password !== form.confirmPassword) return 'Passwords do not match.'
+        return null
+      case 1:
+        if (!form.businessName || !form.suburbId) return 'Business name and suburb are required.'
+        return null
+      case 2:
+        if (form.ages.length === 0) return 'Select at least one age group.'
+        return null
+      case 3:
+        if (!form.primaryService) return 'Choose a primary service.'
+        return null
+      case 5:
+        if (!form.abn) return 'Enter your ABN before submitting.'
+        return null
+      default:
+        return null
+    }
+  }
+
+  const handleNext = () => {
+    const error = validateStep(currentStep)
+    if (error) {
+      setMessage({ type: 'error', text: error })
       return
     }
-    if (!form.suburbId) {
-      setMessage('Please select a valid suburb before continuing.')
+    setMessage(null)
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+  }
+
+  const handleBack = () => {
+    setMessage(null)
+    setCurrentStep((prev) => Math.max(prev - 1, 0))
+  }
+
+  const handleSubmit = async () => {
+    const error = validateStep(currentStep)
+    if (error) {
+      setMessage({ type: 'error', text: error })
       return
     }
     setLoading(true)
+    setMessage(null)
     try {
       const response = await fetch('/api/onboarding', {
         method: 'POST',
@@ -128,48 +205,57 @@ export default function OnboardingPage() {
       })
       const payload = await response.json()
       if (!response.ok) {
-        setMessage(payload.error || 'Failed to onboard. Please try again.')
+        setMessage({ type: 'error', text: payload.error || 'Failed to onboard. Please try again.' })
         return
       }
-      setMessage('Onboarding complete! Check your inbox to confirm your account.')
-      setForm((prev) => ({ ...prev, password: '' }))
+      setMessage({
+        type: 'success',
+        text: 'Onboarding complete! Check your inbox for the verification email (valid for 24 hours).'
+      })
     } catch (error) {
       console.error(error)
-      setMessage('An unexpected error occurred.')
+      setMessage({ type: 'error', text: 'An unexpected error occurred.' })
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h1 className="text-3xl font-semibold mb-4">Trainer Onboarding (Manual only)</h1>
-          <p className="text-gray-600 mb-6">
-            Create your account, register your business, and verify your ABN.
-          </p>
-          <form className="space-y-6" onSubmit={handleSubmit}>
+  const completedSteps = useMemo(() => currentStep, [currentStep])
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <div className="space-y-4">
             <div>
               <label className="text-sm font-semibold">Account email</label>
               <input
                 type="email"
-                required
                 value={form.email}
                 onChange={(event) => setForm({ ...form, email: event.target.value })}
                 className="input-field mt-2"
               />
             </div>
-            <div>
-              <label className="text-sm font-semibold">Password</label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                className="input-field mt-2"
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-semibold">Password</label>
+                <input
+                  type="password"
+                  minLength={8}
+                  value={form.password}
+                  onChange={(event) => setForm({ ...form, password: event.target.value })}
+                  className="input-field mt-2"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold">Confirm password</label>
+                <input
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
+                  className="input-field mt-2"
+                />
+              </div>
             </div>
             <div>
               <label className="text-sm font-semibold">Full name</label>
@@ -179,6 +265,11 @@ export default function OnboardingPage() {
                 className="input-field mt-2"
               />
             </div>
+          </div>
+        )
+      case 1:
+        return (
+          <div className="space-y-4">
             <div>
               <label className="text-sm font-semibold">Business name</label>
               <input
@@ -189,7 +280,7 @@ export default function OnboardingPage() {
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-semibold">Phone</label>
+                <label className="text-sm font-semibold">Business phone</label>
                 <input
                   value={form.businessPhone}
                   onChange={(event) => setForm({ ...form, businessPhone: event.target.value })}
@@ -222,109 +313,225 @@ export default function OnboardingPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-semibold">Suburb ID (pick from search)</label>
+              <label className="text-sm font-semibold">Suburb</label>
               <input
-                type="number"
-                min={1}
-                value={form.suburbId || ''}
-                onChange={(event) => setForm({ ...form, suburbId: Number(event.target.value) })}
+                value={form.suburbQuery}
+                onChange={(event) => setForm({ ...form, suburbQuery: event.target.value, suburbId: 0 })}
+                placeholder="Start typing a suburb…"
                 className="input-field mt-2"
               />
-              <small className="text-xs text-gray-500">Use the triage search to copy a suburb ID (Phase 1 override).</small>
+              {suburbSuggestions.length > 0 && (
+                <ul className="border border-gray-200 rounded-md mt-2 bg-white max-h-60 overflow-y-auto divide-y">
+                  {suburbSuggestions.map((suburb) => (
+                    <li
+                      key={suburb.id}
+                      className="px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleSuburbSelect(suburb)}
+                    >
+                      <p className="font-semibold">{suburb.name} ({suburb.postcode})</p>
+                      <p className="text-xs text-gray-500">{suburb.council_name} · {suburb.region}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {form.suburbId !== 0 && (
+                <p className="text-xs text-green-600 mt-2">Suburb selected · ID #{form.suburbId}</p>
+              )}
             </div>
-            <div>
-              <label className="text-sm font-semibold">Bio</label>
-              <textarea
-                value={form.bio}
-                onChange={(event) => setForm({ ...form, bio: event.target.value })}
-                className="input-field mt-2 min-h-[80px]"
-              />
+          </div>
+        )
+      case 2:
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">Select the dog life stages you currently support (uncheck any that don’t apply).</p>
+            <div className="grid md:grid-cols-2 gap-3">
+              {ageOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className={`border rounded-lg p-3 cursor-pointer ${
+                    form.ages.includes(option.value) ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.ages.includes(option.value)}
+                    onChange={() => handleToggleAge(option.value)}
+                    className="mr-2"
+                  />
+                  {option.label}
+                </label>
+              ))}
             </div>
+          </div>
+        )
+      case 3:
+        return (
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-semibold">Pricing (optional)</label>
-              <input
-                value={form.pricing}
-                onChange={(event) => setForm({ ...form, pricing: event.target.value })}
-                className="input-field mt-2"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold">Age specialties (min 1)</label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {ageOptions.map((option) => (
-                  <button
-                    type="button"
-                    key={option.value}
-                    onClick={() => handleToggleAge(option.value)}
-                    className={`rounded-md border px-3 py-2 text-sm text-left ${form.ages.includes(option.value) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+              <p className="text-sm font-semibold text-gray-700">Primary service type</p>
+              <div className="mt-2 grid md:grid-cols-2 gap-3">
+                {serviceOptions.map((service) => (
+                  <label
+                    key={service}
+                    className={`border rounded-lg p-3 cursor-pointer ${
+                      form.primaryService === service ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                    }`}
                   >
-                    {option.label}
-                  </button>
+                    <input
+                      type="radio"
+                      name="primaryService"
+                      value={service}
+                      checked={form.primaryService === service}
+                      onChange={() => setForm({ ...form, primaryService: service })}
+                      className="mr-2"
+                    />
+                    {formatLabel(service)}
+                  </label>
                 ))}
               </div>
             </div>
             <div>
-              <label className="text-sm font-semibold">Behaviour issues (optional)</label>
-              <div className="grid md:grid-cols-2 gap-2 mt-2">
-                {issueOptions.map((option) => (
+              <p className="text-sm font-semibold text-gray-700">Secondary services (optional)</p>
+              <div className="mt-2 grid md:grid-cols-2 gap-3">
+                {serviceOptions.map((service) => (
+                  <label key={service} className="border rounded-lg p-3 cursor-pointer border-gray-200 hover:border-blue-300">
+                    <input
+                      type="checkbox"
+                      checked={form.secondaryServices.includes(service)}
+                      onChange={() => handleSecondaryService(service)}
+                      className="mr-2"
+                    />
+                    {formatLabel(service)}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      case 4:
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">Tap the behaviour issues you specialise in. Leave blank to appear under “generalist” filters.</p>
+            <div className="grid md:grid-cols-2 gap-3">
+              {issueOptions.map((option) => {
+                const selected = form.issues.includes(option.value)
+                return (
                   <button
                     type="button"
                     key={option.value}
                     onClick={() => handleToggleIssue(option.value)}
-                    className={`rounded-md border px-3 py-2 text-sm text-left ${form.issues.includes(option.value) ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                    className={`rounded-lg px-3 py-2 text-left text-sm border ${
+                      selected ? 'bg-orange-600 text-white border-orange-600' : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
+                    }`}
                   >
                     {option.label}
                   </button>
-                ))}
-              </div>
+                )
+              })}
             </div>
+          </div>
+        )
+      case 5:
+        return (
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-semibold">Primary service type</label>
-              <select
-                value={form.primaryService}
-                onChange={(event) => setForm({ ...form, primaryService: event.target.value })}
+              <label className="text-sm font-semibold">Bio (optional)</label>
+              <textarea
+                value={form.bio}
+                onChange={(event) => setForm({ ...form, bio: event.target.value })}
+                rows={4}
                 className="input-field mt-2"
-              >
-                {serviceOptions.map((service) => (
-                  <option key={service} value={service}>
-                    {formatLabel(service)}
-                  </option>
-                ))}
-              </select>
+                placeholder="Share your training philosophy, experience, and location details."
+              />
             </div>
             <div>
-              <label className="text-sm font-semibold">Additional service types</label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {serviceOptions.map((service) => (
-                  <button
-                    key={service}
-                    type="button"
-                    onClick={() => handleSecondaryService(service)}
-                    className={`rounded-full border px-3 py-1 text-xs ${form.secondaryServices.includes(service) ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-                  >
-                    {formatLabel(service)}
-                  </button>
-                ))}
-              </div>
+              <label className="text-sm font-semibold">Pricing overview (optional)</label>
+              <textarea
+                value={form.pricing}
+                onChange={(event) => setForm({ ...form, pricing: event.target.value })}
+                rows={3}
+                className="input-field mt-2"
+                placeholder="1:1 in-home: $120/hr&#10;Group class: $45/week&#10;Remote consults: $80/session"
+              />
             </div>
             <div>
               <label className="text-sm font-semibold">ABN</label>
               <input
-                required
                 value={form.abn}
                 onChange={(event) => setForm({ ...form, abn: event.target.value })}
                 className="input-field mt-2"
+                placeholder="11 111 111 111"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                We call the Australian Business Register (ABR) using the provided GUID to verify your ABN instantly.
+              </p>
             </div>
-            {message && <div className="text-sm text-red-600">{message}</div>}
-            <button
-              type="submit"
-              className="btn-primary w-full text-center"
-              disabled={loading}
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
+  return (
+    <main className="container mx-auto px-4 py-10">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <header className="space-y-3">
+          <p className="text-sm uppercase tracking-wider text-blue-600 font-semibold">Phase 4 · Manual onboarding</p>
+          <h1 className="text-3xl font-bold text-gray-900">Add your training business</h1>
+          <p className="text-gray-600">
+            Complete the guided 6-step form. We’ll send a verification email and confirm your ABN automatically.
+          </p>
+        </header>
+
+        <ol className="flex flex-wrap gap-3 text-sm">
+          {steps.map((step, index) => (
+            <li
+              key={step.title}
+              className={`flex items-center gap-2 border px-3 py-2 rounded-full ${
+                index === currentStep
+                  ? 'border-blue-600 text-blue-700'
+                  : index < completedSteps
+                  ? 'border-green-500 text-green-600'
+                  : 'border-gray-200 text-gray-500'
+              }`}
             >
-              {loading ? 'Submitting…' : 'Submit onboarding'}
-            </button>
-          </form>
+              <span className="font-semibold">{index + 1}.</span>
+              <span>{step.title}</span>
+            </li>
+          ))}
+        </ol>
+
+        <section className="card space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">{steps[currentStep].title}</h2>
+            <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
+          </div>
+          {renderStep()}
+          {message && (
+            <div className={`text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+              {message.text}
+            </div>
+          )}
+          <div className="flex justify-between">
+            {currentStep > 0 ? (
+              <button type="button" onClick={handleBack} className="btn-outline">
+                Back
+              </button>
+            ) : (
+              <span />
+            )}
+            {currentStep < steps.length - 1 && (
+              <button type="button" onClick={handleNext} className="btn-primary ml-auto">
+                Next
+              </button>
+            )}
+            {currentStep === steps.length - 1 && (
+              <button type="button" onClick={handleSubmit} className="btn-primary ml-auto" disabled={loading}>
+                {loading ? 'Verifying ABN…' : 'Verify ABN & Finish'}
+              </button>
+            )}
+          </div>
         </section>
       </div>
     </main>

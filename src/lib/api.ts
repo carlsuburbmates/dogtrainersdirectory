@@ -1,11 +1,18 @@
 import { supabase } from './supabase'
-import { AgeSpecialty, BehaviorIssue } from '../types/database'
+import { AgeSpecialty, BehaviorIssue, DistanceFilter, ServiceType } from '../types/database'
 
 export interface TriageRequest {
-  age: AgeSpecialty
-  issues: BehaviorIssue[]
-  suburbId: number
-  radius?: number
+  ageFilters?: AgeSpecialty[]
+  includeRescue?: boolean
+  issues?: BehaviorIssue[]
+  suburbId?: number
+  distanceFilter?: DistanceFilter
+  serviceType?: ServiceType | null
+  verifiedOnly?: boolean
+  priceMax?: number
+  searchTerm?: string
+  limit?: number
+  offset?: number
 }
 
 export interface SuburbResult {
@@ -15,6 +22,8 @@ export interface SuburbResult {
   latitude: number
   longitude: number
   council_id: number
+  council_name: string
+  region: string
 }
 
 export interface SearchResult {
@@ -23,16 +32,22 @@ export interface SearchResult {
   business_email?: string
   business_phone?: string
   business_website?: string
+  business_address?: string
+  business_bio?: string
+  business_pricing?: string
+  featured_until?: string | null
+  is_featured?: boolean
+  pricing_min_rate?: number | null
   suburb_name: string
   council_name: string
   region: string
-  distance_km: number
-  average_rating?: number
+  distance_km?: number | null
+  average_rating?: number | null
   review_count: number
-  age_specialties: string[]
-  behavior_issues: string[]
-  services: string[]
-  verified: boolean
+  age_specialties: AgeSpecialty[]
+  behavior_issues: BehaviorIssue[]
+  services: ServiceType[]
+  abn_verified: boolean
 }
 
 // API service for connecting to Supabase Edge Functions

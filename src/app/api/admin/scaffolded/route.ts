@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
       )
       .eq('id', id)
       .single()
-    const email = businessData?.email
+    const decrypted = businessData as { name?: string; email?: string } | null
+    const email = decrypted?.email
     if (email) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
           to: email,
           subject: 'Your scaffolded listing is live',
           html: `
-<p>Hi ${businessData.name},</p>
+<p>Hi ${decrypted?.name ?? 'there'},</p>
 <p>Your scaffolded listing has now been approved and appears live on dogtrainersdirectory.com.au.</p>
 <p>If you haven’t already, <a href="https://dogtrainersdirectory.com/trainer">log in to your dashboard</a> to confirm your profile details and share your availability.</p>
 <p>Thanks,<br/>dogtrainersdirectory</p>

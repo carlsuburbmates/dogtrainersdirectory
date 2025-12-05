@@ -3,13 +3,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { logValidationError } from '../_shared/validation.ts'
 
-interface SuburbResult {
+interface SuburbRecord {
   id: number;
   name: string;
   postcode: string;
   latitude: number;
   longitude: number;
   council_id: number;
+  councils: {
+    name: string;
+    region: string;
+  } | null;
 }
 
 const supabase = createClient(
@@ -25,7 +29,19 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const query = url.searchParams.get('q')
+    let query = url.searchParams.get('q')
+
+    if ((!query || query.trim().length === 0) && req.method !== 'GET') {
+      const contentType = req.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const body = await req.json().catch(() => ({}))
+        if (body && typeof body.query === 'string') {
+          query = body.query
+        } else if (body && typeof body.q === 'string') {
+          query = body.q
+        }
+      }
+    }
 
     if (!query) {
       return new Response(
@@ -75,10 +91,10 @@ serve(async (req) => {
     // Search suburbs by name
     const { data: suburbs, error } = await supabase
       .from('suburbs')
-      .select('id, name, postcode, latitude, longitude, council_id')
+      .select('id, name, postcode, latitude, longitude, council_id, councils ( name, region )')
       .ilike('name', `%${query}%`)
       .limit(10)
-      .order('name') as { data: SuburbResult[] | null; error: any }
+      .order('name') as { data: SuburbRecord[] | null; error: any }
 
     if (error) {
       console.error('Suburbs API database error:', error)
@@ -110,11 +126,22 @@ serve(async (req) => {
       )
     }
 
+    const formatted = suburbs.map((suburb) => ({
+      id: suburb.id,
+      name: suburb.name,
+      postcode: suburb.postcode,
+      latitude: suburb.latitude,
+      longitude: suburb.longitude,
+      council_id: suburb.council_id,
+      council_name: suburb.councils?.name ?? '',
+      region: suburb.councils?.region ?? ''
+    }))
+
     return new Response(
       JSON.stringify({
         success: true,
-        suburbs: suburbs,
-        count: suburbs.length
+        suburbs: formatted,
+        count: formatted.length
       }),
       {
         status: 200,

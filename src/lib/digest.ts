@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase'
 import { fetchDigestMetrics, DailyDigestMetrics } from './emergency'
-import { generateLLMResponse } from './llm'
+import { callLlm } from './llm'
 
 export type DailyDigestRecord = {
   id: number
@@ -37,10 +37,29 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
 
   const metrics = await fetchDigestMetrics()
   const prompt = buildDigestPrompt(metrics)
-  const llm = await generateLLMResponse({
+  const llm = await callLlm({
+    purpose: 'ops_digest',
     systemPrompt: 'Summarise operational health for a solo operator keeping an eye on onboarding, emergency queries, and verification tooling.',
-    userPrompt: prompt
+    userPrompt: prompt,
+    responseFormat: 'text',
+    temperature: 0.3,
+    maxTokens: 400
   })
+
+  // If AI disabled or there was an error, provide deterministic fallback
+  if (!llm.ok) {
+    if (llm.reason === 'ai_disabled') {
+      console.warn('getOrCreateDailyDigest: AI disabled — using deterministic fallback')
+      llm.text = `Ops digest: ${prompt.slice(0, 140)}...` // cheap fallback
+      llm.model = 'fallback'
+      llm.provider = llm.provider || 'deterministic'
+    } else {
+      console.error('getOrCreateDailyDigest: LLM call failed', llm.errorMessage)
+      llm.text = `Ops digest: ${prompt.slice(0, 140)}...` // fallback
+      llm.model = llm.model || 'error'
+      llm.provider = llm.provider || 'deterministic'
+    }
+  }
 
   // Store the digest — be tolerant to DB errors when running in a non-operator environment
   try {
@@ -49,7 +68,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
         .from('daily_ops_digests')
         .upsert({
           digest_date: today,
-          summary: llm.text,
+          summary: llm.text ?? '' ,
           metrics,
           model: llm.model,
           generated_by: llm.provider
@@ -71,7 +90,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   return {
     id: -1,
     digest_date: today,
-    summary: llm.text,
+    summary: llm.text ?? '',
     metrics,
     model: llm.model || 'fallback',
     generated_by: llm.provider || 'deterministic',
