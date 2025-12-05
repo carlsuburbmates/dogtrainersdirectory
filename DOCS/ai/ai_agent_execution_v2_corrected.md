@@ -51,7 +51,7 @@ This document corrects the uploaded v2.0 plan to align with finalized decisions 
 
 ## Executive Summary
 
-This document outlines how to use **AI agent** to build dogtrainersdirectory.com.au in a phased, checkpoint-driven approach. Each phase is a self-contained task that AI agent can complete in 5–25 minutes, with built-in database, auth, versioning, and one-click deployment.
+This document outlines how to use **Abacus AI agent** to build dogtrainersdirectory.com.au in a phased, checkpoint-driven approach. Each phase is a self-contained task that AI agent can complete in 5–25 minutes, with built-in database, auth, versioning, and one-click deployment.
 
 **Key alignment with AI agent:**
 - ✅ Database + Auth: Built-in (no external setup)
@@ -78,7 +78,7 @@ This document outlines how to use **AI agent** to build dogtrainersdirectory.com
 
 Before starting Phase 1:
 
-- [ ] You have a Pro tier (or sufficient credits)
+- [ ] You have Abacus AI Pro tier (or sufficient credits)
 - [ ] You have access to dogtrainersdirectory.com.au domain (or will provide to AI agent for custom publishing)
 - [ ] You have the **blueprint_ssot_v1.1.md** saved (reference only; don't paste into prompts unless asked)
 - [ ] You understand each Phase outputs a **preview + checkpoint** that AI agent stores
@@ -225,7 +225,7 @@ DELIVERABLE FORMAT:
   6. Verification: "Database locked and ready for Phase 2"
 
 NOTES FOR AI AGENT:
-- AI agent has built-in database support—use it; no external DB setup needed
+- Abacus AI agent has built-in database support—use it; no external DB setup needed
 - Use standard SQL (database agnostic if possible, or use AI agent's default)
 - All test data must respect enums (no "custom" ages or issues)
 - Do NOT create UI or API endpoints yet—just data models and validation
@@ -1790,7 +1790,7 @@ CONSTRAINTS:
 Once Phase 5 is approved and passing its success checklist:
 
 1. **Connect custom domain** (dogtrainersdirectory.com.au)
-   - Decide hosting for the app (AI environment vs exported Next.js + Supabase on Vercel/other).
+   - Decide hosting for the app (Abacus environment vs exported Next.js + Supabase on Vercel/other).
    - Configure `dogtrainersdirectory.com.au` at the registrar (VentraIP) to point to your chosen host:
      - Either change nameservers to the host’s NS, or
      - Keep VentraIP DNS and add the required A/ALIAS/CNAME records from the host’s custom-domain wizard.
@@ -1843,7 +1843,7 @@ Once Phase 5 is approved and passing its success checklist:
 
 ## Execution Timeline (High-Level)
 
-These timings describe **AI agent build time**, not human review or production hardening. Real-world elapsed time will include your manual QA, content work, DNS, and rollout.
+These timings describe **Abacus AI agent build time**, not human review or production hardening. Real-world elapsed time will include your manual QA, content work, DNS, and rollout.
 
 | Phase | Duration (agent) | Cumulative (agent) | Checkpoint |
 |------|-------------------|--------------------|-----------|
@@ -1936,6 +1936,3 @@ Focus: **owner experience + revenue**, building on everything above.
   - Always verify `Stripe-Signature` and log `event.id` in an ingestion audit table to handle retries safely.
 
 ---
-
-If you want, your next move after the agent finishes current Phase 5 is: update this section in `ai_agent_execution_v2_corrected.md` with the block above, then add a short note at the top of the doc pointing to “Part II — Automation Phases A–F” as the post-launch path.
-::contentReference[oaicite:5]{index=5}
