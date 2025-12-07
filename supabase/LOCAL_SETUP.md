@@ -31,7 +31,7 @@ Advanced (optional): local Postgres / offline migration testing with Docker
 If you require an isolated local Postgres for tough migration-edge testing or for running scripts against synthetic data, this repo contains helper scripts and schema snapshots — these are optional and for advanced contributors only.
 
 Optional Docker/local helpers (advanced only):
-- `scripts/local_db_start_apply.sh` — advanced helper: start/reuse a local Postgres container and apply `supabase/schema.sql` + `supabase/data-import.sql`. Supports `--reset`, `--no-seed`, and `--seed-only`.
+- `scripts/local_db_start_apply.sh` — advanced helper: start/reuse a local Postgres container and apply SQL schema to the DB. This helper now prefers applying any SQL files found in `supabase/migrations/` (lexical/chronological order) when present; otherwise it falls back to applying `supabase/schema.sql`. Supports `--reset`, `--no-seed`, and `--seed-only`.
 - `scripts/local_db_stop.sh` — advanced helper to stop and remove the local test container.
 - `scripts/test_apply_migrations.sh` — optional helper that starts a local Postgres container, creates a minimal `auth.users` stub, and applies migrations in order.
 

@@ -234,6 +234,37 @@ Safety & governance
    ```bash
    npm run lint          # Check code style
    npm run type-check     # Verify TypeScript types
+
+## Optional UI: shadcn/ui (manual install — for humans)
+
+If you want to adopt shadcn/ui primitives (table, card, badge, button) for the admin UI, follow these manual install steps locally.
+
+> These are *instructions only* — do not run from CI. Execute locally and commit any frontend changes in a separate PR.
+
+1) Install packages
+
+```bash
+# npm
+npm install @shadcn/ui @radix-ui/react-icons
+
+# or pnpm
+pnpm add @shadcn/ui @radix-ui/react-icons
+```
+
+2) Optional: use the CLI to scaffold components
+
+```bash
+# one-time scaffold via npx
+npx shadcn-ui@latest init
+# add core components (button, card, table, badge)
+npx shadcn-ui add button card table badge
+```
+
+3) Follow CLI prompts to place components under `src/components` and update `tailwind.config.js` if requested.
+
+Notes:
+- Prefer server-rendered shadcn components or light client wrappers to avoid large client bundles.
+- If you want me to scaffold the components and port the admin page to use them, say “scaffold UI” and I’ll implement the follow-up PR.
    ```
 
    > **Note:** Vitest suites (`*.test.ts*` / `*.spec.ts*`) are excluded from the TypeScript project until their helper typings are refactored. `npm run type-check` covers application/runtime code only.
@@ -399,3 +430,27 @@ node scripts/verify_decryption.js
 Integration tests (CI/local):
 - The repo now contains a vitest integration test at `src/tests/integration/decrypt.integration.test.ts`.
 - This test is skipped unless both `SUPABASE_CONNECTION_STRING` and `SUPABASE_PGCRYPTO_KEY` are present in the environment. It uses `pg` to insert an encrypted test record, validates `get_trainer_profile(id, p_key)` returns decrypted fields, and validates `get_trainer_profile(id, NULL)` returns NULL.
+
+## AI evaluation harness (offline golden sets)
+
+We include a small, dependency-light evaluation runner to run offline "golden set" evaluations and optionally persist results to the DB (uses `ai_evaluation_runs`). The script is intentionally safe and will not persist anything unless you provide a Supabase service-role key.
+
+Examples (zsh):
+
+# Dry-run (no DB creds) — prints results only
+node ./scripts/evaluate_ai.ts --pipeline=triage --input=src/tests/fixtures/ai_golden_triage_sample.json --dataset-version=dev-1
+
+# Persist results (one-off) — set service role key in the shell only for the run
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="$YOUR_SUPABASE_SERVICE_ROLE_KEY" \
+node ./scripts/evaluate_ai.ts --pipeline=triage --input=src/tests/fixtures/ai_golden_triage_sample.json --dataset-version=v1
+
+# Local dev: export envs for the session and run multiple commands
+export NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+export NEXT_PUBLIC_SUPABASE_ANON_KEY="public-anon-key"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+node ./scripts/evaluate_ai.ts --pipeline=triage --dataset-version=v1
+
+Notes:
+- Avoid pasting secrets into public places. Use the shell or CI secrets to provide SUPABASE_SERVICE_ROLE_KEY.
+- For CI runs, add the service role key to your secret store so this script can persist results in a controlled test environment.
