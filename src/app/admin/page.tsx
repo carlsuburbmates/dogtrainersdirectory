@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 
 type QueuePayload = {
   reviews: Array<{
@@ -69,6 +70,9 @@ export default function AdminQueuesPage() {
   const [scaffolded, setScaffolded] = useState<ScaffoldedItem[]>([])
   const [overview, setOverview] = useState<OverviewPayload | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [featuredActive, setFeaturedActive] = useState<any[]>([])
+  const [featuredQueued, setFeaturedQueued] = useState<any[]>([])
+  const [featuredLoading, setFeaturedLoading] = useState(false)
   const [digestRefreshing, setDigestRefreshing] = useState(false)
 
   useEffect(() => {
@@ -93,6 +97,18 @@ export default function AdminQueuesPage() {
         setQueues(queuePayload)
         setScaffolded(scaffoldPayload.scaffolded || [])
         setOverview(overviewPayload)
+
+        // Fetch featured placements admin list
+        try {
+          const fRes = await fetch('/api/admin/featured/list')
+          if (fRes.ok) {
+            const js = await fRes.json()
+            setFeaturedActive(js.active || [])
+            setFeaturedQueued(js.queued || [])
+          }
+        } catch (fErr) {
+          console.warn('Failed to load featured placements', fErr)
+        }
       } catch (err) {
         console.error(err)
         setError('Unable to load admin queues right now.')
@@ -118,6 +134,30 @@ export default function AdminQueuesPage() {
   return (
     <main className="container mx-auto px-4 py-8">
       <section className="space-y-6">
+        <div className="flex gap-3 justify-end">
+          <Button onClick={async () => {
+            try {
+              const res = await fetch('/api/admin/run/moderation', { method: 'POST' })
+              if (!res.ok) throw new Error('Failed')
+              alert('Moderation cycle triggered — check logs for results')
+            } catch (err) {
+              alert('Failed to trigger moderation run')
+            }
+          }}>
+            Run moderation now
+          </Button>
+          <Button onClick={async () => {
+            try {
+              const res = await fetch('/api/admin/run/featured-expire', { method: 'POST' })
+              if (!res.ok) throw new Error('Failed')
+              alert('Featured expiry/promotion job triggered')
+            } catch (err) {
+              alert('Failed to trigger featured expiry')
+            }
+          }}>
+            Run featured expiry now
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold">Admin Moderation + Ops</h1>
         {error && <div className="text-sm text-red-600">{error}</div>}
         {overview && (
@@ -151,13 +191,30 @@ export default function AdminQueuesPage() {
         {!queues && !error && <p className="text-gray-500">Loading queues…</p>}
         {queues && (
           <div className="space-y-8">
-            <QueueCard title="Pending Reviews" items={queues.reviews.map((item) => ({
+            <QueueCard
+              title="Pending Reviews"
+              items={queues.reviews.map((item) => ({
               id: item.id,
               title: item.title,
               meta: `Rating ${item.rating} • Business ${item.business_id}`,
               body: item.content || 'No message provided',
               ai_reason: item.ai_reason ?? null
-            }))} />
+            }))}
+            onReview={async (id, action) => {
+              try {
+                const res = await fetch(`/api/admin/reviews/${id}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action })
+                })
+                if (!res.ok) throw new Error('Failed')
+                // Refresh queues state
+                const qres = await fetch('/api/admin/queues')
+                if (qres.ok) setQueues(await qres.json())
+              } catch (err) {
+                alert('Failed to apply review override')
+              }
+            }} />
             <QueueCard
               title="ABN Manual Reviews"
               items={queues.abn_verifications.map((item) => ({
@@ -188,6 +245,100 @@ export default function AdminQueuesPage() {
               meta: `Status ${item.verification_status}`,
               body: `Active: ${item.is_active} • Featured until: ${item.featured_until || 'N/A'}`
             }))} />
+            {/* Featured Placements Admin */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Featured Placements</h2>
+                <div className="flex gap-3">
+                  <Button onClick={async () => {
+                    setFeaturedLoading(true)
+                    try {
+                      const res = await fetch('/api/admin/run/featured-expire', { method: 'POST' })
+                      if (!res.ok) throw new Error('Failed')
+                      const js = await res.json()
+                      alert('Featured expiry triggered — check logs')
+                      // Refresh lists
+                      const f2 = await fetch('/api/admin/featured/list')
+                      if (f2.ok) {
+                        const js2 = await f2.json()
+                        setFeaturedActive(js2.active || [])
+                        setFeaturedQueued(js2.queued || [])
+                      }
+                    } catch (err) {
+                      alert('Failed to trigger featured expiry')
+                    } finally { setFeaturedLoading(false) }
+                  }}>
+                    Run featured expiry now
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase">Active Placements</h3>
+                  {featuredActive.length === 0 ? (
+                    <p className="text-xs text-gray-500 mt-2">No active placements</p>
+                  ) : (
+                    featuredActive.map((p) => (
+                      <div key={p.id} className="rounded-lg border border-dashed border-gray-200 p-3 mt-2 flex items-start justify-between">
+                        <div>
+                          <div className="font-semibold">Business {p.business_id} • {p.slot_type}</div>
+                          <div className="text-xs text-gray-500">Expiry: {p.expiry_date ?? 'N/A'}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/admin/featured/${p.id}/demote`, { method: 'POST' })
+                              if (!res.ok) throw new Error('demote failed')
+                              // refresh
+                              const f2 = await fetch('/api/admin/featured/list')
+                              if (f2.ok) {
+                                const js2 = await f2.json(); setFeaturedActive(js2.active||[]); setFeaturedQueued(js2.queued||[])
+                              }
+                            } catch(e){ alert('Failed to demote') }
+                          }} variant="destructive">Demote</Button>
+                          <Button onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/admin/featured/${p.id}/extend`, { method: 'POST', body: JSON.stringify({ days: 30 }), headers: { 'Content-Type': 'application/json' } })
+                              if (!res.ok) throw new Error('extend failed')
+                              const f2 = await fetch('/api/admin/featured/list')
+                              if (f2.ok) { const js2 = await f2.json(); setFeaturedActive(js2.active||[]); setFeaturedQueued(js2.queued||[]) }
+                            } catch(e){ alert('Failed to extend') }
+                          }}>Extend 30d</Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase">Queued Placements</h3>
+                  {featuredQueued.length === 0 ? (
+                    <p className="text-xs text-gray-500 mt-2">No queued placements</p>
+                  ) : (
+                    featuredQueued.map((q) => (
+                      <div key={q.id} className="rounded-lg border border-dashed border-gray-200 p-3 mt-2 flex items-start justify-between">
+                        <div>
+                          <div className="font-semibold">Business {q.business_id} • {q.slot_type}</div>
+                          <div className="text-xs text-gray-500">Priority: {q.priority ?? 'N/A'}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/admin/featured/${q.id}/promote`, { method: 'POST' })
+                              if (!res.ok) throw new Error('promote failed')
+                              const f2 = await fetch('/api/admin/featured/list')
+                              if (f2.ok) { const js2 = await f2.json(); setFeaturedActive(js2.active||[]); setFeaturedQueued(js2.queued||[]) }
+                            } catch(e){ alert('Failed to promote') }
+                          }}>Promote</Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
             <QueueCard
               title="Scaffolded Listings"
               items={scaffolded.map((item) => ({

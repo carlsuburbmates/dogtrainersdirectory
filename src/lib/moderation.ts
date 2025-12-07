@@ -57,26 +57,42 @@ const evaluateReview = (review: ReviewRecord): { action: ModerationAction; reaso
   }
 }
 
-export async function moderatePendingReviews(limit = 30) {
+type ModerateOptions =
+  | { reviews: ReviewRecord[]; limit?: number }
+  | { reviews?: undefined; limit: number }
+
+export async function moderatePendingReviews(options: ModerateOptions = { limit: 30 }) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('moderatePendingReviews: SUPABASE_SERVICE_ROLE_KEY not set — skipping moderation operations')
     return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
   }
 
-  const { data: reviews, error } = await supabaseAdmin
-    .from('reviews')
-    .select('id, business_id, reviewer_name, rating, title, content, created_at')
-    .eq('is_approved', false)
-    .eq('is_rejected', false)
-    .order('created_at', { ascending: true })
-    .limit(limit)
+  const limit = typeof options.limit === 'number' && options.limit > 0 ? options.limit : 30
 
-  if (error || !reviews?.length) {
-    return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
+  let pendingReviews: ReviewRecord[] | null = Array.isArray(options.reviews) ? options.reviews : null
+
+  if (!pendingReviews) {
+    const { data: reviews, error } = await supabaseAdmin
+      .from('reviews')
+      .select('id, business_id, reviewer_name, rating, title, content, created_at')
+      .eq('is_approved', false)
+      .eq('is_rejected', false)
+      .order('created_at', { ascending: true })
+      .limit(limit)
+
+    if (error || !reviews?.length) {
+      return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
+    }
+
+    pendingReviews = reviews as ReviewRecord[]
   }
 
-  const pendingReviews: ReviewRecord[] = reviews as ReviewRecord[]
-  const existingIds = pendingReviews.map((review) => review.id)
+  const reviewsToProcess = pendingReviews
+
+  if (!reviewsToProcess?.length) {
+    return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
+  }
+  const existingIds = reviewsToProcess.map((review) => review.id)
   const { data: existingDecisions } = await supabaseAdmin
     .from('ai_review_decisions')
     .select('review_id')
@@ -88,7 +104,7 @@ export async function moderatePendingReviews(limit = 30) {
   let autoRejected = 0
   let manualFlagged = 0
 
-  for (const review of pendingReviews) {
+  for (const review of reviewsToProcess) {
     if (alreadyDecided.has(review.id)) continue
 
     const prompt = `Review title: ${review.title ?? ''}\nReview content: ${review.content ?? ''}\nRating: ${review.rating}\nReviewer: ${review.reviewer_name}\n
