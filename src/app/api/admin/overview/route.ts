@@ -31,6 +31,29 @@ export async function GET(request: Request) {
     }
 
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    
+    // Get latency statistics
+    let latencyStats = null
+    try {
+      const latencyResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'}/api/admin/latency?hours=24`)
+      if (latencyResponse.ok) {
+        latencyStats = await latencyResponse.json()
+      }
+    } catch (e) {
+      console.warn('Failed to fetch latency stats for admin overview', e)
+    }
+    
+    // Get system health status
+    let healthStatus = null
+    try {
+      const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'}/api/admin/health`)
+      if (healthResponse.ok) {
+        healthStatus = await healthResponse.json()
+      }
+    } catch (e) {
+      console.warn('Failed to fetch health status for admin overview', e)
+    }
+    
     const [trainerCounts, trainerVerified, emergencyResources, emergencyPending, triageMetrics, pendingLogs, lastVerificationRun] = await Promise.all([
       supabaseAdmin
         .from('businesses')
@@ -83,6 +106,32 @@ export async function GET(request: Request) {
         resources: emergencyResources.count ?? 0,
         pendingVerification: emergencyPending.count ?? 0,
         lastVerificationRun: lastVerificationRun.data?.[0] ?? null
+      },
+      latencySummary: latencyStats ? {
+        p50: latencyStats.p50_latency || 0,
+        p95: latencyStats.p95_latency || 0,
+        avg: latencyStats.avg_latency || 0,
+        successRate: latencyStats.success_rate || 100,
+        totalOperations: latencyStats.total_operations || 0,
+        alertThresholdExceeded: latencyStats.alertThresholdExceeded || false
+      } : {
+        p50: 0,
+        p95: 0,
+        avg: 0,
+        successRate: 100,
+        totalOperations: 0,
+        alertThresholdExceeded: false
+      },
+      healthSummary: healthStatus ? {
+        overall: healthStatus.overall,
+        components: healthStatus.components,
+        summary: healthStatus.summary,
+        lastChecked: healthStatus.timestamp
+      } : {
+        overall: 'unknown',
+        components: null,
+        summary: 'Health check unavailable',
+        lastChecked: null
       },
       triageSummary: {
         weeklyMetrics: triageMetrics.data?.[0] ?? null,
