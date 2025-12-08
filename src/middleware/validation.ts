@@ -83,6 +83,14 @@ export async function validateProfileData(
         message: e.message || 'Invalid age specialty',
         code: 'INVALID_AGE_SPECIALTY'
       })
+      
+      // Log validation error
+      try {
+        const { logValidationError } = await import('../lib/errorLog')
+        await logValidationError('age_specialties', e.message || 'Invalid age specialty', data.age_specialties)
+      } catch (logError) {
+        console.error('Failed to log validation error:', logError)
+      }
     }
   }
 
@@ -96,6 +104,14 @@ export async function validateProfileData(
         message: e.message || 'Invalid behavior issue',
         code: 'INVALID_BEHAVIOR_ISSUE'
       })
+      
+      // Log validation error
+      try {
+        const { logValidationError } = await import('../lib/errorLog')
+        await logValidationError('behaviour_issues', e.message || 'Invalid behavior issue', data.behaviour_issues)
+      } catch (logError) {
+        console.error('Failed to log validation error:', logError)
+      }
     }
   }
 
@@ -118,6 +134,14 @@ export async function validateProfileData(
         message: e.message || 'Invalid service type',
         code: 'INVALID_SERVICE_TYPE'
       })
+      
+      // Log validation error
+      try {
+        const { logValidationError } = await import('../lib/errorLog')
+        await logValidationError('service_type_primary', e.message || 'Invalid service type', data.service_type_primary)
+      } catch (logError) {
+        console.error('Failed to log validation error:', logError)
+      }
     }
   }
 

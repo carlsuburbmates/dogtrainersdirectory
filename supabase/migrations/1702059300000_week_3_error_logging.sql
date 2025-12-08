@@ -1,5 +1,8 @@
--- Migration for Priority 3: Error Logging & Monitoring
--- Deploy Week 3: Create error_logs, error_alerts, error_alert_events tables
+-- Migration for Priority 3: Error Logging & Monitoring (Week 3)
+-- Creates error_logs, error_alerts, error_alert_events tables with indexes and RLS
+
+-- Enable required extensions (if not already enabled)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Step 1: Create error_logs table
 CREATE TABLE IF NOT EXISTS public.error_logs (
@@ -69,36 +72,32 @@ ALTER TABLE IF EXISTS public.error_alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.error_alert_events ENABLE ROW LEVEL SECURITY;
 
 -- Step 8: RLS Policies
+-- NOTE: Adjust roles (service_role, admin, authenticated) to your project's roles if different
 
 -- RLS for error_logs
--- Service role (api) can insert logs
-CREATE OR REPLACE POLICY "Service role can insert error_logs" ON public.error_logs
+CREATE POLICY "Service role can insert error_logs" ON public.error_logs
   FOR INSERT TO service_role
   WITH CHECK (true);
 
--- Admin role can read all error_logs
-CREATE OR REPLACE POLICY "Admin role can select error_logs" ON public.error_logs
+CREATE POLICY "Admin role can select error_logs" ON public.error_logs
   FOR SELECT TO admin
   USING (true);
 
 -- RLS for error_alerts
--- Service role (api) can manage alerts
-CREATE OR REPLACE POLICY "Service role can manage error_alerts" ON public.error_alerts
+CREATE POLICY "Service role can manage error_alerts" ON public.error_alerts
   FOR ALL TO service_role
   WITH CHECK (true);
 
--- Admin role can view and acknowledge alerts
-CREATE OR REPLACE POLICY "Admin role can view error_alerts" ON public.error_alerts
+CREATE POLICY "Admin role can view error_alerts" ON public.error_alerts
   FOR SELECT TO admin
   USING (true);
 
-CREATE OR REPLACE POLICY "Admin role can acknowledge error_alerts" ON public.error_alerts
+CREATE POLICY "Admin role can acknowledge error_alerts" ON public.error_alerts
   FOR UPDATE TO admin
-  WITH CHECK (status IN ('ack', 'closed') AND acked_by = auth.uid());
+  WITH CHECK (status IN ('ack', 'closed') AND (acked_by IS NULL OR acked_by = auth.uid()));
 
 -- RLS for error_alert_events
--- Service role (api) can insert events
-CREATE OR REPLACE POLICY "Service role can insert error_alert_events" ON public.error_alert_events
+CREATE POLICY "Service role can insert error_alert_events" ON public.error_alert_events
   FOR INSERT TO service_role
   WITH CHECK (true);
 
@@ -118,10 +117,10 @@ BEGIN
 END;
 $$;
 
--- Step 10: Grant permission to service role for cleanup function
 GRANT EXECUTE ON FUNCTION public.cleanup_old_error_logs() TO service_role;
+GRANT EXECUTE ON FUNCTION public.cleanup_old_error_logs() TO authenticated;
 
--- Step 11: Function to check error rates for alerting
+-- Step 10: Function to check error rates for alerting
 CREATE OR REPLACE FUNCTION public.check_error_rate_alert(
     minutes_ago integer DEFAULT 5,
     threshold integer DEFAULT 5,
@@ -143,7 +142,6 @@ DECLARE
     current_minute_check timestamp with time zone;
     errors_per_minute numeric;
 BEGIN
-    -- Check each minute in the window
     FOR current_minute_check IN (
         SELECT generate_series(
             start_time,
@@ -174,11 +172,64 @@ BEGIN
 END;
 $$;
 
--- Step 12: Grant permission to service role for check_error_rate_alert function
 GRANT EXECUTE ON FUNCTION public.check_error_rate_alert(integer, integer, integer) TO service_role;
-
--- Step 13: Grant permission to authenticated role for monitoring functions
 GRANT EXECUTE ON FUNCTION public.check_error_rate_alert(integer, integer, integer) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.cleanup_old_error_logs() TO authenticated;
 
-COMMIT;
+-- Step 11: Helper function for errors per hour (used by stats endpoint)
+CREATE OR REPLACE FUNCTION public.get_errors_per_hour(
+  start_at timestamptz,
+  hours_count integer DEFAULT 24
+)
+RETURNS TABLE (
+  hour timestamp with time zone,
+  error_count bigint,
+  errors_by_level jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  current_hour timestamptz;
+  end_hour timestamptz;
+BEGIN
+  end_hour := start_at + make_interval(hours => hours_count);
+  
+  CREATE TEMPORARY TABLE IF NOT EXISTS temp_hourly_errors (
+    hour timestamptz,
+    error_count bigint,
+    errors_by_level jsonb
+  ) ON COMMIT DROP;
+  
+  DELETE FROM temp_hourly_errors;
+  
+  FOR current_hour IN 
+    SELECT generate_series(
+      date_trunc('hour', start_at),
+      date_trunc('hour', end_hour) - make_interval(hours => 1),
+      '1 hour'::interval
+    )
+  LOOP
+    INSERT INTO temp_hourly_errors
+    SELECT 
+      current_hour AS hour,
+      COUNT(*) as error_count,
+      COALESCE(json_object_agg(level, level_count), '{}'::jsonb) as errors_by_level
+    FROM (
+      SELECT 
+        level,
+        COUNT(*) as level_count
+      FROM public.error_logs
+      WHERE created_at >= current_hour 
+        AND created_at < current_hour + make_interval(hours => 1)
+      GROUP BY level
+    ) level_counts;
+  END LOOP;
+
+  RETURN QUERY SELECT * FROM temp_hourly_errors ORDER BY hour;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_errors_per_hour(timestamptz, integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_errors_per_hour(timestamptz, integer) TO authenticated;
+
+-- End of migration

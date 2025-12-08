@@ -78,18 +78,62 @@ export async function generateLLMResponse(params: {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-      throw new Error(`Z.ai API error: ${response.status} - ${errorData.error || response.statusText}`)
+      const error = new Error(`Z.ai API error: ${response.status} - ${errorData.error || response.statusText}`)
+      
+      // Log the error with LLM-specific logging
+      try {
+        const { logLLMError } = await import('./errorLog')
+        await logLLMError(
+          params.userPrompt,
+          errorData,
+          Date.now() - startTime,
+          error,
+          { route: '/api/llm/complete', method: 'POST' }
+        )
+      } catch (logError) {
+        console.error('Failed to log LLM error:', logError)
+      }
+      
+      throw error
     }
 
     const data = await response.json()
     const text = data.choices[0]?.message?.content || ''
 
     if (!text) {
-      throw new Error('Empty response from Z.ai API')
+      const error = new Error('Empty response from Z.ai API')
+      
+      // Log the error with LLM-specific logging
+      try {
+        const { logLLMError } = await import('./errorLog')
+        await logLLMError(
+          params.userPrompt,
+          data,
+          Date.now() - startTime,
+          error,
+          { route: '/api/llm/complete', method: 'POST' }
+        )
+      } catch (logError) {
+        console.error('Failed to log LLM error:', logError)
+      }
+      
+      throw error
     }
 
     const duration = Date.now() - startTime
     console.log(`Z.ai API call completed in ${duration}ms, model: ${config.model}`)
+
+    // Log successful LLM call (optional)
+    try {
+      const { logLLMError } = await import('./errorLog')
+      await logLLMError(
+        params.userPrompt,
+        data,
+        duration
+      )
+    } catch (logError) {
+      console.error('Failed to log LLM success:', logError)
+    }
 
     // Check if usage information is available
     const usage = data.usage ? {
@@ -199,25 +243,36 @@ export async function generateLLMResponseLimited(params: {
   return generateLLMResponse(params)
 }
 
-// Health check for LLM provider
-export async function checkLLMHealth(): Promise<{ status: 'healthy' | 'degraded' | 'down', message: string }> {
+/**
+ * Check LLM Provider Health Status
+ * @returns Promise<{status: 'healthy'|'degraded'|'down', message: string}>
+ */
+export async function checkLLMHealth(): Promise<{status: 'healthy'|'degraded'|'down', message: string}> {
   try {
     const config = getConfig()
-    const response = await generateLLMResponse({
-      userPrompt: 'Respond with "OK" only.',
+    if (!config.apiKey) {
+      return { status: 'down', message: 'LLM API key not configured' }
+    }
+
+    // Try a simple API call to check connectivity
+    const testResponse = await generateLLMResponseLimited({
+      userPrompt: 'test',
       maxTokens: 10,
       temperature: 0
     })
 
-    if (response.text === 'OK') {
-      return { status: 'healthy', message: 'Z.ai API responding normally' }
-    } else {
-      return { status: 'degraded', message: `Unexpected response: ${response.text}` }
+    if (testResponse.text.includes('Service temporarily unavailable')) {
+      return { status: 'down', message: 'LLM service is down or experiencing errors' }
     }
+
+    if (testResponse.provider === 'deterministic') {
+      return { status: 'degraded', message: 'LLM service returned fallback response' }
+    }
+
+    return { status: 'healthy', message: `LLM service operational using ${config.model}` }
   } catch (error) {
-    return { 
-      status: 'down', 
-      message: `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-    }
+    return { status: 'down', message: `LLM health check failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
   }
 }
+
+// Health check function defined above
