@@ -1,9 +1,62 @@
 import { supabaseAdmin } from '@/lib/supabase'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+// Simple components without shadcnUI for compatibility
 import Link from 'next/link'
+
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>
+}
+function CardHeader({ children }: { children: React.ReactNode }) {
+  return <div className="border-b pb-2 mb-4">{children}</div>
+}
+function CardTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-lg font-semibold">{children}</h2>
+}
+function CardDescription({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-gray-600">{children}</p>
+}
+function CardContent({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>
+}
+
+function Table({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <table className={className}>{children}</table>
+}
+function TableHeader({ children }: { children: React.ReactNode }) {
+  return <thead>{children}</thead>
+}
+function TableBody({ children }: { children: React.ReactNode }) {
+  return <tbody>{children}</tbody>
+}
+function TableRow({ children }: { children: React.ReactNode }) {
+  return <tr className="border-b">{children}</tr>
+}
+function TableHead({ children }: { children: React.ReactNode }) {
+  return <th className="text-left py-3 px-4 font-medium">{children}</th>
+}
+function TableCell({ children }: { children: React.ReactNode }) {
+  return <td className="py-3 px-4">{children}</td>
+}
+
+function Badge({ children, variant }: { children: React.ReactNode; variant?: string }) {
+  const base = "inline-flex px-2 py-1 text-xs rounded-full"
+  const variantMap = {
+    default: "bg-blue-100 text-blue-800",
+    secondary: "bg-gray-100 text-gray-800",
+    outline: "border border-gray-300 text-gray-700",
+    destructive: "bg-red-100 text-red-800"
+  }
+  return <span className={`${base} ${variantMap[variant as keyof typeof variantMap] || variantMap.default}`}>{children}</span>
+}
+
+function Button({ children, variant, ...props }: { children: React.ReactNode; variant?: string; [key: string]: any }) {
+  const base = "inline-block font-medium px-4 py-2 rounded"
+  const variantMap = {
+    default: "bg-blue-600 text-white hover:bg-blue-700", 
+    outline: "border border-gray-300 hover:bg-gray-50"
+  }
+  const className = `${base} ${variantMap[variant as keyof typeof variantMap] || variantMap.default}`
+  return <button className={className} {...props}>{children}</button>
+}
 
 interface CronJobRun {
   job_name: string

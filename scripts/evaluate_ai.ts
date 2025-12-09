@@ -71,7 +71,7 @@ async function run() {
       if (insert.error) {
         console.error('Supabase insert failed:', insert.error)
       } else {
-        console.log('Inserted evaluation run id:', insert.data?.[0]?.id)
+        console.log('Inserted evaluation run successfully');
       }
     } catch (err) {
       console.error('Error inserting into supabase', err)

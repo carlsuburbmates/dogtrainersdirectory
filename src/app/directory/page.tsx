@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase'
-import { SearchAutocomplete } from '@/components/SearchAutocomplete'
+import SearchAutocomplete from '@/components/SearchAutocomplete'
 import { SearchResult } from '@/lib/api'
 
 export const revalidate = 600

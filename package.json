@@ -12,14 +12,11 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-
     "db:start": "bash ./scripts/local_db_start_apply.sh --reset",
     "db:seed": "bash ./scripts/local_db_start_apply.sh --seed-only",
     "dev:local": "npm run db:start & sleep 1 && next dev",
-
     "allowlist:staging": "python3 scripts/generate_allowlist.py staging",
     "allowlist:prod": "python3 scripts/generate_allowlist.py prod",
-
     "abn:batch:staging": "python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.staging.json",
     "abn:batch:staging:apply": "AUTO_APPLY=true python3 scripts/abn_controlled_batch.py --apply --file=scripts/controlled_abn_list.staging.json",
     "abn:batch:prod": "python3 scripts/abn_controlled_batch.py --file=scripts/controlled_abn_list.prod.json",
@@ -38,6 +35,7 @@
   },
   "homepage": "https://github.com/carlsuburbmates/dogtrainersdirectory#readme",
   "dependencies": {
+    "@radix-ui/react-icons": "^1.3.2",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/auth-helpers-react": "^0.15.0",
     "@supabase/supabase-js": "^2.86.0",

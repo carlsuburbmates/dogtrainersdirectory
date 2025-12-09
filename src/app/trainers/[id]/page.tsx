@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
-import { ReviewList } from '@/components/ReviewList'
+import ReviewList from '@/components/ReviewList'
 
 export const revalidate = 3600
 

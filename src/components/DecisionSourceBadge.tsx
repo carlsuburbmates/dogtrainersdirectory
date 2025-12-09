@@ -1,5 +1,15 @@
-import { Badge } from '@/components/ui/card'
+// Simple Badge implementation inline
 import type { DecisionSource } from '@/lib/ai-types'
+
+function Badge({ children, variant }: { children: React.ReactNode; variant?: string }) {
+  const base = "inline-flex px-2 py-1 text-xs rounded-full"
+  const variantMap = {
+    default: "bg-blue-100 text-blue-800",
+    secondary: "bg-gray-100 text-gray-800",
+    outline: "border border-gray-300 text-gray-700"
+  }
+  return <span className={`${base} ${variantMap[variant as keyof typeof variantMap] || variantMap.default}`}>{children}</span>
+}
 
 interface DecisionSourceBadgeProps {
   source: DecisionSource

@@ -8,11 +8,12 @@ type RequestBody = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id)
-    if (isNaN(id)) {
+    const { id } = await params
+const idNum = Number(id)
+    if (isNaN(idNum)) {
       return NextResponse.json({ error: 'Invalid ABN ID' }, { status: 400 })
     }
 
@@ -35,7 +36,7 @@ export async function POST(
     await supabaseAdmin.from('abn_verifications').update({
       status,
       admin_notes: action === 'reject' ? 'Manual rejection' : 'Manual approval'
-    }).eq('id', id)
+    }).eq('id', idNum)
 
     await supabaseAdmin.from('businesses').update({
       abn_verified: status === 'verified',
@@ -48,6 +49,4 @@ export async function POST(
   }
 }
 
-export const config = {
-  runtime: 'edge'
-}
+export const runtime = 'edge'
