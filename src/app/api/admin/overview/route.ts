@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       console.warn('Failed to fetch health status for admin overview', e)
     }
     
-    const [trainerCounts, trainerVerified, emergencyResources, emergencyPending, triageMetrics, pendingLogs, lastVerificationRun] = await Promise.all([
+    const [trainerCounts, trainerVerified, emergencyResources, emergencyPending, triageMetrics, pendingLogs, lastVerificationRun, failedJobs, webhookFailures, dlqTotals] = await Promise.all([
       supabaseAdmin
         .from('businesses')
         .select('id', { count: 'exact', head: true })
@@ -93,7 +93,26 @@ export async function GET(request: Request) {
         .from('emergency_resource_verification_runs')
         .select('id, started_at, completed_at, total_resources, auto_updates, flagged_manual')
         .order('started_at', { ascending: false })
-        .limit(1)
+        .limit(1),
+      supabaseAdmin
+        .from('cron_job_runs')
+        .select('job_name, started_at, error_message, status')
+        .eq('status', 'failed')
+        .gte('started_at', since)
+        .order('started_at', { ascending: false })
+        .limit(20),
+      supabaseAdmin
+        .from('featured_placement_events')
+        .select('id, event_type, metadata, created_at')
+        .ilike('event_type', '%webhook%')
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      supabaseAdmin
+        .from('cron_job_runs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'failed')
+        .gte('started_at', since)
     ])
 
     return NextResponse.json({
@@ -136,6 +155,12 @@ export async function GET(request: Request) {
       triageSummary: {
         weeklyMetrics: triageMetrics.data?.[0] ?? null,
         pendingLogs: pendingLogs.data ?? []
+      },
+      dlqSummary: {
+        failedJobs: failedJobs.data ?? [],
+        totalEvents: dlqTotals.count ?? 0,
+        recentFailures: failedJobs.data?.length ?? 0,
+        webhookFailures: webhookFailures.data ?? []
       }
     })
   } catch (error: any) {
