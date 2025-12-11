@@ -19,6 +19,7 @@ This checklist assumes all automation (Steps 1–3) have already **PASSED**. You
 ## Preconditions (Tick-list)
 
 - [ ] `npm run build` and tests green (verified by automation, last checked: [insert date])
+- [ ] (Optional but recommended) GitHub Actions workflow **Verify Phase 9B** has been run and is green for main
 - [ ] You have access to Stripe Dashboard (test mode)
 - [ ] You have access to Vercel project settings (dogtrainersdirectory)
 - [ ] You can connect to staging Supabase DB via psql or Supabase Studio

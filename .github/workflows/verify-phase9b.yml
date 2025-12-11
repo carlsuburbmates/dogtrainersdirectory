@@ -1,0 +1,31 @@
+name: Verify Phase 9B
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  verify-phase9b:
+    name: verify-phase9b
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_KEY }}
+      FEATURE_MONETIZATION_ENABLED: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Phase 9B verification harness
+        run: npm run verify:phase9b
