@@ -1,5 +1,5 @@
 // Test endpoint for triggering error alerts
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { checkAndTriggerAlerts } from '@/lib/errorAlerts'
 import { logError } from '@/lib/errorLog'
 

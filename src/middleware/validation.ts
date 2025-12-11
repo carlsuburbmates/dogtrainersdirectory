@@ -168,11 +168,11 @@ export function withValidation() {
     // Only apply to profile update or creation routes
     const { pathname } = request.nextUrl
     if (!pathname.startsWith('/api/trainer') || !(pathname.endsWith('/route.ts') || pathname.includes('/profile'))) {
-      return request.next()
+      return NextResponse.next()
     }
 
     if (request.method !== 'POST' && request.method !== 'PUT') {
-      return request.next()
+      return NextResponse.next()
     }
 
     // Clone the request body to be able to read it
@@ -212,9 +212,10 @@ export function withValidation() {
     }
 
     // Return the modified request with normalized data
-    return NextResponse.json({}, {
-      status: 200,
-      headers: Object.fromEntries(requestHeaders)
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders
+      }
     })
   }
 }

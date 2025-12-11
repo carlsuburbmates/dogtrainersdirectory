@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: ABN lookup contract & implementation guidance
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # ABN Lookup Integration Spec — ABR / Web Services
 
 Version: 2025-12-01

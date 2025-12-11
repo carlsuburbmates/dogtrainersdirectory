@@ -1,73 +1,55 @@
 # Migrations index (supabase/migrations)
 
-This page summarizes the SQL migration files stored under `supabase/migrations/` and explains the role of `supabase/migrations_archive/`.
+This page tracks every SQL file under `supabase/migrations/` (current source of truth) and highlights any migration IDs that are referenced in docs but missing on disk. Use it alongside `DOCS/automation/REMOTE_DB_MIGRATIONS.md` when applying changes.
 
-> Note: The "Applied to remote?" column is set to **Yes** for the baseline project migrations in this index (these migrations correspond to the recent remote migration pushes used during Phase rollout). Always verify remote state before applying more migrations (see `DOCS/automation/REMOTE_DB_MIGRATIONS.md`).
+## Active migrations on disk
 
 | Filename | Category | Applied to remote? | Notes |
 | --- | --- | ---: | --- |
-| `20250205120000_update_search_trainers.sql` | RPC / search function update (Phase 2) | Yes | Implements triage + filtering logic for `search_trainers`.
-| `20250207121500_phase3_profiles.sql` | RPC / profile functions (Phase 3) | Yes | Adds `get_trainer_profile` and profile support.
-| `20250207145000_phase5_emergency_schema.sql` | Schema additions (Phase 5 emergency) | Yes | Adds emergency-related columns, `council_contacts`, and `search_emergency_resources` RPC.
-| `20250208103000_phase5_emergency_automation.sql` | Schema & automation tables (Phase 5) | Yes | Adds ops/automation tables used by emergency triage, digests, and verification runs.
-| `20250208132000_fix_search_trainers_review_count.sql` | Fix / maintenance (Phase 5) | Yes | Repair of trainer search review-count logic.
-| `20250210140000_restore_search_trainers_signature.sql` | Fix / maintenance | Yes | Restores signature handling for search trainers RPC.
-| `20250210141000_fix_decrypt_sensitive.sql` | Fix / maintenance | Yes | First of several decrypt_sensitive / key changes.
-| `20250210143000_fix_decrypt_sensitive_nullsafe.sql` | Fix / maintenance | Yes | Null-safe handling for decrypt_sensitive.
-| `20250210152000_add_decrypt_sensitive_key_arg.sql` | RPC update | Yes | Adds `p_key` argument to decrypt_sensitive where needed.
-| `20250210153000_search_trainers_accept_key.sql` | RPC update | Yes | Make `search_trainers` accept optional `p_key` for decryption.
-| `20250210160000_get_trainer_profile_accept_key.sql` | RPC update | Yes | Make `get_trainer_profile` accept optional `p_key` for decrypt.
-| `20251130000001_add_abn_matched_json.sql` | Schema / ABN | Yes | Adds `matched_json` jsonb column to `abn_verifications`.
-| `20251202093000_create_abn_and_business_abn_columns.sql` | Schema / ABN | Yes | Creates `abn_verifications` table and `business.abn` columns.
+| `1702059300000_week_3_error_logging.sql` | Schema – error logging tables/RLS | Yes (Week 3 rollout) | Creates `error_logs`, `error_alerts`, and `error_alert_events` plus indexes. |
+| `1702075200000_week_4_triage_logs.sql` | Schema – triage telemetry | Yes (Week 4 rollout) | Adds `triage_logs`/`triage_events` tables used by emergency ops. |
+| `20241208020000_search_telemetry.sql` | Schema – search telemetry | Yes (Dec 2024) | Adds `search_telemetry` table + indexes for latency tracking. |
+| `20250210143000_fix_decrypt_sensitive_nullsafe.sql` | RPC maintenance | Yes (Phase 5) | Makes `decrypt_sensitive` null-safe before key work. |
+| `20250210152000_add_decrypt_sensitive_key_arg.sql` | RPC maintenance | Yes (Phase 5) | Adds key argument to helper functions. |
+| `20250210153000_search_trainers_accept_key.sql` | RPC update | Yes (Phase 5) | Thread key arg through `search_trainers`. |
+| `20250210160000_get_trainer_profile_accept_key.sql` | RPC update | Yes (Phase 5) | Key argument for `get_trainer_profile`. |
+| `20251130000001_add_abn_matched_json.sql` | Schema – ABN improvements | Yes (Nov 2025) | Adds `matched_json` column to `abn_verifications`. |
+| `20251209093000_add_latency_metrics.sql` | Telemetry – latency metrics | Pending apply | Creates `latency_metrics` table for request duration + success telemetry across search, emergency, admin, and ABN flows. |
+| `20251209101000_create_payment_tables.sql` | Monetization – payments | Pending apply | Adds `payment_audit` + `business_subscription_status` tables for Stripe checkout logging and subscription sync. **Phase 9B action:** run `supabase db push --linked` + `supabase db diff --linked` in staging and log the apply date here. |
 
----
+> **Fresh DB bootstrap:** Apply these migrations in order with `supabase db push` or `supabase db remote commit`. After applying, run `scripts/test_abn_recheck.py` and `npm run type-check` to verify RPC compatibility.
 
-## Migrations archive (`supabase/migrations_archive/`)
+## Referenced but missing migrations
 
-The `migrations_archive/` directory contains archived SQL files and exports that are kept for historical reference, data seeds, or full-schema dumps. Files in this folder are intentionally not included in `supabase db push` and should not be moved back into `supabase/migrations/` without a manual review and approval.
+Several filenames appear in older SSOT docs but are not present in `supabase/migrations/` today. They likely lived in older branches or were dropped during cleanup. Until we recover or rewrite them, treat the corresponding functionality as covered by newer migrations or manual seeds.
 
-Key archive entries in this repo (DO NOT apply automatically):
+| Filename (missing) | Mentioned in | Action |
+| --- | --- | --- |
+| `20250205120000_update_search_trainers.sql` | Earlier versions of this doc (Phase 2) | Pending reconciliation – file not present on disk or in repo history; confirm whether `search_trainers` logic already lives in later migrations before next DB change. |
+| `20250207121500_phase3_profiles.sql` | Same as above | Pending reconciliation – no historical file found; inspect remote RPC definitions to ensure profile features landed elsewhere. |
+| `20250207145000_phase5_emergency_schema.sql` | Same | Pending reconciliation – verify remote emergency tables still match docs even though this migration is absent locally. |
+| `20250208103000_phase5_emergency_automation.sql` | Same | Pending reconciliation – determine whether automation tables were applied manually or rolled into other migrations. |
+| `20250208132000_fix_search_trainers_review_count.sql` | Same | Pending reconciliation – confirm RPC behaviour (review count) via Supabase history/tests before altering schema. |
+| `20250210140000_restore_search_trainers_signature.sql` | Same | Pending reconciliation – likely merged into later 20250210 migrations; double-check remote schema diff before assuming redundancy. |
+| `20250210141000_fix_decrypt_sensitive.sql` | Same | Pending reconciliation – ensure decrypt helper behaviour matches documentation despite missing file. |
+| `20251202093000_create_abn_and_business_abn_columns.sql` | Earlier doc entries | Pending reconciliation – remote DB already shows `abn_verifications` columns, but capture provenance before future modifications. |
 
-- `20250207150000_phase5_emergency_seed.sql` — Phase 5 seed data (council contacts + emergency resources). This is a data seed and should be applied manually by ops when necessary; do not include it in automated migration flows.
-- `20251129095232_remote_schema.sql` — Placeholder/legacy remote schema export (currently empty or placeholder). Kept for traceability — DO NOT reintroduce into active migrations without manual review.
-- `20251202101000_create_full_schema.sql` — Full canonical schema dump (idempotent). Use for reference or manual restores; not for automated migration tooling.
-
-**Archive policy:**
-- Active migrations live under `supabase/migrations/` and are the source-of-truth for CI/`supabase db` flows.
-- Archive files are historical snapshots, seed scripts, or dumps; they are intentionally excluded from automated migrations and require manual review to re-use.
-- If a file in `migrations_archive/` needs to be promoted to active migrations, run a change control PR with a clear justification and update `DOCS/db/MIGRATIONS_INDEX.md` accordingly.
-
----
-
-## Workflow reminder
-
-- Use `supabase db push` or `supabase db migrate` for applying schema changes that live in `supabase/migrations/`.
-- Keep seeds and large canonical dumps in `supabase/migrations_archive/` and apply them manually when needed (ops-only).
-- Always back up remote DB before applying large changes and consult `DOCS/automation/REMOTE_DB_MIGRATIONS.md` for a safe apply checklist.
-
-| `20250205120000_update_search_trainers.sql` | RPC / search function update (Phase 2) | Yes | Implements triage + filtering logic for `search_trainers`.
-| `20250207121500_phase3_profiles.sql` | RPC / profile functions (Phase 3) | Yes | Adds `get_trainer_profile` and profile support.
-| `20250207145000_phase5_emergency_schema.sql` | Schema additions (Phase 5 emergency) | Yes | Adds emergency columns, `council_contacts`, and `search_emergency_resources` RPC.
-| `20250208103000_phase5_emergency_automation.sql` | Schema & automation tables (Phase 5) | Yes | New types and multiple AI/ops tables (triage logs, verification runs, daily digests).
-| `20251130000001_add_abn_matched_json.sql` | ABN patch (jsonb column) | Yes | Adds `matched_json` jsonb column to `abn_verifications` (nullable).
-| `20251202093000_create_abn_and_business_abn_columns.sql` | ABN feature (table + columns) | Yes | Creates `abn_verifications` table and ABN columns on `businesses`.
-
----
+Until these historical IDs are reconciled, keep this section as a reminder during DB diffing.
 
 ## Migrations archive (`supabase/migrations_archive/`)
 
-The `migrations_archive/` directory contains archived SQL files and exports that are kept for historical reference, data seeds, or full-schema dumps. Files in this folder are intentionally not included in `supabase db push` and should not be moved back into `supabase/migrations/` without a manual review and approval.
+`supabase/migrations_archive/` currently contains:
 
-Key archive entries in this repo:
+| Filename | Purpose |
+| --- | --- |
+| `20251129095232_remote_schema.sql` | Legacy remote schema export (placeholder). |
+| `README.md` | Archive policy notes. |
 
-- `20250207150000_phase5_emergency_seed.sql` — Phase 5 seed data (council contacts + emergency resources). This is a data seed and is typically applied manually or via an ops-runner, not via automatic migration pushes.
-- `20251129095232_remote_schema.sql` — Placeholder/legacy remote schema export (currently empty or placeholder). Kept for traceability — DO NOT reintroduce without review.
-- `20251202101000_create_full_schema.sql` — Full canonical schema dump (idempotent). Useful as a reference or for manual applies when migrating remote databases, but not used by automated migration tooling.
-
----
+Older docs referenced `20250207150000_phase5_emergency_seed.sql` and `20251202101000_create_full_schema.sql`, but they are not present in the repo right now. If they resurface, log them here with a clear “manual apply only” warning.
 
 ## Workflow reminder
 
-- Use `supabase db push` or `supabase db migrate` for applying schema changes that live in `supabase/migrations/`.
-- Keep seeds and large canonical dumps in `supabase/migrations_archive/` and apply them manually when needed (ops-only).
-- Always back up remote DB before applying big changes (see `DOCS/automation/REMOTE_DB_MIGRATIONS.md`).
+- Active migrations live in `supabase/migrations/`. Keep this index in sync whenever a new file is added or removed.
+- Use `supabase db diff` or `supabase db remote commit` to regenerate/create migrations, and record the result in this doc plus `DOCS/CHANGE_CONTROL_LOG.md`.
+- Archive-only files are reference/seed materials; do **not** push them via automated tooling without a change-control update.
+- Before running migrations against remote environments, follow the checklist in `DOCS/automation/REMOTE_DB_MIGRATIONS.md` (backup, apply, verify RPCs).

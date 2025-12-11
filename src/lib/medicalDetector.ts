@@ -52,10 +52,15 @@ export async function detectMedicalEmergency(description: string): Promise<Medic
 
     // Validate and default fields
     const is_medical = parsed.is_medical === true || false
-    const severity = ['life_threatening','serious','moderate','minor'].includes(parsed.severity) ? parsed.severity : 'moderate'
+    const severityOptions: MedicalResult['severity'][] = ['life_threatening','serious','moderate','minor']
+    const severity = severityOptions.includes(parsed.severity) ? parsed.severity : 'moderate'
     const symptoms = Array.isArray(parsed.symptoms) ? parsed.symptoms : []
+    const allowedResources: MedicalResult['recommended_resources'][number][] = ['24hr_vet','poison_control','emergency_clinic']
     const resources = Array.isArray(parsed.recommended_resources) 
-      ? parsed.recommended_resources.filter(r => ['24hr_vet','poison_control','emergency_clinic'].includes(r))
+      ? parsed.recommended_resources.filter(
+        (resource: unknown): resource is MedicalResult['recommended_resources'][number] =>
+          typeof resource === 'string' && allowedResources.includes(resource as MedicalResult['recommended_resources'][number])
+        )
       : []
     const waitCritical = parsed.vet_wait_time_critical === true || false
 

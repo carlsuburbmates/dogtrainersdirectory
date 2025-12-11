@@ -29,7 +29,10 @@ coverage/
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.alert_state.json
+playwright-report/
+blob-report/
+test-results/
 
 # Build / dist artifacts
 dist/
-

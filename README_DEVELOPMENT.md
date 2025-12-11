@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: Development workflow & environment setup
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # Dog Trainers Directory - Development Setup Guide
 
 Documentation home: `DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.

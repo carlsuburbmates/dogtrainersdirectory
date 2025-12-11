@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: ABN verification release summary
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # ABN Verification — Release Notes
 
 Version: 2025-12-01

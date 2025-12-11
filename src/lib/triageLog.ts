@@ -2,7 +2,6 @@
 // Handles persistence and retrieval of triage classification results
 
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database'
 import { logError } from '@/lib/errorLog'
 
 export type TriageCategory = 'medical' | 'stray' | 'crisis_training' | 'other'
@@ -57,7 +56,7 @@ export interface TriageLogFilters {
 }
 
 // Helper: get SB client configured for server-side
-const supabase = createClient<Database>(
+const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
@@ -99,13 +98,13 @@ export async function createTriageLog(params: CreateTriageLogParams): Promise<st
       .single()
 
     if (error) {
-      await logError('Failed to insert triage log', { error: error.message, params }, 'error', 'db')
+      await logError('Failed to insert triage log', { extra: { error: error.message, params } }, 'error', 'db')
       return null
     }
 
     return data.id
   } catch (err) {
-    await logError('Exception in createTriageLog', { error: (err as Error).message, params }, 'error', 'db')
+    await logError('Exception in createTriageLog', { extra: { error: (err as Error).message, params } }, 'error', 'db')
     return null
   }
 }
@@ -128,13 +127,13 @@ export async function createTriageEvent(
       })
 
     if (error) {
-      await logError('Failed to insert triage event', { error: error.message, triageLogId, stage }, 'error', 'db')
+      await logError('Failed to insert triage event', { extra: { error: error.message, triageLogId, stage } }, 'error', 'db')
       return false
     }
 
     return true
   } catch (err) {
-    await logError('Exception in createTriageEvent', { error: (err as Error).message, triageLogId, stage }, 'error', 'db')
+    await logError('Exception in createTriageEvent', { extra: { error: (err as Error).message, triageLogId, stage } }, 'error', 'db')
     return false
   }
 }
@@ -161,13 +160,13 @@ export async function listTriageLogs(filters: TriageLogFilters = {}) {
     const { data, error, count } = await query
 
     if (error) {
-      await logError('Failed to fetch triage logs', { error: error.message, filters }, 'error', 'db')
+      await logError('Failed to fetch triage logs', { extra: { error: error.message, filters } }, 'error', 'db')
       return { logs: [], total: 0 }
     }
 
     return { logs: data || [], total: count || 0 }
   } catch (err) {
-    await logError('Exception in listTriageLogs', { error: (err as Error).message, filters }, 'error', 'db')
+    await logError('Exception in listTriageLogs', { extra: { error: (err as Error).message, filters } }, 'error', 'db')
     return { logs: [], total: 0 }
   }
 }
@@ -185,7 +184,7 @@ export async function getTriageStats(hours: number = 24) {
       .gte('created_at', startDate.toISOString())
     
     if (error) {
-      await logError('Failed to fetch triage stats', { error: error.message, hours }, 'error', 'db')
+      await logError('Failed to fetch triage stats', { extra: { error: error.message, hours } }, 'error', 'db')
       return null
     }
     
@@ -202,7 +201,7 @@ export async function getTriageStats(hours: number = 24) {
     
     return stats
   } catch (err) {
-    await logError('Exception in getTriageStats', { error: (err as Error).message, hours }, 'error', 'db')
+    await logError('Exception in getTriageStats', { extra: { error: (err as Error).message, hours } }, 'error', 'db')
     return null
   }
 }
@@ -220,13 +219,13 @@ export async function getTriageMetrics(hours: number = 24) {
       .order('hour', { ascending: false })
 
     if (error) {
-      await logError('Failed to fetch triage metrics hourly', { error: error.message, hours }, 'error', 'db')
+      await logError('Failed to fetch triage metrics hourly', { extra: { error: error.message, hours } }, 'error', 'db')
       return []
     }
 
     return data || []
   } catch (err) {
-    await logError('Exception in getTriageMetrics', { error: (err as Error).message, hours }, 'error', 'db')
+    await logError('Exception in getTriageMetrics', { extra: { error: (err as Error).message, hours } }, 'error', 'db')
     return []
   }
 }

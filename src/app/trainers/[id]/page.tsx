@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
 import { ReviewList } from '@/components/ReviewList'
+import { e2eTrainerProfile, isE2ETestMode } from '@/lib/e2eTestUtils'
+import { recordLatencyMetric } from '@/lib/telemetryLatency'
 
 export const revalidate = 3600
 
@@ -35,20 +37,55 @@ const formatTag = (value: string) =>
     .join(' ')
 
 export async function getTrainerProfile(id: number) {
-  const { data, error } = await supabaseAdmin.rpc('get_trainer_profile', {
-    p_business_id: id,
-    p_key: process.env.SUPABASE_PGCRYPTO_KEY ?? null
-  })
+  const start = Date.now()
+  try {
+    if (isE2ETestMode()) {
+      return e2eTrainerProfile
+    }
 
-  if (error || !data || data.length === 0) {
-    return null
+    const { data, error } = await supabaseAdmin.rpc('get_trainer_profile', {
+      p_business_id: id,
+      p_key: process.env.SUPABASE_PGCRYPTO_KEY ?? null
+    })
+
+    if (error || !data || data.length === 0) {
+      await recordLatencyMetric({
+        area: 'trainer_profile_page',
+        route: '/trainers/[id]',
+        durationMs: Date.now() - start,
+        statusCode: 404,
+        success: false,
+        metadata: { businessId: id }
+      })
+      return null
+    }
+
+    await recordLatencyMetric({
+      area: 'trainer_profile_page',
+      route: '/trainers/[id]',
+      durationMs: Date.now() - start,
+      statusCode: 200,
+      success: true,
+      metadata: { businessId: id }
+    })
+
+    return data[0] as TrainerProfile
+  } catch (error) {
+    await recordLatencyMetric({
+      area: 'trainer_profile_page',
+      route: '/trainers/[id]',
+      durationMs: Date.now() - start,
+      statusCode: 500,
+      success: false,
+      metadata: { businessId: id }
+    })
+    throw error
   }
-
-  return data[0] as TrainerProfile
 }
 
-export default async function TrainerProfilePage({ params }: { params: { id: string } }) {
-  const businessId = Number(params.id)
+export default async function TrainerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: idString } = await params
+  const businessId = Number(idString)
   if (!businessId) {
     notFound()
   }

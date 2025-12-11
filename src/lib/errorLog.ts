@@ -45,33 +45,37 @@ const MAX_RETRIES = 3
 const RETRY_DELAY = 1000 // ms
 
 // Helper to normalize error messages and extract stack trace
-function normalizeError(error: string | Error): { message: string; stack?: string } {
-  if (typeof error === 'string') {
-    return { message: error }
-  }
-  
+function normalizeError(error: unknown): { message: string; stack?: string } {
   if (error instanceof Error) {
     return {
       message: error.message,
       stack: error.stack
     }
   }
-  
-  // Handle other types that might be thrown
-  return {
-    message: String(error)
+
+  if (typeof error === 'string') {
+    return { message: error }
   }
+
+  return { message: JSON.stringify(error) }
 }
 
 // Helper to get current environment
 function getCurrentEnv(): 'dev' | 'staging' | 'prod' {
-  const env = process.env.NODE_ENV || 'dev'
-  return env as 'dev' | 'staging' | 'prod'
+  const env =
+    process.env.RUNTIME_ENV ||
+    process.env.VERCEL_ENV ||
+    process.env.NODE_ENV ||
+    'development'
+
+  if (env === 'production') return 'prod'
+  if (env === 'preview' || env === 'staging') return 'staging'
+  return 'dev'
 }
 
 // Main error logging function
 export async function logError(
-  messageOrError: string | Error,
+  messageOrError: unknown,
   ctx?: ErrorContext,
   level: ErrorLevel = 'error',
   category: ErrorCategory = 'other'
@@ -95,7 +99,7 @@ export async function logError(
     session_id: ctx?.sessionId,
     request_id: ctx?.requestId,
     duration_ms: ctx?.durationMs,
-    env
+    env: ctx?.env ?? env
   }
   
   // Add to buffer
@@ -221,7 +225,7 @@ async function flushErrorBuffer(): Promise<void> {
       }
       
       // Success, log batch size
-      if (process.env.NODE_ENV === 'dev') {
+      if (process.env.NODE_ENV === 'development') {
         console.debug(`Logged ${errorsToInsert.length} errors to database`)
       }
       

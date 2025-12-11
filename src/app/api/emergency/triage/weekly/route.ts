@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { resolveLlmMode } from '@/lib/llm'
-import { generateLLMResponse } from '@/lib/llm'
+import { resolveLlmMode, generateLLMResponse } from '@/lib/llm'
+import { recordLatencyMetric } from '@/lib/telemetryLatency'
 
 // Handle both GET (for cron) and POST (for manual execution)
 export async function GET() {
@@ -13,6 +13,18 @@ export async function POST() {
 }
 
 async function handleWeeklyTriageSummary() {
+  const start = Date.now()
+  const respond = async (payload: any, status = 200) => {
+    await recordLatencyMetric({
+      area: 'emergency_weekly_api',
+      route: '/api/emergency/triage/weekly',
+      durationMs: Date.now() - start,
+      statusCode: status,
+      success: status < 500
+    })
+    return NextResponse.json(payload, { status })
+  }
+
   try {
     // Get weekly emergency triage metrics
     const sevenDaysAgo = new Date()
@@ -25,29 +37,26 @@ async function handleWeeklyTriageSummary() {
       .gte('created_at', sevenDaysAgo.toISOString())
     
     if (triageError) {
-      return NextResponse.json(
+      return respond(
         { error: 'Failed to fetch weekly metrics', message: triageError.message },
-        { status: 500 }
+        500
       )
     }
 
     // Classification breakdown
-    const classifications = allTriages?.reduce((acc, triage) => {
-      acc[triage.classification] = (acc[triage.classification] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const triageRows = (allTriages ?? []) as Array<Record<string, any>>
+    const accumulateByKey = (key: string) => {
+      const result: Record<string, number> = {}
+      for (const triage of triageRows) {
+        const bucket = (triage?.[key] as string) || 'unknown'
+        result[bucket] = (result[bucket] ?? 0) + 1
+      }
+      return result
+    }
 
-    // Priority breakdown
-    const priorities = allTriages?.reduce((acc, triage) => {
-      acc[triage.priority] = (acc[triage.priority] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    // Decision source breakdown
-    const decisionSources = allTriages?.reduce((acc, triage) => {
-      acc[triage.decision_source] = (acc[triage.decision_source] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const classifications = accumulateByKey('classification')
+    const priorities = accumulateByKey('priority')
+    const decisionSources = accumulateByKey('decision_source')
 
     // Calculate accuracy percentage
     const llmCount = decisionSources?.llm || 0
@@ -76,8 +85,8 @@ async function handleWeeklyTriageSummary() {
 
     // Generate AI summary if LLM is available
     let aiSummary = null
-    const mode = resolveLlmMode('summary')
-    if (mode === 'live') {
+    const llmConfig = tryResolveLlmConfig()
+    if (llmConfig) {
       try {
         const prompt = `Summarize this weekly emergency triage performance:
         
@@ -102,17 +111,26 @@ async function handleWeeklyTriageSummary() {
       }
     }
 
-    return NextResponse.json({
+    return respond({
       success: true,
       metrics: weeklyMetrics,
       aiSummary,
       stored: !insertError
     })
   } catch (error: any) {
-    return NextResponse.json(
+    return respond(
       { error: 'Server error', message: error.message },
-      { status: 500 }
+      500
     )
+  }
+}
+
+const tryResolveLlmConfig = () => {
+  try {
+    return resolveLlmMode()
+  } catch (error) {
+    console.warn('LLM not configured for weekly summary:', error)
+    return null
   }
 }
 

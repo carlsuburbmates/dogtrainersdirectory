@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       // Errors per minute for last hour
       supabaseAdmin
         .rpc('check_error_rate_alert', { minutes_ago: 60, threshold: 1, consecutive_minutes: 1 })
-        .then(({ data }) => data)
+        .then(({ data }: { data: any[] }) => data)
         .catch(() => [])
     ])
 
@@ -72,7 +72,16 @@ export async function GET(request: NextRequest) {
     })
 
     // Build response
-    const stats = {
+    const stats: {
+      period: string
+      totalErrors: number
+      errorsPerMinute: number
+      levelBreakdown: Record<string, number>
+      categoryBreakdown: Record<string, number>
+      topErrors: any
+      errorsPerHour?: any
+      llmErrors?: any
+    } = {
       period,
       totalErrors: errorCount.count || 0,
       errorsPerMinute: calculateAverageErrors(errorsPerMinute),

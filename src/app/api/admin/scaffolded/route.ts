@@ -78,6 +78,4 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
-export const config = {
-  runtime: 'edge',
-}
+// runtime is edge by default for app dir

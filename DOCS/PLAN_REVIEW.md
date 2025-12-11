@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: Execution plan corrections & approvals
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # Plan Review & Approval Status
 ## dogtrainersdirectory.com.au - Execution Plan v2.0 → v2.1
 
@@ -74,6 +80,13 @@ The uploaded execution plan (v2.0) was **fundamentally sound** with excellent st
 **Impact:** Database schema, test data generation, validation rules
 
 ---
+
+## Phase 9 – Monetization Rollout Checkpoint (Dec 2025)
+
+- `DOCS/MONETIZATION_ROLLOUT_PLAN.md` is now live as the SSOT for the Stripe rollout. It captures the new `payment_audit` / `business_subscription_status` tables (`20251209101000_create_payment_tables.sql`), the `/api/stripe/create-checkout-session` endpoint, and the admin monetization overview/resync routes.
+- Monetization UI stays behind `FEATURE_MONETIZATION_ENABLED`/`NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED`. The new `/promote` page and admin “Subscription Health (24h)” tab are guarded accordingly and verified via Playwright (`tests/e2e/monetization.spec.ts`).
+- Telemetry + alerting were extended to cover monetization signals (latency logging, payment failure rate, subscription sync errors). See `DOCS/OPS_TELEMETRY_ENHANCEMENTS.md` for the thresholds and delivery workflow.
+- Rollout policy remains “feature-flagged until launch sign-off,” and the launch checklist now requires a monetization E2E run, Stripe webhook dry-run, and a payment audit evidence snapshot.
 
 ### Decision 2: Web Scraper - Deferred to Phase 2
 

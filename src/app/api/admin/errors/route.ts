@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       supabaseAdmin
         .from('error_logs')
         .select('level')
-        .then(({ data }) => {
+        .then(({ data }: { data: Array<{ level: string }> | null }) => {
           const counts: Record<string, number> = { debug: 0, info: 0, warn: 0, error: 0, critical: 0 }
           data?.forEach(item => {
             const key = item.level as ErrorLevel
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       supabaseAdmin
         .from('error_logs')
         .select('category')
-        .then(({ data }) => {
+        .then(({ data }: { data: Array<{ category: string }> | null }) => {
           const counts: Record<string, number> = { api: 0, llm: 0, validation: 0, db: 0, client: 0, other: 0 }
           data?.forEach(item => {
             const key = item.category as ErrorCategory
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         .from('error_logs')
         .select('route')
         .not('route', 'is', null)
-        .then(({ data }) => {
+        .then(({ data }: { data: Array<{ route: string }> | null }) => {
           const counts: Record<string, number> = {}
           data?.forEach(item => {
             if (item.route) {

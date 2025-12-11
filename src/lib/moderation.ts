@@ -74,19 +74,22 @@ export async function moderatePendingReviews(limit = 30) {
     return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
   }
 
-  const existingIds = reviews.map((review) => review.id)
+  const reviewsTyped = reviews as ReviewRecord[]
+  const existingIds = reviewsTyped.map((review) => review.id)
   const { data: existingDecisions } = await supabaseAdmin
     .from('ai_review_decisions')
     .select('review_id')
     .in('review_id', existingIds)
 
-  const alreadyDecided = new Set(existingDecisions?.map((item) => item.review_id))
+  const alreadyDecided = new Set(
+    (existingDecisions ?? []).map((item: { review_id: number }) => item.review_id)
+  )
 
   let autoApproved = 0
   let autoRejected = 0
   let manualFlagged = 0
 
-  for (const review of reviews) {
+  for (const review of reviewsTyped) {
     if (alreadyDecided.has(review.id)) continue
     const decision = evaluateReview(review)
 

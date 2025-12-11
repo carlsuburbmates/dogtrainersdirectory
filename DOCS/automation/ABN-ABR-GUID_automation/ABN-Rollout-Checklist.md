@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: ABN rollout checklist & operational runbook
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # ABN Verification Rollout Checklist
 
 Version: 2025-12-01

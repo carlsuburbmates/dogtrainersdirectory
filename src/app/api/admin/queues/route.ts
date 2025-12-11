@@ -64,19 +64,19 @@ export async function GET() {
     }
 
     let reviewDecisions: Record<number, { ai_decision: string | null; reason: string | null }> = {}
-    const reviewIds = reviewsRes.data?.map((item) => item.id) ?? []
+    const reviewIds = reviewsRes.data?.map((item: { id: number }) => item.id) ?? []
     if (reviewIds.length > 0) {
       const { data: decisionRows } = await supabaseAdmin
         .from('ai_review_decisions')
         .select('review_id, ai_decision, reason')
         .in('review_id', reviewIds)
-      reviewDecisions = (decisionRows || []).reduce((acc, row) => {
+      reviewDecisions = (decisionRows || []).reduce((acc: Record<number, { ai_decision: string | null; reason: string | null }>, row: any) => {
         acc[row.review_id] = { ai_decision: row.ai_decision, reason: row.reason }
         return acc
       }, {} as Record<number, { ai_decision: string | null; reason: string | null }>)
     }
 
-    const reviews = (reviewsRes.data || []).map((item) => ({
+    const reviews = (reviewsRes.data || []).map((item: any) => ({
       ...item,
       ai_decision: reviewDecisions[item.id]?.ai_decision ?? null,
       ai_reason: reviewDecisions[item.id]?.reason ?? null
@@ -94,6 +94,4 @@ export async function GET() {
   }
 }
 
-export const config = {
-  runtime: 'edge'
-}
+// runtime is edge by default for app dir

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import abrLib from '@/lib/abr'
 import { supabaseAdmin } from '@/lib/supabase'
+import { recordAbnFallbackEvent } from '@/lib/abnFallback'
 import type { AbrSearchResponse } from '../../../../../types/abr'
+import { recordLatencyMetric } from '@/lib/telemetryLatency'
 
 type RequestBody = {
   abn: string
@@ -26,13 +28,29 @@ const tokenOverlapScore = (a: string, b: string) => {
 }
 
 export async function POST(request: NextRequest) {
+  const start = Date.now()
+  const finish = async (status: number, success: boolean, meta?: Record<string, unknown>) => {
+    await recordLatencyMetric({
+      area: 'abn_verify_api',
+      route: '/api/abn/verify',
+      durationMs: Date.now() - start,
+      statusCode: status,
+      success,
+      metadata: meta
+    })
+  }
+
   try {
     const body = (await request.json()) as RequestBody
     const { abn, businessName } = body
-    if (!abn) return NextResponse.json({ error: 'Missing abn' }, { status: 400 })
+    if (!abn) {
+      await finish(400, false, { reason: 'missing_abn' })
+      return NextResponse.json({ error: 'Missing abn' }, { status: 400 })
+    }
 
     // Validate ABN format server-side (checksum + length)
     if (!abrLib.isValidAbn(abn)) {
+      await finish(400, false, { reason: 'invalid_format' })
       return NextResponse.json({ error: 'Invalid ABN format' }, { status: 400 })
     }
 
@@ -61,6 +79,19 @@ export async function POST(request: NextRequest) {
       similarity: Math.round((similarity || 0) * 100) / 100,
       abnData,
       requiresManualReview
+    }
+
+    if (!verified) {
+      let reason: 'abn_verify_inactive' | 'abn_verify_manual_review' | 'abn_verify_error' = 'abn_verify_manual_review'
+      if (!entity || status >= 400) {
+        reason = 'abn_verify_error'
+      } else if (abnStatus && abnStatus !== 'Active') {
+        reason = 'abn_verify_inactive'
+      }
+      await recordAbnFallbackEvent({
+        businessId: body.businessId ?? null,
+        reason
+      })
     }
 
     // Persist a record in abn_verifications when server-side writing is enabled.
@@ -107,14 +138,15 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       // Do not fail the request if persistence fails - log server-side only
       // (nextjs server runtime will log to platform logs). Keep endpoint behaviour unchanged.
-      // eslint-disable-next-line no-console
       console.error('abn verify persistence failed', err)
     }
 
+    await finish(200, true, { abn, businessId: body.businessId ?? null, verified })
     return NextResponse.json(response)
   } catch (err: any) {
+    await finish(500, false, { error: err?.message })
     return NextResponse.json({ error: 'Internal error', message: err?.message ?? 'unknown' }, { status: 500 })
   }
 }
 
-export const config = { runtime: 'nodejs' }
+// runtime is nodejs by default for app dir

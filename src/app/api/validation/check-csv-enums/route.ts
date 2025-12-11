@@ -75,27 +75,66 @@ export async function GET() {
     ])
 
     // Collect unique values
-    const dbEnums = {
-      age_specialty: ageConstraints.data?.[0]?.enum_values ? 
-        ageConstraints.data[0].enum_values.split(',').map((v: string) => v.trim().replace(/[{}']/g, '')) : [],
-      behaviour_issue: issueConstraints.data?.[0]?.enum_values ?
-        issueConstraints.data[0].enum_values.split(',').map((v: string) => v.trim().replace(/[{}']/g, '')) : [],
-      service_type: [...new Set(serviceConstraints.data?.map((r: any) => r.service_type_primary))],
-      resource_type: [...new Set(resourceConstraints.data?.map((r: any) => r.resource_type))]
+    type EnumName = keyof typeof EXPECTED_ENUMS
+    const cleanEnumValues = (valueString?: string) =>
+      valueString
+        ?.split(',')
+        .map((value) => value.trim().replace(/[{}']/g, ''))
+        .filter((value) => value.length > 0) ?? []
+
+    const dbEnums: Record<EnumName, string[]> = {
+      age_specialty: cleanEnumValues(ageConstraints.data?.[0]?.enum_values),
+      behaviour_issue: cleanEnumValues(issueConstraints.data?.[0]?.enum_values),
+      service_type: Array.from(
+        new Set(
+          (serviceConstraints.data ?? [])
+            .map((record: { service_type_primary: string | null }) => record.service_type_primary)
+            .filter((value: string | null): value is string => Boolean(value))
+        )
+      ),
+      resource_type: Array.from(
+        new Set(
+          (resourceConstraints.data ?? [])
+            .map((record: { resource_type: string | null }) => record.resource_type)
+            .filter((value: string | null): value is string => Boolean(value))
+        )
+      )
     }
 
     // 2. Compare with expected values
-    const validationResults = {}
+    const validationResults: Record<EnumName, {
+      expected: string[]
+      actual: string[]
+      missing: string[]
+      extra: string[]
+      consistent: boolean
+    }> = {} as Record<EnumName, {
+      expected: string[]
+      actual: string[]
+      missing: string[]
+      extra: string[]
+      consistent: boolean
+    }>
     let isConsistent = true
     
-    for (const [enumName, expectedValues] of Object.entries(EXPECTED_ENUMS)) {
-      const actualValues = dbEnums[enumName as keyof typeof dbEnums] || []
+    for (const [enumName, expectedValues] of Object.entries(EXPECTED_ENUMS) as [EnumName, string[]][]) {
+      const actualValues = dbEnums[enumName] || []
       const expectedSet = new Set(expectedValues)
       const actualSet = new Set(actualValues)
       
       // Find mismatches
-      const missing = expectedValues.filter(v => !actualSet.has(v))
-      const extra = actualValues.filter(v => !expectedSet.has(v))
+      const missing: string[] = []
+      for (const expected of expectedValues) {
+        if (!actualSet.has(expected)) {
+          missing.push(expected)
+        }
+      }
+      const extra: string[] = []
+      for (const actual of actualValues) {
+        if (!expectedSet.has(actual)) {
+          extra.push(actual)
+        }
+      }
       
       if (missing.length > 0 || extra.length > 0) {
         isConsistent = false

@@ -6,15 +6,42 @@ import { classifyEmergency } from '@/lib/emergencyTriage'
 import { detectMedicalEmergency } from '@/lib/medicalDetector'
 import { logAPIError, logError } from '@/lib/errorLog'
 import { createTriageLog, createTriageEvent } from '@/lib/triageLog'
+import type { MedicalResult } from '@/lib/triageLog'
+import { recordLatencyMetric } from '@/lib/telemetryLatency'
+
+const normalizeSuburbId = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
 
 export async function POST(request: NextRequest) {
   const start = Date.now()
+  let suburbId: number | null = null
+
+  const recordMetric = async (statusCode: number, success: boolean) => {
+    await recordLatencyMetric({
+      area: 'emergency_triage_api',
+      route: '/api/emergency/triage',
+      durationMs: Date.now() - start,
+      statusCode,
+      success,
+      metadata: suburbId ? { suburbId } : undefined
+    })
+  }
   
   try {
     const body = await request.json()
-    const { message, suburbId } = body
+    const { message } = body
+    suburbId = normalizeSuburbId(body.suburbId)
     
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      await recordMetric(400, false)
       return NextResponse.json(
         { 
           error: 'Message is required and must be a non-empty string', 
@@ -28,7 +55,7 @@ export async function POST(request: NextRequest) {
 // Step 1: Classification and medical detection
     let llmStart = Date.now()
     let classification: any
-    let medicalResult = null
+    let medicalResult: MedicalResult | null = null
     let llmLatency = 0
     let tokenCount = { prompt: 0, completion: 0, total: 0 }
     let llmError: Error | null = null
@@ -47,11 +74,11 @@ export async function POST(request: NextRequest) {
           medicalResult = {
             is_medical: false,
             severity: 'minor',
-            symptoms: [],
-            recommended_resources: [],
+            symptoms: [] as string[],
+            recommended_resources: [] as MedicalResult['recommended_resources'],
             vet_wait_time_critical: false
           }
-          await logError('Medical detector failed', { error: (medicalErr as Error).message }, 'warn')
+          await logError('Medical detector failed', { route: '/api/emergency/triage', method: 'POST', extra: { error: medicalErr instanceof Error ? medicalErr.message : medicalErr } }, 'warn')
         }
       }
       
@@ -68,7 +95,7 @@ export async function POST(request: NextRequest) {
         recommended_action: 'other',
         urgency: 'moderate'
       }
-      await logError('LLM classification failed', { error: llmError.message, message }, 'error', 'llm')
+      await logError('LLM classification failed', { route: '/api/emergency/triage', method: 'POST', extra: { error: llmError instanceof Error ? llmError.message : llmError } }, 'error', 'llm')
     }
     
     const totalDuration = Date.now() - start
@@ -78,7 +105,7 @@ export async function POST(request: NextRequest) {
     try {
       triageLogId = await createTriageLog({
         message,
-        suburbId: suburbId ? Number(suburbId) : undefined,
+        suburbId: suburbId ?? undefined,
         classification,
         medical: medicalResult,
         tokens: tokenCount,
@@ -93,7 +120,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (dbErr) {
       await logAPIError('/api/emergency/triage', 'POST', 500, dbErr, { 
-        details: { suburbId, classification, medicalResult, durationMs: totalDuration } 
+        extra: { suburbId, classification, medicalResult, durationMs: totalDuration } 
       })
     }
     
@@ -109,11 +136,12 @@ export async function POST(request: NextRequest) {
         }
         await createTriageEvent(triageLogId, 'persist', { success: true, logId: triageLogId })
       } catch (eventErr) {
-        await logError('Event logging failed', { error: (eventErr as Error).message, triageLogId }, 'error')
+        await logError('Event logging failed', { extra: { error: eventErr instanceof Error ? eventErr.message : eventErr, triageLogId } }, 'error')
       }
     }
     
-return NextResponse.json({
+    await recordMetric(200, true)
+    return NextResponse.json({
       success: true,
       classification,
       medical: medicalResult, // Include medical detection if performed
@@ -129,8 +157,8 @@ return NextResponse.json({
     const duration = Date.now() - start
     
     await logAPIError('/api/emergency/triage', 'POST', 500, error, 
-      { details: { suburbId }, duration_ms: duration })
-    
+      { extra: { suburbId, durationMs: duration } })
+    await recordMetric(500, false)
     return NextResponse.json(
       { 
         error: 'Failed to classify emergency', 

@@ -38,22 +38,31 @@ type ScaffoldedItem = {
   bio?: string
 }
 
+type FallbackStats = {
+  fallbackCount: number
+  verificationCount: number
+  rate: number
+  windowHours: number
+  events: Array<{ business_id: number | null; reason: string; created_at: string }>
+}
+
 export default function AdminQueuesPage() {
   const [queues, setQueues] = useState<QueuePayload | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [scaffolded, setScaffolded] = useState<ScaffoldedItem[]>([])
+  const [fallbackStats, setFallbackStats] = useState<FallbackStats | null>(null)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/queues').then((res) => res.json()),
       fetch('/api/admin/scaffolded').then((res) => res.json()),
+      fetch('/api/admin/abn/fallback-stats').then((res) => res.json())
     ])
-      .then(([queuePayload, scaffoldPayload]: [QueuePayload, { scaffolded: ScaffoldedItem[] }]) => {
+      .then(([queuePayload, scaffoldPayload, fallbackPayload]: [QueuePayload, { scaffolded: ScaffoldedItem[] }, FallbackStats]) => {
         setQueues(queuePayload)
         setScaffolded(scaffoldPayload.scaffolded || [])
+        setFallbackStats(fallbackPayload || null)
       })
-      .then((res) => res.json())
-      .then((payload: QueuePayload) => setQueues(payload))
       .catch((err) => {
         console.error(err)
         setError('Unable to load admin queues right now.')
@@ -76,6 +85,27 @@ export default function AdminQueuesPage() {
         )}
         {queues && (
           <div className="space-y-8">
+            {fallbackStats && (
+              <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                <p className="text-sm font-semibold text-blue-900">ABN fallback rate (last {fallbackStats.windowHours}h)</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {(fallbackStats.rate * 100).toFixed(1)}%
+                  <span className="ml-2 text-sm text-blue-900">
+                    ({fallbackStats.fallbackCount}/{fallbackStats.verificationCount || 1})
+                  </span>
+                </p>
+                <p className="text-xs text-blue-900">Monitoring fallback pipeline closes telemetry gap #3.</p>
+                {fallbackStats.events?.length > 0 && (
+                  <ul className="mt-2 text-xs text-blue-900">
+                    {fallbackStats.events.slice(0, 3).map((evt, idx) => (
+                      <li key={`${evt.business_id ?? 'na'}-${idx}`}>
+                        {new Date(evt.created_at).toLocaleTimeString()} – {evt.reason}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <QueueCard title="Pending Reviews" items={queues.reviews.map((item) => ({
               id: item.id,
               title: item.title,

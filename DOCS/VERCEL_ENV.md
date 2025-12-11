@@ -36,6 +36,18 @@ Notes:
 - SENTRY_DSN — Errors monitoring (Production, Preview)
 - LOGFLARE_API_KEY, LOGFLARE_SOURCE_ID — Logging (Production, Preview)
 - OPENAI_API_KEY, ANTHROPIC_API_KEY — AI providers when used (server only)
+- ALERTS_EMAIL_TO — Comma-separated list of ops recipients for alert emails (Preview + Production)
+- ALERTS_EMAIL_FROM — Optional override for alert email sender (defaults to `Ops Alerts <ops@dogtrainersdirectory.com.au>`)
+- ALERTS_SLACK_WEBHOOK_URL — Incoming webhook to receive alert summaries in Slack (Preview + Production)
+- Stripe / Monetization:
+  | Name | What it is | Where to set | Used by |
+  | --- | --- | --- | --- |
+  | STRIPE_SECRET_KEY | Server-side Stripe key for Checkout + webhook events | Local `.env.local` (trusted), Vercel Preview & Production | `/api/stripe/create-checkout-session`, `/api/webhooks/stripe` |
+  | STRIPE_WEBHOOK_SECRET | Signing secret for Stripe webhooks | Local `.env.local`, Vercel Preview & Production | `/api/webhooks/stripe` |
+  | STRIPE_PRICE_FEATURED | Price ID for Featured Placement subscription | Local `.env.local`, Vercel Preview & Production | Checkout session creation |
+  | STRIPE_PRICE_PRO | Optional future plan price ID | Local `.env.local`, Vercel Preview & Production | Reserved for future upgrade tiers |
+  | FEATURE_MONETIZATION_ENABLED | Server feature flag (`1`/`0`) | Local `.env.local`, Vercel Preview & Production | Enables monetization backend routes |
+  | NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED | Client feature flag (`1`/`0`) | Local `.env.local`, Vercel Preview & Production | Shows “Promote my listing” UI when enabled |
 
 ## Behavioral flags / toggles
 - AUTO_APPLY

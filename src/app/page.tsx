@@ -13,7 +13,7 @@ const ageOptions: { value: AgeSpecialty; label: string }[] = [
 ]
 
 const issueOptions: { value: BehaviorIssue; label: string }[] = [
-  { value: 'pulling_lead', label: 'Pulling on the lead' },
+  { value: 'pulling_on_lead', label: 'Pulling on the lead' },
   { value: 'separation_anxiety', label: 'Separation anxiety' },
   { value: 'excessive_barking', label: 'Excessive barking' },
   { value: 'dog_aggression', label: 'Dog aggression' },

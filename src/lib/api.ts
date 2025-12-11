@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
+import { recordSearchTelemetry, type SearchTelemetryPayload } from './telemetryLatency'
 import { AgeSpecialty, BehaviorIssue } from '../types/database'
 
 export interface TriageRequest {
@@ -23,6 +24,9 @@ export interface SearchResult {
   business_email?: string
   business_phone?: string
   business_website?: string
+  business_address?: string
+  business_bio?: string
+  business_pricing?: string
   suburb_name: string
   council_name: string
   region: string
@@ -33,6 +37,9 @@ export interface SearchResult {
   behavior_issues: string[]
   services: string[]
   verified: boolean
+  is_featured?: boolean
+  featured_until?: string | null
+  abn_verified?: boolean
 }
 
 // Helper function to log telemetry for API calls
@@ -45,23 +52,30 @@ async function logApiTelemetry(
   success: boolean = true,
   error?: string
 ): Promise<void> {
+  const payload: SearchTelemetryPayload = {
+    operation,
+    suburbId,
+    suburbName,
+    resultCount,
+    latencyMs,
+    success,
+    error
+  }
+
   try {
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return // Skip if no admin access
-    
-    await supabaseAdmin
-      .from('search_telemetry')
-      .insert({
-        operation,
-        suburb_id: suburbId,
-        suburb_name: suburbName,
-        result_count: resultCount,
-        latency_ms: latencyMs,
-        success,
-        error,
-        timestamp: new Date().toISOString()
+    if (typeof window === 'undefined') {
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return
+      }
+      await recordSearchTelemetry(payload)
+    } else {
+      await fetch('/api/telemetry/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       })
+    }
   } catch (e) {
-    // Silently fail to avoid blocking main flow
     console.warn('Failed to log telemetry:', e)
   }
 }

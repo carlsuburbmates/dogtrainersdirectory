@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import ErrorMetricsChart from '@/components/admin/ErrorMetricsChart'
 
 interface ErrorMetrics {
@@ -16,11 +16,7 @@ export default function AdminErrorDashboard() {
   const [period, setPeriod] = useState<'24h' | '7d' | '30d'>('24h')
   const [detailed, setDetailed] = useState(false)
 
-  useEffect(() => {
-    fetchErrorMetrics()
-  }, [period, detailed])
-
-  const fetchErrorMetrics = async () => {
+  const fetchErrorMetrics = useCallback(async () => {
     try {
       setIsLoading(true)
       const response = await fetch(`/api/admin/errors/stats?period=${period}&detailed=${detailed}`)
@@ -33,7 +29,11 @@ export default function AdminErrorDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [detailed, period])
+
+  useEffect(() => {
+    fetchErrorMetrics()
+  }, [fetchErrorMetrics])
 
   if (isLoading && !errorData) {
     return (
@@ -98,9 +98,6 @@ export default function AdminErrorDashboard() {
         </a>
         <a href="/api/admin/errors/trigger-alert" className="inline-block px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
           Trigger Alert Test
-        </a>
-        <a href="/api/test/errors/" target="_blank" className="inline-block px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-          Test Error Logging
         </a>
         <a href="/api/test/triage" target="_blank" className="inline-block px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
           Test Triage

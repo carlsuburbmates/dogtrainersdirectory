@@ -1,7 +1,7 @@
 import { supabaseAdmin } from './supabase'
 import { apiService } from './api'
-import type { SearchResult } from './api'
-import type { BehaviorIssue, DistanceFilter } from '../types/database'
+import type { SearchResult, TriageRequest } from './api'
+import type { BehaviorIssue } from '../types/database'
 
 export type EmergencyFlow = 'medical' | 'stray' | 'crisis' | 'normal'
 
@@ -132,20 +132,21 @@ export async function fetchEmergencyResources(flow: EmergencyFlow, options: { su
   const coords = await getSuburbCoordinates(options.suburbId)
   const filters = FLOW_FILTERS[flow]
 
-  if (flow === 'crisis' || flow === 'normal') {
+  if ((flow === 'crisis' || flow === 'normal') && options.suburbId) {
     // reuse trainer search for crisis flow
-    const distanceFilter: DistanceFilter = coords ? '0-5' : 'greater'
-    const request = {
-      ageFilters: undefined,
-      includeRescue: flow === 'crisis',
-      issues: flow === 'crisis' ? CRISIS_BEHAVIOUR_FOCUS : undefined,
+    const request: TriageRequest = {
+      age: 'adult_18m_7y',
+      issues: flow === 'crisis' ? CRISIS_BEHAVIOUR_FOCUS : [],
       suburbId: options.suburbId,
-      distanceFilter,
-      verifiedOnly: true,
-      limit
+      radius: coords ? 5 : 50
     }
     const trainers = (await apiService.getTriageResults(request)) as SearchResult[]
-    return { trainers } as const
+    return { trainers: trainers.slice(0, limit) } as const
+  }
+
+  if (flow === 'crisis' || flow === 'normal') {
+    // Without a suburb context we cannot determine proximity—return empty crisis dataset.
+    return { trainers: [] } as const
   }
 
   const { data, error } = await supabaseAdmin.rpc('search_emergency_resources', {

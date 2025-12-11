@@ -8,10 +8,11 @@ type RequestBody = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id)
+    const { id: idString } = await params
+    const id = Number(idString)
     if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid ABN ID' }, { status: 400 })
     }
@@ -48,6 +49,4 @@ export async function POST(
   }
 }
 
-export const config = {
-  runtime: 'edge'
-}
+// runtime is edge by default for app dir

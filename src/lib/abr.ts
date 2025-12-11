@@ -127,10 +127,8 @@ export function parseAbrSoap(xml: string): AbrSearchResponse | null {
     const extractAll = (tag: string) => {
       const re = new RegExp(`<(?:[A-Za-z0-9_\\-]+:)?${tag}[^>]*>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_\\-]+:)?${tag}[^>]*>`, 'gi')
       const matches: string[] = []
-      let r
-      // eslint-disable-next-line no-cond-assign
-      while ((r = re.exec(clean)) !== null) {
-        matches.push(r[1].trim())
+      for (let match = re.exec(clean); match !== null; match = re.exec(clean)) {
+        matches.push(match[1].trim())
       }
       return matches
     }
@@ -184,8 +182,11 @@ export async function fetchAbrJson(abn: string, guid?: string): Promise<{ status
   return { status: res.status, body, parsed }
 }
 
-export default {
+const abrHelpers = {
   stripJsonp,
   parseAbrJson,
-  fetchAbrJson
+  fetchAbrJson,
+  isValidAbn
 }
+
+export default abrHelpers

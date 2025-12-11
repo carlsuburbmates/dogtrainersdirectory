@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: Product blueprint & domain rules
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # dogtrainersdirectory.com.au – Complete Conceptual Blueprint (SSOT)
 
 **Version:** 1.1  

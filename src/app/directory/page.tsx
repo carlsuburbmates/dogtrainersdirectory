@@ -114,7 +114,7 @@ export default async function DirectoryPage() {
                       ))}
                     </div>
                     <div className="mt-4 flex flex-wrap gap-3">
-                      <Link href={`/trainer/${trainer.business_id}`} className="btn-primary">
+                      <Link href={`/trainers/${trainer.business_id}`} className="btn-primary">
                         View profile
                       </Link>
                       {trainer.business_website && (

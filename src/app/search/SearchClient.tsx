@@ -1,32 +1,54 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiService, SearchResult } from '../../lib/api'
-
+import { Button } from '@/components/ui/Button'
+import { generateResultsStructuredData } from './metadata'
+import Head from 'next/head'
 export default function SearchResultsPage() {
   const router = useRouter()
   const [results, setResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [sortBy, setSortBy] = useState<'distance' | 'rating' | 'verified'>('distance')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 30
+
+  const suburbId = React.useMemo(() => {
+    if (typeof window === 'undefined') return null
+    const storedParams = window.sessionStorage.getItem('searchParams')
+    return storedParams ? JSON.parse(storedParams)?.suburbId : null
+  }, [])
 
   useEffect(() => {
-    // Get results from sessionStorage set by the triage page
-    const storedResults = sessionStorage.getItem('searchResults')
-    const storedParams = sessionStorage.getItem('searchParams')
-    
-    if (storedResults) {
-      try {
-        const results = JSON.parse(storedResults) as SearchResult[]
-        setResults(results)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error parsing stored results:', error)
-        setResults([])
-        setLoading(false)
+    let cancelled = false
+
+    const hydrateFromStorage = () => {
+      if (typeof window === 'undefined') return
+      const storedResults = window.sessionStorage.getItem('searchResults')
+
+      if (storedResults) {
+        try {
+          const parsed = JSON.parse(storedResults) as SearchResult[]
+          startTransition(() => {
+            if (cancelled) return
+            setResults(parsed)
+            setLoading(false)
+          })
+          return
+        } catch (error) {
+          console.error('Error parsing stored results:', error)
+        }
       }
-    } else {
-      // No results found, redirect back to home
-      router.push('/')
+
+      if (!cancelled) {
+        router.push('/')
+      }
+    }
+
+    hydrateFromStorage()
+    return () => {
+      cancelled = true
     }
   }, [router])
 
@@ -36,9 +58,25 @@ export default function SearchResultsPage() {
   }
 
   const handleViewProfile = (trainer: SearchResult) => {
-    // TODO: Navigate to trainer profile page
-    alert(`Viewing profile for ${trainer.business_name}`)
+    router.push(`/trainers/${trainer.business_id}`)
   }
+
+  const paginatedResults = results.slice(0, page * PAGE_SIZE)
+  const canLoadMore = results.length > page * PAGE_SIZE
+
+  const sortedResults = useMemo(() => {
+    const list = [...paginatedResults]
+    switch (sortBy) {
+      case 'distance':
+        return list.sort((a, b) => a.distance_km - b.distance_km)
+      case 'rating':
+        return list.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
+      case 'verified':
+        return list.sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0))
+      default:
+        return list
+    }
+  }, [sortBy, paginatedResults])
 
   if (loading) {
     return (
@@ -46,13 +84,20 @@ export default function SearchResultsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-300 border-t-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Finding trainers...</p>
+          <p className="text-sm text-gray-500">This may take a few seconds</p>
         </div>
       </div>
     )
   }
 
+  const structuredData = JSON.stringify(generateResultsStructuredData(results.length, suburbId), null, 0)
+
   return (
-    <main className="container mx-auto px-4 py-8">
+    <>
+      <Head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: structuredData }} />
+      </Head>
+      <main className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -70,13 +115,23 @@ export default function SearchResultsPage() {
           </p>
         </div>
 
+        {/* Sort bar */}
+        <div className="mb-4 bg-white rounded-md border border-gray-200 p-3 flex items-center justify-between">
+          <span className="text-sm font-medium">Sort by:</span>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="text-sm border rounded px-2 py-1">
+            <option value="distance">Distance</option>
+            <option value="rating">Rating</option>
+            <option value="verified">Verified</option>
+          </select>
+        </div>
+
         {/* Results */}
         {results.length === 0 ? (
           <div className="text-center py-16">
             <div className="card max-w-md mx-auto">
               <h2 className="text-xl font-semibold mb-4">No trainers found</h2>
               <p className="text-gray-600">
-                We couldn't find any trainers matching your criteria. Try adjusting your search filters or browse all trainers in your area.
+                We couldn&rsquo;t find any trainers matching your criteria. Try adjusting your search filters or browse all trainers in your area.
               </p>
               <button
                 onClick={() => router.push('/')}
@@ -218,9 +273,17 @@ export default function SearchResultsPage() {
                 </div>
               </div>
             ))}
+            {canLoadMore && (
+              <div className="mt-6 text-center">
+                <Button onClick={() => setPage(p => p + 1)} variant="secondary" className="w-full max-w-xs">
+                  Load more ({results.length - page * PAGE_SIZE} left)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
     </main>
+    </>
   )
 }

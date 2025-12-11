@@ -276,3 +276,38 @@ export async function checkLLMHealth(): Promise<{status: 'healthy'|'degraded'|'d
 }
 
 // Health check function defined above
+
+/**
+ * Resolve LLM provider and configuration from environment variables
+ * This function determines which LLM provider should be used based on environment config
+ * @returns {provider: string, config: object} - The active LLM provider and configuration
+ */
+export function resolveLlmMode() {
+  const provider = process.env.LLM_PROVIDER || 'zai'
+  
+  const config = {
+    zai: {
+      apiKey: process.env.ZAI_API_KEY,
+      baseUrl: process.env.ZAI_BASE_URL || 'https://api.z.ai/api/paas/v4',
+      model: process.env.LLM_DEFAULT_MODEL || 'glm-4.6',
+      maxTokens: 1000,
+      temperature: 0.7
+    },
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY,
+      baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+      model: process.env.OPENAI_MODEL_ID || 'gpt-4',
+      maxTokens: 1000,
+      temperature: 0.7
+    }
+  }
+  
+  if (!config[provider as keyof typeof config]?.apiKey) {
+    throw new Error(`LLM provider '${provider}' is not configured properly. Missing API key.`)
+  }
+  
+  return {
+    provider,
+    ...config[provider as keyof typeof config]
+  }
+}

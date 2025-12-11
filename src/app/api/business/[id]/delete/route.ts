@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id)
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idString } = await params
+  const id = Number(idString)
   if (!id) return NextResponse.json({ error: 'Invalid business id' }, { status: 400 })
 
   const { data, error } = await supabaseAdmin
@@ -17,4 +18,4 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   return NextResponse.json({ success: true, business: data?.[0] })
 }
 
-export const config = { runtime: 'edge' }
+// runtime is edge by default for app dir

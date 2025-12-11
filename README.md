@@ -1,3 +1,9 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: Project overview & status
+> Status: Active · Last reviewed: 2025-12-09
+
+---
+
 # dogtrainersdirectory.com.au
 
 Docs home: `DOCS/README.md` — single place to discover authoritative design, automation runbooks, DB/migration index, and AI playbooks.

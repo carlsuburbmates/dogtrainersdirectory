@@ -24,6 +24,8 @@ export async function GET(request: Request) {
     .eq('business_id', businessId)
     .eq('is_approved', true)
 
+  const typedReviews = (reviews ?? []) as { rating: number }[]
+
   const totalViews = Math.floor(Math.random() * 300 + 50)
   const totalProfileClicks = Math.floor(totalViews * 0.35)
   const totalInquiries = Math.floor(totalProfileClicks * 0.25)
@@ -34,8 +36,10 @@ export async function GET(request: Request) {
       totalViews,
       totalProfileClicks,
       totalInquiries,
-      averageRating: reviews?.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 'N/A',
-      reviewCount: reviews?.length || 0
+      averageRating: typedReviews.length > 0
+        ? (typedReviews.reduce((sum, review) => sum + review.rating, 0) / typedReviews.length).toFixed(1)
+      : 'N/A',
+      reviewCount: typedReviews.length
     }
   })
 }

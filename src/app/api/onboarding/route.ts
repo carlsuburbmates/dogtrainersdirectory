@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { encryptValue } from '@/lib/encryption'
 import abrLib from '@/lib/abr'
+import { recordAbnFallbackEvent } from '@/lib/abnFallback'
+import { recordLatencyMetric } from '@/lib/telemetryLatency'
 
 type RequestBody = {
   email: string
@@ -32,6 +34,18 @@ const computeSimilarity = (abn: string) => {
 }
 
 export async function POST(request: Request) {
+  const start = Date.now()
+  const finish = async (status: number, success: boolean, metadata?: Record<string, unknown>) => {
+    await recordLatencyMetric({
+      area: 'onboarding_api',
+      route: '/api/onboarding',
+      durationMs: Date.now() - start,
+      statusCode: status,
+      success,
+      metadata
+    })
+  }
+
   try {
     const body = (await request.json()) as RequestBody
     const {
@@ -54,6 +68,7 @@ export async function POST(request: Request) {
     } = body
 
     if (!email || !password || !businessName || !abn) {
+      await finish(400, false, { reason: 'missing_fields' })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -65,6 +80,7 @@ export async function POST(request: Request) {
     })
     // Server-side ABN validation and authoritative ABR lookup
     if (!abrLib.isValidAbn(abn)) {
+      await finish(400, false, { reason: 'invalid_abn' })
       return NextResponse.json({ error: 'Invalid ABN format' }, { status: 400 })
     }
 
@@ -77,12 +93,16 @@ export async function POST(request: Request) {
     // - otherwise => 'manual_review'
     const entity = abnData?.Response?.ResponseBody ?? null
     let abnStatus: 'verified' | 'manual_review' | 'rejected' = 'manual_review'
-    if (!entity || Object.keys(entity).length === 0) {
+    let fallbackReason: 'onboarding_manual_review' | 'onboarding_abn_invalid' | null = null
+
+    if (!entity || Object.keys(entity).length === 0 || abrStatus >= 400) {
       abnStatus = 'rejected'
+      fallbackReason = 'onboarding_abn_invalid'
     } else if (entity?.ABNStatus === 'Active') {
       abnStatus = 'verified'
     } else {
       abnStatus = 'manual_review'
+      fallbackReason = 'onboarding_manual_review'
     }
 
     await supabaseAdmin.from('profiles').insert({
@@ -127,10 +147,18 @@ export async function POST(request: Request) {
     }
 
     if (!business || businessErr) {
+      await finish(500, false, { reason: 'business_insert_failed' })
       return NextResponse.json({ error: 'Failed to create business record' }, { status: 500 })
     }
 
     const businessId = business.id as number
+
+    if (fallbackReason) {
+      await recordAbnFallbackEvent({
+        businessId,
+        reason: fallbackReason
+      })
+    }
 
     if (ages.length > 0) {
       const specializations = ages.map((age) => ({
@@ -173,13 +201,13 @@ export async function POST(request: Request) {
       await abnInsertCall
     }
 
+    await finish(200, true, { businessId, abnStatus })
     return NextResponse.json({ success: true, trainer_id: user.id, business_id: businessId, abn_status: abnStatus })
   } catch (error: any) {
     console.error('Onboarding error', error)
+    await finish(500, false, { error: error?.message })
     return NextResponse.json({ error: 'Internal error', message: error?.message ?? 'unknown' }, { status: 500 })
   }
 }
 
-export const config = {
-  runtime: 'nodejs'
-}
+// runtime is nodejs by default for app dir
