@@ -39,8 +39,8 @@ Use this page for the final production go/no-go review. All items below must be 
 10. **Monetization readiness (Phase 9B – staging only)**
     - Feature flag in staging: `FEATURE_MONETIZATION_ENABLED=1`, `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=1` (for test runs only).
     - Payment tables: `payment_audit` and `business_subscription_status` created and migrated in staging.
-    - Phase 9B staging drill: **COMPLETED 2025-12-11** (Stripe test payment, webhook replay, DB verification, admin dashboard checks).
-    - Evidence archived in: `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md`.
+    - Phase 9B staging drill: **PENDING – operator execution required** (Stripe test payment, webhook replay, DB verification, admin dashboard checks; see `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md` template).
+    - Evidence will be archived in: `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md`.
     - Production safety: `FEATURE_MONETIZATION_ENABLED=0` and `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0` in production (monetization OFF).
     - Production gates: NOT MET (blocked behind ≥ 50 claimed trainers, ≥ 85% ABN verification, and governance approval).
 11. **Production DNS + secrets (final gate)**

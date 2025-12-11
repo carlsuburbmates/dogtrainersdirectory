@@ -128,16 +128,16 @@ This runbook provides:
 - Feature flags remain default-off in every environment. Enabling monetization requires completing Launch Checklist section 10 + documented sign-off. Setting `E2E_TEST_MODE=1` or `x-e2e-stripe-test` should be reserved for automated tests; ops usage must be logged.
 - Alerts exist for latency spikes (`monetization_api`), payment failures, and sync errors. Use telemetry overrides sparingly and record any override usage in ops logs.
 
-## Phase 9B – Staging Hardening (COMPLETED)
+## Phase 9B – Staging Hardening (IN PROGRESS – Stripe drill pending)
 
-**Summary:** Phase 9B was executed entirely in the staging environment to validate the end-to-end $20 AUD Featured Placement payment flow, webhook handling, and downstream state changes without touching production. All tests were performed in Stripe test mode and against staging Supabase.
+**Summary:** Phase 9B is executing entirely in the staging environment to validate the end-to-end $20 AUD Featured Placement payment flow, webhook handling, and downstream state changes without touching production. All tests are performed in Stripe test mode and against staging Supabase.
 
-- Execution date: 2025-12-11
-- Operator: Codex AI Agent (Documentation & Setup)
+- Execution date: {{PHASE_9B_EXECUTION_DATE}} (to be set after Stripe drill)
+- Operator: {{PHASE_9B_OPERATOR}} (human operator name)
 
-Key outcomes:
-- E2E test: The $20 AUD Featured Placement checkout and payment flow was exercised end-to-end (Checkout Session → Payment Intent → webhook replay → DB upserts → admin surface updates).
-- Evidence archive: Full evidence (session IDs, webhook deliveries, Supabase queries, logs, and screenshots) is stored in:
+Expected outcomes (to be verified during execution):
+- E2E test: The $20 AUD Featured Placement checkout and payment flow is exercised end-to-end (Checkout Session → Payment Intent → webhook replay → DB upserts → admin surface updates).
+- Evidence archive: Full evidence (session IDs, webhook deliveries, Supabase queries, logs, and screenshots) will be stored in:
   - DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md
 - Safety posture: Production monetization remains OFF. Production feature flags must remain:
   - `FEATURE_MONETIZATION_ENABLED=0`
@@ -148,5 +148,6 @@ Key outcomes:
   - Formal governance approval and documented sign-off.
 
 Notes and next steps:
-- Once the operator populates the launch run with real IDs/timestamps, this section should be updated with actual {{DATE}} and {{OPERATOR}} values.
+- Phase 9B execution is pending operator completion of the Stripe drill (Step 4).
+- See `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md` for the step-by-step execution template.
 - Monetization remains strictly staging-only until Phase 9C approves production enablement.

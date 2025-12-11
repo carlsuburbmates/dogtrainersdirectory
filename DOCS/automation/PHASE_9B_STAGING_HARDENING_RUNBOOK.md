@@ -39,20 +39,34 @@ Prove that all monetization components work end-to-end in **staging only**, with
   - `STRIPE_PRICE_PRO` = reserved for Phase 5+ (do not use in Phase 1)
 - [ ] Stripe test mode dashboard accessible (not production dashboard)
 
-### Precondition 3: Production Flags Remain OFF
-- [ ] Production Vercel environment has:
+### Precondition 3: Production Flags Remain OFF ⚠️ CRITICAL SAFETY GATE
+- [ ] **Production Vercel environment MUST have:**
   ```
   FEATURE_MONETIZATION_ENABLED=0
   NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0
   ```
-- [ ] Confirm via `vercel env list --prod` or Vercel UI
+- [ ] **Staging/Preview Vercel environment MUST have:**
+  ```
+  FEATURE_MONETIZATION_ENABLED=1
+  NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=1
+  ```
+- [ ] Confirm via Vercel UI: https://vercel.com/dogtrainersdirectory/dogtrainersdirectory/settings/environment-variables
+  - Look at "Environment" column to distinguish Production vs. Preview
+  - Values are encrypted in UI but labels show "(Production)" or "(Preview)"
+  - If you cannot verify, **STOP and contact ops team before proceeding**
 
-**⚠️ If preconditions fail:**
+**⚠️ ABORT CONDITIONS - Do NOT proceed if:**
+1. Production flags are set to `1` (monetization would be enabled live)
+2. You cannot verify the environment targets (risk of production changes)
+3. Staging/Preview flags are not set to `1` (cannot run the drill)
+4. Any other precondition fails
+
+**If preconditions fail:**
 1. Stop immediately.
 2. Document which condition failed.
-3. Remediate with ops team.
+3. Remediate with ops team (likely: fix Vercel env var values).
 4. Re-run precondition check.
-5. Only proceed when all three are ✅.
+5. Only proceed when all three gates are ✅.
 
 ---
 
