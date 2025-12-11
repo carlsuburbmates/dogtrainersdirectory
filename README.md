@@ -62,7 +62,7 @@ See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → product
 ## Data Sources
 - `DOCS/blueprint_ssot_v1.1.md` — product/UX rules, taxonomies, geography
 - `DOCS/suburbs_councils_mapping.csv` — 28 councils, 138 suburb rows with postcode/lat/lon
-- `DOCS/automation/ABN-ABR-GUID_automation/abn_stripe_legal_integration_v5.md` — ABN + Stripe flows
+- `DOCS/MONETIZATION_ROLLOUT_PLAN.md` — Stripe monetization SSOT (product scope, metadata contract, legal requirements)
 - `DOCS/implementation/master_plan.md` — phased rollout, governance
 - `DOCS/ai/ai_agent_execution_v2_corrected.md` — phase prompts/checklists
 

@@ -4,11 +4,15 @@
 
 # Monetization Rollout Plan
 
-This document tracks the phased rollout of Featured Placement subscriptions powered by Stripe Checkout. It links the backend, UI, telemetry, and governance controls necessary to safely launch monetization without compromising existing operational guarantees.
+This document tracks the phased rollout of Featured Placement (one-time $20 AUD purchase, 30-day duration, FIFO queue with 5 concurrent slots per council) powered by Stripe Checkout. It links the backend, UI, telemetry, and governance controls necessary to safely launch monetization without compromising existing operational guarantees.
+
+## Pricing Model (Phase 1 Final)
+- **Featured Placement**: $20 AUD / 30-day placement / FIFO queue / max 5 concurrent slots per council
+- **Subscription tiers** (e.g., Pro, Premium): DEFERRED to Phase 5+ pending Phase 4 KPI gates and user demand validation
 
 ## Objectives
 - Offer an upgrade path (“Promote my listing”) to ABN-verified providers.
-- Instrument everything via Stripe webhooks, Supabase audit tables, and the existing telemetry/alerting stack.
+- Instrument everything via Stripe Checkout (one-time payment), Supabase audit tables, and the existing telemetry/alerting stack.
 - Keep monetization feature-flagged (`FEATURE_MONETIZATION_ENABLED` / `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED`) so merges are safe until launch sign-off.
 
 ## Technical Checklist
@@ -63,3 +67,63 @@ This document tracks the phased rollout of Featured Placement subscriptions powe
 4. **Evidence logging** – Add the drill output to `DOCS/LAUNCH_READY_CHECKLIST.md` and expand the relevant section in this plan with timestamps, Stripe session IDs, and Supabase query links.
 
 > These steps require real infrastructure access. Until ops completes them, Phase 9 remains in “staging hardening” status even though the codebase is feature-complete.
+
+## Phase 9B Operations Runbook
+
+**See `DOCS/automation/PHASE_9B_STAGING_HARDENING_RUNBOOK.md` for the definitive step-by-step operations manual.**
+
+This runbook provides:
+- Precondition verification checklist (Staging infra, Stripe test keys, production flag confirmation)
+- Detailed step-by-step instructions for all 7 stages of the Phase 9B drill
+- Command sequences with expected outputs
+- Evidence capture templates for launch_runs/
+- Troubleshooting & rollback procedures
+- SSOT document update instructions
+
+**Runbook Status:** Active (validated against Phase 9a codebase)
+
+## Product Scope & Lifecycle (Authoritative Summary)
+
+- **Live product:** Featured Placement upgrade priced at $20 AUD for 30 calendar days, limited to five concurrent slots per council (FIFO queue). No other paid tiers may be exposed until Phase 4+ KPIs (≥50 claimed trainers, ≥30% renewal, ≥200 inquiries/month) are met and governance explicitly signs off.
+- **Checkout metadata (required):** `trainer_id`, `business_id`, `lga_id`, `tier`, and optional context (`desired_start`, `queue_position_hint`). Webhooks must reject any session lacking these fields.
+- **Activation workflow:**
+  1. Trainer clicks “Promote my listing,” selects LGA, and is redirected to Stripe Checkout.
+  2. On success, Stripe redirects back to the dashboard and enqueues the webhook events listed below.
+  3. Webhook handler verifies signature + idempotency, logs the event into `payment_audit`, and inspects the `featured_slots_status` row for that LGA.
+  4. If `current_featured_count < 5`, activate immediately (set `featured_slot_active=true`, insert metrics row with start/end timestamps, send “Placement live” email).
+  5. Otherwise enqueue trainer (insert into `featured_queue`, persist `queue_position`, send “You’re position N” email). Queue ETA baseline is `(position - 1) * 6 days` (30 days / 5 slots) unless telemetry shows a different duration.
+  6. Daily cron handles expiries, renewals, and queue promotions. Renewals before expiry skip the queue entirely.
+  7. Admin dashboards and `/api/admin/monetization/overview` surface active slots, queue lengths, failure/sync counts, and audit entries.
+
+## Webhook & Metadata Contract
+
+| Event | When it fires | Required handling |
+| --- | --- | --- |
+| `checkout.session.completed` | Hosted checkout completes for Featured Placement | Validate metadata, create `payment_audit` row (`checkout_session_completed`), transition trainer to `pending_activation` or activate immediately depending on slot availability, emit telemetry. |
+| `payment_intent.succeeded` | Underlying PaymentIntent finalises (Stripe automatically triggers alongside checkout) | Additional guard in case Checkout redirect fails; confirm audit log + activation state match the session outcome. |
+| `invoice.payment_failed` | Future subscription flows (deferred) or manual retries fail | Presently used for alerting/stub flows; log failure, notify ops, and surface in admin alerts. |
+| `customer.subscription.deleted` | Future subscription tiers cancel | Keep handler in place but treated as no-op until subscriptions ship. |
+| `charge.refunded` | Refund processed (manual support) | Insert `refund` entry in `payment_audit`, deactivate slot, remove from featured listings, notify trainer. |
+| `charge.dispute.created` | Chargeback/dispute opened | Flag record, alert support, lock placement until resolved. |
+
+**Signature & Idempotency:** All webhook deliveries must verify `Stripe-Signature` using `STRIPE_WEBHOOK_SECRET` and skip duplicate `event.id` values. Local harnesses may bypass verification, but production/staging must never accept unsigned payloads. Store `event.id`, `livemode`, `created`, essential metadata, and handler status in `payment_audit` for auditability.
+
+## Legal, Refund, and Compliance Expectations
+
+- **Payment terms:** All prices in AUD; Stripe (PCI Level 1) processes and stores card data. Platform servers never persist raw payment credentials.
+- **Refund policy:**
+  - Featured placement refunds allowed for 3 days after purchase; afterward treat as delivered service.
+  - Refund processing occurs via Stripe dashboard or admin tooling, and webhook handler must mirror the refund in `payment_audit` + deactivate the slot.
+- **Dispute workflow:** On `charge.dispute.created`, create a priority support ticket, gather evidence within Stripe, and notify support@dogtrainersdirectory.com.au. Admin UI should reflect dispute status so trainers are removed from paid listings until resolved.
+- **Compliance copy (summarised):** Platform does not endorse trainers, cannot replace veterinary care, and treats trainers as independent contractors. ABN verification grants only a “verified business” badge; it is not an endorsement of qualifications. Privacy requirements include encrypting ABN metadata, retaining payment/financial logs for 7 years (ATO compliance), honoring deletion/export requests, and limiting disclosure to Stripe or statutory bodies.
+- **Tax & record keeping:** Stripe retains 2.9% + $0.30 fees automatically. Net deposits land in the connected account. Operators must export monthly Stripe reports, reconcile deposits with bank statements, and record Stripe fees as deductible expenses for ATO filings. Trainers treat featured slot purchases as marketing spend on their own taxes; the platform never withholds PAYG.
+
+## Operational Appendices
+
+### A. Email & Notification Triggers
+- Activation, queue added, queue position improved, expires soon (5-day reminder), expired/auto-promotion, renewal confirmation, dispute/refund notices, and inquiry confirmations. Content/timing mirror the legacy eight-template set; reference the onboarding copy deck when updating messaging.
+
+### B. Support & Tooling Guard Rails
+- Stripe dashboard is the canonical place for pausing subscriptions, issuing refunds, and rotating secrets. Do not tunnel production webhooks through local machines; use the repository harness on `127.0.0.1:4243` only for development.
+- Feature flags remain default-off in every environment. Enabling monetization requires completing Launch Checklist section 10 + documented sign-off. Setting `E2E_TEST_MODE=1` or `x-e2e-stripe-test` should be reserved for automated tests; ops usage must be logged.
+- Alerts exist for latency spikes (`monetization_api`), payment failures, and sync errors. Use telemetry overrides sparingly and record any override usage in ops logs.

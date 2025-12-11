@@ -1069,7 +1069,7 @@ Access: /admin (restricted to admin accounts, separate authentication)
 Overview:
 - Total trainers: 50 claimed, 0 unclaimed (no scraper yet)
 - Emergency resources: 50+ active
- - Featured slots: Phase 1 monetization (Featured placements - $20 AUD / 30-day FIFO per LGA). Implement checkout + webhook flow, DB columns, and queue logic (see STRIPE/phase1_mvp_master_spec.md). Default 0 active until purchases are made.
+- Featured slots: Phase 1 monetization (Featured placements - $20 AUD / 30-day FIFO per LGA). Implement checkout + webhook flow, DB columns, and queue logic (see `DOCS/MONETIZATION_ROLLOUT_PLAN.md`). Default 0 active until purchases are made.
 - Recent activity: Profile edits, review submissions, ABN verifications
 
 ---

@@ -10,7 +10,7 @@ Core summary
 
 High-value files to read first
 - `DOCS/blueprint_ssot_v1.1.md` — architecture, domain model, taxonomies, and UX rules.
-- `DOCS/automation/ABN-ABR-GUID_automation/abn_stripe_legal_integration_v5.md` — ABN verification, Stripe webhooks, and payment flows (includes example endpoints and DB table shapes).
+- `DOCS/MONETIZATION_ROLLOUT_PLAN.md` — Stripe monetization SSOT (product scope, metadata contract, webhook/legal requirements).
 - `DOCS/implementation/master_plan.md` — rollout phases, priorities, and constraints.
 - `suburbs_councils_mapping.csv` — authoritative geographic dataset (used for seeding and lookup).
 
@@ -23,7 +23,7 @@ Project-specific patterns & constraints (do not change unless spec updates)
 
 -Integration & infra notes (discoverable here — secrets are not in repo)
 - ABR (ATO) API: example usage shown in ABN doc: GET /abr/abn/{ABN}?businessName={name}. A GUID credential is required (not in repo).
-- Stripe: webhook-driven flows — expect webhook endpoints that create/renew featured_placements and subscriptions; **always verify signatures**, return a 2xx as soon as persistence succeeds, and make handlers idempotent. Test locally with the Stripe CLI (`stripe listen`) before deploying. See webhook flow and sample events in `DOCS/automation/ABN-ABR-GUID_automation/abn_stripe_legal_integration_v5.md`.
+- Stripe: webhook-driven flows — expect webhook endpoints that create/renew featured placements and future subscriptions; **always verify signatures**, return a 2xx as soon as persistence succeeds, and make handlers idempotent. Test locally with the Stripe CLI (`stripe listen`) before deploying. See flow + sample events in `DOCS/MONETIZATION_ROLLOUT_PLAN.md`.
 - DeepAgent / LLM orchestration: design references exist in the docs (webhook parsing, LLM-triggered workflows). Confirm runtime endpoints and secrets with maintainers.
 
 -Practical dev tasks & commands (docs-driven)

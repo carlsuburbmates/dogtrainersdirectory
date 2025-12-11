@@ -15,6 +15,7 @@ CANONICAL_DOCS = [
     "DOCS/blueprint_ssot_v1.1.md",
     "DOCS/PLAN_REVIEW.md",
     "DOCS/FRONTEND_VERIFICATION_FINDINGS.md",
+    "DOCS/MONETIZATION_ROLLOUT_PLAN.md",
     "DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md",
     "DOCS/automation/ABN-ABR-GUID_automation/ABN-Rollout-Checklist.md",
     "DOCS/automation/ABN-ABR-GUID_automation/ABN-Release-Notes.md",
@@ -23,7 +24,6 @@ CANONICAL_DOCS = [
 ARCHIVED_DOCS = [
     "DOCS/_legacy_conflicts/FILE_MANIFEST.md",
     "DOCS/_legacy_conflicts/FRONTEND_IMPLEMENTATION_GAP_ANALYSIS.md",
-    "DOCS/_legacy_conflicts/phase1_mvp_master_spec.md",
     "DOCS/_legacy_conflicts/webhook_README_DTD.md",
     "DOCS/_legacy_conflicts/README_STRIPE_WEBHOOK.md",
 ]

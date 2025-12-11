@@ -20,10 +20,10 @@ Use `config/env_required.json`, `DOCS/VERCEL_ENV.md`, and monetization/telemetry
 ### Monetization / Stripe
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_FEATURED`
-- `STRIPE_PRICE_PRO` (placeholder for future tiers)
-- `FEATURE_MONETIZATION_ENABLED` (set to `0` until launch)
-- `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED` (set to `0` until launch)
+- `STRIPE_PRICE_FEATURED` (featured placement: $20 AUD / 30-day placement)
+- `STRIPE_PRICE_PRO` (DEFERRED: reserved for Phase 5+ subscription tiers)
+- `FEATURE_MONETIZATION_ENABLED` (set to `0` until launch gates met: ≥50 trainers + 85%+ ABN verify)
+- `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED` (set to `0` until launch gates met)
 
 ### ABN / OPS / AI
 - `ABR_GUID`

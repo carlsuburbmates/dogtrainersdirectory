@@ -22,7 +22,6 @@ These files now live under `_legacy_conflicts` for historical reference only. Th
 
 - [`DOCS/_legacy_conflicts/FILE_MANIFEST.md`](_legacy_conflicts/FILE_MANIFEST.md) — Legacy file manifest describing a previous cleanup snapshot.
 - [`DOCS/_legacy_conflicts/FRONTEND_IMPLEMENTATION_GAP_ANALYSIS.md`](_legacy_conflicts/FRONTEND_IMPLEMENTATION_GAP_ANALYSIS.md) — Superseded gap analysis that contradicts verified frontend findings.
-- [`DOCS/_legacy_conflicts/phase1_mvp_master_spec.md`](_legacy_conflicts/phase1_mvp_master_spec.md) — Deprecated Phase 1 monetization plan; monetization remains deferred.
 - [`DOCS/_legacy_conflicts/webhook_README_DTD.md`](_legacy_conflicts/webhook_README_DTD.md) — Older local webhook harness instructions replaced by current automation docs.
 - [`DOCS/_legacy_conflicts/README_STRIPE_WEBHOOK.md`](_legacy_conflicts/README_STRIPE_WEBHOOK.md) — Duplicate webhook harness guidance retained for traceability.
 

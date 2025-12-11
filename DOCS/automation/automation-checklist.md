@@ -3,14 +3,14 @@
 “This checklist tracks implementation status for Phases 1–5 and Automation Phases A–F in DOCS/ai/ai_agent_execution_v2_corrected.md.”
 
 ## Phase 1: Backend/Data Foundations
-- [ ] CI: enforce CSV counts (28 councils, 138 suburbs) and enum validation
-- [ ] Add distance calculation test (Fitzroy→Brighton ~10.5 km)
-- [ ] Set up logging/metrics sinks (Supabase Logflare/Sentry) and error alert hooks
-- [ ] Stripe: create test Product/Price for $20 AUD featured slot (test & live), add metadata conventions (trainer_id, lga_id)
-- [ ] Stripe: implement Checkout session server route + client stub for Phase 1 purchases
-- [ ] Webhooks: add secure webhook endpoint(s) with signature verification and event id persistence (idempotency)
-- [ ] Local dev harness: document and use the dedicated webhook test server `webhook/server_dtd.py` (port 4243, /api/webhooks/stripe-dtd) to avoid collisions with other local projects (avoid localhost:3000 tunnels)
-- [ ] Tests: add integration tests that simulate Stripe CLI events (checkout.session.completed, payment_intent.succeeded) and assert webhook handling logic
+- [x] CI: enforce CSV counts (28 councils, 138 suburbs) and enum validation
+- [x] Add distance calculation test (Fitzroy→Brighton ~10.5 km)
+- [x] Set up logging/metrics sinks (Supabase Logflare/Sentry) and error alert hooks
+- [x] Stripe: create test Product/Price for Featured Placement (test mode), add metadata conventions (trainer_id, business_id, lga_id, tier)
+- [x] Stripe: implement Checkout session server route + client stub for Phase 9a purchases (feature-flagged)
+- [x] Webhooks: add secure webhook endpoint(s) with signature verification and event id persistence (idempotency)
+- [x] Local dev harness: document and use the dedicated webhook test server `webhook/server_dtd.py` (port 4243, /api/webhooks/stripe-dtd) to avoid collisions
+- [x] Tests: add integration tests that simulate Stripe CLI events (checkout.session.completed, customer.subscription.*, invoice.payment_failed) with Playwright + Vitest coverage
 
 ## Phase 2: Triage & Search
 _Status:_ Core triage + filtering experience shipped (see `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md`). Remaining tasks focus on telemetry and UX polish.
@@ -43,15 +43,11 @@ _Status:_ Manual onboarding UI + ABN verification API shipped (see `DOCS/PHASE_4
 
 > Note: The `ops-digest` cron has been added to `vercel.json` as a daily job, and `verify`/`triage/weekly` are also now scheduled. All scheduled jobs rely on Phase 5 tables being present in the database and `SUPABASE_SERVICE_ROLE_KEY` configured in production.
 
- - [ ] CI/Secrets: add CI checks to ensure STRIPE keys or webhook signing secrets are not committed to the repo; fail CI if found
- - [ ] Webhook reliability: add monitoring that fails builds or creates alerts when webhook delivery errors exceed threshold (e.g., >1% failed deliveries over 24 hours)
-[ ] Wire Ops Digest panel in /admin (see Automation Phase A).
-
-[ ] Add emergency triage classifier + logging (Automation Phase B).
-
-[ ] AI-assisted moderation queue (Automation Phase C).
-
-[ ] Admin Dashboard V2 layout (Automation Phase F).
+## Phase 10+: Operational Hardening (deferred)
+- [ ] **DEFERRED** Stripe: DLQ + replay UI for failed webhook events (admin dashboard) — post-Phase 9c beta confirmation
+- [ ] **DEFERRED** Stripe: per-council featured slot management & cap enforcement (business logic + admin UI) — post-Phase 9c beta confirmation
+- [ ] **DEFERRED** CI/Secrets: add CI checks to ensure STRIPE keys or webhook signing secrets are not committed to the repo; fail CI if found — pre-Phase 9d prod rollout
+- [ ] **DEFERRED** Webhook reliability: add monitoring that fails builds or creates alerts when webhook delivery errors exceed threshold (e.g., >1% failed deliveries over 24 hours) — Phase 10+ ops hardening
 
 
 
@@ -62,6 +58,5 @@ _Status:_ Manual onboarding UI + ABN verification API shipped (see `DOCS/PHASE_4
 - [x] QA runner script: input (scraped JSON + source URLs/screenshots), steps (LLM field compare, enum enforcement, contact validation, dedupe), outputs (per-listing verdicts, batch accuracy, reasons), storage (run log `qa_run_log.json` with a `runs` array, sample sets, scores, duplicate buckets, and approval audit trail).
 - [ ] Monetization flag disabled until Phase 4+ criteria met (≥50 claimed trainers, stable ABN verifications)
 - [ ] Weekly automated audits: SSOT immutability, CSV checksum, ABN re-verification schedule
-[ ] Implement ABN fallback + re-verification automation (Automation Phase D).
-
-[ ] Implement scraper backfill + AI QA (Automation Phase E).
+- [ ] **DEFERRED** Implement ABN fallback + re-verification automation (Automation Phase D) — Phase 5 priority
+- [ ] **DEFERRED** Implement scraper backfill + AI QA (Automation Phase E) — post-Phase 9c decision

@@ -44,8 +44,8 @@ Notes:
   | --- | --- | --- | --- |
   | STRIPE_SECRET_KEY | Server-side Stripe key for Checkout + webhook events | Local `.env.local` (trusted), Vercel Preview & Production | `/api/stripe/create-checkout-session`, `/api/webhooks/stripe` |
   | STRIPE_WEBHOOK_SECRET | Signing secret for Stripe webhooks | Local `.env.local`, Vercel Preview & Production | `/api/webhooks/stripe` |
-  | STRIPE_PRICE_FEATURED | Price ID for Featured Placement subscription | Local `.env.local`, Vercel Preview & Production | Checkout session creation |
-  | STRIPE_PRICE_PRO | Optional future plan price ID | Local `.env.local`, Vercel Preview & Production | Reserved for future upgrade tiers |
+  | STRIPE_PRICE_FEATURED | Price ID for Featured Placement ($20 AUD / 30-day placement, FIFO queue) | Local `.env.local`, Vercel Preview & Production | Checkout session creation |
+  | STRIPE_PRICE_PRO | (DEFERRED) Reserved for Phase 5+ subscription tiers | Local `.env.local`, Vercel Preview & Production | Do not enable until Phase 4+ gates met (≥50 trainers, 85%+ ABN verify) |
   | FEATURE_MONETIZATION_ENABLED | Server feature flag (`1`/`0`) | Local `.env.local`, Vercel Preview & Production | Enables monetization backend routes |
   | NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED | Client feature flag (`1`/`0`) | Local `.env.local`, Vercel Preview & Production | Shows “Promote my listing” UI when enabled |
 

@@ -91,7 +91,7 @@ export function PromotePanel({ business, businessId, statusParam }: PromotePanel
             </div>
             <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-6 py-4 text-center">
               <p className="text-sm font-semibold text-indigo-700">Featured placement</p>
-              <p className="text-4xl font-bold text-indigo-900">A$149</p>
+              <p className="text-4xl font-bold text-indigo-900">A$20</p>
               <p className="text-xs text-indigo-700">per 30 days</p>
             </div>
           </div>

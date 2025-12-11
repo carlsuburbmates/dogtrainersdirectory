@@ -50,6 +50,21 @@ When all items are green, include reviewer name, timestamp, and commit hash. If 
 
 ---
 
+## Phase 9B Staging Hardening Runbook
+
+**For detailed step-by-step operations guidance, see `DOCS/automation/PHASE_9B_STAGING_HARDENING_RUNBOOK.md`**
+
+This runbook provides the authoritative checklist and procedures for:
+- Verifying preconditions (staging infra, Stripe test keys, production safety)
+- Populating staging environment variables
+- Running environment validators
+- Applying migrations
+- Conducting the Stripe test payment drill
+- Verifying database state and admin dashboard
+- Updating all SSOT documents with evidence
+
+---
+
 ## Launch Run Template (`DOCS/launch_runs/launch-YYYYMMDD-HHMM.md`)
 
 ```

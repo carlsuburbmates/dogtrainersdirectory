@@ -5,7 +5,7 @@ REFERENCE DOCUMENTS:
 - `DOCS/implementation/master_plan.md` (Phase 2 roadmap, web scraper strategy, risk mitigations)
 - `DOCS/ai_agent_execution_v2_corrected.md` (Phase 1 status + Phase 2 success criteria)
 - `DOCS/automation-checklist.md` (scraper QA runner, CI guardrails, feature flags)
-- `DOCS/abn_stripe_legal_integration_v5.md` (Stripe event expectations, Phase 1.5 gating)
+- `DOCS/MONETIZATION_ROLLOUT_PLAN.md` (Stripe event expectations, feature flags, Phase 4+ gating)
 
 OBJECTIVE:
 1. Build the web scraper pipeline (LLM + structured output) that ingests 50–100 trainer URLs, maps each page to locked enums (age, issue, service, resource), sanitizes contact info, and writes scaffolded “unclaimed” listings with `is_scaffolded = true`.

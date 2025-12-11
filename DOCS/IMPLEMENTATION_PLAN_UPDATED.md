@@ -167,23 +167,39 @@ Initial frontend gap analysis claimed 2-3 days of work needed. Step-by-step veri
 
 ## Stripe Integration Status
 
-### Current State
+> Authoritative requirements live in `DOCS/MONETIZATION_ROLLOUT_PLAN.md`. This section tracks delivery status only.
 
+### Current State (Phase 9 – Monetization Rollout)
+
+✅ **CONFIRMED-WORKING** (see IMPLEMENTATION_REALITY_MAP.md for evidence):
 - ✅ Webhook endpoint implemented (`/api/webhooks/stripe/route.ts`)
-- ✅ Signature verification + idempotency
-- ✅ Handles 4 event types (charge.succeeded, customer.subscription.deleted, etc.)
-- ❌ Checkout session API missing
-- ❌ Purchase UI missing
-- ❌ Stripe products not configured
-- ❌ Integration tests missing
+- ✅ Signature verification + idempotency + E2E test bypass
+- ✅ Handles 5 event types (checkout.session.completed, customer.subscription.*, invoice.payment_failed, etc.)
+- ✅ Checkout session API (`/api/stripe/create-checkout-session`) – validates ABN, enforces feature flag, returns stub URL in test mode
+- ✅ Purchase UI (`/promote/page.tsx`) – feature-flagged, guarded by ABN verification, Playwright coverage via `tests/e2e/monetization.spec.ts`
+- ✅ Admin monetization dashboard (`/api/admin/monetization/{overview,resync}`) – subscription health card, payment audit summaries, latency metrics
+- ✅ Stripe product + price created in test mode (Featured Placement: $20 AUD / 30-day placement / FIFO queue)
+- ✅ Unit tests (`tests/unit/monetization.test.ts`) + E2E tests (`tests/e2e/monetization.spec.ts`) – both green
+- ✅ Telemetry + alerts – payment failure/sync-error thresholds integrated into `/api/admin/alerts/snapshot`
 
-### Decision Required
+### Pricing Model (Phase 1 Final)
+- **Featured Placement**: $20 AUD / 30-day placement / FIFO queue / max 5 concurrent slots per council
+- **Subscription tiers** (Pro, Premium, etc.): DEFERRED to Phase 5+ pending Phase 4 KPI gates and user demand validation
 
-**Launch with Stripe?**
-- **YES:** Add 4-6 hours for checkout + purchase UI (WEEK 2)
-- **NO:** Defer to post-launch, launch with directory-only (LAUNCH WEEK)
+### Launch Gating (Phase 9 Policy)
 
-**Recommendation:** Defer. Directory + trainer onboarding is MVT (Minimum Viable Thing) already.
+**Monetization remains feature-flagged end-to-end:**
+- `FEATURE_MONETIZATION_ENABLED=0` (server default) – rejects checkout API calls
+- `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0` (client default) – hides `/promote` UI
+- **Flip flags only after go-live rehearsal + payment audit evidence captured in staging**
+- See `DOCS/LAUNCH_READY_CHECKLIST.md` item 10–11 for required evidence (Stripe session IDs, webhook dry-run, payment_audit entries)
+
+### Decision: Feature-Flagged Deployment (NOT MVP Launch Blocker)
+
+**Monetization ships in code but stays dark until Phase 4+ gates met:**
+- ≥50 claimed trainers (current ~0 – Phase 1 onboarding in progress)
+- Stable ABN verification (85%+ auto-match, manual review backlog <30 days)
+- See risk register in `DOCS/blueprint_ssot_v1.1.md:798` and `DOCS/implementation/master_plan.md:622`
 
 ---
 
