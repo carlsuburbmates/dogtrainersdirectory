@@ -1,3 +1,7 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: Automation + ops checklist across phases 1–5 and automation phases A–F
+> Status: Active · Last reviewed: 2025-12-11
+
 # Automation Checklist (aligned to phases)
 
 “This checklist tracks implementation status for Phases 1–5 and Automation Phases A–F in DOCS/ai/ai_agent_execution_v2_corrected.md.”

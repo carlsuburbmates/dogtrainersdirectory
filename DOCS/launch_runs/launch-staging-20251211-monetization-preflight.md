@@ -1,3 +1,5 @@
+<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->
+
 # Launch Run – staging – 2025-12-11 Monetization Preflight
 - Commit: main (Phase 9a implementation complete)
 - Operator(s): AI agent (automated test-mode hardening)

@@ -1,3 +1,7 @@
+> **SSOT – Canonical Source of Truth**
+> Scope: Vercel environment variable mapping and deployment guidance
+> Status: Active · Last reviewed: 2025-12-11
+
 # Vercel environment variables — Project: dogtrainersdirectory (sanitized)
 
 This document lists the environment variables used in the repo and recommended Vercel environment targets. DO NOT store live secrets in the repository. The examples below are sanitized placeholders — use values from your secure vault or `.env.local` when running the import script.

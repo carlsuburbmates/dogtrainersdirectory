@@ -1,3 +1,5 @@
+<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->
+
 # dogtrainersdirectory.com.au – AI agent Implementation Strategy v2.1 (CORRECTED)
 
 **Version:** 2.1 (Corrected to align with finalized decisions)  

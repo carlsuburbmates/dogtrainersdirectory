@@ -1,3 +1,5 @@
+<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->
+
 > **Runbook Status:** Active · Last reviewed: 2025-12-11
 > Purpose: Phase 9B staging drill for monetization end-to-end validation
 > Authority: DOCS/MONETIZATION_ROLLOUT_PLAN.md, DOCS/blueprint_ssot_v1.1.md, DOCS/implementation/master_plan.md

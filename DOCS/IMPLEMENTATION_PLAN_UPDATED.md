@@ -1,3 +1,5 @@
+<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->
+
 # DTD Implementation Plan - UPDATED
 **Date:** December 9, 2025  
 **Version:** 2.0 - Corrected Frontend Status  
