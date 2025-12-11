@@ -5,6 +5,8 @@
 **Phase:** 9B (Staging Hardening Drill)  
 **Status:** 🟡 IN PROGRESS (Steps 1-3 verified, Steps 4-7 pending)
 
+> **Operator:** Follow [DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md](../automation/PHASE_9B_OPERATOR_CHECKLIST.md) while filling in this file with evidence from Steps 4–7.
+
 ---
 
 ## 🔥 Preconditions Verified

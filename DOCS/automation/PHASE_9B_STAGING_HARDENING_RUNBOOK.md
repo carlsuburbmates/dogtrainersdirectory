@@ -6,6 +6,8 @@
 
 # Phase 9B – Staging Hardening Runbook (Monetization Drill)
 
+> **Day-of operations?** Use [PHASE_9B_OPERATOR_CHECKLIST.md](PHASE_9B_OPERATOR_CHECKLIST.md) as your step-by-step guide while recording evidence in [DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md](../launch_runs/launch-staging-20251211-monetization-preflight.md).
+
 ## Objective
 
 Prove that all monetization components work end-to-end in **staging only**, without enabling live payments or touching production infrastructure. This runbook is the definitive operations checklist for validating the Phase 9a codebase before Phase 9c beta rollout decision.
