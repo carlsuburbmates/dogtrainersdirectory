@@ -15,7 +15,7 @@ This page tracks every SQL file under `supabase/migrations/` (current source of 
 | `20250210160000_get_trainer_profile_accept_key.sql` | RPC update | Yes (Phase 5) | Key argument for `get_trainer_profile`. |
 | `20251130000001_add_abn_matched_json.sql` | Schema – ABN improvements | Yes (Nov 2025) | Adds `matched_json` column to `abn_verifications`. |
 | `20251209093000_add_latency_metrics.sql` | Telemetry – latency metrics | Pending apply | Creates `latency_metrics` table for request duration + success telemetry across search, emergency, admin, and ABN flows. |
-| `20251209101000_create_payment_tables.sql` | Monetization – payments | Pending apply | Adds `payment_audit` + `business_subscription_status` tables for Stripe checkout logging and subscription sync. **Phase 9B action:** run `supabase db push --linked` + `supabase db diff --linked` in staging and log the apply date here. |
+| `20251209101000_create_payment_tables.sql` | Create `payment_audit` + `business_subscription_status` tables | Phase 9B | Applied in staging on 2025-12-11 — Evidence: `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md` |
 
 > **Fresh DB bootstrap:** Apply these migrations in order with `supabase db push` or `supabase db remote commit`. After applying, run `scripts/test_abn_recheck.py` and `npm run type-check` to verify RPC compatibility.
 

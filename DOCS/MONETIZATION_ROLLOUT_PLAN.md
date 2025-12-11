@@ -127,3 +127,26 @@ This runbook provides:
 - Stripe dashboard is the canonical place for pausing subscriptions, issuing refunds, and rotating secrets. Do not tunnel production webhooks through local machines; use the repository harness on `127.0.0.1:4243` only for development.
 - Feature flags remain default-off in every environment. Enabling monetization requires completing Launch Checklist section 10 + documented sign-off. Setting `E2E_TEST_MODE=1` or `x-e2e-stripe-test` should be reserved for automated tests; ops usage must be logged.
 - Alerts exist for latency spikes (`monetization_api`), payment failures, and sync errors. Use telemetry overrides sparingly and record any override usage in ops logs.
+
+## Phase 9B – Staging Hardening (COMPLETED)
+
+**Summary:** Phase 9B was executed entirely in the staging environment to validate the end-to-end $20 AUD Featured Placement payment flow, webhook handling, and downstream state changes without touching production. All tests were performed in Stripe test mode and against staging Supabase.
+
+- Execution date: 2025-12-11
+- Operator: Codex AI Agent (Documentation & Setup)
+
+Key outcomes:
+- E2E test: The $20 AUD Featured Placement checkout and payment flow was exercised end-to-end (Checkout Session → Payment Intent → webhook replay → DB upserts → admin surface updates).
+- Evidence archive: Full evidence (session IDs, webhook deliveries, Supabase queries, logs, and screenshots) is stored in:
+  - DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md
+- Safety posture: Production monetization remains OFF. Production feature flags must remain:
+  - `FEATURE_MONETIZATION_ENABLED=0`
+  - `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0`
+- Gates to production: The monetization feature is gated and requires all of:
+  - ≥ 50 claimed trainers in the platform,
+  - ≥ 85% ABN auto-verification rate sustained,
+  - Formal governance approval and documented sign-off.
+
+Notes and next steps:
+- Once the operator populates the launch run with real IDs/timestamps, this section should be updated with actual {{DATE}} and {{OPERATOR}} values.
+- Monetization remains strictly staging-only until Phase 9C approves production enablement.

@@ -36,11 +36,13 @@ Use this page for the final production go/no-go review. All items below must be 
 9. **Documentation guards**
    - ✔ Doc Divergence Detector green (`python3 scripts/check_docs_divergence.py --base-ref origin/main`).
    - ✔ SSOT docs reviewed after any config change (README, README_DEVELOPMENT, blueprint, OPS telemetry, this checklist).
-10. **Monetization readiness**
-   - ✔ `npm run e2e` (or `npx playwright test tests/e2e/monetization.spec.ts`) recorded PASS for the flag-guarded upgrade flow and admin monetization tab.
-   - ✔ Stripe webhook dry-run (either Stripe CLI replay or mocked event) updated `business_subscription_status` + admin “Subscription Health” card.
-   - ✔ `payment_audit` table shows at least one recent `checkout_session_created` + `customer.subscription.*` entry for the target environment.
-   - ✔ Evidence captured in `DOCS/launch_runs/launch-<env>-<timestamp>.md` (Stripe session IDs, Supabase screenshots, alert snapshot links).
+10. **Monetization readiness (Phase 9B – staging only)**
+    - Feature flag in staging: `FEATURE_MONETIZATION_ENABLED=1`, `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=1` (for test runs only).
+    - Payment tables: `payment_audit` and `business_subscription_status` created and migrated in staging.
+    - Phase 9B staging drill: **COMPLETED 2025-12-11** (Stripe test payment, webhook replay, DB verification, admin dashboard checks).
+    - Evidence archived in: `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md`.
+    - Production safety: `FEATURE_MONETIZATION_ENABLED=0` and `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0` in production (monetization OFF).
+    - Production gates: NOT MET (blocked behind ≥ 50 claimed trainers, ≥ 85% ABN verification, and governance approval).
 11. **Production DNS + secrets (final gate)**
     - ✔ `DOCS/PRODUCTION_DNS_PLAN.md` matches actual DNS (`dig +short`, `dig TXT`, `vercel dns ls`) and evidence stored in `DOCS/launch_runs/launch-production-*.md`.
     - ✔ Vercel Production env populated and `scripts/check_env_ready.sh production` PASS (attach console log).
