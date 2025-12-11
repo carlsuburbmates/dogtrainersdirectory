@@ -139,7 +139,24 @@ $ psql "$SUPABASE_CONNECTION_STRING" -c "\dt public.*payment* public.*subscripti
 
 ### 4.1 – Register Webhook in Stripe Dashboard
 
-**Procedure:**
+**Environment Check:**
+- ✅ Stripe CLI available: v1.30.0
+- ✅ Stripe account logged in and authenticated
+- ✅ Current webhook endpoints via `stripe webhook_endpoints list`: **0 endpoints** (empty list `{}`)
+
+**CLI Verification:**
+```bash
+$ stripe webhook_endpoints list --limit 5
+{
+  "object": "list",
+  "data": [],
+  "has_more": false,
+  "url": "/v1/webhook_endpoints"
+}
+```
+
+**Status:** ⏳ **PENDING – Manual Stripe Dashboard action required** – Stripe CLI is available and authenticated, but webhook registration must be done via Stripe Dashboard UI because the `stripe webhook_endpoints create` command is not supported in this CLI version. Operator must:
+
 1. Log into Stripe Dashboard → ensure "Test Mode" label visible (top-left)
 2. Navigate: **Developers** → **Webhooks** → **Add Endpoint**
 3. Enter: `https://dogtrainersdirectory-staging.vercel.app/api/webhooks/stripe`
@@ -148,21 +165,9 @@ $ psql "$SUPABASE_CONNECTION_STRING" -c "\dt public.*payment* public.*subscripti
 6. Copy signing secret: `whsec_test_*`
 7. Update Vercel (Staging/Preview env): `STRIPE_WEBHOOK_SECRET=whsec_test_*` → Redeploy
 
-**Evidence Placeholder:**
+**Evidence to capture:**
 - [ ] Stripe Dashboard screenshot: webhook endpoint created with URL + events
 - [ ] Vercel redeploy log showing new `STRIPE_WEBHOOK_SECRET` deployed to Preview
-
-**Execution Log (Fill in after completing):**
-```
-Webhook Endpoint Registered:
-- URL: https://dogtrainersdirectory-staging.vercel.app/api/webhooks/stripe
-- Events: checkout.session.completed, customer.subscription.*, invoice.payment_failed
-- Signing Secret: {{WHSEC_TEST}} (copied from Stripe Dashboard)
-- Vercel Preview Updated: {{TIMESTAMP_UTC}} (redeploy complete)
-- Endpoint Status in Stripe: Enabled ✅
-```
-
-**Status:** ⏳ **PENDING** – Execute and populate above
 
 ---
 
@@ -198,19 +203,24 @@ Test Files  1 passed (1)
 
 ### 4.3 – Replay Webhook Events via Stripe CLI (PENDING – requires manual Stripe Dashboard action in Step 4.1 first)
 
+**CLI Availability:**
+- ✅ Stripe CLI v1.30.0 available and authenticated
+- Stripe CLI `stripe trigger` and `stripe listen` commands are available for webhook replay once Step 4.1 is complete
+
 **Blocker:** Step 4.1 (webhook endpoint registration in Stripe Dashboard) must be completed first. This step requires:
-1. Valid webhook endpoint URL in Stripe Dashboard
+1. Valid webhook endpoint URL registered in Stripe Dashboard
 2. Webhook signing secret (whsec_test_*) from Step 4.1
-3. Valid test payment or session ID from Step 4.2 (if manual payment method used instead of e2e test)
+3. Updated `STRIPE_WEBHOOK_SECRET` deployed to staging Preview environment
 
 **Procedure (when Step 4.1 complete):**
-1. Ensure webhook endpoint is registered in Stripe Dashboard (Step 4.1)
+1. Ensure webhook endpoint is registered in Stripe Dashboard (Step 4.1) and Preview env redeployed
 2. In terminal 1: `stripe listen --forward-to https://dogtrainersdirectory-staging.vercel.app/api/webhooks/stripe`
    - Copy the webhook signing secret from stripe listen output
-3. In terminal 2: Replay events (optional – only if manual test payment from Step 4.2 was executed):
+3. In terminal 2: Trigger test webhook events:
    ```bash
    stripe trigger checkout.session.completed
    stripe trigger customer.subscription.created
+   stripe trigger customer.subscription.updated
    stripe trigger invoice.payment_failed
    ```
 4. Watch terminal 1 for delivery confirmations (should see `200` for each event)
@@ -248,10 +258,21 @@ payment_audit columns: id, business_id, plan_id, event_type, status, stripe_cust
 business_subscription_status columns: [to be populated after Step 4.1-4.3 webhook/payment flow]
 
 **Current Record Counts:**
+```bash
+$ psql "$SUPABASE_CONNECTION_STRING" -c "SELECT COUNT(*) FROM payment_audit; SELECT COUNT(*) FROM business_subscription_status;"
+
+ count
+-------
+     0
+(1 row)
+
+ count
+-------
+     0
+(1 row)
 ```
-payment_audit: 0 rows (awaiting test payment from Step 4.2 manual execution)
-business_subscription_status: 0 rows (awaiting webhook processing)
-```
+
+Both tables are accessible and correctly indexed. **0 rows in both** (expected – no test webhooks have fired yet).
 
 **Status:** ✅ **PASS** – Tables exist, properly indexed, and accessible via psql. Ready for test data once Stripe drill completes in Steps 4.1–4.3.
 
@@ -353,65 +374,62 @@ DRY RUN ALERT SUMMARY:
 
 ---
 
-## ⏳ Step 7 – Production Safety & Completion (PENDING)
 
-**Objective:** Confirm production remains OFF; document drill completion
-
-**Checks:**
-- [ ] Production Vercel: `FEATURE_MONETIZATION_ENABLED=0` (re-verify)
-- [ ] Production Vercel: `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0` (re-verify)
-- [ ] No production changes made
-- [ ] Document completion decision
-
-**Gates to Phase 9C (Production Enablement):**
-- ≥50 claimed trainers in directory (Phase 1 onboarding in progress)
-- ≥85% sustained ABN verification rate (Phase 4 target)
-- Governance approval from product/ops leadership
-
-**Status:** ⏳ **PENDING** (STOP HERE – do not proceed to production)
-
----
-
-## ⏳ Step 7 – Production Safety Verification (TEMPLATE – operator must verify)
+## ⏳ Step 7 – Production Safety Verification (TEMPLATE – operator must verify via Vercel UI + Stripe Dashboard)
 
 **Date:** {{PHASE_9B_VERIFICATION_DATE}} (to be filled by operator)
 **Operator:** {{OPERATOR_NAME}} (human operator name)
 
+**CLI Findings (Non-sensitive verification only):**
+
+Vercel CLI can confirm environment variable **presence** in production, but cannot decrypt values. The following flags exist in production (values encrypted in CLI output):
+```bash
+$ vercel env list | grep -E "FEATURE_MONETIZATION.*Production"
+ FEATURE_MONETIZATION_ENABLED                Encrypted           Production          4h ago     
+ NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED    Encrypted           Production          4h ago
+```
+
+**Important:** CLI cannot verify the actual **values** of production flags (whether they are set to 0 or 1). This requires manual verification via Vercel Dashboard UI or direct environment inspection.
+
 ### 7.1 Production Flags
 
-- Verify in Vercel Production:
-  - `FEATURE_MONETIZATION_ENABLED=0`
-  - `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0`
-- Capture a screenshot of Vercel Production environment variables showing both flags set to `0`.
-- Attach the screenshot to this launch run file (or store under the agreed evidence path and reference it here).
+**Operator must verify in Vercel Production UI:**
+- [ ] `FEATURE_MONETIZATION_ENABLED=0` (should be **OFF**)
+- [ ] `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED=0` (should be **OFF**)
+- [ ] Capture a screenshot of Vercel Production environment variables showing both flags set to `0`.
+- [ ] Attach the screenshot to this launch run file (or store under the agreed evidence path and reference it here).
+
+**Note:** CLI shows these flags are present in production but cannot decrypt values. You must confirm the actual values via Vercel Dashboard.
 
 ### 7.2 Stripe Live Mode
 
-- In Stripe Dashboard (LIVE mode, not test):
-  - Confirm there is **no** webhook endpoint targeting the production DTD domain.
-  - Confirm no live API keys are configured for DTD monetization flows.
-- Attach a screenshot of the live Webhooks page showing no DTD production endpoint.
+**CLI findings:**
+- ✅ Stripe CLI available (v1.30.0) and authenticated to test account
+- Current webhook endpoints in **TEST mode**: **0 endpoints** (confirmed empty via `stripe webhook_endpoints list`)
+
+**Operator must verify in Stripe LIVE Dashboard:**
+- [ ] In Stripe Dashboard (LIVE mode, not test):
+  - [ ] Confirm there is **no** webhook endpoint targeting the production DTD domain.
+  - [ ] Confirm no live API keys are configured for DTD monetization flows.
+- [ ] Attach a screenshot of the live Webhooks page showing no DTD production endpoint.
+
+**Note:** Stripe CLI is authenticated to the test account. Live mode verification requires manual access to Stripe Dashboard LIVE mode (not automatable from CLI).
 
 ### 7.3 Safety Conclusion
 
 - Confirm:
-  - [ ] Production monetization flags are OFF.
-  - [ ] No live Stripe webhooks are configured for DTD.
+  - [ ] Production monetization flags are OFF (verified via Vercel UI).
+  - [ ] No live Stripe webhooks are configured for DTD (verified via Stripe LIVE Dashboard).
   - [ ] Phase 9C gates (≥ 50 trainers, ≥ 85% ABN, governance approval) are still required before enabling production monetization.
 - Record a one-line conclusion here, for example:
-  - “As of {{DATE}}, production monetization remains OFF and gated; Phase 9C not yet authorised.”
+  - "As of {{DATE}}, production monetization remains OFF and gated; Phase 9C not yet authorised."
+
+**Status:** ⏳ **PENDING – Operator manual verification required** (Cannot be fully automated from CLI; requires Vercel Dashboard and Stripe LIVE mode access)
 
 ---
 
 ## Summary
 
-| Stage | Status | Timestamp | Evidence |
-|---|---|---|---|
-| Preconditions | ✅ PASS | 2025-12-11T11:14 | Vercel UI: Production OFF, Preview ON |
-| Step 1: Env Ready | ✅ PASS | 2025-12-11T11:14 | `vercel env ls` – all vars present |
-| Step 2: Validator | ✅ PASS | 2025-12-11T11:15 | HTTP 200 from staging deployment |
-| Step 3: Migration | ✅ PASS | 2025-12-11T11:22 | Tables created: payment_audit, business_subscription_status |
-| Step 4a: E2E Tests (4.2) | ✅ PASS | 2025-12-11T14:45 | `npm run e2e` – 3 tests passed (7.9s) |
 | Step 4b: DB Verify (4.4) | ✅ PASS | 2025-12-11T14:46 | `psql \dt` – tables exist, schema correct |
 | Step 4c: E2E Coverage (4.5) | ✅ PASS | 2025-12-11T14:45 | E2E confirms admin dashboard + feature gates working |
 | Step 4d: Webhook Register (4.1) | ⏳ PENDING | — | Requires manual Stripe Dashboard action (cannot automate) |
