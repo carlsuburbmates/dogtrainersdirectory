@@ -7,6 +7,8 @@
 # Phase 9B – Staging Hardening Runbook (Monetization Drill)
 
 > **Day-of operations?** Use [PHASE_9B_OPERATOR_CHECKLIST.md](PHASE_9B_OPERATOR_CHECKLIST.md) as your step-by-step guide while recording evidence in [DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md](../launch_runs/launch-staging-20251211-monetization-preflight.md).
+>
+> **Automation:** Run `npm run verify:phase9b` before starting to confirm build/tests/DB are ready.
 
 ## Objective
 

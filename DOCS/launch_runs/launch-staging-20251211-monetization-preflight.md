@@ -11,6 +11,9 @@
 
 ## 🔥 Preconditions Verified
 
+- [x] **Precondition 0:** Automation health
+  - `npm run verify:phase9b` – all checks PASS (before this drill runs)
+
 - [x] **Precondition 1:** Staging infrastructure ready
   - Supabase staging project available
   - Database connection confirmed
