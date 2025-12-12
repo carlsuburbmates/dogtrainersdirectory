@@ -7,11 +7,14 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { Client } from 'pg'
+
+export type Status = 'PASS' | 'FAIL' | 'WARN' | 'SKIP'
 
 interface CheckResult {
   name: string
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'
+  status: Status
   command?: string
   durationMs: number
   output?: string
@@ -21,6 +24,15 @@ interface CheckResult {
 const results: CheckResult[] = []
 let hasFailure = false
 let dnsStatus: 'PASS' | 'WARN' = 'PASS'
+
+const WARN_ALLOWED = new Set(['DNS root → Vercel', 'DNS staging → Vercel'])
+
+export function enforceStatusRules(name: string, status: Status): Status {
+  if (status !== 'WARN') {
+    return status
+  }
+  return WARN_ALLOWED.has(name) ? status : 'FAIL'
+}
 
 const REQUIRED_TABLES = [
   'payment_audit',
@@ -37,6 +49,8 @@ const REQUIRED_TABLES = [
 const RLS_REQUIRED_TABLES = ['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events', 'ops_overrides']
 
 const POLICY_REQUIRED_TABLES = ['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events', 'ops_overrides']
+
+const SENSITIVE_POLICY_TABLES = new Set(['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events'])
 
 const DNS_EXPECTATIONS: Record<string, { label: string; expected: string }> = {
   'dogtrainersdirectory.com.au': { label: 'DNS root → Vercel', expected: 'cname.vercel-dns.com.' },
@@ -86,15 +100,30 @@ const OPERATOR_ONLY_CHECKS = new Set(OPERATOR_ONLY_ITEMS.map(item => item.name))
 const MCP_ONLY_CHECKS = new Set(MCP_ONLY_ITEMS.map(item => item.name))
 
 function addResult(result: CheckResult) {
-  results.push(result)
-  if (result.status === 'FAIL') {
+  const normalizedStatus = enforceStatusRules(result.name, result.status)
+  const needsWarnMessage = result.status === 'WARN' && normalizedStatus === 'FAIL'
+  const finalResult: CheckResult = {
+    ...result,
+    status: normalizedStatus,
+    output: needsWarnMessage
+      ? `${result.output ? `${result.output} | ` : ''}WARN not allowed for ${result.name}`
+      : result.output
+  }
+  results.push(finalResult)
+  if (finalResult.status === 'FAIL') {
     hasFailure = true
   }
   const icon =
-    result.status === 'PASS' ? '✅' : result.status === 'FAIL' ? '❌' : result.status === 'WARN' ? '⚠️' : '⊘'
-  console.log(`${icon} ${result.name} (${formatDuration(result.durationMs)})`)
-  if (result.output) {
-    console.log(result.output)
+    finalResult.status === 'PASS'
+      ? '✅'
+      : finalResult.status === 'FAIL'
+        ? '❌'
+        : finalResult.status === 'WARN'
+          ? '⚠️'
+          : '⊘'
+  console.log(`${icon} ${finalResult.name} (${formatDuration(finalResult.durationMs)})`)
+  if (finalResult.output) {
+    console.log(finalResult.output)
   }
 }
 
@@ -284,18 +313,44 @@ async function checkPolicyCoverage(client: Client) {
   const start = Date.now()
   try {
     const missing: string[] = []
-    const policies: Array<{ table: string; policyCount: number }> = []
+    const overlyPermissive: Array<{ table: string; policies: string[] }> = []
+    const perTablePolicies: Array<{ table: string; policies: Array<{ name: string; permissive: boolean; usingClause: string }> }> = []
     for (const table of POLICY_REQUIRED_TABLES) {
-      const res = await client.query('select count(*)::int as count from pg_policies where schemaname=$1 and tablename=$2', ['public', table])
-      const count = res.rows[0]?.count ?? 0
-      policies.push({ table, policyCount: count })
-      if (count === 0) missing.push(table)
+      const res = await client.query(
+        `select policyname, permissive, qual, cmd
+         from pg_policies
+         where schemaname=$1 and tablename=$2
+         order by policyname`,
+        ['public', table]
+      )
+      const tablePolicies = res.rows.map(row => ({
+        name: row.policyname as string,
+        permissive: String(row.permissive ?? '').toUpperCase() === 'PERMISSIVE',
+        usingClause: (row.qual as string | null)?.trim() || 'true',
+        command: String(row.cmd ?? '').toLowerCase()
+      }))
+      perTablePolicies.push({ table, policies: tablePolicies })
+      if (tablePolicies.length === 0) {
+        missing.push(table)
+      }
+      if (SENSITIVE_POLICY_TABLES.has(table)) {
+        const permissiveUsingTrue = tablePolicies
+          .filter(
+            policy =>
+              policy.permissive && policy.usingClause.toLowerCase() === 'true' && policy.command !== 'insert'
+          )
+          .map(policy => policy.name)
+        if (permissiveUsingTrue.length > 0) {
+          overlyPermissive.push({ table, policies: permissiveUsingTrue })
+        }
+      }
     }
+    const hasIssues = missing.length > 0 || overlyPermissive.length > 0
     addResult({
       name: 'Policy coverage',
-      status: missing.length === 0 ? 'PASS' : 'FAIL',
+      status: hasIssues ? 'FAIL' : 'PASS',
       durationMs: Date.now() - start,
-      details: { missing, policies }
+      details: { missing, overlyPermissive, perTablePolicies }
     })
   } catch (error) {
     addResult({ name: 'Policy coverage', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
@@ -331,6 +386,7 @@ async function checkMigrationParity(client: Client) {
       durationMs: Date.now() - start,
       details: {
         totalMigrations: files.length,
+        appliedCount: ledger.rows.length,
         checkedAfterBaseline: relevantFiles.length,
         missing,
         recentApplied: appliedTimeline,
@@ -447,6 +503,7 @@ function writeArtifacts() {
   const jsonPath = path.join(process.cwd(), 'DOCS', 'launch_runs', `launch-prod-${date}-ai-preflight.json`)
   const sha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim()
   const counts = getStatusCounts()
+  const envTarget = process.env.ENV_TARGET ?? 'staging'
 
   fs.mkdirSync(path.dirname(mdPath), { recursive: true })
   if (!fs.existsSync(mdPath)) {
@@ -459,9 +516,10 @@ function writeArtifacts() {
   }
 
   const mdLines = [
-    `## AI Launch Gate – ${now.toISOString()}`,
+    '---',
+    `## AI Launch Gate – ${now.toISOString()} (sha ${sha}, target ${envTarget})`,
     `- Commit: ${sha}`,
-    '- Target: staging',
+    `- Target: ${envTarget}`,
     `- DNS_STATUS: ${dnsStatus}${dnsStatus === 'WARN' ? ' (operator confirmation required)' : ''}`,
     `- Result counts: PASS ${counts.pass} / WARN ${counts.warn} / SKIP ${counts.skip} / FAIL ${counts.fail}`,
     '- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)',
@@ -485,7 +543,8 @@ function writeArtifacts() {
       {
         timestamp: now.toISOString(),
         sha,
-        target: 'staging',
+        target: envTarget,
+        envTarget,
         dnsStatus,
         counts,
         results
@@ -527,7 +586,11 @@ async function main() {
     { name: 'e2e', command: 'npm run e2e' },
     { name: 'preprod (staging)', command: './scripts/preprod_verify.sh', env: { ENV_TARGET: 'staging' } },
     { name: 'check_env_ready staging', command: './scripts/check_env_ready.sh staging' },
-    { name: 'alerts dry-run', command: 'npx tsx scripts/run_alerts_email.ts --dry-run' }
+    {
+      name: 'alerts dry-run',
+      command: 'npx tsx scripts/run_alerts_email.ts --dry-run',
+      env: { E2E_TEST_MODE: '1', NEXT_PUBLIC_E2E_TEST_MODE: '1' }
+    }
   ]
 
   for (const item of commandChecks) {
@@ -546,7 +609,21 @@ async function main() {
   }
 }
 
-main().catch(error => {
-  console.error('Fatal error in verify:launch', error)
-  process.exit(1)
-})
+const invokedFromCli = (() => {
+  const entry = process.argv[1]
+  if (!entry) {
+    return false
+  }
+  try {
+    return import.meta.url === pathToFileURL(entry).href
+  } catch {
+    return false
+  }
+})()
+
+if (invokedFromCli) {
+  main().catch(error => {
+    console.error('Fatal error in verify:launch', error)
+    process.exit(1)
+  })
+}

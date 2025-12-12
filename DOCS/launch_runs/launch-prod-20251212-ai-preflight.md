@@ -1539,3 +1539,665 @@ All required variables are set.
 | Production monetization flags – item 10e | SKIP | 0.0s | {"reason":"Needs Vercel production env inspect via MCP/browser."} |
 | Production DNS evidence – item 11a | SKIP | 0.0s | {"reason":"Needs DNS provider screenshots/API (MCP) for production domain."} |
 
+---
+## AI Launch Gate – 2025-12-12T16:59:13.643Z (sha f091995db6d54bd93e2f35fb8b9ef709f3617b95, target staging)
+- Commit: f091995db6d54bd93e2f35fb8b9ef709f3617b95
+- Target: staging
+- DNS_STATUS: WARN (operator confirmation required)
+- Result counts: PASS 15 / WARN 2 / SKIP 10 / FAIL 1
+- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)
+
+| Check | Status | Duration | Details |
+| --- | --- | --- | --- |
+| verify:phase9b | PASS | 36.8s | > dtd@1.0.0 verify:phase9b
+> tsx scripts/verify_phase9b.ts
+
+========================================
+Phase 9B Verification Harness
+========================================
+
+[PASS] Environment Variables: All required vars present (3 checked)
+
+[BUILD] Running npm run build...
+[PASS] Build (npm run build): Next.js build succeeded
+
+[TESTS] Running npm test...
+[PASS] Tests (npm test): Tests passed (unknown tests)
+
+[DB] Connecting to Supabase...
+[PASS] Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+
+---
+
+## Automated Verification Snapshot – Phase 9B
+
+- **Date:** 2025-12-12T16:57:49.540Z
+- **Checks:**
+  - ✅ Environment Variables: All required vars present (3 checked)
+  - ✅ Build (npm run build): Next.js build succeeded
+  - ✅ Tests (npm test): Tests passed (unknown tests)
+  - ✅ Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+**Overall:** ✅ AUTOMATION PASS
+> Note: Manual Stripe drill (Steps 4.1, 4.3) and production UI checks (Step 7) still required.
+> Use `DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md` to continue. |
+| lint | PASS | 14.1s | > dtd@1.0.0 lint
+> eslint . |
+| test | PASS | 4.7s | > dtd@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m src/app/directory/fetchDirectoryRegions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 432[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 426[2mms[22m[39m
+ [32m✓[39m src/app/api/admin/ops/overrides/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 271[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 559[2mms[22m[39m
+     [33m[2m✓[22m[39m calls ABR and persists matched_json when creating a business [33m 556[2mms[22m[39m
+ [32m✓[39m src/app/trainers/get_trainer_profile.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 571[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 549[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 583[2mms[22m[39m
+     [33m[2m✓[22m[39m stores matched_json parsed object and status=verified for Active ABN [33m 566[2mms[22m[39m
+ [32m✓[39m src/app/api/abn/verify/route.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 582[2mms[22m[39m
+     [33m[2m✓[22m[39m returns verification results and does not write when AUTO_APPLY=false [33m 552[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1… |
+| smoke | PASS | 3.1s | > dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 821[2mms[22m[39m
+     [33m[2m✓[22m[39m raises ABN fallback alert when rate exceeds threshold [33m 326[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 03:58:09
+[2m   Duration [22m 1.94s[2m (transform 1.39s, setup 0ms, import 2.43s, tests 930ms, environment 1ms)[22m |
+| e2e | PASS | 36.7s | > dtd@1.0.0 e2e
+> playwright test
+
+
+Running 8 tests using 4 workers
+
+  ✓  1 [chromium] › tests/e2e/alerts-snapshot.spec.ts:3:1 › alerts snapshot healthy baseline (2.9s)
+  ✓  2 [chromium] › tests/e2e/emergency.spec.ts:5:1 › Emergency controls toggle state and capture screenshot (7.7s)
+  ✓  4 [chromium] › tests/e2e/admin-dashboards.spec.ts:86:3 › Admin dashboards › AI health dashboard shows override state (8.4s)
+  ✓  6 [chromium] › tests/e2e/admin-dashboards.spec.ts:99:3 › Admin dashboards › Cron health dashboard renders schedule snapshot (5.3s)
+  ✓  3 [chromium] › tests/e2e/monetization.spec.ts:178:3 › Monetization upgrade flow › provider upgrade and admin subscription tab (14.4s)
+  ✓  7 [chromium] › tests/e2e/monetization.spec.ts:203:3 › Monetization upgrade flow › hides upgrade CTA when feature flag disabled (1.7s)
+  ✓  8 [chromium] › tests/e2e/monetization.spec.ts:209:3 › Monetization upgrade flow › requires ABN verification before upgrade (1.4s)
+  ✓  5 [chromium] › tests/e2e/search-and-trainer.spec.ts:19:3 › Search → Trainer profile › navigates from search results to trainer profile (16.1s)
+
+  8 passed (34.2s) |
+| preprod (staging) | PASS | 20.4s | ========================================
+Running Type Check
+
+> dtd@1.0.0 type-check
+> tsc --noEmit
+
+[PASS] Type Check
+========================================
+Running Smoke Tests
+
+> dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 747[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 03:58:55
+[2m   Duration [22m 1.72s[2m (transform 1.38s, setup 0ms, import 1.89s, tests 836ms, environment 1ms)[22m
+
+[PASS] Smoke Tests
+========================================
+Running Lint
+
+> dtd@1.0.0 lint
+> eslint .
+
+[PASS] Lint
+========================================
+Running Doc Divergence Detector
+Doc Divergence Detector: all checks passed ✅
+[PASS] Doc Divergence Detector
+========================================
+Running Env Ready Check
+========================================
+Ru… |
+| check_env_ready staging | PASS | 0.1s | ========================================
+Running Env Ready Check (target: staging)
+All required variables are set.
+[PASS] Env Ready Check |
+| alerts dry-run | PASS | 2.3s | DRY RUN ALERT SUMMARY:
+- [CRITICAL] emergency_cron: Emergency cron has no recorded successes |
+| DB target | PASS | 0.1s | {"urlHost":"db.xqytwtmdilipxnjetvoe.supabase.co","urlDatabase":"postgres","runtimeHost":"2406:da18:243:7427:54d8:9466:9e8a:e018/128","runtimeDatabase":"postgres","runtimeRole":"postgres","runtimePort":5432} |
+| ABN fallback rate | PASS | 0.3s | {"fallbackCount24h":1,"verifiedCount24h":6,"fallbackCount7d":1,"threshold":0.15} |
+| Database schema presence | PASS | 0.8s | {"missing":[]} |
+| RLS status | PASS | 0.4s | {"missing":[],"tableStatuses":[{"table":"businesses","rlsEnabled":true},{"table":"profiles","rlsEnabled":true},{"table":"abn_verifications","rlsEnabled":true},{"table":"abn_fallback_events","rlsEnabled":true},{"table":"ops_overrides","rlsEnabled":true}]} |
+| Policy coverage | FAIL | 0.1s | column "polpermissive" does not exist |
+| Migration parity | PASS | 0.1s | {"totalMigrations":13,"appliedCount":11,"checkedAfterBaseline":6,"missing":[],"recentApplied":["20251209093000_add_latency_metrics (name: add_latency_metrics, appliedAt: not tracked)","20251209101000_create_payment_tables (name: create_payment_tables, appliedAt: not tracked)","20251212111500_create_abn_fallback_events (name: create_abn_fallback_events, appliedAt: not tracked)","20251212113000_secure_abn_tables (name: secure_abn_tables, appliedAt: not tracked)","20251212114500_create_ops_overrides (name: create_ops_overrides, appliedAt: not tracked)"],"baselineVersion":20251100000000,"timestampSource":"schema_migrations has no inserted_at column"} |
+| DNS root → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["216.198.79.1","64.29.17.1"]} |
+| DNS staging → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["64.29.17.1","216.198.79.65"]} |
+| Production curl | PASS | 0.1s | HTTP/2 404 |
+| Monetization flags (staging env) | PASS | 0.0s | {"FEATURE_MONETIZATION_ENABLED":"1","NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED":"1"} |
+| Secrets alignment (.env vs Vercel) – item 4c | SKIP | 0.0s | {"reason":"Requires Vercel dashboard + secret rotation approvals."} |
+| Stripe monetization drill – item 8b | SKIP | 0.0s | {"reason":"Live Stripe payment and webhook replay need human supervision."} |
+| Production payouts + compliance review – item 9b | SKIP | 0.0s | {"reason":"Requires finance + compliance teams sign-off."} |
+| Production admin toggles – item 10c | SKIP | 0.0s | {"reason":"Vercel/Stripe toggles enforced during final go/no-go."} |
+| Stripe live upgrade path – item 10d | SKIP | 0.0s | {"reason":"Must be exercised with real card + observers."} |
+| Stripe invoice sanity – item 10f | SKIP | 0.0s | {"reason":"Needs invoice PDF inspection + accounting approval."} |
+| Production governance approvals – item 11b | SKIP | 0.0s | {"reason":"Board/governance approvals cannot be automated."} |
+| Legal sign-off + comms – item 11c | SKIP | 0.0s | {"reason":"Requires legal + comms leads to sign launch docs."} |
+| Production monetization flags – item 10e | SKIP | 0.0s | {"reason":"Needs Vercel production env inspect via MCP/browser."} |
+| Production DNS evidence – item 11a | SKIP | 0.0s | {"reason":"Needs DNS provider screenshots/API (MCP) for production domain."} |
+
+---
+## AI Launch Gate – 2025-12-12T17:01:58.173Z (sha f091995db6d54bd93e2f35fb8b9ef709f3617b95, target staging)
+- Commit: f091995db6d54bd93e2f35fb8b9ef709f3617b95
+- Target: staging
+- DNS_STATUS: WARN (operator confirmation required)
+- Result counts: PASS 15 / WARN 2 / SKIP 10 / FAIL 1
+- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)
+
+| Check | Status | Duration | Details |
+| --- | --- | --- | --- |
+| verify:phase9b | PASS | 38.5s | > dtd@1.0.0 verify:phase9b
+> tsx scripts/verify_phase9b.ts
+
+========================================
+Phase 9B Verification Harness
+========================================
+
+[PASS] Environment Variables: All required vars present (3 checked)
+
+[BUILD] Running npm run build...
+[PASS] Build (npm run build): Next.js build succeeded
+
+[TESTS] Running npm test...
+[PASS] Tests (npm test): Tests passed (unknown tests)
+
+[DB] Connecting to Supabase...
+[PASS] Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+
+---
+
+## Automated Verification Snapshot – Phase 9B
+
+- **Date:** 2025-12-12T17:00:31.959Z
+- **Checks:**
+  - ✅ Environment Variables: All required vars present (3 checked)
+  - ✅ Build (npm run build): Next.js build succeeded
+  - ✅ Tests (npm test): Tests passed (unknown tests)
+  - ✅ Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+**Overall:** ✅ AUTOMATION PASS
+> Note: Manual Stripe drill (Steps 4.1, 4.3) and production UI checks (Step 7) still required.
+> Use `DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md` to continue. |
+| lint | PASS | 15.3s | > dtd@1.0.0 lint
+> eslint . |
+| test | PASS | 6.3s | > dtd@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m src/app/directory/fetchDirectoryRegions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 737[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 711[2mms[22m[39m
+ [32m✓[39m src/app/api/admin/ops/overrides/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 319[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 875[2mms[22m[39m
+     [33m[2m✓[22m[39m calls ABR and persists matched_json when creating a business [33m 867[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 892[2mms[22m[39m
+     [33m[2m✓[22m[39m stores matched_json parsed object and status=verified for Active ABN [33m 868[2mms[22m[39m
+ [32m✓[39m src/app/trainers/get_trainer_profile.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 908[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 890[2mms[22m[39m
+ [32m✓[39m src/app/api/abn/verify/route.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 950[2mms[22m[39m
+     [33m[2m✓[22m[39m returns verification results and does not write when AUTO_APPLY=false [33m 910[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2… |
+| smoke | PASS | 3.7s | > dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 173[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1032[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 04:00:55
+[2m   Duration [22m 2.20s[2m (transform 2.33s, setup 0ms, import 3.24s, tests 1.28s, environment 1ms)[22m |
+| e2e | PASS | 35.9s | > dtd@1.0.0 e2e
+> playwright test
+
+
+Running 8 tests using 4 workers
+
+  ✓  1 [chromium] › tests/e2e/alerts-snapshot.spec.ts:3:1 › alerts snapshot healthy baseline (4.1s)
+  ✓  4 [chromium] › tests/e2e/emergency.spec.ts:5:1 › Emergency controls toggle state and capture screenshot (7.3s)
+  ✓  2 [chromium] › tests/e2e/admin-dashboards.spec.ts:86:3 › Admin dashboards › AI health dashboard shows override state (8.0s)
+  ✓  6 [chromium] › tests/e2e/admin-dashboards.spec.ts:99:3 › Admin dashboards › Cron health dashboard renders schedule snapshot (3.8s)
+  ✓  3 [chromium] › tests/e2e/monetization.spec.ts:178:3 › Monetization upgrade flow › provider upgrade and admin subscription tab (12.1s)
+  ✓  7 [chromium] › tests/e2e/monetization.spec.ts:203:3 › Monetization upgrade flow › hides upgrade CTA when feature flag disabled (832ms)
+  ✓  5 [chromium] › tests/e2e/search-and-trainer.spec.ts:19:3 › Search → Trainer profile › navigates from search results to trainer profile (11.2s)
+  ✓  8 [chromium] › tests/e2e/monetization.spec.ts:209:3 › Monetization upgrade flow › requires ABN verification before upgrade (1.1s)
+
+  8 passed (33.6s) |
+| preprod (staging) | PASS | 19.8s | ========================================
+Running Type Check
+
+> dtd@1.0.0 type-check
+> tsc --noEmit
+
+[PASS] Type Check
+========================================
+Running Smoke Tests
+
+> dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1163[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 04:01:39
+[2m   Duration [22m 2.12s[2m (transform 2.56s, setup 0ms, import 3.16s, tests 1.30s, environment 1ms)[22m
+
+[PASS] Smoke Tests
+========================================
+Running Lint
+
+> dtd@1.0.0 lint
+> eslint .
+
+[PASS] Lint
+========================================
+Running Doc Divergence Detector
+Doc Divergence Detector: all checks passed ✅
+[PASS] Doc Divergence Detector
+========================================
+Running Env Ready Check
+========================================
+R… |
+| check_env_ready staging | PASS | 0.1s | ========================================
+Running Env Ready Check (target: staging)
+All required variables are set.
+[PASS] Env Ready Check |
+| alerts dry-run | PASS | 2.0s | DRY RUN ALERT SUMMARY:
+- [CRITICAL] emergency_cron: Emergency cron has no recorded successes |
+| DB target | PASS | 0.1s | {"urlHost":"db.xqytwtmdilipxnjetvoe.supabase.co","urlDatabase":"postgres","runtimeHost":"2406:da18:243:7427:54d8:9466:9e8a:e018/128","runtimeDatabase":"postgres","runtimeRole":"postgres","runtimePort":5432} |
+| ABN fallback rate | PASS | 0.3s | {"fallbackCount24h":1,"verifiedCount24h":6,"fallbackCount7d":1,"threshold":0.15} |
+| Database schema presence | PASS | 0.8s | {"missing":[]} |
+| RLS status | PASS | 0.4s | {"missing":[],"tableStatuses":[{"table":"businesses","rlsEnabled":true},{"table":"profiles","rlsEnabled":true},{"table":"abn_verifications","rlsEnabled":true},{"table":"abn_fallback_events","rlsEnabled":true},{"table":"ops_overrides","rlsEnabled":true}]} |
+| Policy coverage | FAIL | 0.5s | {"missing":["payment_audit"],"overlyPermissive":[{"table":"businesses","policies":["Trainers can insert own businesses"]}],"perTablePolicies":[{"table":"businesses","policies":[{"name":"Active businesses are viewable by everyone","permissive":true,"usingClause":"(is_active = true)"},{"name":"Admins can view all businesses","permissive":true,"usingClause":"(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::user_role))))"},{"name":"Trainers can insert own businesses","permissive":true,"usingClause":"true"},{"name":"Trainers can update own businesses","permissive":true,"usingClause":"(auth.uid() = profile_id)"}]},{"table":"profiles","policies":[{"name":"Admins can view all profiles","permissive":true,"usingClause":"(EXISTS ( SELECT 1\n   FROM profiles profiles_1\n  WHERE ((profiles_1.id = auth.uid()) AND (profiles_1.role = 'admin'::user_role))))"},{"name":"Users can update own profile","permissive":true,"usingClause":"(auth.uid() = id)"},{"name":"Users can view own profile","permissive":true,"usingClause":"(auth.uid() = id)"}]},{"table":"abn_verifications","policies":[{"name":"service-role-abn-verifications","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)"}]},{"table":"abn_fallback_events","policies":[{"name":"service-role-abn-fallback-events","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)"}]},{"table":"ops_overrides","policies":[{"name":"service-role-ops-overrides","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)"}]},{"table":"payment_audit","policies":[]}]} |
+| Migration parity | PASS | 0.1s | {"totalMigrations":13,"appliedCount":11,"checkedAfterBaseline":6,"missing":[],"recentApplied":["20251209093000_add_latency_metrics (name: add_latency_metrics, appliedAt: not tracked)","20251209101000_create_payment_tables (name: create_payment_tables, appliedAt: not tracked)","20251212111500_create_abn_fallback_events (name: create_abn_fallback_events, appliedAt: not tracked)","20251212113000_secure_abn_tables (name: secure_abn_tables, appliedAt: not tracked)","20251212114500_create_ops_overrides (name: create_ops_overrides, appliedAt: not tracked)"],"baselineVersion":20251100000000,"timestampSource":"schema_migrations has no inserted_at column"} |
+| DNS root → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["64.29.17.65","64.29.17.1"]} |
+| DNS staging → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["216.198.79.65","64.29.17.1"]} |
+| Production curl | PASS | 0.1s | HTTP/2 404 |
+| Monetization flags (staging env) | PASS | 0.0s | {"FEATURE_MONETIZATION_ENABLED":"1","NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED":"1"} |
+| Secrets alignment (.env vs Vercel) – item 4c | SKIP | 0.0s | {"reason":"Requires Vercel dashboard + secret rotation approvals."} |
+| Stripe monetization drill – item 8b | SKIP | 0.0s | {"reason":"Live Stripe payment and webhook replay need human supervision."} |
+| Production payouts + compliance review – item 9b | SKIP | 0.0s | {"reason":"Requires finance + compliance teams sign-off."} |
+| Production admin toggles – item 10c | SKIP | 0.0s | {"reason":"Vercel/Stripe toggles enforced during final go/no-go."} |
+| Stripe live upgrade path – item 10d | SKIP | 0.0s | {"reason":"Must be exercised with real card + observers."} |
+| Stripe invoice sanity – item 10f | SKIP | 0.0s | {"reason":"Needs invoice PDF inspection + accounting approval."} |
+| Production governance approvals – item 11b | SKIP | 0.0s | {"reason":"Board/governance approvals cannot be automated."} |
+| Legal sign-off + comms – item 11c | SKIP | 0.0s | {"reason":"Requires legal + comms leads to sign launch docs."} |
+| Production monetization flags – item 10e | SKIP | 0.0s | {"reason":"Needs Vercel production env inspect via MCP/browser."} |
+| Production DNS evidence – item 11a | SKIP | 0.0s | {"reason":"Needs DNS provider screenshots/API (MCP) for production domain."} |
+
+---
+## AI Launch Gate – 2025-12-12T17:04:41.159Z (sha f091995db6d54bd93e2f35fb8b9ef709f3617b95, target staging)
+- Commit: f091995db6d54bd93e2f35fb8b9ef709f3617b95
+- Target: staging
+- DNS_STATUS: WARN (operator confirmation required)
+- Result counts: PASS 15 / WARN 2 / SKIP 10 / FAIL 1
+- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)
+
+| Check | Status | Duration | Details |
+| --- | --- | --- | --- |
+| verify:phase9b | PASS | 41.3s | > dtd@1.0.0 verify:phase9b
+> tsx scripts/verify_phase9b.ts
+
+========================================
+Phase 9B Verification Harness
+========================================
+
+[PASS] Environment Variables: All required vars present (3 checked)
+
+[BUILD] Running npm run build...
+[PASS] Build (npm run build): Next.js build succeeded
+
+[TESTS] Running npm test...
+[PASS] Tests (npm test): Tests passed (unknown tests)
+
+[DB] Connecting to Supabase...
+[PASS] Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+
+---
+
+## Automated Verification Snapshot – Phase 9B
+
+- **Date:** 2025-12-12T17:03:03.758Z
+- **Checks:**
+  - ✅ Environment Variables: All required vars present (3 checked)
+  - ✅ Build (npm run build): Next.js build succeeded
+  - ✅ Tests (npm test): Tests passed (unknown tests)
+  - ✅ Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+**Overall:** ✅ AUTOMATION PASS
+> Note: Manual Stripe drill (Steps 4.1, 4.3) and production UI checks (Step 7) still required.
+> Use `DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md` to continue. |
+| lint | PASS | 13.2s | > dtd@1.0.0 lint
+> eslint . |
+| test | PASS | 7.2s | > dtd@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m src/app/api/admin/ops/overrides/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m src/app/directory/fetchDirectoryRegions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 452[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 436[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 617[2mms[22m[39m
+     [33m[2m✓[22m[39m calls ABR and persists matched_json when creating a business [33m 611[2mms[22m[39m
+ [32m✓[39m src/app/trainers/get_trainer_profile.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 621[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 597[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 693[2mms[22m[39m
+     [33m[2m✓[22m[39m stores matched_json parsed object and status=verified for Active ABN [33m 661[2mms[22m[39m
+ [32m✓[39m src/app/api/abn/verify/route.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 682[2mms[22m[39m
+     [33m[2m✓[22m[39m returns verification results and does not write when AUTO_APPLY=false [33m 645[2mms[22m[39m
+ [32m✓[39m src/lib/abr.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 48[2mms… |
+| smoke | PASS | 5.6s | > dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 88[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 107[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1516[2mms[22m[39m
+     [33m[2m✓[22m[39m raises ABN fallback alert when rate exceeds threshold [33m 446[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 04:03:27
+[2m   Duration [22m 2.57s[2m (transform 2.85s, setup 0ms, import 4.57s, tests 1.78s, environment 2ms)[22m |
+| e2e | PASS | 43.5s | > dtd@1.0.0 e2e
+> playwright test
+
+
+Running 8 tests using 4 workers
+
+  ✓  3 [chromium] › tests/e2e/alerts-snapshot.spec.ts:3:1 › alerts snapshot healthy baseline (5.1s)
+  ✓  2 [chromium] › tests/e2e/emergency.spec.ts:5:1 › Emergency controls toggle state and capture screenshot (8.3s)
+  ✓  1 [chromium] › tests/e2e/admin-dashboards.spec.ts:86:3 › Admin dashboards › AI health dashboard shows override state (9.2s)
+  ✓  6 [chromium] › tests/e2e/admin-dashboards.spec.ts:99:3 › Admin dashboards › Cron health dashboard renders schedule snapshot (4.0s)
+  ✓  4 [chromium] › tests/e2e/monetization.spec.ts:178:3 › Monetization upgrade flow › provider upgrade and admin subscription tab (13.4s)
+  ✓  7 [chromium] › tests/e2e/monetization.spec.ts:203:3 › Monetization upgrade flow › hides upgrade CTA when feature flag disabled (799ms)
+  ✓  5 [chromium] › tests/e2e/search-and-trainer.spec.ts:19:3 › Search → Trainer profile › navigates from search results to trainer profile (10.2s)
+  ✓  8 [chromium] › tests/e2e/monetization.spec.ts:209:3 › Monetization upgrade flow › requires ABN verification before upgrade (1.2s)
+
+  8 passed (40.5s) |
+| preprod (staging) | PASS | 22.0s | ========================================
+Running Type Check
+
+> dtd@1.0.0 type-check
+> tsc --noEmit
+
+[PASS] Type Check
+========================================
+Running Smoke Tests
+
+> dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 811[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 04:04:20
+[2m   Duration [22m 1.92s[2m (transform 1.47s, setup 0ms, import 2.07s, tests 905ms, environment 4ms)[22m
+
+[PASS] Smoke Tests
+========================================
+Running Lint
+
+> dtd@1.0.0 lint
+> eslint .
+
+[PASS] Lint
+========================================
+Running Doc Divergence Detector
+Doc Divergence Detector: all checks passed ✅
+[PASS] Doc Divergence Detector
+========================================
+Running Env Ready Check
+========================================
+Ru… |
+| check_env_ready staging | PASS | 0.1s | ========================================
+Running Env Ready Check (target: staging)
+All required variables are set.
+[PASS] Env Ready Check |
+| alerts dry-run | PASS | 2.3s | DRY RUN ALERT SUMMARY:
+- [CRITICAL] emergency_cron: Emergency cron has no recorded successes |
+| DB target | PASS | 0.1s | {"urlHost":"db.xqytwtmdilipxnjetvoe.supabase.co","urlDatabase":"postgres","runtimeHost":"2406:da18:243:7427:54d8:9466:9e8a:e018/128","runtimeDatabase":"postgres","runtimeRole":"postgres","runtimePort":5432} |
+| ABN fallback rate | PASS | 0.3s | {"fallbackCount24h":1,"verifiedCount24h":6,"fallbackCount7d":1,"threshold":0.15} |
+| Database schema presence | PASS | 0.8s | {"missing":[]} |
+| RLS status | PASS | 0.5s | {"missing":[],"tableStatuses":[{"table":"businesses","rlsEnabled":true},{"table":"profiles","rlsEnabled":true},{"table":"abn_verifications","rlsEnabled":true},{"table":"abn_fallback_events","rlsEnabled":true},{"table":"ops_overrides","rlsEnabled":true}]} |
+| Policy coverage | FAIL | 0.5s | {"missing":[],"overlyPermissive":[{"table":"businesses","policies":["Trainers can insert own businesses"]}],"perTablePolicies":[{"table":"businesses","policies":[{"name":"Active businesses are viewable by everyone","permissive":true,"usingClause":"(is_active = true)"},{"name":"Admins can view all businesses","permissive":true,"usingClause":"(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::user_role))))"},{"name":"Trainers can insert own businesses","permissive":true,"usingClause":"true"},{"name":"Trainers can update own businesses","permissive":true,"usingClause":"(auth.uid() = profile_id)"}]},{"table":"profiles","policies":[{"name":"Admins can view all profiles","permissive":true,"usingClause":"(EXISTS ( SELECT 1\n   FROM profiles profiles_1\n  WHERE ((profiles_1.id = auth.uid()) AND (profiles_1.role = 'admin'::user_role))))"},{"name":"Users can update own profile","permissive":true,"usingClause":"(auth.uid() = id)"},{"name":"Users can view own profile","permissive":true,"usingClause":"(auth.uid() = id)"}]},{"table":"abn_verifications","policies":[{"name":"service-role-abn-verifications","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)"}]},{"table":"abn_fallback_events","policies":[{"name":"service-role-abn-fallback-events","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)"}]},{"table":"ops_overrides","policies":[{"name":"service-role-ops-overrides","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)"}]}]} |
+| Migration parity | PASS | 0.1s | {"totalMigrations":13,"appliedCount":11,"checkedAfterBaseline":6,"missing":[],"recentApplied":["20251209093000_add_latency_metrics (name: add_latency_metrics, appliedAt: not tracked)","20251209101000_create_payment_tables (name: create_payment_tables, appliedAt: not tracked)","20251212111500_create_abn_fallback_events (name: create_abn_fallback_events, appliedAt: not tracked)","20251212113000_secure_abn_tables (name: secure_abn_tables, appliedAt: not tracked)","20251212114500_create_ops_overrides (name: create_ops_overrides, appliedAt: not tracked)"],"baselineVersion":20251100000000,"timestampSource":"schema_migrations has no inserted_at column"} |
+| DNS root → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["64.29.17.65","64.29.17.1"]} |
+| DNS staging → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["64.29.17.1","216.198.79.1"]} |
+| Production curl | PASS | 0.6s | HTTP/2 404 |
+| Monetization flags (staging env) | PASS | 0.0s | {"FEATURE_MONETIZATION_ENABLED":"1","NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED":"1"} |
+| Secrets alignment (.env vs Vercel) – item 4c | SKIP | 0.0s | {"reason":"Requires Vercel dashboard + secret rotation approvals."} |
+| Stripe monetization drill – item 8b | SKIP | 0.0s | {"reason":"Live Stripe payment and webhook replay need human supervision."} |
+| Production payouts + compliance review – item 9b | SKIP | 0.0s | {"reason":"Requires finance + compliance teams sign-off."} |
+| Production admin toggles – item 10c | SKIP | 0.0s | {"reason":"Vercel/Stripe toggles enforced during final go/no-go."} |
+| Stripe live upgrade path – item 10d | SKIP | 0.0s | {"reason":"Must be exercised with real card + observers."} |
+| Stripe invoice sanity – item 10f | SKIP | 0.0s | {"reason":"Needs invoice PDF inspection + accounting approval."} |
+| Production governance approvals – item 11b | SKIP | 0.0s | {"reason":"Board/governance approvals cannot be automated."} |
+| Legal sign-off + comms – item 11c | SKIP | 0.0s | {"reason":"Requires legal + comms leads to sign launch docs."} |
+| Production monetization flags – item 10e | SKIP | 0.0s | {"reason":"Needs Vercel production env inspect via MCP/browser."} |
+| Production DNS evidence – item 11a | SKIP | 0.0s | {"reason":"Needs DNS provider screenshots/API (MCP) for production domain."} |
+
+---
+## AI Launch Gate – 2025-12-12T17:07:53.681Z (sha f091995db6d54bd93e2f35fb8b9ef709f3617b95, target staging)
+- Commit: f091995db6d54bd93e2f35fb8b9ef709f3617b95
+- Target: staging
+- DNS_STATUS: WARN (operator confirmation required)
+- Result counts: PASS 16 / WARN 2 / SKIP 10 / FAIL 0
+- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)
+
+| Check | Status | Duration | Details |
+| --- | --- | --- | --- |
+| verify:phase9b | PASS | 46.6s | > dtd@1.0.0 verify:phase9b
+> tsx scripts/verify_phase9b.ts
+
+========================================
+Phase 9B Verification Harness
+========================================
+
+[PASS] Environment Variables: All required vars present (3 checked)
+
+[BUILD] Running npm run build...
+[PASS] Build (npm run build): Next.js build succeeded
+
+[TESTS] Running npm test...
+[PASS] Tests (npm test): Tests passed (unknown tests)
+
+[DB] Connecting to Supabase...
+[PASS] Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+
+---
+
+## Automated Verification Snapshot – Phase 9B
+
+- **Date:** 2025-12-12T17:06:15.566Z
+- **Checks:**
+  - ✅ Environment Variables: All required vars present (3 checked)
+  - ✅ Build (npm run build): Next.js build succeeded
+  - ✅ Tests (npm test): Tests passed (unknown tests)
+  - ✅ Database Schema: All required tables present (payment_audit, business_subscription_status)
+
+**Overall:** ✅ AUTOMATION PASS
+> Note: Manual Stripe drill (Steps 4.1, 4.3) and production UI checks (Step 7) still required.
+> Use `DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md` to continue. |
+| lint | PASS | 19.7s | > dtd@1.0.0 lint
+> eslint . |
+| test | PASS | 5.8s | > dtd@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m src/app/api/admin/ops/overrides/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m src/app/directory/fetchDirectoryRegions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 440[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 423[2mms[22m[39m
+ [32m✓[39m src/app/trainers/get_trainer_profile.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 645[2mms[22m[39m
+     [33m[2m✓[22m[39m passes p_key from env when SUPABASE_PGCRYPTO_KEY is set [33m 637[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 643[2mms[22m[39m
+     [33m[2m✓[22m[39m stores matched_json parsed object and status=verified for Active ABN [33m 630[2mms[22m[39m
+ [32m✓[39m src/app/api/abn/verify/route.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 637[2mms[22m[39m
+     [33m[2m✓[22m[39m returns verification results and does not write when AUTO_APPLY=false [33m 620[2mms[22m[39m
+ [32m✓[39m src/app/api/onboarding/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 634[2mms[22m[39m
+     [33m[2m✓[22m[39m calls ABR and persists matched_json when creating a business [33m 633[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1… |
+| smoke | PASS | 4.2s | > dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 869[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 04:06:42
+[2m   Duration [22m 2.78s[2m (transform 1.99s, setup 0ms, import 2.70s, tests 965ms, environment 5ms)[22m |
+| e2e | PASS | 42.4s | > dtd@1.0.0 e2e
+> playwright test
+
+
+Running 8 tests using 4 workers
+
+  ✓  1 [chromium] › tests/e2e/alerts-snapshot.spec.ts:3:1 › alerts snapshot healthy baseline (3.7s)
+  ✓  2 [chromium] › tests/e2e/emergency.spec.ts:5:1 › Emergency controls toggle state and capture screenshot (11.8s)
+  ✓  3 [chromium] › tests/e2e/admin-dashboards.spec.ts:86:3 › Admin dashboards › AI health dashboard shows override state (13.4s)
+  ✓  4 [chromium] › tests/e2e/monetization.spec.ts:178:3 › Monetization upgrade flow › provider upgrade and admin subscription tab (18.7s)
+  ✓  6 [chromium] › tests/e2e/admin-dashboards.spec.ts:99:3 › Admin dashboards › Cron health dashboard renders schedule snapshot (5.4s)
+  ✓  7 [chromium] › tests/e2e/monetization.spec.ts:203:3 › Monetization upgrade flow › hides upgrade CTA when feature flag disabled (1.3s)
+  ✓  8 [chromium] › tests/e2e/monetization.spec.ts:209:3 › Monetization upgrade flow › requires ABN verification before upgrade (686ms)
+  ✓  5 [chromium] › tests/e2e/search-and-trainer.spec.ts:19:3 › Search → Trainer profile › navigates from search results to trainer profile (19.0s)
+
+  8 passed (40.4s) |
+| preprod (staging) | PASS | 20.3s | ========================================
+Running Type Check
+
+> dtd@1.0.0 type-check
+> tsc --noEmit
+
+[PASS] Type Check
+========================================
+Running Smoke Tests
+
+> dtd@1.0.0 smoke
+> vitest run tests/smoke
+
+
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90m/Users/carlg/Documents/PROJECTS/Project-dev/DTD[39m
+
+ [32m✓[39m tests/smoke/error-logging.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m tests/smoke/admin-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m tests/smoke/trainers.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m tests/smoke/emergency-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/smoke/alerts.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 952[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 04:07:35
+[2m   Duration [22m 1.92s[2m (transform 1.73s, setup 0ms, import 2.45s, tests 1.08s, environment 1ms)[22m
+
+[PASS] Smoke Tests
+========================================
+Running Lint
+
+> dtd@1.0.0 lint
+> eslint .
+
+[PASS] Lint
+========================================
+Running Doc Divergence Detector
+Doc Divergence Detector: all checks passed ✅
+[PASS] Doc Divergence Detector
+========================================
+Running Env Ready Check
+========================================
+Ru… |
+| check_env_ready staging | PASS | 0.1s | ========================================
+Running Env Ready Check (target: staging)
+All required variables are set.
+[PASS] Env Ready Check |
+| alerts dry-run | PASS | 2.1s | DRY RUN ALERT SUMMARY:
+- [CRITICAL] emergency_cron: Emergency cron has no recorded successes |
+| DB target | PASS | 0.1s | {"urlHost":"db.xqytwtmdilipxnjetvoe.supabase.co","urlDatabase":"postgres","runtimeHost":"2406:da18:243:7427:54d8:9466:9e8a:e018/128","runtimeDatabase":"postgres","runtimeRole":"postgres","runtimePort":5432} |
+| ABN fallback rate | PASS | 0.3s | {"fallbackCount24h":1,"verifiedCount24h":6,"fallbackCount7d":1,"threshold":0.15} |
+| Database schema presence | PASS | 0.8s | {"missing":[]} |
+| RLS status | PASS | 0.5s | {"missing":[],"tableStatuses":[{"table":"businesses","rlsEnabled":true},{"table":"profiles","rlsEnabled":true},{"table":"abn_verifications","rlsEnabled":true},{"table":"abn_fallback_events","rlsEnabled":true},{"table":"ops_overrides","rlsEnabled":true}]} |
+| Policy coverage | PASS | 0.5s | {"missing":[],"overlyPermissive":[],"perTablePolicies":[{"table":"businesses","policies":[{"name":"Active businesses are viewable by everyone","permissive":true,"usingClause":"(is_active = true)","command":"select"},{"name":"Admins can view all businesses","permissive":true,"usingClause":"(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::user_role))))","command":"select"},{"name":"Trainers can insert own businesses","permissive":true,"usingClause":"true","command":"insert"},{"name":"Trainers can update own businesses","permissive":true,"usingClause":"(auth.uid() = profile_id)","command":"update"}]},{"table":"profiles","policies":[{"name":"Admins can view all profiles","permissive":true,"usingClause":"(EXISTS ( SELECT 1\n   FROM profiles profiles_1\n  WHERE ((profiles_1.id = auth.uid()) AND (profiles_1.role = 'admin'::user_role))))","command":"select"},{"name":"Users can update own profile","permissive":true,"usingClause":"(auth.uid() = id)","command":"update"},{"name":"Users can view own profile","permissive":true,"usingClause":"(auth.uid() = id)","command":"select"}]},{"table":"abn_verifications","policies":[{"name":"service-role-abn-verifications","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)","command":"all"}]},{"table":"abn_fallback_events","policies":[{"name":"service-role-abn-fallback-events","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)","command":"all"}]},{"table":"ops_overrides","policies":[{"name":"service-role-ops-overrides","permissive":true,"usingClause":"(auth.role() = 'service_role'::text)","command":"all"}]}]} |
+| Migration parity | PASS | 0.1s | {"totalMigrations":13,"appliedCount":11,"checkedAfterBaseline":6,"missing":[],"recentApplied":["20251209093000_add_latency_metrics (name: add_latency_metrics, appliedAt: not tracked)","20251209101000_create_payment_tables (name: create_payment_tables, appliedAt: not tracked)","20251212111500_create_abn_fallback_events (name: create_abn_fallback_events, appliedAt: not tracked)","20251212113000_secure_abn_tables (name: secure_abn_tables, appliedAt: not tracked)","20251212114500_create_ops_overrides (name: create_ops_overrides, appliedAt: not tracked)"],"baselineVersion":20251100000000,"timestampSource":"schema_migrations has no inserted_at column"} |
+| DNS root → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["64.29.17.65","64.29.17.1"]} |
+| DNS staging → Vercel | WARN | 0.1s | {"expected":"cname.vercel-dns.com.","cnameRecords":[],"aRecords":["64.29.17.1","216.198.79.1"]} |
+| Production curl | PASS | 0.1s | HTTP/2 404 |
+| Monetization flags (staging env) | PASS | 0.0s | {"FEATURE_MONETIZATION_ENABLED":"1","NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED":"1"} |
+| Secrets alignment (.env vs Vercel) – item 4c | SKIP | 0.0s | {"reason":"Requires Vercel dashboard + secret rotation approvals."} |
+| Stripe monetization drill – item 8b | SKIP | 0.0s | {"reason":"Live Stripe payment and webhook replay need human supervision."} |
+| Production payouts + compliance review – item 9b | SKIP | 0.0s | {"reason":"Requires finance + compliance teams sign-off."} |
+| Production admin toggles – item 10c | SKIP | 0.0s | {"reason":"Vercel/Stripe toggles enforced during final go/no-go."} |
+| Stripe live upgrade path – item 10d | SKIP | 0.0s | {"reason":"Must be exercised with real card + observers."} |
+| Stripe invoice sanity – item 10f | SKIP | 0.0s | {"reason":"Needs invoice PDF inspection + accounting approval."} |
+| Production governance approvals – item 11b | SKIP | 0.0s | {"reason":"Board/governance approvals cannot be automated."} |
+| Legal sign-off + comms – item 11c | SKIP | 0.0s | {"reason":"Requires legal + comms leads to sign launch docs."} |
+| Production monetization flags – item 10e | SKIP | 0.0s | {"reason":"Needs Vercel production env inspect via MCP/browser."} |
+| Production DNS evidence – item 11a | SKIP | 0.0s | {"reason":"Needs DNS provider screenshots/API (MCP) for production domain."} |
+
