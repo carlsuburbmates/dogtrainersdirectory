@@ -1,0 +1,32 @@
+name: Verify Launch
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  verify-launch:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_KEY }}
+      FEATURE_MONETIZATION_ENABLED: '1'
+      NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED: '1'
+      ENV_TARGET: staging
+      ABN_FALLBACK_MAX_RATE: '0.15'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AI launch gate
+        run: npm run verify:launch
