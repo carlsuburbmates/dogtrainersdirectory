@@ -90,7 +90,9 @@ test.describe('Admin dashboards', () => {
     await expect(page.getByRole('heading', { name: 'AI Integration Health Status' })).toBeVisible()
     await expect(page.getByText('Service status', { exact: false })).toBeVisible()
     await page.getByRole('button', { name: 'Mark Down' }).click()
-    await expect(page.getByText('Override:')).toBeVisible()
+    await expect(page.getByText('Override:', { exact: false })).toBeVisible()
+    await page.getByRole('button', { name: 'Clear' }).click()
+    await expect(page.getByText('Override:', { exact: false })).toHaveCount(0)
     await expect(page).toHaveScreenshot('admin-ai-health.png', screenshotOptions)
   })
 
