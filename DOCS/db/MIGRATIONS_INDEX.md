@@ -16,6 +16,9 @@ This page tracks every SQL file under `supabase/migrations/` (current source of 
 | `20251130000001_add_abn_matched_json.sql` | Schema – ABN improvements | Yes (Nov 2025) | Adds `matched_json` column to `abn_verifications`. |
 | `20251209093000_add_latency_metrics.sql` | Telemetry – latency metrics | Pending apply | Creates `latency_metrics` table for request duration + success telemetry across search, emergency, admin, and ABN flows. |
 | `20251209101000_create_payment_tables.sql` | Create `payment_audit` + `business_subscription_status` tables | Phase 9B | Applied in staging on 2025-12-11 — Evidence: `DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md` |
+| `20251212111500_create_abn_fallback_events.sql` | Telemetry – ABN fallback log | Pending apply | Creates `abn_fallback_events` table + indexes for override metrics + admin dashboards. |
+| `20251212113000_secure_abn_tables.sql` | Security – ABN RLS | Pending apply | Enables RLS + service-role policy on `abn_verifications`. |
+| `20251212114500_create_ops_overrides.sql` | Ops overrides table | Pending apply | Creates `ops_overrides` table with auto-expiring overrides for telemetry dashboards. |
 
 > **Fresh DB bootstrap:** Apply these migrations in order with `supabase db push` or `supabase db remote commit`. After applying, run `scripts/test_abn_recheck.py` and `npm run type-check` to verify RPC compatibility.
 

@@ -100,11 +100,11 @@ function checkBuild() {
       output = execSync('npm run build 2>&1', { encoding: 'utf-8' });
     } catch (err) {
       // Capture output even if exit code is non-zero
-      if (err instanceof Error && 'stdout' in err) {
-        output = (err as any).stdout || '';
+      if (isExecError(err) && err.stdout) {
+        output = err.stdout.toString();
       }
-      if (!output && 'stderr' in err) {
-        output = (err as any).stderr || '';
+      if (!output && isExecError(err) && err.stderr) {
+        output = err.stderr.toString();
       }
     }
     
@@ -147,11 +147,11 @@ function checkTests() {
     } catch (err) {
       // npm test may return non-zero due to Playwright warnings, but tests can still pass
       // Capture the stdout from the error
-      if (err instanceof Error && 'stdout' in err) {
-        output = (err as any).stdout || '';
+      if (isExecError(err) && err.stdout) {
+        output = err.stdout.toString();
       }
-      if (!output && 'stderr' in err) {
-        output = (err as any).stderr || '';
+      if (!output && isExecError(err) && err.stderr) {
+        output = err.stderr.toString();
       }
     }
     
@@ -306,3 +306,6 @@ main().catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });
+function isExecError(err: unknown): err is { stdout?: string; stderr?: string } {
+  return typeof err === 'object' && err !== null && ('stdout' in err || 'stderr' in err)
+}
