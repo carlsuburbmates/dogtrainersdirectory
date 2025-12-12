@@ -6,6 +6,8 @@
 
 Use this page for the final production go/no-go review. All items below must be explicitly confirmed (✔) with links to evidence (screenshots, logs, or CLI output). Keep historical runs in this file so that launch decisions are auditable.
 
+- [ ] AI verification system complete when: verify:launch PASS with only DNS WARNs allowed + artifacts uploaded in CI.
+
 ## Required Checks
 
 1. **Pre-production verification**

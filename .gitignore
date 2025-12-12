@@ -33,6 +33,7 @@ pnpm-debug.log*
 playwright-report/
 blob-report/
 test-results/
+next-env.d.ts
 
 # Build / dist artifacts
 dist/
