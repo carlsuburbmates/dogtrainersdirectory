@@ -30,3 +30,12 @@ jobs:
 
       - name: Run AI launch gate
         run: npm run verify:launch
+
+      - name: Upload launch artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-launch-${{ github.run_id }}
+          path: |
+            DOCS/launch_runs/launch-prod-*-ai-preflight.md
+            DOCS/launch_runs/launch-prod-*-ai-preflight.json
