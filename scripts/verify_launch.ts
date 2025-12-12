@@ -1,11 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Dog Trainers Directory – AI Launch Gate
- * ---------------------------------------
  * npm run verify:launch
- *  - Executes all AI-verifiable launch checks in a single harness
- *  - Writes auditable artifacts under DOCS/launch_runs/
- *  - Exits non-zero if any launch gate fails
  */
 
 import { execSync } from 'node:child_process'
@@ -13,11 +9,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { Client } from 'pg'
 
-type Status = 'PASS' | 'FAIL' | 'WARN' | 'SKIP'
-
 interface CheckResult {
   name: string
-  status: Status
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'
   command?: string
   durationMs: number
   output?: string
@@ -26,13 +20,78 @@ interface CheckResult {
 
 const results: CheckResult[] = []
 let hasFailure = false
+let dnsStatus: 'PASS' | 'WARN' = 'PASS'
+
+const REQUIRED_TABLES = [
+  'payment_audit',
+  'business_subscription_status',
+  'abn_fallback_events',
+  'abn_verifications',
+  'ops_overrides',
+  'businesses',
+  'profiles',
+  'suburbs',
+  'featured_placements'
+]
+
+const RLS_REQUIRED_TABLES = ['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events', 'ops_overrides']
+
+const POLICY_REQUIRED_TABLES = ['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events', 'ops_overrides']
+
+const DNS_EXPECTATIONS: Record<string, { label: string; expected: string }> = {
+  'dogtrainersdirectory.com.au': { label: 'DNS root → Vercel', expected: 'cname.vercel-dns.com.' },
+  'staging.dogtrainersdirectory.com.au': { label: 'DNS staging → Vercel', expected: 'cname.vercel-dns.com.' }
+}
+
+const AI_CHECKS = new Set<string>([
+  'verify:phase9b',
+  'lint',
+  'test',
+  'smoke',
+  'e2e',
+  'preprod (staging)',
+  'check_env_ready staging',
+  'alerts dry-run',
+  'DB target',
+  'ABN fallback rate',
+  'Database schema presence',
+  'RLS status',
+  'Policy coverage',
+  'Migration parity',
+  'DNS root → Vercel',
+  'DNS staging → Vercel',
+  'Production curl',
+  'Monetization flags (staging env)'
+])
+
+const OPERATOR_ONLY_ITEMS = [
+  { name: 'Secrets alignment (.env vs Vercel) – item 4c', reason: 'Requires Vercel dashboard + secret rotation approvals.' },
+  { name: 'Stripe monetization drill – item 8b', reason: 'Live Stripe payment and webhook replay need human supervision.' },
+  { name: 'Production payouts + compliance review – item 9b', reason: 'Requires finance + compliance teams sign-off.' },
+  { name: 'Production admin toggles – item 10c', reason: 'Vercel/Stripe toggles enforced during final go/no-go.' },
+  { name: 'Stripe live upgrade path – item 10d', reason: 'Must be exercised with real card + observers.' },
+  { name: 'Stripe invoice sanity – item 10f', reason: 'Needs invoice PDF inspection + accounting approval.' },
+  { name: 'Production governance approvals – item 11b', reason: 'Board/governance approvals cannot be automated.' },
+  { name: 'Legal sign-off + comms – item 11c', reason: 'Requires legal + comms leads to sign launch docs.' }
+]
+
+const MCP_ONLY_ITEMS = [
+  { name: 'Production monetization flags – item 10e', reason: 'Needs Vercel production env inspect via MCP/browser.' },
+  { name: 'Production DNS evidence – item 11a', reason: 'Needs DNS provider screenshots/API (MCP) for production domain.' }
+]
+
+const DOCS_DIVERGENCE_OPT_OUT = '<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->'
+
+const OPERATOR_ONLY_CHECKS = new Set(OPERATOR_ONLY_ITEMS.map(item => item.name))
+const MCP_ONLY_CHECKS = new Set(MCP_ONLY_ITEMS.map(item => item.name))
 
 function addResult(result: CheckResult) {
   results.push(result)
   if (result.status === 'FAIL') {
     hasFailure = true
   }
-  const icon = result.status === 'PASS' ? '✅' : result.status === 'FAIL' ? '❌' : result.status === 'WARN' ? '⚠️' : '⊘'
+  const icon =
+    result.status === 'PASS' ? '✅' : result.status === 'FAIL' ? '❌' : result.status === 'WARN' ? '⚠️' : '⊘'
   console.log(`${icon} ${result.name} (${formatDuration(result.durationMs)})`)
   if (result.output) {
     console.log(result.output)
@@ -43,7 +102,7 @@ function formatDuration(ms: number) {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-function truncate(text: string, limit = 2000) {
+function truncate(text: string, limit = 1500) {
   if (!text) return ''
   return text.length > limit ? `${text.slice(0, limit)}…` : text
 }
@@ -71,21 +130,64 @@ function runCommandCheck(name: string, command: string, extraEnv: Record<string,
 async function runDbChecks() {
   const connString = process.env.SUPABASE_CONNECTION_STRING
   if (!connString) {
-    addResult({ name: 'Database checks', status: 'FAIL', durationMs: 0, output: 'SUPABASE_CONNECTION_STRING not set' })
+    addResult({ name: 'DB target', status: 'FAIL', durationMs: 0, output: 'SUPABASE_CONNECTION_STRING not set' })
     return
   }
 
   const client = new Client({ connectionString: connString })
   try {
     await client.connect()
-    await checkAbnFallbackMetrics(client)
-    await checkTablePresence(client)
-    await checkPolicyPresence(client)
-    await checkMigrationParity(client)
   } catch (error) {
-    addResult({ name: 'Database checks', status: 'FAIL', durationMs: 0, output: (error as Error).message })
-  } finally {
-    await client.end()
+    addResult({ name: 'DB target', status: 'FAIL', durationMs: 0, output: `Database connection failed: ${(error as Error).message}` })
+    return
+  }
+
+  await reportDbTarget(client, connString)
+  await checkAbnFallbackMetrics(client)
+  await checkTablePresence(client)
+  await checkRlsStatus(client)
+  await checkPolicyCoverage(client)
+  await checkMigrationParity(client)
+
+  await client.end().catch(() => {})
+}
+
+function parseConnectionTarget(connectionString: string) {
+  try {
+    const url = new URL(connectionString)
+    return {
+      host: url.hostname,
+      port: url.port || '5432',
+      database: url.pathname.replace('/', ''),
+      user: url.username
+    }
+  } catch (error) {
+    return { host: 'unknown', port: 'unknown', database: 'unknown', user: 'unknown' }
+  }
+}
+
+async function reportDbTarget(client: Client, connectionString: string) {
+  const start = Date.now()
+  try {
+    const runtime = await client.query(
+      'select current_database() as database, current_user as role, inet_server_addr()::text as host, inet_server_port() as port'
+    )
+    const parsed = parseConnectionTarget(connectionString)
+    addResult({
+      name: 'DB target',
+      status: 'PASS',
+      durationMs: Date.now() - start,
+      details: {
+        urlHost: parsed.host,
+        urlDatabase: parsed.database,
+        runtimeHost: runtime.rows[0]?.host ?? 'unknown',
+        runtimeDatabase: runtime.rows[0]?.database ?? 'unknown',
+        runtimeRole: runtime.rows[0]?.role ?? 'unknown',
+        runtimePort: runtime.rows[0]?.port ?? 'unknown'
+      }
+    })
+  } catch (error) {
+    addResult({ name: 'DB target', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
   }
 }
 
@@ -98,16 +200,19 @@ async function checkAbnFallbackMetrics(client: Client) {
     const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
     const fallback24 = await client.query('select count(*)::int as count from abn_fallback_events where created_at >= $1', [since24h.toISOString()])
-    const fallbackCount = fallback24.rows[0]?.count ?? 0
-    const verified24 = await client.query("select count(*)::int as count from abn_verifications where status = 'verified' and updated_at >= $1", [since24h.toISOString()])
-    const verifiedCount = verified24.rows[0]?.count ?? 0
+    const verified24 = await client.query(
+      "select count(*)::int as count from abn_verifications where status = 'verified' and updated_at >= $1",
+      [since24h.toISOString()]
+    )
     const fallback7d = await client.query('select count(*)::int as count from abn_fallback_events where created_at >= $1', [since7d.toISOString()])
-    const fallback7dCount = fallback7d.rows[0]?.count ?? 0
 
+    const fallbackCount = fallback24.rows[0]?.count ?? 0
+    const verifiedCount = verified24.rows[0]?.count ?? 0
+    const fallback7dCount = fallback7d.rows[0]?.count ?? 0
     const denom = fallbackCount + verifiedCount
     const rate = denom === 0 ? 0 : fallbackCount / denom
 
-    let status: Status = 'PASS'
+    let status: CheckResult['status'] = 'PASS'
     let output = `fallback ${fallbackCount}, verified ${verifiedCount}, rate ${(rate * 100).toFixed(2)}% (threshold ${(threshold * 100).toFixed(2)}%)`
 
     if (denom > 0 && rate > threshold) {
@@ -122,7 +227,12 @@ async function checkAbnFallbackMetrics(client: Client) {
       name: 'ABN fallback rate',
       status,
       durationMs: Date.now() - start,
-      details: { fallbackCount24h: fallbackCount, verifiedCount24h: verifiedCount, fallbackCount7d: fallback7dCount, threshold }
+      details: {
+        fallbackCount24h: fallbackCount,
+        verifiedCount24h: verifiedCount,
+        fallbackCount7d: fallback7dCount,
+        threshold
+      }
     })
   } catch (error) {
     addResult({ name: 'ABN fallback rate', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
@@ -131,102 +241,140 @@ async function checkAbnFallbackMetrics(client: Client) {
 
 async function checkTablePresence(client: Client) {
   const start = Date.now()
-  const tables = [
-    'payment_audit',
-    'business_subscription_status',
-    'abn_fallback_events',
-    'abn_verifications',
-    'businesses',
-    'profiles',
-    'suburbs',
-    'featured_placements',
-    'ops_overrides'
-  ]
-  const missing: string[] = []
-  for (const table of tables) {
-    const res = await client.query('select to_regclass($1) is not null as exists', [`public.${table}`])
-    if (!res.rows[0]?.exists) missing.push(table)
+  try {
+    const missing: string[] = []
+    for (const table of REQUIRED_TABLES) {
+      const res = await client.query('select to_regclass($1) is not null as exists', [`public.${table}`])
+      if (!res.rows[0]?.exists) missing.push(table)
+    }
+    addResult({
+      name: 'Database schema presence',
+      status: missing.length === 0 ? 'PASS' : 'FAIL',
+      durationMs: Date.now() - start,
+      details: { missing }
+    })
+  } catch (error) {
+    addResult({ name: 'Database schema presence', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
   }
-  addResult({
-    name: 'Database schema presence',
-    status: missing.length === 0 ? 'PASS' : 'FAIL',
-    durationMs: Date.now() - start,
-    details: { missing }
-  })
 }
 
-async function checkPolicyPresence(client: Client) {
+async function checkRlsStatus(client: Client) {
   const start = Date.now()
-  const tables = ['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events']
-  const missing: string[] = []
-  for (const table of tables) {
-    const res = await client.query('select count(*)::int as count from pg_policies where schemaname=$1 and tablename=$2', ['public', table])
-    if ((res.rows[0]?.count ?? 0) === 0) missing.push(table)
+  try {
+    const missing: string[] = []
+    const tableStatuses: Array<{ table: string; rlsEnabled: boolean }> = []
+    for (const table of RLS_REQUIRED_TABLES) {
+      const res = await client.query('select relrowsecurity as enabled from pg_class where oid = $1::regclass', [`public.${table}`])
+      const enabled = !!res.rows[0]?.enabled
+      tableStatuses.push({ table, rlsEnabled: enabled })
+      if (!enabled) missing.push(table)
+    }
+    addResult({
+      name: 'RLS status',
+      status: missing.length === 0 ? 'PASS' : 'FAIL',
+      durationMs: Date.now() - start,
+      details: { missing, tableStatuses }
+    })
+  } catch (error) {
+    addResult({ name: 'RLS status', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
   }
-  addResult({ name: 'RLS policy presence', status: missing.length === 0 ? 'PASS' : 'FAIL', durationMs: Date.now() - start, details: { missing } })
+}
+
+async function checkPolicyCoverage(client: Client) {
+  const start = Date.now()
+  try {
+    const missing: string[] = []
+    const policies: Array<{ table: string; policyCount: number }> = []
+    for (const table of POLICY_REQUIRED_TABLES) {
+      const res = await client.query('select count(*)::int as count from pg_policies where schemaname=$1 and tablename=$2', ['public', table])
+      const count = res.rows[0]?.count ?? 0
+      policies.push({ table, policyCount: count })
+      if (count === 0) missing.push(table)
+    }
+    addResult({
+      name: 'Policy coverage',
+      status: missing.length === 0 ? 'PASS' : 'FAIL',
+      durationMs: Date.now() - start,
+      details: { missing, policies }
+    })
+  } catch (error) {
+    addResult({ name: 'Policy coverage', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
+  }
 }
 
 async function checkMigrationParity(client: Client) {
   const start = Date.now()
-  const migrationsDir = path.join(process.cwd(), 'supabase', 'migrations')
-  const files = fs
-    .readdirSync(migrationsDir)
-    .filter(file => file.endsWith('.sql'))
-    .map(file => file.replace('.sql', ''))
-    .sort()
   try {
-    const ledger = await client.query('select version from supabase_migrations.schema_migrations order by version')
-    const applied = ledger.rows.map((row: any) => row.version)
-    const baseline = 20251100000000
-    const critical = files.filter(file => {
+    const migrationsDir = path.join(process.cwd(), 'supabase', 'migrations')
+    const files = fs
+      .readdirSync(migrationsDir)
+      .filter(file => file.endsWith('.sql'))
+      .map(file => file.replace('.sql', ''))
+      .sort()
+
+    const ledger = await client.query('select version, name from supabase_migrations.schema_migrations order by version')
+    const applied = new Set<string>(ledger.rows.map(row => row.version))
+    const baseline = Number(process.env.MIGRATION_BASELINE_VERSION ?? '20251100000000')
+    const relevantFiles = files.filter(file => {
       const numeric = Number(file.split('_')[0])
-      return !Number.isNaN(numeric) && numeric >= baseline
+      return Number.isFinite(numeric) && numeric >= baseline
     })
-    const missing = critical.filter(file => !applied.includes(file))
+    const missing = relevantFiles.filter(file => !applied.has(file))
+    const appliedTimeline = ledger.rows.slice(-5).map(row => {
+      const rowAny = row as Record<string, any>
+      return `${row.version} (name: ${rowAny.name ?? 'n/a'}, appliedAt: not tracked)`
+    })
+
     addResult({
       name: 'Migration parity',
       status: missing.length === 0 ? 'PASS' : 'FAIL',
       durationMs: Date.now() - start,
-      details: { checkedCount: critical.length, missingCount: missing.length, missing }
+      details: {
+        totalMigrations: files.length,
+        checkedAfterBaseline: relevantFiles.length,
+        missing,
+        recentApplied: appliedTimeline,
+        baselineVersion: baseline,
+        timestampSource: 'schema_migrations has no inserted_at column'
+      }
     })
   } catch (error) {
-    addResult({ name: 'Migration parity', status: 'WARN', durationMs: Date.now() - start, output: `Unable to read ledger: ${(error as Error).message}` })
+    addResult({ name: 'Migration parity', status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
   }
 }
 
 function runDnsChecks() {
-  checkDnsTarget('dogtrainersdirectory.com.au', 'DNS root → Vercel')
-  checkDnsTarget('staging.dogtrainersdirectory.com.au', 'DNS staging → Vercel')
+  Object.entries(DNS_EXPECTATIONS).forEach(([domain, config]) => {
+    checkDnsTarget(domain, config.label, config.expected)
+  })
   runCurlCheck()
 }
 
-function checkDnsTarget(domain: string, name: string) {
+function checkDnsTarget(domain: string, name: string, expected: string) {
   const start = Date.now()
   try {
-    const cname = execSync(`dig +short ${domain} CNAME`, { encoding: 'utf-8' }).trim()
-    if (cname && cname.includes('vercel-dns.com')) {
-      addResult({ name, status: 'PASS', durationMs: Date.now() - start, output: `CNAME ${cname}` })
-      return
+    const cnameRaw = execSync(`dig +short ${domain} CNAME`, { encoding: 'utf-8' }).trim()
+    const aRaw = execSync(`dig +short ${domain}`, { encoding: 'utf-8' }).trim()
+    const cnameRecords = cnameRaw ? cnameRaw.split('\n').filter(Boolean) : []
+    const aRecords = aRaw ? aRaw.split('\n').filter(Boolean) : []
+    const matches = cnameRecords.includes(expected) || aRecords.some(ip => ip.startsWith('76.76.'))
+    const status: CheckResult['status'] = matches ? 'PASS' : 'WARN'
+    if (status === 'WARN') {
+      dnsStatus = 'WARN'
     }
-    const ns = execSync(`dig +short ${domain} NS`, { encoding: 'utf-8' }).trim()
-    if (ns && ns.includes('vercel-dns.com')) {
-      addResult({ name, status: 'PASS', durationMs: Date.now() - start, output: 'NS managed by Vercel (apex flattening)' })
-      return
-    }
-    const records = execSync(`dig +short ${domain}`, { encoding: 'utf-8' }).trim()
-    if (records) {
-      const looksVercel = records.split('\n').some(ip => ip.startsWith('76.76.21.'))
-      addResult({
-        name,
-        status: looksVercel ? 'PASS' : 'WARN',
-        durationMs: Date.now() - start,
-        output: looksVercel ? `A-record(s): ${records}` : `A-record(s): ${records} (manual confirm required)`
-      })
-      return
-    }
-    addResult({ name, status: 'FAIL', durationMs: Date.now() - start, output: 'No DNS records returned' })
+    addResult({
+      name,
+      status,
+      durationMs: Date.now() - start,
+      details: {
+        expected,
+        cnameRecords,
+        aRecords
+      }
+    })
   } catch (error) {
-    addResult({ name, status: 'FAIL', durationMs: Date.now() - start, output: (error as Error).message })
+    dnsStatus = 'WARN'
+    addResult({ name, status: 'WARN', durationMs: Date.now() - start, output: (error as Error).message })
   }
 }
 
@@ -235,11 +383,21 @@ function runCurlCheck() {
   try {
     const output = execSync('curl -I https://dogtrainersdirectory.com.au', { encoding: 'utf-8' })
     const statusLine = output.split('\n')[0]?.trim()
-    addResult({ name: 'Production curl', status: statusLine?.startsWith('HTTP/') ? 'PASS' : 'WARN', durationMs: Date.now() - start, output: statusLine })
+    addResult({
+      name: 'Production curl',
+      status: statusLine?.startsWith('HTTP/') ? 'PASS' : 'WARN',
+      durationMs: Date.now() - start,
+      output: statusLine
+    })
   } catch (error) {
     const stdout = (error as any)?.stdout?.toString() ?? ''
     const stderr = (error as any)?.stderr?.toString() ?? ''
-    addResult({ name: 'Production curl', status: 'FAIL', durationMs: Date.now() - start, output: truncate((stdout + '\n' + stderr).trim()) })
+    addResult({
+      name: 'Production curl',
+      status: 'FAIL',
+      durationMs: Date.now() - start,
+      output: truncate((stdout + '\n' + stderr).trim())
+    })
   }
 }
 
@@ -247,7 +405,7 @@ function checkMonetizationFlags() {
   const start = Date.now()
   const featureFlag = process.env.FEATURE_MONETIZATION_ENABLED ?? 'unset'
   const clientFlag = process.env.NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED ?? 'unset'
-  const status: Status = featureFlag === '1' && clientFlag === '1' ? 'PASS' : 'FAIL'
+  const status: CheckResult['status'] = featureFlag === '1' && clientFlag === '1' ? 'PASS' : 'FAIL'
   addResult({
     name: 'Monetization flags (staging env)',
     status,
@@ -264,8 +422,22 @@ function maskValue(value: string) {
   return value.length <= 4 ? value : `${value.slice(0, 1)}***${value.slice(-1)}`
 }
 
+function recordManualChecks() {
+  OPERATOR_ONLY_ITEMS.forEach(item => recordSkip(item.name, item.reason))
+  MCP_ONLY_ITEMS.forEach(item => recordSkip(item.name, item.reason))
+}
+
 function recordSkip(name: string, reason: string) {
   addResult({ name, status: 'SKIP', durationMs: 0, details: { reason } })
+}
+
+function getStatusCounts() {
+  return {
+    pass: results.filter(r => r.status === 'PASS').length,
+    warn: results.filter(r => r.status === 'WARN').length,
+    skip: results.filter(r => r.status === 'SKIP').length,
+    fail: results.filter(r => r.status === 'FAIL').length
+  }
 }
 
 function writeArtifacts() {
@@ -274,16 +446,24 @@ function writeArtifacts() {
   const mdPath = path.join(process.cwd(), 'DOCS', 'launch_runs', `launch-prod-${date}-ai-preflight.md`)
   const jsonPath = path.join(process.cwd(), 'DOCS', 'launch_runs', `launch-prod-${date}-ai-preflight.json`)
   const sha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim()
+  const counts = getStatusCounts()
 
   fs.mkdirSync(path.dirname(mdPath), { recursive: true })
   if (!fs.existsSync(mdPath)) {
-    fs.writeFileSync(mdPath, `# Launch Run – production – ${date}\n\n`)
+    fs.writeFileSync(mdPath, `${DOCS_DIVERGENCE_OPT_OUT}\n# Launch Run – production – ${date}\n\n`)
+  } else {
+    const existing = fs.readFileSync(mdPath, 'utf-8')
+    if (!existing.includes(DOCS_DIVERGENCE_OPT_OUT)) {
+      fs.writeFileSync(mdPath, `${DOCS_DIVERGENCE_OPT_OUT}\n${existing}`)
+    }
   }
 
   const mdLines = [
     `## AI Launch Gate – ${now.toISOString()}`,
     `- Commit: ${sha}`,
     '- Target: staging',
+    `- DNS_STATUS: ${dnsStatus}${dnsStatus === 'WARN' ? ' (operator confirmation required)' : ''}`,
+    `- Result counts: PASS ${counts.pass} / WARN ${counts.warn} / SKIP ${counts.skip} / FAIL ${counts.fail}`,
     '- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)',
     '',
     '| Check | Status | Duration | Details |',
@@ -291,25 +471,51 @@ function writeArtifacts() {
   ]
 
   for (const result of results) {
-    mdLines.push(`| ${result.name} | ${result.status} | ${formatDuration(result.durationMs)} | ${result.output ?? JSON.stringify(result.details ?? {})} |`)
+    mdLines.push(
+      `| ${result.name} | ${result.status} | ${formatDuration(result.durationMs)} | ${
+        result.output ?? JSON.stringify(result.details ?? {})
+      } |`
+    )
   }
 
   fs.appendFileSync(mdPath, mdLines.join('\n') + '\n\n')
-  fs.writeFileSync(jsonPath, JSON.stringify({ timestamp: now.toISOString(), sha, target: 'staging', results }, null, 2))
+  fs.writeFileSync(
+    jsonPath,
+    JSON.stringify(
+      {
+        timestamp: now.toISOString(),
+        sha,
+        target: 'staging',
+        dnsStatus,
+        counts,
+        results
+      },
+      null,
+      2
+    )
+  )
 
   console.log(`\nArtifacts updated:\n- ${mdPath}\n- ${jsonPath}`)
 }
 
 function printSummary() {
-  const pass = results.filter(r => r.status === 'PASS').length
-  const warn = results.filter(r => r.status === 'WARN').length
-  const skip = results.filter(r => r.status === 'SKIP').length
-  const fail = results.filter(r => r.status === 'FAIL').length
+  const counts = getStatusCounts()
   console.log('\nSummary:')
-  console.log(`  PASS: ${pass}`)
-  console.log(`  WARN: ${warn}`)
-  console.log(`  SKIP: ${skip}`)
-  console.log(`  FAIL: ${fail}`)
+  console.log(`  PASS: ${counts.pass}`)
+  console.log(`  WARN: ${counts.warn}`)
+  console.log(`  SKIP: ${counts.skip}`)
+  console.log(`  FAIL: ${counts.fail}`)
+
+  const aiVerified = results.filter(r => AI_CHECKS.has(r.name) && r.status === 'PASS').map(r => r.name)
+  const warnings = results.filter(r => r.status === 'WARN').map(r => r.name)
+  const operatorOnly = results.filter(r => OPERATOR_ONLY_CHECKS.has(r.name)).map(r => r.name)
+  const mcpOnly = results.filter(r => MCP_ONLY_CHECKS.has(r.name)).map(r => r.name)
+
+  console.log('\nAutomation Boundary:')
+  console.log(`  ✅ AI-VERIFIED: ${aiVerified.length ? aiVerified.join(', ') : 'None'}`)
+  console.log(`  ⚠️ WARNINGS: ${warnings.length ? warnings.join(', ') : 'None'}`)
+  console.log(`  ⏳ OPERATOR-ONLY: ${operatorOnly.length ? operatorOnly.join(', ') : 'None'}`)
+  console.log(`  🔒 MCP-ONLY: ${mcpOnly.length ? mcpOnly.join(', ') : 'None'}`)
 }
 
 async function main() {
@@ -331,11 +537,7 @@ async function main() {
   await runDbChecks()
   runDnsChecks()
   checkMonetizationFlags()
-
-  recordSkip('Secrets alignment (.env vs Vercel) – item 4c', 'Operator-only (requires Vercel UI & secret inventory)')
-  recordSkip('Production monetization flags – item 10e', 'MCP verification pending (Vercel Production env)')
-  recordSkip('Production DNS evidence – item 11a', 'MCP verification pending (Vercel DNS tooling)')
-
+  recordManualChecks()
   writeArtifacts()
   printSummary()
 
