@@ -8,6 +8,7 @@
 ## Overview
 
 **You should only open this checklist once:**
+- [x] `npm run verify:launch` (or GitHub Actions **Verify Launch**) is green for the target branch
 - [x] `npm run build` succeeds
 - [x] `npm test` / `npm run e2e` passes (including monetization flows)
 - [x] All code commits are pushed to main
@@ -184,4 +185,3 @@ Once all Step 4 substeps are done and evidence is captured:
 - [ ] Step 7: Production safety verified
 - [ ] Git commit: `git add DOCS/launch_runs/launch-staging-20251211-monetization-preflight.md DOCS/MONETIZATION_ROLLOUT_PLAN.md DOCS/LAUNCH_READY_CHECKLIST.md && git commit -m "ops(phase9b): drill completed {{PHASE_9B_EXECUTION_DATE}}"`
 - [ ] Ready for Phase 9C governance & production enablement (if gates met)
-
