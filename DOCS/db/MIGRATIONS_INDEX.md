@@ -1,5 +1,7 @@
 # Migrations index (supabase/migrations)
 
+> **SSOT – Canonical Source of Truth** · Tracks repo-backed Supabase migrations applied to staging/production targets
+
 This page tracks every SQL file under `supabase/migrations/` (current source of truth) and highlights any migration IDs that are referenced in docs but missing on disk. Use it alongside `DOCS/automation/REMOTE_DB_MIGRATIONS.md` when applying changes.
 
 ## Active migrations on disk

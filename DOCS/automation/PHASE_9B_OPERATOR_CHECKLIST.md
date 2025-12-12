@@ -1,5 +1,7 @@
 # Phase 9B Operator Checklist – Staging Monetization Drill
 
+> **SSOT – Canonical Source of Truth** · Phase 9B operator-only actions and evidence capture
+
 > **Use this checklist on the day you execute the Phase 9B Stripe drill in staging.**
 > This is your day-of operations guide. For detailed technical context, see:
 > - PHASE_9B_STAGING_HARDENING_RUNBOOK.md (full reference)
