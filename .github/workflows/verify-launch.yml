@@ -1,9 +1,14 @@
 name: Verify Launch
 
 on:
-  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      accept_dns_warn:
+        description: "Treat apex DNS WARN as accepted (sets VERIFY_LAUNCH_ACCEPT_DNS_WARN=1)"
+        required: false
+        default: "false"
 
 jobs:
   verify-launch:
@@ -45,6 +50,8 @@ jobs:
 
       - name: Run AI launch gate
         run: npm run verify:launch
+        env:
+          VERIFY_LAUNCH_ACCEPT_DNS_WARN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.accept_dns_warn == 'true' && '1' || '' }}
 
       - name: Upload launch artifacts
         if: always()

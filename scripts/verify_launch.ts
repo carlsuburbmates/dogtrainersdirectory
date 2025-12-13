@@ -681,10 +681,12 @@ async function main() {
   recordManualChecks()
   writeArtifacts()
   printSummary()
-
-  if (hasFailure) {
-    process.exit(1)
-  }
+  const counts = getStatusCounts()
+  const exitCode = counts.fail > 0 ? 1 : 0
+  console.log(
+    `VERIFY_LAUNCH_RESULT: PASS=${counts.pass} WARN=${counts.warn} SKIP=${counts.skip} FAIL=${counts.fail} EXIT=${exitCode}`
+  )
+  process.exit(exitCode)
 }
 
 const invokedFromCli = (() => {
