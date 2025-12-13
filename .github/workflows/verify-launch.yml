@@ -14,27 +14,22 @@ jobs:
   verify-launch:
     runs-on: ubuntu-latest
     env:
+      # Database and core infrastructure
       SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      SUPABASE_PGCRYPTO_KEY: ${{ secrets.SUPABASE_PGCRYPTO_KEY }}
-      ABR_GUID: ${{ secrets.ABR_GUID }}
-      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-      STRIPE_PRICE_FEATURED: ${{ secrets.STRIPE_PRICE_FEATURED }}
-      STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
-      ZAI_BASE_URL: ${{ secrets.ZAI_BASE_URL }}
-      LLM_DEFAULT_MODEL: ${{ secrets.LLM_DEFAULT_MODEL }}
-      ALERTS_EMAIL_TO: ${{ secrets.ALERTS_EMAIL_TO }}
-      ALERTS_SLACK_WEBHOOK_URL: ${{ secrets.ALERTS_SLACK_WEBHOOK_URL }}
+      
+      # Feature flags
       FEATURE_MONETIZATION_ENABLED: '1'
       NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED: '1'
+      
+      # Verification context
       ENV_TARGET: staging
-      ABN_FALLBACK_MAX_RATE: '0.15'
+      ABN_FALLBACK_MAX_RATE_24H: '0.15'
+      VERIFY_LAUNCH_ACCEPT_DNS_WARN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.accept_dns_warn == 'true' && '1' || '' }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,8 +45,6 @@ jobs:
 
       - name: Run AI launch gate
         run: npm run verify:launch
-        env:
-          VERIFY_LAUNCH_ACCEPT_DNS_WARN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.accept_dns_warn == 'true' && '1' || '' }}
 
       - name: Upload launch artifacts
         if: always()
