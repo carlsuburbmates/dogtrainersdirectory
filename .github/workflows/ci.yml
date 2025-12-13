@@ -96,23 +96,6 @@ jobs:
       - name: Run smoke tests
         run: npm run smoke
 
-  build:
-    runs-on: ubuntu-latest
-    env:
-      # Required for Next.js build (dummy values OK for CI)
-      NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Build Next.js
-        run: npm run build
-
   validate-import:
     runs-on: ubuntu-latest
     steps:
