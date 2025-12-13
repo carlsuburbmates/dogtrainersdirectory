@@ -23,7 +23,7 @@ test.describe('Search → Trainer profile', () => {
     await expect(page.getByText('Found 1 trainer')).toBeVisible()
     await expect(page).toHaveScreenshot('search-results.png', screenshotOptions)
 
-    await page.getByRole('button', { name: 'View Profile' }).first().click()
+    await page.getByTestId('trainer-view-profile').first().click()
     await expect(page).toHaveURL(/\/trainers\//)
     await expect(page.getByRole('heading', { name: e2eSearchResults[0].business_name })).toBeVisible()
     await expect(page).toHaveScreenshot('trainer-profile.png', screenshotOptions)

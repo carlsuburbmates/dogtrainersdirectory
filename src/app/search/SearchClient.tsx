@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, startTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { apiService, SearchResult } from '../../lib/api'
 import { Button } from '@/components/ui/Button'
@@ -55,10 +56,6 @@ export default function SearchResultsPage() {
   const handleContactTrainer = (trainer: SearchResult) => {
     // TODO: Implement contact functionality
     alert(`Contacting ${trainer.business_name} - Phone: ${trainer.business_phone}`)
-  }
-
-  const handleViewProfile = (trainer: SearchResult) => {
-    router.push(`/trainers/${trainer.business_id}`)
   }
 
   const paginatedResults = results.slice(0, page * PAGE_SIZE)
@@ -264,12 +261,14 @@ export default function SearchResultsPage() {
                   >
                     Contact Trainer
                   </button>
-                  <button
-                    onClick={() => handleViewProfile(trainer)}
-                    className="btn-secondary flex-1"
+                  <Link
+                    href={`/trainers/${trainer.business_id}`}
+                    prefetch
+                    data-testid="trainer-view-profile"
+                    className="btn-secondary flex-1 text-center"
                   >
                     View Profile
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}
