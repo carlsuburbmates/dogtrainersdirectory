@@ -98,6 +98,10 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env:
+      # Required for Next.js build (dummy values OK for CI)
+      NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
