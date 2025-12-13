@@ -20,23 +20,25 @@ These steps provide an auditable checklist for validating DNS records and enviro
 
 | Domain | Purpose | Expected target | Verification steps |
 | --- | --- | --- | --- |
-| `dogtrainersdirectory.com.au` | Production marketing + app | Vercel edge (CNAME `cname.vercel-dns.com.`) | `dig +short dogtrainersdirectory.com.au CNAME` must resolve to Vercel. Verify TLS + route via `curl -I https://dogtrainersdirectory.com.au`. |
+| `dogtrainersdirectory.com.au` | Production marketing + app | Vercel apex alias → IPv4 (typically `76.76.21.21`) or registrar-provided ALIAS result | `dig +short dogtrainersdirectory.com.au` (A/ALIAS) should resolve to the Vercel-managed IPv4(s) documented in the launch run. Capture `curl -I https://dogtrainersdirectory.com.au` to prove TLS + routing. |
 | `app.dogtrainersdirectory.com.au` | Production app alias | Vercel edge | `vercel dns ls carlsuburbmates/dogtrainersdirectory` should list the CNAME. |
 
 Staging/preview deployments **do not** have a dedicated DNS entry. Instead, confirm preview environments via Vercel (`vercel env list`, deployment URLs) alongside the automated `npm run verify:launch` run.
+
+> If the apex is proxied by the registrar and therefore does not expose the Vercel ALIAS directly, operators must capture `dig` + `curl` output in the launch run and set `VERIFY_LAUNCH_ACCEPT_DNS_WARN=1` when running `npm run verify:launch` to acknowledge the manual verification.
 
 **Manual DNS verification**
 
 ```bash
 # Production root
-dig +short dogtrainersdirectory.com.au CNAME
+dig +short dogtrainersdirectory.com.au
 # Optional: confirm alias records if used
 dig +short app.dogtrainersdirectory.com.au CNAME
 # TLS + HTTP routing check
 curl -I https://dogtrainersdirectory.com.au
 ```
 
-If any record does not point to Vercel, fix in DNS provider and re-run before launch.
+If any record does not point to Vercel, fix in DNS provider and re-run before launch. When you must rely on registrar-specific ALIAS proxies, include the captured `dig` + `curl` output in the launch run and set `VERIFY_LAUNCH_ACCEPT_DNS_WARN=1` for that run so the harness records the acceptance.
 
 ---
 

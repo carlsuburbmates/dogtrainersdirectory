@@ -62,6 +62,10 @@ Notes:
   - Purpose: Launch-gate thresholds for ABN fallback alerts (`verify:launch` + ops scripts)
   - Where: Preview + Production (optional; defaults are 0.15 and 30 respectively)
   - Example: `ABN_FALLBACK_MAX_RATE_24H=0.20`, `ABN_FALLBACK_MIN_SAMPLE_24H=30`
+- VERIFY_LAUNCH_ACCEPT_DNS_WARN
+  - Purpose: Operator acknowledgement that apex DNS (dogtrainersdirectory.com.au) was manually verified even if Vercel CNAME/ALIAS is proxied through another provider
+  - Where: Only set temporarily in CLI/CI when attaching evidence to a launch run (set to `1`), otherwise omit
+  - Example: `VERIFY_LAUNCH_ACCEPT_DNS_WARN=1`
 
 ---
 

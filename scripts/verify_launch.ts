@@ -480,19 +480,31 @@ function checkDnsTarget(domain: string, name: string, expected: string) {
     const cnameRecords = cnameRaw ? cnameRaw.split('\n').filter(Boolean) : []
     const aRecords = aRaw ? aRaw.split('\n').filter(Boolean) : []
     const matches = cnameRecords.includes(expected) || aRecords.some(ip => ip.startsWith('76.76.'))
-    const status: CheckResult['status'] = matches ? 'PASS' : 'WARN'
-    if (status === 'WARN') {
+    let status: CheckResult['status'] = matches ? 'PASS' : 'WARN'
+    const details: Record<string, unknown> = {
+      expected,
+      cnameRecords,
+      aRecords
+    }
+
+    if (!matches && name === 'DNS root → Vercel' && process.env.VERIFY_LAUNCH_ACCEPT_DNS_WARN === '1') {
+      status = 'PASS'
+      details.operatorAccepted = true
+      details.operatorAcceptanceFlag = 'VERIFY_LAUNCH_ACCEPT_DNS_WARN'
+      details.operatorAcceptanceNote = 'Manual DNS verification attached to launch run'
+    } else if (status === 'WARN') {
       dnsStatus = 'WARN'
     }
+
     addResult({
       name,
       status,
       durationMs: Date.now() - start,
-      details: {
-        expected,
-        cnameRecords,
-        aRecords
-      }
+      output:
+        status === 'PASS' && details.operatorAccepted
+          ? 'Operator accepted root DNS via VERIFY_LAUNCH_ACCEPT_DNS_WARN=1'
+          : undefined,
+      details
     })
   } catch (error) {
     dnsStatus = 'WARN'
