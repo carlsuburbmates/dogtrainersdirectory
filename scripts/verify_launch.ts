@@ -7,6 +7,7 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { lookup } from 'node:dns/promises'
 import { pathToFileURL } from 'node:url'
 import { Client } from 'pg'
 
@@ -25,7 +26,7 @@ const results: CheckResult[] = []
 let hasFailure = false
 let dnsStatus: 'PASS' | 'WARN' = 'PASS'
 
-const WARN_ALLOWED = new Set(['DNS root → Vercel', 'DNS staging → Vercel'])
+const WARN_ALLOWED = new Set(['DNS root → Vercel'])
 
 export function enforceStatusRules(name: string, status: Status): Status {
   if (status !== 'WARN') {
@@ -53,8 +54,7 @@ const POLICY_REQUIRED_TABLES = ['businesses', 'profiles', 'abn_verifications', '
 const SENSITIVE_POLICY_TABLES = new Set(['businesses', 'profiles', 'abn_verifications', 'abn_fallback_events'])
 
 const DNS_EXPECTATIONS: Record<string, { label: string; expected: string }> = {
-  'dogtrainersdirectory.com.au': { label: 'DNS root → Vercel', expected: 'cname.vercel-dns.com.' },
-  'staging.dogtrainersdirectory.com.au': { label: 'DNS staging → Vercel', expected: 'cname.vercel-dns.com.' }
+  'dogtrainersdirectory.com.au': { label: 'DNS root → Vercel', expected: 'cname.vercel-dns.com.' }
 }
 
 const AI_CHECKS = new Set<string>([
@@ -156,6 +156,12 @@ function runCommandCheck(name: string, command: string, extraEnv: Record<string,
   }
 }
 
+interface PgClientMeta {
+  client: Client
+  parsed: ReturnType<typeof parseConnectionTarget>
+  resolvedHost: string
+}
+
 async function runDbChecks() {
   const connString = process.env.SUPABASE_CONNECTION_STRING
   if (!connString) {
@@ -163,7 +169,10 @@ async function runDbChecks() {
     return
   }
 
-  const client = new Client({ connectionString: connString })
+  const pgMeta = await createPgClient(connString)
+  if (!pgMeta) return
+
+  const { client } = pgMeta
   try {
     await client.connect()
   } catch (error) {
@@ -171,7 +180,7 @@ async function runDbChecks() {
     return
   }
 
-  await reportDbTarget(client, connString)
+  await reportDbTarget(client, pgMeta)
   await checkAbnFallbackMetrics(client)
   await checkTablePresence(client)
   await checkRlsStatus(client)
@@ -188,27 +197,58 @@ function parseConnectionTarget(connectionString: string) {
       host: url.hostname,
       port: url.port || '5432',
       database: url.pathname.replace('/', ''),
-      user: url.username
+      user: decodeURIComponent(url.username || ''),
+      password: decodeURIComponent(url.password || '')
     }
   } catch (error) {
-    return { host: 'unknown', port: 'unknown', database: 'unknown', user: 'unknown' }
+    return { host: 'unknown', port: 'unknown', database: 'unknown', user: 'unknown', password: '' }
   }
 }
 
-async function reportDbTarget(client: Client, connectionString: string) {
+async function createPgClient(connectionString: string): Promise<PgClientMeta | undefined> {
+  try {
+    if (!connectionString.startsWith('postgres')) {
+      throw new Error('Invalid connection string protocol')
+    }
+    const parsed = parseConnectionTarget(connectionString)
+    const sslParam = new URL(connectionString).searchParams.get('sslmode')
+    const ssl = sslParam?.toLowerCase() === 'disable' ? undefined : { rejectUnauthorized: false }
+    let resolvedHost = parsed.host
+    try {
+      const lookupResult = await lookup(parsed.host, { family: 4 })
+      resolvedHost = lookupResult.address
+    } catch (error) {
+      console.warn(`IPv4 lookup failed for ${parsed.host}; falling back to hostname`, (error as Error).message)
+    }
+    const client = new Client({
+      host: resolvedHost,
+      port: Number(parsed.port || '5432'),
+      database: parsed.database,
+      user: parsed.user,
+      password: parsed.password,
+      ssl
+    })
+    return { client, parsed, resolvedHost }
+  } catch (error) {
+    addResult({ name: 'DB target', status: 'FAIL', durationMs: 0, output: `Unable to parse DB connection: ${(error as Error).message}` })
+    return undefined
+  }
+}
+
+async function reportDbTarget(client: Client, meta: PgClientMeta) {
   const start = Date.now()
   try {
     const runtime = await client.query(
       'select current_database() as database, current_user as role, inet_server_addr()::text as host, inet_server_port() as port'
     )
-    const parsed = parseConnectionTarget(connectionString)
     addResult({
       name: 'DB target',
       status: 'PASS',
       durationMs: Date.now() - start,
       details: {
-        urlHost: parsed.host,
-        urlDatabase: parsed.database,
+        urlHost: meta.parsed.host,
+        urlDatabase: meta.parsed.database,
+        resolvedHost: meta.resolvedHost,
         runtimeHost: runtime.rows[0]?.host ?? 'unknown',
         runtimeDatabase: runtime.rows[0]?.database ?? 'unknown',
         runtimeRole: runtime.rows[0]?.role ?? 'unknown',
@@ -402,6 +442,12 @@ async function checkMigrationParity(client: Client) {
 function runDnsChecks() {
   Object.entries(DNS_EXPECTATIONS).forEach(([domain, config]) => {
     checkDnsTarget(domain, config.label, config.expected)
+  })
+  addResult({
+    name: 'DNS staging preview model',
+    status: 'SKIP',
+    durationMs: 0,
+    output: 'Staging uses Vercel Preview deployments; no staging subdomain by design.'
   })
   runCurlCheck()
 }

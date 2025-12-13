@@ -1,10 +1,18 @@
 > **SSOT – Canonical Source of Truth**
 > Scope: DNS + environment readiness verification process
-> Status: Active · Last reviewed: 2025-12-09
+> Status: Active · Last reviewed: 2025-12-13
 
 # DNS & Environment Readiness Checks
 
 These steps provide an auditable checklist for validating DNS records and environment variables prior to any launch or major change. Use this doc together with `DOCS/VERCEL_ENV.md`, `DOCS/LAUNCH_READY_CHECKLIST.md`, and the `scripts/check_env_ready.sh` helper.
+
+**Canonical setup**
+
+- Canonical production domain: `dogtrainersdirectory.com.au` (served via Vercel)
+- Staging model: Vercel Preview deployments (no `staging.` subdomain). Readiness is proven via:
+  - `vercel env list` showing populated Preview/Development env vars
+  - `npm run verify:launch` (includes smoke, e2e, env, DNS, and health checks)
+  - Preview deployment URLs when screenshots or demo links are required (optional evidence captured per run)
 
 ---
 
@@ -14,15 +22,16 @@ These steps provide an auditable checklist for validating DNS records and enviro
 | --- | --- | --- | --- |
 | `dogtrainersdirectory.com.au` | Production marketing + app | Vercel edge (CNAME `cname.vercel-dns.com.`) | `dig +short dogtrainersdirectory.com.au CNAME` must resolve to Vercel. Verify TLS + route via `curl -I https://dogtrainersdirectory.com.au`. |
 | `app.dogtrainersdirectory.com.au` | Production app alias | Vercel edge | `vercel dns ls carlsuburbmates/dogtrainersdirectory` should list the CNAME. |
-| `staging.dogtrainersdirectory.com.au` | Staging preview | Vercel preview deployment | Confirm `dig staging...` points to Vercel and the deployment is accessible. |
+
+Staging/preview deployments **do not** have a dedicated DNS entry. Instead, confirm preview environments via Vercel (`vercel env list`, deployment URLs) alongside the automated `npm run verify:launch` run.
 
 **Manual DNS verification**
 
 ```bash
 # Production root
 dig +short dogtrainersdirectory.com.au CNAME
-# Staging alias
-dig +short staging.dogtrainersdirectory.com.au CNAME
+# Optional: confirm alias records if used
+dig +short app.dogtrainersdirectory.com.au CNAME
 # TLS + HTTP routing check
 curl -I https://dogtrainersdirectory.com.au
 ```

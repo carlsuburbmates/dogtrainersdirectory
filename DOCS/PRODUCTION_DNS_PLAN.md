@@ -12,12 +12,13 @@ This document lists the DNS changes required to move Dog Trainers Directory from
 | --- | --- | --- | --- | --- |
 | Primary app | `dogtrainersdirectory.com.au` | A / ALIAS | `76.76.21.21` (Vercel edge) | Root domain routed to Vercel. Use ALIAS/ANAME if registrar supports it; fallback to A record per Vercel guidance. |
 | WWW alias | `www.dogtrainersdirectory.com.au` | CNAME | `cname.vercel-dns.com.` | Canonical CNAME for Vercel-managed domains. |
-| Preview/staging (optional) | `staging.dogtrainersdirectory.com.au` | CNAME | `cname.vercel-dns.com.` | Keep staging mapping active until production cutover validated. |
 | Email MX | `dogtrainersdirectory.com.au` | MX | `aspmx.l.google.com.` (and secondary MX as per Google Workspace) | Mirror existing staging MX list (typically Google Workspace: priority 1-5). |
 | SPF | `dogtrainersdirectory.com.au` | TXT | `v=spf1 include:_spf.google.com include:sendgrid.net ~all` | Include providers used for notifications/alerts; adjust per ops guidance. |
 | DKIM | `google._domainkey.dogtrainersdirectory.com.au` | TXT | `v=DKIM1; k=rsa; p=<google-public-key>` | Carry over DKIM selectors used in staging (Google/Resend/etc.). |
 | DMARC | `_dmarc.dogtrainersdirectory.com.au` | TXT | `v=DMARC1; p=quarantine; rua=mailto:dmarc@dogtrainersdirectory.com.au` | Keep policy aligned with staging; adjust enforcement level before launch if required. |
 | Alert webhook host (optional) | `alerts.dogtrainersdirectory.com.au` | CNAME | Slack/third-party target | Only if alerts need custom domain; typically not required. |
+
+Preview/staging is handled entirely via Vercel Preview deployments (unique URLs per PR / branch). No `staging.` subdomain is required; ensure preview env vars are accurate via `vercel env list` and artifacted `npm run verify:launch` runs.
 
 > Update the table with exact values once Vercel DNS and email providers confirm final targets. For MX/SPF/DKIM/DMARC copy the existing production-approved configs from the staging registrar to avoid regressions.
 
@@ -45,7 +46,7 @@ Document the command output (especially the final `dig` + `vercel dns ls`) in `D
 ## Risk & Rollback Notes
 
 - **Propagation window:** DNS TTLs should be set low (300s) ahead of cutover to reduce propagation delays. Expect up to 24h for global caching, though Vercel changes typically take effect within minutes.
-- **Fallback behaviour:** Keep staging domain (`staging.dogtrainersdirectory.com.au`) live until production DNS + environment verification succeed. If a rollback is required, revert the root/WWW records to staging CNAMEs and disable monetization flags in Vercel Production.
+- **Fallback behaviour:** Keep a healthy Vercel Preview deployment available (and document the URL inside the launch run) until production DNS + environment verification succeed. If a rollback is required, point traffic back to the previous production deployment in Vercel and disable monetization flags until resolved.
 - **Certificate issuance:** Vercel automatically provisions certificates once DNS validation succeeds. Monitor the Vercel dashboard for certificate status before sending traffic.
 - **Email deliverability:** Changes to MX/SPF/DKIM/DMARC must be coordinated with whoever manages outbound email (Resend/Gmail). Update DMARC report recipients if ops requires separate monitoring.
 

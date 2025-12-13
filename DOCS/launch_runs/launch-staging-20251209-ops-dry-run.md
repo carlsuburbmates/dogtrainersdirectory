@@ -7,7 +7,8 @@
 - scripts/check_env_ready.sh target(s): staging → PASS
 
 ## DNS & Env
-- DNS verification notes: `dig staging.dogtrainersdirectory.com.au CNAME` → `cname.vercel-dns.com.`
+- DNS verification notes: *(historical)* `dig staging.dogtrainersdirectory.com.au CNAME` → `cname.vercel-dns.com.`
+- Canonical staging approach now relies on Vercel Preview deployments with env verification via `npm run verify:launch` + `vercel env list` (see `DOCS/DNS_ENV_READY_CHECKS.md`).
 - Critical env diff: staging keys present per `config/env_required.json`.
 
 ## Telemetry Snapshot
