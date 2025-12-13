@@ -55,32 +55,69 @@ jobs:
             echo "Secret scan passed (no Stripe keys/webhook secrets in tracked files)."
           fi
 
-  stripe-cli-local:
-    if: ${{ env.STRIPE_TEST_KEY != '' && env.STRIPE_WEBHOOK_SECRET != '' }}
+  lint:
     runs-on: ubuntu-latest
-    env:
-      STRIPE_TEST_KEY: ${{ secrets.STRIPE_TEST_KEY }}
-      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install stripe CLI
-        run: |
-          curl -L https://github.com/stripe/stripe-cli/releases/download/v1.16.4/stripe_1.16.4_linux_x86_64.tar.gz -o stripe.tar.gz
-          tar -xzf stripe.tar.gz
-          sudo mv stripe /usr/local/bin/stripe
-      - name: Run webhook harness for CI
-        run: |
-          python3 webhook/server_dtd.py &
-          echo $! > /tmp/server_pid
-          sleep 2
-      - name: Trigger test event
-        run: |
-          stripe trigger payment_intent.succeeded --api-key "$STRIPE_TEST_KEY" --webhook-secret "$STRIPE_WEBHOOK_SECRET" --webhook-url http://127.0.0.1:4243/api/webhooks/stripe-dtd
-      - name: Show harness log
-        if: always()
-        run: |
-          cat webhook/server.log || true
-      - name: Stop harness
-        if: always()
-        run: |
-          kill $(cat /tmp/server_pid) || true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript type check
+        run: npm run type-check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+      - name: Run smoke tests
+        run: npm run smoke
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Next.js
+        run: npm run build
+
+  validate-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate import map
+        run: npm run validate-import
