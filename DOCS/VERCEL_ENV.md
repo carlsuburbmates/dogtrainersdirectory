@@ -58,6 +58,10 @@ Notes:
   - Purpose: Safety toggle used by the ABN verification flow and scripts
   - Where: Preview/Development (default false in Production unless specifically enabled)
   - Example: "true" or "false"
+- ABN_FALLBACK_MAX_RATE_24H / ABN_FALLBACK_MIN_SAMPLE_24H
+  - Purpose: Launch-gate thresholds for ABN fallback alerts (`verify:launch` + ops scripts)
+  - Where: Preview + Production (optional; defaults are 0.15 and 30 respectively)
+  - Example: `ABN_FALLBACK_MAX_RATE_24H=0.20`, `ABN_FALLBACK_MIN_SAMPLE_24H=30`
 
 ---
 

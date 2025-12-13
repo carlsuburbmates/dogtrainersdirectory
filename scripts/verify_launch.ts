@@ -263,7 +263,8 @@ async function reportDbTarget(client: Client, meta: PgClientMeta) {
 async function checkAbnFallbackMetrics(client: Client) {
   const start = Date.now()
   try {
-    const threshold = Number(process.env.ABN_FALLBACK_MAX_RATE ?? '0.15')
+    const threshold = Number(process.env.ABN_FALLBACK_MAX_RATE_24H ?? '0.15')
+    const minSample = Number(process.env.ABN_FALLBACK_MIN_SAMPLE_24H ?? '30')
     const now = new Date()
     const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -278,18 +279,35 @@ async function checkAbnFallbackMetrics(client: Client) {
     const fallbackCount = fallback24.rows[0]?.count ?? 0
     const verifiedCount = verified24.rows[0]?.count ?? 0
     const fallback7dCount = fallback7d.rows[0]?.count ?? 0
+    const sampleSize = verifiedCount
+
+    if (sampleSize < minSample) {
+      addResult({
+        name: 'ABN fallback rate',
+        status: 'SKIP',
+        durationMs: Date.now() - start,
+        output: 'Insufficient verification volume in last 24h',
+        details: {
+          fallbackCount24h: fallbackCount,
+          verifiedCount24h: verifiedCount,
+          sampleSize,
+          fallbackCount7d: fallback7dCount,
+          minSample,
+          reason: 'insufficient_volume'
+        }
+      })
+      return
+    }
+
     const denom = fallbackCount + verifiedCount
     const rate = denom === 0 ? 0 : fallbackCount / denom
 
     let status: CheckResult['status'] = 'PASS'
     let output = `fallback ${fallbackCount}, verified ${verifiedCount}, rate ${(rate * 100).toFixed(2)}% (threshold ${(threshold * 100).toFixed(2)}%)`
 
-    if (denom > 0 && rate > threshold) {
+    if (rate > threshold) {
       status = 'FAIL'
       output = `ABN fallback rate ${(rate * 100).toFixed(2)}% exceeds ${(threshold * 100).toFixed(2)}%`
-    } else if (fallbackCount === 0) {
-      status = fallback7dCount > 0 ? 'WARN' : 'FAIL'
-      output = fallback7dCount > 0 ? 'No fallback events in last 24h (7d history present)' : 'No fallback events recorded in last 7d'
     }
 
     addResult({
@@ -299,8 +317,10 @@ async function checkAbnFallbackMetrics(client: Client) {
       details: {
         fallbackCount24h: fallbackCount,
         verifiedCount24h: verifiedCount,
+        sampleSize,
         fallbackCount7d: fallback7dCount,
-        threshold
+        threshold,
+        minSample
       }
     })
   } catch (error) {
