@@ -155,3 +155,4 @@ Notes:
 - Monetization stays off until Phase 4+ criteria (≥50 claimed trainers, stable ABN verifications).
 - Emergency data requires periodic verification; prefer automation over manual calls.
 - AI moderation: AI flags, human approves; transparency copy required in UI.
+
