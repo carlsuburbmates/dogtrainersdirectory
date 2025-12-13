@@ -6,7 +6,6 @@
   "routes": [],
   "crons": [
     { "path": "/api/emergency/verify", "schedule": "0 0 * * *" },
-    { "path": "/api/emergency/triage/weekly", "schedule": "0 0 * * 1" },
-    { "path": "/api/admin/ops-digest", "schedule": "0 23 * * *" }
+    { "path": "/api/emergency/triage/weekly", "schedule": "0 0 * * 1" }
   ]
 }
