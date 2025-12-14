@@ -46,14 +46,12 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       metrics: {
-        weekStart: sevenDaysAgo.toISOString(),
-        totalTriages: allTriages?.length || 0,
-        breakdown: {
-          classifications: classifications || {},
-          priorities: priorities || {},
-          decisionSources: decisionSources || {}
-        },
-        accuracyPercentage
+        week_start: sevenDaysAgo.toISOString(),
+        total_triages: allTriages?.length || 0,
+        classification_breakdown: classifications || {},
+        priority_breakdown: priorities || {},
+        decision_source_breakdown: decisionSources || {},
+        accuracy_percentage: accuracyPercentage
       }
     })
   } catch (error: any) {
