@@ -106,7 +106,7 @@ export async function runModerationCycle(
       }
     }
 
-    // Run moderation - the function fetches reviews internally
+    // Run moderation - the function fetches reviews internally with the provided limit
     const results = await moderatePendingReviews(batchSize)
 
     processedCount = results.processed

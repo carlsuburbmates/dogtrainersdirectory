@@ -50,8 +50,11 @@ export function scoreAgainstGold(predictions: string[], golds: string[], config?
   let falsePos = 0
   let falseNeg = 0
 
-  // Use configured positive labels or default set
-  const positiveSet = new Set(config?.positiveLabels || ['emergency', 'reject'])
+  // Use configured positive labels or default based on pipeline type
+  const positiveSet = new Set(
+    config?.positiveLabels || 
+    [...DEFAULT_POSITIVE_LABELS.triage, ...DEFAULT_POSITIVE_LABELS.moderation]
+  )
 
   for (let i = 0; i < total; i++) {
     if (predictions[i] === golds[i]) {

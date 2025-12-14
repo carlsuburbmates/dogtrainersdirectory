@@ -20,7 +20,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     await supabaseAdmin.from('featured_placements').update({ active: false }).eq('id', idNum)
-    await supabaseAdmin.from('featured_placement_events').insert({ placement_id: idNum, event_type: 'demoted', previous_status: 'active', new_status: 'inactive', triggered_by: 'manual' })
+    await supabaseAdmin.from('featured_placement_events').insert({ 
+      placement_id: idNum, 
+      event_type: 'demoted', 
+      previous_status: 'active', 
+      new_status: 'inactive', 
+      triggered_by: 'manual' 
+    })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

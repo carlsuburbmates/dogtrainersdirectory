@@ -18,8 +18,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const current = row.expiry_date ? new Date(row.expiry_date) : new Date()
     current.setDate(current.getDate() + days)
 
-    await supabaseAdmin.from('featured_placements').update({ expiry_date: current.toISOString() }).eq('id', idNum)
-    await supabaseAdmin.from('featured_placement_events').insert({ placement_id: idNum, event_type: 'extended', previous_status: 'active', new_status: 'active', triggered_by: 'manual', metadata: { added_days: days, new_expiry: current.toISOString() } })
+    await supabaseAdmin.from('featured_placements').update({ 
+      expiry_date: current.toISOString() 
+    }).eq('id', idNum)
+    
+    await supabaseAdmin.from('featured_placement_events').insert({ 
+      placement_id: idNum, 
+      event_type: 'extended', 
+      previous_status: 'active', 
+      new_status: 'active', 
+      triggered_by: 'manual', 
+      metadata: { added_days: days, new_expiry: current.toISOString() } 
+    })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
