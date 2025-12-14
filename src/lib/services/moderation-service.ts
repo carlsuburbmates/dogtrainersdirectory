@@ -9,7 +9,6 @@
 
 import { supabaseAdmin } from '@/lib/supabase'
 import { moderatePendingReviews } from '@/lib/moderation'
-import type { ReviewRecord } from '@/lib/moderation'
 
 export interface ModerationRunResult {
   success: boolean
@@ -107,50 +106,7 @@ export async function runModerationCycle(
       }
     }
 
-    // Fetch pending reviews
-    const { data: reviews, error: fetchError } = await supabaseAdmin
-      .from('reviews')
-      .select('id, business_id, reviewer_name, rating, title, content, created_at')
-      .eq('is_approved', false)
-      .eq('is_rejected', false)
-      .order('created_at', { ascending: true })
-      .limit(batchSize)
-
-    if (fetchError) {
-      throw new Error(`Failed to fetch reviews: ${fetchError.message}`)
-    }
-
-    if (!reviews || reviews.length === 0) {
-      const completedAt = new Date()
-      const durationMs = completedAt.getTime() - startedAt.getTime()
-      
-      if (runId) {
-        await supabaseAdmin
-          .from('cron_job_runs')
-          .update({
-            status: 'success',
-            completed_at: completedAt.toISOString(),
-            duration_ms: durationMs,
-            metadata: { noPendingReviews: true }
-          })
-          .eq('id', runId)
-      }
-
-      return {
-        success: true,
-        processedCount: 0,
-        autoApproved: 0,
-        autoRejected: 0,
-        manualReview: 0,
-        errors: [],
-        startedAt,
-        completedAt,
-        durationMs
-      }
-    }
-
-    // Run moderation on each review
-    const typedReviews = reviews as ReviewRecord[]
+    // Run moderation - the function fetches reviews internally
     const results = await moderatePendingReviews(batchSize)
 
     processedCount = results.processed
