@@ -138,9 +138,18 @@ if [ -d "$MIGRATIONS_DIR" ] && ls "$MIGRATIONS_DIR"/*.sql >/dev/null 2>&1; then
   echo "Found SQL migrations in $MIGRATIONS_DIR — applying in lexical order"
   for f in $(ls "$MIGRATIONS_DIR"/*.sql | sort); do
     echo "Applying migration $f"
-    if ! PGPASSWORD="${PG_PASS}" psql "postgresql://postgres:${PG_PASS}@127.0.0.1:${PG_PORT}/postgres?sslmode=disable" -f "$f"; then
-      echo "Migration $f reported errors — aborting. Check output above." >&2
-      exit 1
+    MIGRATION_OUTPUT=$(PGPASSWORD="${PG_PASS}" psql "postgresql://postgres:${PG_PASS}@127.0.0.1:${PG_PORT}/postgres?sslmode=disable" -f "$f" 2>&1)
+    MIGRATION_EXIT=$?
+    if [ $MIGRATION_EXIT -ne 0 ]; then
+      # Check if error is due to idempotent operations (already exists)
+      if echo "$MIGRATION_OUTPUT" | grep -qiE "already exists|duplicate key value|relation .* already exists|column .* already exists"; then
+        echo "Warning: Migration $f reported 'already exists' or duplicate errors. Continuing. Output:"
+        echo "$MIGRATION_OUTPUT"
+      else
+        echo "Migration $f reported errors — aborting. Check output below." >&2
+        echo "$MIGRATION_OUTPUT" >&2
+        exit 1
+      fi
     fi
   done
 else

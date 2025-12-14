@@ -1,15 +1,27 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { DEFAULT_PLACEMENT_DURATION_DAYS } from '@/lib/featured-constants'
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'Service role required' }, { status: 401 })
     const { id } = await params
     const idNum = Number(id)
-    if (isNaN(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+    if (isNaN(idNum)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+
+    // Fetch the placement first to ensure it exists
+    const { data: placement, error: fetchError } = await supabaseAdmin
+      .from('featured_placements')
+      .select('*')
+      .eq('id', idNum)
+      .maybeSingle()
+
+    if (fetchError || !placement) {
+      return NextResponse.json({ error: 'Placement not found' }, { status: 404 })
+    }
 
     const body = await request.json().catch(() => ({}))
-    const days = Number(body?.days || 30)
+    const days = Number(body?.days || DEFAULT_PLACEMENT_DURATION_DAYS)
     const expiry = new Date(); expiry.setDate(expiry.getDate() + days)
 
     await supabaseAdmin.from('featured_placements').update({ active: true, expiry_date: expiry.toISOString() }).eq('id', idNum)

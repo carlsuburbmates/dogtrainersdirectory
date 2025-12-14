@@ -104,5 +104,14 @@ describe('admin review override API (unit)', () => {
     expect(json.success).toBe(true)
     expect(mockUpdate).toHaveBeenCalled()
     expect(mockUpsert).toHaveBeenCalled()
+    
+    // Verify the upsert call includes critical fields
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        review_id: 1,
+        decision_source: 'manual_override'
+      }),
+      expect.any(Object)
+    )
   })
 })

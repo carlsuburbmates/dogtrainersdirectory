@@ -15,17 +15,26 @@ import { runModerationCycle } from '@/lib/services/moderation-service'
  */
 export async function POST(request: Request) {
   try {
-    // Auth check: require service role key OR cron secret
+    // Auth check: require either a valid Bearer token or a valid cron secret
     const authHeader = request.headers.get('authorization')
     const cronSecret = request.headers.get('x-vercel-cron-secret')
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const expectedCronSecret = process.env.CRON_SECRET
     
-    const isAuthorized =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      (cronSecret && cronSecret === process.env.CRON_SECRET)
+    const isBearerAuth =
+      !!authHeader &&
+      authHeader.startsWith('Bearer ') &&
+      serviceRoleKey &&
+      authHeader.slice('Bearer '.length).trim() === serviceRoleKey
+    const isCronAuth =
+      !!cronSecret &&
+      expectedCronSecret &&
+      cronSecret === expectedCronSecret
+    const isAuthorized = isBearerAuth || isCronAuth
 
     if (!isAuthorized) {
       return NextResponse.json(
-        { error: 'Unauthorized: SUPABASE_SERVICE_ROLE_KEY or CRON_SECRET required' },
+        { error: 'Unauthorized: valid SUPABASE_SERVICE_ROLE_KEY or CRON_SECRET required' },
         { status: 401 }
       )
     }

@@ -113,13 +113,24 @@ function formatTimeAgo(isoString: string | null): string {
   return `${diffDays}d ago`
 }
 
+// Job-specific expected intervals (in hours)
+const JOB_EXPECTED_INTERVALS: Record<string, number> = {
+  'moderation': 1,           // Every 10 minutes, so warning if > 1 hour
+  'featured_expiry': 26,     // Daily at 2am, so warning if > 26 hours
+  'emergency_verification': 26, // Daily
+  'weekly_triage': 168 + 2,  // Weekly (7 days), warning if > 170 hours
+  'ops_digest': 26           // Daily at 11pm
+}
+
 function getHealthStatus(run: CronJobRun): 'healthy' | 'warning' | 'critical' {
   if (run.status === 'failed') return 'critical'
   
   const hoursSinceRun = (Date.now() - new Date(run.started_at).getTime()) / (1000 * 60 * 60)
   
-  // If job hasn't run in 2 hours, warning
-  if (hoursSinceRun > 2) return 'warning'
+  // Use job-specific threshold if available, otherwise default to 2 hours
+  const threshold = JOB_EXPECTED_INTERVALS[run.job_name] || 2
+  
+  if (hoursSinceRun > threshold) return 'warning'
   
   return 'healthy'
 }

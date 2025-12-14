@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { SLOT_TYPES, DEFAULT_PLACEMENT_DURATION_DAYS } from '@/lib/featured-constants'
 
 /**
  * Featured Placement Expiry Cron
@@ -17,15 +18,20 @@ import { supabaseAdmin } from '@/lib/supabase'
  */
 export async function POST(request: Request) {
   try {
-    // Auth check
+    // Auth check - require BOTH the service role key to exist AND the cron secret to match
     const cronSecret = request.headers.get('x-vercel-cron-secret')
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const expectedCronSecret = process.env.CRON_SECRET
+    
     const isAuthorized =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      (cronSecret && cronSecret === process.env.CRON_SECRET)
+      serviceRoleKey &&
+      cronSecret &&
+      expectedCronSecret &&
+      cronSecret === expectedCronSecret
 
     if (!isAuthorized) {
       return NextResponse.json(
-        { error: 'Unauthorized: SUPABASE_SERVICE_ROLE_KEY or CRON_SECRET required' },
+        { error: 'Unauthorized: valid x-vercel-cron-secret required' },
         { status: 401 }
       )
     }
@@ -102,7 +108,7 @@ export async function POST(request: Request) {
     // STEP 2: Promote next queued placements
     // ========================================================================
     // For each slot type, find the highest priority queued placement
-    const slotTypes = ['hero', 'premium', 'standard'] // Adjust based on your schema
+    const slotTypes = SLOT_TYPES
 
     for (const slotType of slotTypes) {
       try {
@@ -115,12 +121,12 @@ export async function POST(request: Request) {
           .is('expiry_date', null) // Not yet activated (or use your queuing logic)
           .order('priority', { ascending: true })
           .limit(1)
-          .single()
+          .maybeSingle()
 
         if (nextInQueue) {
-          // Set expiry date (e.g., 30 days from now)
+          // Set expiry date using default duration
           const expiryDate = new Date()
-          expiryDate.setDate(expiryDate.getDate() + 30)
+          expiryDate.setDate(expiryDate.getDate() + DEFAULT_PLACEMENT_DURATION_DAYS)
 
           await supabaseAdmin
             .from('featured_placements')

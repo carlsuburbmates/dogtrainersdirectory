@@ -29,6 +29,10 @@ export interface ModerationOptions {
   dryRun?: boolean
 }
 
+// Default configuration constants
+const DEFAULT_BATCH_SIZE = 50
+const DEFAULT_MODE = 'live'
+
 /**
  * Runs a full moderation cycle on pending reviews.
  * 
@@ -39,8 +43,8 @@ export async function runModerationCycle(
   options: ModerationOptions = {}
 ): Promise<ModerationRunResult> {
   const {
-    batchSize = 50,
-    mode = (process.env.MODERATION_AI_MODE as 'live' | 'shadow' | 'disabled') || 'live',
+    batchSize = DEFAULT_BATCH_SIZE,
+    mode = (process.env.MODERATION_AI_MODE as 'live' | 'shadow' | 'disabled') || DEFAULT_MODE,
     dryRun = false
   } = options
 
@@ -72,7 +76,7 @@ export async function runModerationCycle(
   }
 
   try {
-    // Mode check: if disabled, skip AI entirely
+    // Mode check: if disabled, skip AI entirely but return informational status (not an error)
     if (mode === 'disabled') {
       const completedAt = new Date()
       const durationMs = completedAt.getTime() - startedAt.getTime()
@@ -96,7 +100,7 @@ export async function runModerationCycle(
         autoApproved: 0,
         autoRejected: 0,
         manualReview: 0,
-        errors: ['Moderation AI is disabled via MODERATION_AI_MODE'],
+        errors: [], // Not an error - just disabled
         startedAt,
         completedAt,
         durationMs
@@ -147,7 +151,7 @@ export async function runModerationCycle(
 
     // Run moderation on each review
     const typedReviews = reviews as ReviewRecord[]
-    const results = await moderatePendingReviews({ reviews: typedReviews, limit: batchSize })
+    const results = await moderatePendingReviews(batchSize)
 
     processedCount = results.processed
     autoApproved = results.autoApproved

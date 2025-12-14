@@ -30,9 +30,9 @@ describe('admin featured endpoints (unit)', () => {
 
     const { GET } = await import('../../app/api/admin/featured/list/route')
     const res: any = await GET()
-    const json = await res.json()
+    const data = await res.json()
     expect(res.status).toBe(401)
-    expect(json.error).toBe('Server service role key required')
+    expect(data.error).toBe('Server service role key required')
   })
 
   it('GET /api/admin/featured/list returns data when authorized', async () => {
@@ -57,7 +57,7 @@ describe('admin featured endpoints (unit)', () => {
   it('POST /api/admin/featured/[id]/promote unauthorized without role', async () => {
     delete process.env.SUPABASE_SERVICE_ROLE_KEY
     const resp: any = await callPostRoute('../../app/api/admin/featured/[id]/promote/route', { body: {} }, { id: '1' })
-    const json = await resp.json()
+    const data = await resp.json()
     expect(resp.status).toBe(401)
   })
 
@@ -69,7 +69,10 @@ describe('admin featured endpoints (unit)', () => {
     vi.doMock('@/lib/supabase', () => ({
       supabaseAdmin: {
         from: (table: string) => {
-          if (table === 'featured_placements') return { update: () => ({ eq: mockUpdate }) }
+          if (table === 'featured_placements') return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: 10, active: false }, error: null }) }) }),
+            update: () => ({ eq: mockUpdate })
+          }
           if (table === 'featured_placement_events') return { insert: mockInsert }
           return {}
         }
@@ -93,7 +96,10 @@ describe('admin featured endpoints (unit)', () => {
     vi.doMock('@/lib/supabase', () => ({
       supabaseAdmin: {
         from: (table: string) => {
-          if (table === 'featured_placements') return { update: () => ({ eq: mockUpdate }) }
+          if (table === 'featured_placements') return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: 5, active: true }, error: null }) }) }),
+            update: () => ({ eq: mockUpdate })
+          }
           if (table === 'featured_placement_events') return { insert: mockInsert }
           return {}
         }

@@ -1,6 +1,9 @@
 -- AI Automation Infrastructure Migration
 -- Adds tables and columns required for full automation, monitoring, and evaluation
 
+-- Wrapped in transaction for atomicity
+BEGIN;
+
 -- ============================================================================
 -- PART 1: Event Logging Tables
 -- ============================================================================
@@ -9,7 +12,7 @@
 CREATE TABLE IF NOT EXISTS featured_placement_events (
   id BIGSERIAL PRIMARY KEY,
   placement_id BIGINT REFERENCES featured_placements(id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL CHECK (event_type IN ('expired', 'promoted', 'renewed', 'manual_override', 'stripe_payment')),
+  event_type TEXT NOT NULL CHECK (event_type IN ('expired', 'promoted', 'renewed', 'manual_override', 'stripe_payment', 'extended', 'demoted')),
   previous_status TEXT,
   new_status TEXT,
   triggered_by TEXT NOT NULL, -- 'cron' | 'manual' | 'stripe_webhook' | 'admin_override'
@@ -116,32 +119,32 @@ ON emergency_triage_weekly_metrics(ai_prompt_version) WHERE ai_prompt_version IS
 CREATE OR REPLACE VIEW ai_health_summary AS
 SELECT 
   'triage' as pipeline,
-  COUNT(*) FILTER (WHERE decision_source = 'llm') as ai_decisions,
-  COUNT(*) FILTER (WHERE decision_source = 'deterministic') as deterministic_decisions,
-  COUNT(*) FILTER (WHERE decision_source = 'manual_override') as manual_overrides,
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'llm') as ai_decisions,
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'deterministic') as deterministic_decisions,
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'manual_override') as manual_overrides,
   MAX(created_at) as last_activity
 FROM emergency_triage_logs
 WHERE created_at > NOW() - INTERVAL '24 hours'
 UNION ALL
 SELECT 
   'moderation' as pipeline,
-  COUNT(*) FILTER (WHERE decision_source = 'llm'),
-  COUNT(*) FILTER (WHERE decision_source = 'deterministic'),
-  COUNT(*) FILTER (WHERE decision_source = 'manual_override'),
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'llm'),
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'deterministic'),
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'manual_override'),
   MAX(created_at)
 FROM ai_review_decisions
 WHERE created_at > NOW() - INTERVAL '24 hours'
 UNION ALL
 SELECT 
   'digest' as pipeline,
-  COUNT(*) FILTER (WHERE decision_source = 'llm'),
-  COUNT(*) FILTER (WHERE decision_source = 'deterministic'),
-  COUNT(*) FILTER (WHERE decision_source = 'manual_override'),
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'llm'),
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'deterministic'),
+  COUNT(*) FILTER (WHERE COALESCE(decision_source, 'deterministic') = 'manual_override'),
   MAX(created_at)
 FROM daily_ops_digests
 WHERE created_at > NOW() - INTERVAL '24 hours';
 
-COMMENT ON VIEW ai_health_summary IS 'Real-time AI health metrics for dashboard - shows decision source breakdown per pipeline';
+COMMENT ON VIEW ai_health_summary IS 'Real-time AI health metrics for dashboard - shows decision source breakdown per pipeline (NULL values treated as deterministic)';
 
 -- Cron Health Summary View
 CREATE OR REPLACE VIEW cron_health_summary AS
@@ -161,12 +164,9 @@ SELECT
   status,
   started_at as last_run,
   duration_ms,
-  error_message,
-  CASE 
-    WHEN status = 'failed' THEN 'critical'
-    WHEN started_at < NOW() - INTERVAL '2 hours' THEN 'warning'
-    ELSE 'ok'
-  END as health_status
+  error_message
 FROM latest_runs;
 
-COMMENT ON VIEW cron_health_summary IS 'Latest status of all cron jobs for monitoring dashboard';
+COMMENT ON VIEW cron_health_summary IS 'Latest status of all cron jobs for monitoring dashboard (health_status logic moved to application layer)';
+
+COMMIT;

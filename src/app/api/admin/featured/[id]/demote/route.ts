@@ -6,10 +6,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'Service role required' }, { status: 401 })
     const { id } = await params
     const idNum = Number(id)
-    if (isNaN(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+    if (isNaN(idNum)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+
+    // Fetch the placement first to ensure it exists
+    const { data: placement, error: fetchError } = await supabaseAdmin
+      .from('featured_placements')
+      .select('*')
+      .eq('id', idNum)
+      .maybeSingle()
+
+    if (fetchError || !placement) {
+      return NextResponse.json({ error: 'Placement not found' }, { status: 404 })
+    }
 
     await supabaseAdmin.from('featured_placements').update({ active: false }).eq('id', idNum)
-    await supabaseAdmin.from('featured_placement_events').insert({ placement_id: idNum, event_type: 'demoted', previous_status: 'active', new_status: 'expired', triggered_by: 'manual' })
+    await supabaseAdmin.from('featured_placement_events').insert({ placement_id: idNum, event_type: 'demoted', previous_status: 'active', new_status: 'inactive', triggered_by: 'manual' })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

@@ -71,7 +71,11 @@ async function run() {
       if (insert.error) {
         console.error('Supabase insert failed:', insert.error)
       } else {
-        console.log('Inserted evaluation run successfully');
+        console.log('Inserted evaluation run successfully')
+        // Note: Supabase insert may not return the row data unless explicitly selected
+        if (insert.data && Array.isArray(insert.data) && insert.data.length > 0 && insert.data[0]?.id) {
+          console.log('Evaluation run id:', insert.data[0].id)
+        }
       }
     } catch (err) {
       console.error('Error inserting into supabase', err)
@@ -81,9 +85,8 @@ async function run() {
   }
 }
 
-if (require.main === module) {
-  run().catch(err => {
-    console.error(err)
-    process.exit(1)
-  })
-}
+// ESM-style entry point check
+run().catch(err => {
+  console.error(err)
+  process.exit(1)
+})
