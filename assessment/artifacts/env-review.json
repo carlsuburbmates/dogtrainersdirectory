@@ -1,0 +1,154 @@
+[
+  {
+    "path": ".env.local",
+    "line": 6,
+    "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "f4f517b50ec6cbca81a894a4627e2b72f956947c21713eed03aa4d372e618567",
+    "matched": "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 11,
+    "key": "SUPABASE_SERVICE_ROLE_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "c00e5ef8f7e408d73efae2f95a9205bc46a1e19ffaec6c85f5664618a180433d",
+    "matched": "SUPABASE_SERVICE_ROLE_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 13,
+    "key": "SUPABASE_PGCRYPTO_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "cda08ba476577eb2b5b9f159301ec03b92f4318ce2c7cde887659d013a3e552c",
+    "matched": "SUPABASE_PGCRYPTO_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 14,
+    "key": "PGCRYPTO_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "cda08ba476577eb2b5b9f159301ec03b92f4318ce2c7cde887659d013a3e552c",
+    "matched": "PGCRYPTO_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 18,
+    "key": "ABR_API_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "matched": "ABR_API_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 22,
+    "key": "ZAI_API_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "d4bec94a23afaf4493ca35377c14d0885099b505f7a9d12c05805fb3baed3877",
+    "matched": "ZAI_API_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 23,
+    "key": "OPENAI_API_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "matched": "OPENAI_API_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 27,
+    "key": "STRIPE_SECRET_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "595e3ee7e1855cb3d9a6a927dc52a93136f39d25d989b545613eb796d5421d79",
+    "matched": "STRIPE_SECRET_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 28,
+    "key": "STRIPE_WEBHOOK_SECRET",
+    "masked": "<REDACTED>",
+    "contextHash": "c6c2fb32da207251dd2a549781d458bf881bde32fd83367b82ea5292cde2b048",
+    "matched": "STRIPE_WEBHOOK_SECRET"
+  },
+  {
+    "path": ".env.local",
+    "line": 29,
+    "key": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "0333b344a4a9fddcfc8f189f148228a0403e7560d8f90d6f09d1c9ae4a901547",
+    "matched": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 30,
+    "key": "RESEND_API_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "68a7ce25b50836228f9d73e42fb9700527d2c8a9336dedf3a71b6968eb27c5dd",
+    "matched": "RESEND_API_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 42,
+    "key": "LOGFLARE_API_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "matched": "LOGFLARE_API_KEY"
+  },
+  {
+    "path": ".env.local",
+    "line": 59,
+    "key": "CRON_SECRET",
+    "masked": "<REDACTED>",
+    "contextHash": "1657a952c35859f31fe50bb92279112a7cbd500cd1e861b2ecc44c900a4b32eb",
+    "matched": "CRON_SECRET"
+  },
+  {
+    "path": ".env.local",
+    "line": 60,
+    "key": "GITHUB_CI_SHARED_SECRET",
+    "masked": "<REDACTED>",
+    "contextHash": "ff9c8c84940bc09c67c968702d879633cf6c40d4d155278a7b23ec8fa9e7e147",
+    "matched": "GITHUB_CI_SHARED_SECRET"
+  },
+  {
+    "path": ".env.production.local",
+    "line": 2,
+    "key": "VERCEL_OIDC_TOKEN",
+    "masked": "<REDACTED>",
+    "contextHash": "bbc5ca7b33a6a5a0c440159f8f7eca1cccc87a65ec94b8dde143c2537e86111f",
+    "matched": "VERCEL_OIDC_TOKEN"
+  },
+  {
+    "path": ".env.production.local",
+    "line": 6,
+    "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "f4f517b50ec6cbca81a894a4627e2b72f956947c21713eed03aa4d372e618567",
+    "matched": "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  },
+  {
+    "path": ".env.production.local",
+    "line": 9,
+    "key": "SUPABASE_SERVICE_ROLE_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "c00e5ef8f7e408d73efae2f95a9205bc46a1e19ffaec6c85f5664618a180433d",
+    "matched": "SUPABASE_SERVICE_ROLE_KEY"
+  },
+  {
+    "path": ".env.production.local",
+    "line": 12,
+    "key": "SUPABASE_PGCRYPTO_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "cda08ba476577eb2b5b9f159301ec03b92f4318ce2c7cde887659d013a3e552c",
+    "matched": "SUPABASE_PGCRYPTO_KEY"
+  },
+  {
+    "path": ".env.production.local",
+    "line": 13,
+    "key": "PGCRYPTO_KEY",
+    "masked": "<REDACTED>",
+    "contextHash": "cda08ba476577eb2b5b9f159301ec03b92f4318ce2c7cde887659d013a3e552c",
+    "matched": "PGCRYPTO_KEY"
+  }
+]

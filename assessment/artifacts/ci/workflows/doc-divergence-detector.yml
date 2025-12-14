@@ -1,0 +1,20 @@
+name: Doc Divergence Detector
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  doc-divergence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run Doc Divergence Detector
+        run: python scripts/check_docs_divergence.py --base-ref origin/${{ github.base_ref }}

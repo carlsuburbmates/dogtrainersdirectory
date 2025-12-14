@@ -1,0 +1,47 @@
+.github/workflows/verify-launch.yml:3:on:
+.github/workflows/verify-launch.yml:9:        description: "Treat apex DNS WARN as accepted (sets VERIFY_LAUNCH_ACCEPT_DNS_WARN=1)"
+.github/workflows/verify-launch.yml:15:    runs-on: ubuntu-latest
+.github/workflows/verify-launch.yml:40:          node-version: 20
+.github/workflows/check-schema-migrations.yml:3:on:
+.github/workflows/check-schema-migrations.yml:10:    runs-on: ubuntu-latest
+.github/workflows/lint.yml:3:on:
+.github/workflows/lint.yml:9:    runs-on: ubuntu-latest
+.github/workflows/lint.yml:17:          node-version: 20
+.github/workflows/prevent-generated-files.yml:3:on:
+.github/workflows/prevent-generated-files.yml:15:    runs-on: ubuntu-latest
+.github/workflows/validate-import.yml:3:on:
+.github/workflows/validate-import.yml:15:    runs-on: ubuntu-latest
+.github/workflows/validate-import.yml:24:          python-version: '3.11'
+.github/workflows/doc-divergence-detector.yml:3:on:
+.github/workflows/doc-divergence-detector.yml:9:    runs-on: ubuntu-latest
+.github/workflows/doc-divergence-detector.yml:18:          python-version: '3.11'
+.github/workflows/verify-phase9b.yml:3:on:
+.github/workflows/verify-phase9b.yml:11:    runs-on: ubuntu-latest
+.github/workflows/verify-phase9b.yml:24:          node-version: 20
+.github/workflows/abn-recheck.yml:4:# IMPORTANT: Only runs on schedule or manual dispatch, never on PR/push.
+.github/workflows/abn-recheck.yml:6:on:
+.github/workflows/abn-recheck.yml:7:  schedule:
+.github/workflows/abn-recheck.yml:8:    - cron: '0 2 * * *' # daily at 02:00 UTC
+.github/workflows/abn-recheck.yml:12:        description: 'Target environment to run against (staging or production)'
+.github/workflows/abn-recheck.yml:20:        description: 'If true the run will be a dry-run and will not write updates (default true)'
+.github/workflows/abn-recheck.yml:24:        description: 'If true, and secrets permit, the run will attempt to apply updates (requires non-dry-run and strong review)'
+.github/workflows/abn-recheck.yml:30:    # Skip on forks and pull requests - only run on schedule or manual workflow_dispatch
+.github/workflows/abn-recheck.yml:34:    runs-on: ubuntu-latest
+.github/workflows/abn-recheck.yml:106:      # Optional notification: if `ABN_ALERT_WEBHOOK` secret is configured (e.g., Slack/Teams webhook), the workflow will POST a small run-summary.
+.github/workflows/deploy-migrations.yml:5:on:
+.github/workflows/deploy-migrations.yml:9:        description: 'Target environment (staging or production)'
+.github/workflows/deploy-migrations.yml:17:        description: 'Set to true to only preview the changes (will still create a backup)'
+.github/workflows/deploy-migrations.yml:20:      confirm_production:
+.github/workflows/deploy-migrations.yml:21:        description: 'Set to true to confirm you really want to apply to production (required when target=production and dry_run=false)'
+.github/workflows/deploy-migrations.yml:27:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:3:on:
+.github/workflows/ci.yml:9:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:44:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:59:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:64:          node-version: 20
+.github/workflows/ci.yml:72:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:77:          node-version: 20
+.github/workflows/ci.yml:85:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:90:          node-version: 20
+.github/workflows/ci.yml:100:    runs-on: ubuntu-latest
+.github/workflows/ci.yml:105:          node-version: 20

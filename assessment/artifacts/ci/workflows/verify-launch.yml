@@ -1,0 +1,56 @@
+name: Verify Launch
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      accept_dns_warn:
+        description: "Treat apex DNS WARN as accepted (sets VERIFY_LAUNCH_ACCEPT_DNS_WARN=1)"
+        required: false
+        default: "false"
+
+jobs:
+  verify-launch:
+    runs-on: ubuntu-latest
+    env:
+      # Database and core infrastructure
+      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      
+      # Feature flags
+      FEATURE_MONETIZATION_ENABLED: '1'
+      NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED: '1'
+      
+      # Verification context
+      ENV_TARGET: staging
+      ABN_FALLBACK_MAX_RATE_24H: '0.15'
+      VERIFY_LAUNCH_ACCEPT_DNS_WARN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.accept_dns_warn == 'true' && '1' || '' }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AI launch gate
+        run: npm run verify:launch
+
+      - name: Upload launch artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-launch-${{ github.run_id }}
+          path: |
+            DOCS/launch_runs/launch-prod-*-ai-preflight.md
+            DOCS/launch_runs/launch-prod-*-ai-preflight.json
