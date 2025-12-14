@@ -1,3 +1,4 @@
+<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->
 # Launch Workflow — n1 (canonical)
 
 ## Goals
