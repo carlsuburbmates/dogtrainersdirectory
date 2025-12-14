@@ -17,10 +17,11 @@ export async function POST(request: Request) {
     }
 
     // Use AI or deterministic fallback
-    const mode = resolveLlmMode('triage')
-    
+    let mode = 'deterministic'
+    try { mode = resolveLlmMode('triage') } catch (e) { mode = 'deterministic' }
+
     let classification, priority, followUpActions
-    
+
     if (mode === 'live') {
       // AI-based classification
       const prompt = `Classify this dog emergency situation into one of these categories: "medical", "stray", "crisis", or "normal".

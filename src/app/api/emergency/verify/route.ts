@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     }
 
     // Use AI or deterministic fallback for verification
-    const mode = resolveLlmMode('verification')
+    let mode = 'deterministic'
+    try { mode = resolveLlmMode('verification') } catch (e) { mode = 'deterministic' }
     let isValid = false
     let reason = ''
     let confidence = 0.5
