@@ -132,7 +132,6 @@ export async function POST(request: Request) {
       }
     })
   } catch (error: any) {
-    try { process.stdout.write(`ERROR triage route: ${error.stack || error}\n`) } catch (_) {}
     return NextResponse.json(
       { error: 'Server error', message: error.message },
       { status: 500 }
