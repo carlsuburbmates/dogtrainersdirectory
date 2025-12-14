@@ -9,6 +9,7 @@ BEGIN;
 -- ============================================================================
 
 -- Featured placement lifecycle events (for monetization audit trail)
+-- NOTE: Event types must stay in sync with PLACEMENT_EVENT_TYPES in src/lib/featured-constants.ts
 CREATE TABLE IF NOT EXISTS featured_placement_events (
   id BIGSERIAL PRIMARY KEY,
   placement_id BIGINT REFERENCES featured_placements(id) ON DELETE CASCADE,

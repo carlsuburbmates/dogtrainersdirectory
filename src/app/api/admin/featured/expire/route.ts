@@ -19,6 +19,7 @@ import { SLOT_TYPES, DEFAULT_PLACEMENT_DURATION_DAYS } from '@/lib/featured-cons
 export async function POST(request: Request) {
   try {
     // Auth check - require BOTH the service role key to exist AND the cron secret to match
+    // This endpoint is cron-only (no Bearer token support) for security
     const cronSecret = request.headers.get('x-vercel-cron-secret')
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const expectedCronSecret = process.env.CRON_SECRET

@@ -15,7 +15,8 @@ import { runModerationCycle } from '@/lib/services/moderation-service'
  */
 export async function POST(request: Request) {
   try {
-    // Auth check: require either a valid Bearer token or a valid cron secret
+    // Auth check: require either a valid Bearer token (with service role) or a valid cron secret
+    // Note: Bearer auth requires BOTH authHeader AND serviceRoleKey to be present
     const authHeader = request.headers.get('authorization')
     const cronSecret = request.headers.get('x-vercel-cron-secret')
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY

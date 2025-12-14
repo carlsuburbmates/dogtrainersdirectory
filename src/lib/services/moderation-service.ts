@@ -20,6 +20,7 @@ export interface ModerationRunResult {
   startedAt: Date
   completedAt: Date
   durationMs: number
+  disabled?: boolean
 }
 
 export interface ModerationOptions {
@@ -75,7 +76,7 @@ export async function runModerationCycle(
   }
 
   try {
-    // Mode check: if disabled, skip AI entirely but return informational status (not an error)
+    // Mode check: if disabled, skip AI entirely
     if (mode === 'disabled') {
       const completedAt = new Date()
       const durationMs = completedAt.getTime() - startedAt.getTime()
@@ -95,11 +96,12 @@ export async function runModerationCycle(
 
       return {
         success: true,
+        disabled: true, // Flag to indicate moderation was skipped
         processedCount: 0,
         autoApproved: 0,
         autoRejected: 0,
         manualReview: 0,
-        errors: [], // Not an error - just disabled
+        errors: [],
         startedAt,
         completedAt,
         durationMs
