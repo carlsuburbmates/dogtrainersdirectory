@@ -297,6 +297,8 @@ npm test
 npm run type-check
 ```
 
+> **Local DB note:** All harness and application tests assume the remote Supabase dev/staging project defined in `.env.local`. Do **not** point tests at a local Postgres instance unless you’re explicitly running the optional Docker scripts. Missing remote credentials (e.g., no `SUPABASE_SERVICE_ROLE_KEY`/`SUPABASE_CONNECTION_STRING`) is the most common reason harness checks fail.
+
 ## 7. Environment Variables Reference
 
 | Variable | Description | Required |

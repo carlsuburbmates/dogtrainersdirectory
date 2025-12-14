@@ -5,6 +5,8 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   return <div className={className}>{children}</div>
 }
 
+import EmergencyE2EControls from '@/components/e2e/EmergencyE2EControls'
+
 export default async function EmergencyPage() {
   return (
     <div className="container mx-auto p-6">
@@ -16,6 +18,12 @@ export default async function EmergencyPage() {
         <div className="mt-4">
           <p>If your dog needs immediate help, please contact your local veterinarian.</p>
         </div>
+
+        {process.env.NEXT_PUBLIC_E2E_TEST_MODE === '1' && (
+          <div className="mt-6">
+            <EmergencyE2EControls />
+          </div>
+        )}
       </Card>
     </div>
   )

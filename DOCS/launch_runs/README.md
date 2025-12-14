@@ -27,6 +27,6 @@ Never delete DNS files outright; if you need to reduce noise, **move** them into
 
 1. Run `set -a && source .env.local && set +a` (or rely on `.envrc` + direnv) so `verify:launch` sees all secrets.  
 2. Execute `npm run verify:launch`. The script automatically appends to the current day’s Markdown/JSON and writes a DNS evidence file if needed.  
-3. Commit the updated files plus any newly created `dns-evidence-*.txt`. If you archived older DNS files, include those moves in the same commit.
+3. Commit the updated files plus any newly created `dns-evidence-*.txt`. If you archived older DNS files, include those moves in the same commit. Tests/harness checks rely on the remote Supabase project configured in `.env.local`, so keep that file populated even when you only run locally.
 
 Following this policy keeps the auditing trail reliable while preventing the folder from filling up with dozens of raw resolver dumps.***

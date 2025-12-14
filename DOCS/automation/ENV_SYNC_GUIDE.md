@@ -38,6 +38,8 @@ ENV_TARGET=staging ./scripts/check_env_ready.sh staging   # or production
 
 The command must print `All required variables are set.`
 
+> **Remote DB reminder:** The harness always targets the Supabase instance configured in `.env.local`. Keep those secrets populated even for local-only work; pointing the tests at a local Postgres container will fail unless you deliberately run the optional Docker helpers.
+
 ## 4. Push evidence
 
 1. `git add DOCS/launch_runs/launch-prod-*.md DOCS/launch_runs/launch-prod-*.json DOCS/launch_runs/dns-evidence-*.txt`
