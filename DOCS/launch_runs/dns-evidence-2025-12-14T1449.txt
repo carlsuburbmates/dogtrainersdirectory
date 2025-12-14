@@ -1,0 +1,18 @@
+### dogtrainersdirectory.com.au
+
+A:
+216.198.79.65
+216.198.79.1
+AAAA:
+
+CNAME:
+
+
+### www.dogtrainersdirectory.com.au
+
+A:
+216.198.79.65
+216.198.79.1
+AAAA:
+
+CNAME:

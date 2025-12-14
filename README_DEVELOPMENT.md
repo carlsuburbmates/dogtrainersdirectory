@@ -61,6 +61,18 @@ We recommend using a remote Supabase dev/staging project as the default developm
    - Get ABR GUID from Australian Business Register (for ABN workflows)
    - Optional (admin tasks / CI): SUPABASE_CONNECTION_STRING — secure secret for migrations and backups
 
+   #### Optional: auto-export your `.env.local`
+
+   The repo now includes a `.envrc` that tells [direnv](https://direnv.net/) to export `.env.local` automatically. This keeps local workflows consistent with the harness export step.
+
+   ```bash
+   brew install direnv         # or follow the instructions for your shell
+   echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc   # or bashrc/fish config
+   direnv allow
+   ```
+
+   After `direnv allow`, every time you `cd` into the repo the `.env.local` values become available to `npm run dev`, `npm run verify:launch`, etc., so you no longer need to run `set -a && source .env.local && set +a` manually.
+
 4. **Recommended remote DB / dashboard approach (default — no Docker required)**
 
    For normal development, prefer using the remote dev/staging project. That gives you full parity with hosted services (Auth, Edge Functions, Storage) without running local services.

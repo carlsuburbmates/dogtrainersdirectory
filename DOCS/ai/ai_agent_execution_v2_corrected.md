@@ -1938,3 +1938,6 @@ Focus: **owner experience + revenue**, building on everything above.
   - Always verify `Stripe-Signature` and log `event.id` in an ingestion audit table to handle retries safely.
 
 ---
+
+
+See: DOCS/ai/agent_style_rules.md for agent visual/tone rules.

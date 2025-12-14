@@ -366,13 +366,15 @@ BEGIN
     LEFT JOIN trainer_behavior_issues tbi ON b.id = tbi.business_id
     LEFT JOIN trainer_services tsvc ON b.id = tsvc.business_id
     WHERE 
-        b.is_active = true AND b.is_deleted = false
+        b.is_active = true
+        AND b.is_deleted = false
         AND calculate_distance(user_lat, user_lng, s.latitude, s.longitude) <= radius_km
-        AND (age_filter IS NULL OR age_filter = ANY(ARRAY_AGG(DISTINCT ts.age_specialty)))
-        AND (issues_filter IS NULL OR tbi.behavior_issue = ANY(issues_filter))
-        AND (service_type_filter IS NULL OR service_type_filter = ANY(ARRAY_AGG(DISTINCT tsvc.service_type)))
         AND (verified_only = false OR b.abn_verified = true)
-    GROUP BY b.id, b.name, b.email, b.phone, b.website, b.address, b.bio, b.pricing, b.abn_verified, b.verification_status, s.name, c.name, c.region
+    GROUP BY b.id, b.name, b.email, b.phone, b.website, b.address, b.bio, b.pricing, b.abn_verified, b.verification_status, s.name, s.latitude, s.longitude, c.name, c.region
+    HAVING
+        (age_filter IS NULL OR EXISTS (SELECT 1 FROM trainer_specializations ts2 WHERE ts2.business_id = b.id AND ts2.age_specialty = age_filter))
+        AND (issues_filter IS NULL OR EXISTS (SELECT 1 FROM trainer_behavior_issues tbi2 WHERE tbi2.business_id = b.id AND tbi2.behavior_issue = ANY(issues_filter)))
+        AND (service_type_filter IS NULL OR EXISTS (SELECT 1 FROM trainer_services tsvc2 WHERE tsvc2.business_id = b.id AND tsvc2.service_type = service_type_filter))
     ORDER BY 
         b.abn_verified DESC,
         distance_km ASC,

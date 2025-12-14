@@ -1,47 +1,85 @@
+@import "../styles/theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-white text-gray-900;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
-/* Custom components */
+/* Token-based components */
 .btn-primary {
-  @apply bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  transition: background .15s ease;
 }
 
 .btn-secondary {
-  @apply bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  transition: background .15s ease;
 }
 
 .card {
-  @apply bg-white rounded-lg shadow-md border border-gray-200 p-6;
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: calc(var(--radius));
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  border: 1px solid hsl(var(--border));
+  padding: 1.5rem;
 }
 
 .input-field {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  width: 100%;
+  padding: .5rem .75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  outline: none;
+}
+.input-field:focus {
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+  border-color: hsl(var(--ring));
 }
 
 .triage-button {
-  @apply p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-center;
+  padding: 1rem;
+  border: 2px solid hsl(var(--border));
+  border-radius: calc(var(--radius));
+  transition: border-color .12s, background .12s;
+  text-align: center;
 }
 
 .triage-button.selected {
-  @apply border-blue-500 bg-blue-50;
+  border-color: hsl(var(--ring));
+  background: color-mix(in srgb, hsl(var(--ring)) 8%, transparent);
 }
 
 .badge {
-  @apply inline-block px-2 py-1 rounded-full text-xs font-semibold;
+  display: inline-block;
+  padding: .25rem .5rem;
+  border-radius: 9999px;
+  font-size: .75rem;
+  font-weight: 600;
 }
+
 .badge-blue {
-  @apply bg-blue-100 text-blue-800;
+  background: color-mix(in srgb, hsl(var(--primary)) 10%, white);
+  color: hsl(var(--primary-foreground));
 }
+
 .badge-orange {
-  @apply bg-orange-100 text-orange-800;
+  background: color-mix(in srgb, 20 80% 50% 10%, white);
+  color: #b45309;
 }
+
 .badge-purple {
-  @apply bg-purple-100 text-purple-800;
+  background: color-mix(in srgb, 270 60% 50% 10%, white);
+  color: #5b21b6;
 }
