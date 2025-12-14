@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
 import { resolveLlmMode } from '@/lib/llm'
+import { detectMedicalEmergency } from '@/lib/medicalDetector'
 
 export async function POST(request: Request) {
   try {
@@ -103,8 +104,25 @@ export async function POST(request: Request) {
       )
     }
 
+    const classificationPayload = {
+      classification,
+      priority,
+      followUpActions
+    }
+
+    let medical: any = undefined
+    if (classification === 'medical') {
+      try {
+        medical = await detectMedicalEmergency(situation)
+      } catch (_) {
+        medical = undefined
+      }
+    }
+
     return NextResponse.json({
       success: true,
+      classification: classificationPayload,
+      medical,
       triage: {
         classification,
         priority,

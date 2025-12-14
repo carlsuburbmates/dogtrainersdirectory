@@ -105,7 +105,8 @@ export async function POST(request: Request) {
         reason,
         confidence,
         verificationMethod: mode === 'live' ? 'ai' : 'deterministic',
-        verificationId: data.id
+        verificationId: data.id,
+        resourceId
       }
     })
   } catch (error: any) {
