@@ -1,83 +1,27 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { resolveLlmMode, generateLLMResponse } from '@/lib/llm'
-import { recordLatencyMetric } from '@/lib/telemetryLatency'
-
-// Handle both GET (for cron) and POST (for manual execution)
-export async function GET() {
-  return handleVerification()
-}
+import { resolveLlmMode } from '@/lib/llm'
+import { generateLLMResponse } from '@/lib/llm'
 
 export async function POST(request: Request) {
-  return handleVerification((await request.json()) || {})
-}
-
-async function handleVerification(body: any = {}) {
-  const start = Date.now()
-  const respond = async (payload: any, status = 200) => {
-    await recordLatencyMetric({
-      area: 'emergency_verify_api',
-      route: '/api/emergency/verify',
-      durationMs: Date.now() - start,
-      statusCode: status,
-      success: status < 500,
-      metadata: { resourceId: body?.resourceId ?? null }
-    })
-    return NextResponse.json(payload, { status })
-  }
-
   try {
+    const body = await request.json()
     const { resourceId, phone, website } = body
     
-    // If resourceId is not provided (cron job), fetch all emergency resources to verify
     if (!resourceId) {
-      const { data: resources, error: fetchError } = await supabaseAdmin
-        .from('emergency_resources')
-        .select('id, phone, website')
-        .eq('active', true)
-      
-      if (fetchError) {
-        return respond(
-          { error: 'Failed to fetch emergency resources', message: fetchError.message },
-          500
-        )
-      }
-      
-      // Verify all resources
-      const results = []
-      for (const resource of resources || []) {
-        const result = await verifyResource(resource.id, resource.phone, resource.website)
-        results.push(result)
-      }
-      
-      return respond({
-        success: true,
-        message: 'Verified all emergency resources',
-        verificationCount: results.length,
-        results
-      })
+      return NextResponse.json(
+        { error: 'Missing resource ID' },
+        { status: 400 }
+      )
     }
-    
-    // If resourceId is provided, verify a specific resource
-    const result = await verifyResource(resourceId, phone, website)
-    return respond(result)
-  } catch (error: any) {
-    return respond(
-      { error: 'Server error', message: error.message },
-      500
-    )
-  }
-}
 
-async function verifyResource(resourceId: string, phone?: string, website?: string) {
-  try {
-    const llmConfig = getActiveLlmConfig()
-    const llmEnabled = Boolean(llmConfig)
+    // Use AI or deterministic fallback for verification
+    const mode = resolveLlmMode('verification')
     let isValid = false
     let reason = ''
     let confidence = 0.5
     
-    if (llmEnabled) {
+    if (mode === 'live') {
       // AI-based verification
       const prompt = `Verify if this emergency resource contact information is likely valid:
       
@@ -101,7 +45,7 @@ async function verifyResource(resourceId: string, phone?: string, website?: stri
       }
     }
     
-    if (!llmEnabled) {
+    if (mode !== 'live') {
       // Deterministic checks
       const phoneCheck = phone ? /^\+?[0-9\s\-()]+$/.test(phone) : false
       const websiteCheck = website ? /^https?:\/\/.+\..+/.test(website) : false
@@ -131,7 +75,7 @@ async function verifyResource(resourceId: string, phone?: string, website?: stri
         is_valid: isValid,
         reason,
         confidence,
-        verification_method: llmEnabled ? 'ai' : 'deterministic',
+        verification_method: mode === 'live' ? 'ai' : 'deterministic',
         created_at: new Date().toISOString()
       })
       .select()
@@ -144,33 +88,23 @@ async function verifyResource(resourceId: string, phone?: string, website?: stri
       )
     }
 
-    return {
+    return NextResponse.json({
       success: true,
       verification: {
         isValid,
         reason,
         confidence,
-        verificationMethod: llmEnabled ? 'ai' : 'deterministic',
-        verificationId: data.id,
-        resourceId
+        verificationMethod: mode === 'live' ? 'ai' : 'deterministic',
+        verificationId: data.id
       }
-    }
+    })
   } catch (error: any) {
-    return {
-      error: 'Server error',
-      message: error.message
-    }
+    return NextResponse.json(
+      { error: 'Server error', message: error.message },
+      { status: 500 }
+    )
   }
 }
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-const getActiveLlmConfig = () => {
-  try {
-    return resolveLlmMode()
-  } catch (error) {
-    console.warn('LLM verification disabled:', error)
-    return null
-  }
-}

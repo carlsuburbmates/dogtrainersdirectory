@@ -1,45 +1,28 @@
-'use client'
+import { supabaseAdmin } from '@/lib/supabase'
 
-// Reviews management admin dashboard
-export default function AdminReviewsPage() {
-  const reviewStats = {
-    total: 128,
-    pending: 23,
-    approved: 95,
-    rejected: 10
-  }
+// Simple UI components for admin reviews page
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>
+}
+
+export default async function AdminReviewsPage() {
+  // Fetch reviews that need attention
+  const { data: reviews } = await supabaseAdmin
+    .from('reviews')
+    .select('*')
+    .limit(10)
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="card">
-        <h2 className="text-2xl font-semibold mb-4">Review Management</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="card-border p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Reviews</h3>
-            <p className="text-3xl font-bold">{reviewStats.total}</p>
-          </div>
-          <div className="card-border p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Pending</h3>
-            <p className="text-3xl font-bold text-yellow-600">{reviewStats.pending}</p>
-          </div>
-          <div className="card-border p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Approved</h3>
-            <p className="text-3xl font-bold text-green-600">{reviewStats.approved}</p>
-          </div>
-          <div className="card-border p-4 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Rejected</h3>
-            <p className="text-3xl font-bold text-red-600">{reviewStats.rejected}</p>
-          </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Admin Reviews</h1>
+      <Card className="p-4">
+        <p className="text-sm text-gray-600">
+          Reviews admin page (placeholder - fully implemented in separate PR)
+        </p>
+        <div className="mt-4">
+          <p>Total reviews: {reviews?.length || 0}</p>
         </div>
-
-        <div className="card-border p-4 rounded-lg">
-          <h3 className="text-lg font-medium mb-4">Pending Reviews</h3>
-          <div className="text-sm text-gray-500 mb-4">
-            <em>Review functionality coming soon. AI-powered review system will be available here.</em>
-          </div>
-        </div>
-      </div>
+      </Card>
     </div>
   )
 }

@@ -11,9 +11,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: idString } = await params
-    const id = Number(idString)
-    if (isNaN(id)) {
+    const { id } = await params
+const idNum = Number(id)
+    if (isNaN(idNum)) {
       return NextResponse.json({ error: 'Invalid ABN ID' }, { status: 400 })
     }
 
@@ -36,7 +36,7 @@ export async function POST(
     await supabaseAdmin.from('abn_verifications').update({
       status,
       admin_notes: action === 'reject' ? 'Manual rejection' : 'Manual approval'
-    }).eq('id', id)
+    }).eq('id', idNum)
 
     await supabaseAdmin.from('businesses').update({
       abn_verified: status === 'verified',
@@ -49,4 +49,4 @@ export async function POST(
   }
 }
 
-// runtime is edge by default for app dir
+export const runtime = 'edge'

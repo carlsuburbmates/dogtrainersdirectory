@@ -1,19 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // appDir is now stable and doesn't need to be in experimental
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'localhost',
-        port: '3000',
+        hostname: 'supabase.co',
+        port: '',
         pathname: '/**',
       },
       {
-        protocol: 'https',
-        hostname: 'supabase.co',
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
         pathname: '/**',
-      },
+      }
     ],
   },
   env: {

@@ -1,35 +1,22 @@
-import { EmergencyControls } from '@/components/emergency/EmergencyControls'
+import { supabaseAdmin } from '@/lib/supabase'
 
-// Emergency triage dashboard shell now renders on the server so the static status copy ships without hydration.
-export default function EmergencyPage() {
+// Simple UI components for emergency page
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>
+}
+
+export default async function EmergencyPage() {
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="card space-y-6">
-        <header>
-          <p className="text-sm uppercase tracking-wider text-amber-600 font-semibold">Emergency response</p>
-        </header>
-        <h2 className="text-2xl font-semibold">Emergency Triage</h2>
-
-        <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 space-y-2">
-          <h3 className="text-lg font-medium text-yellow-800">AI-Powered Emergency Response</h3>
-          <p className="text-yellow-700 text-sm">
-            This dashboard provides real-time monitoring and automated triage for critical system issues. The non-interactive
-            telemetry now renders entirely on the server to keep the client bundle reserved for controls only.
-          </p>
-        </section>
-
-        <section className="card-border p-4 rounded-lg space-y-4">
-          <h3 className="text-lg font-medium">System Status</h3>
-          <div className="text-sm text-gray-600">
-            <p>Emergency triage system is running. AI monitoring is active.</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Source: `/api/emergency/triage` and `/api/emergency/verify` smoke-verified in RUNBOOK.
-            </p>
-          </div>
-        </section>
-
-        <EmergencyControls />
-      </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Emergency Assistance</h1>
+      <Card className="p-4">
+        <p className="text-sm text-gray-600">
+          Emergency assistance page (placeholder - fully implemented in separate PR)
+        </p>
+        <div className="mt-4">
+          <p>If your dog needs immediate help, please contact your local veterinarian.</p>
+        </div>
+      </Card>
     </div>
   )
 }
