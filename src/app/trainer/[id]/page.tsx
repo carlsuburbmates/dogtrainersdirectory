@@ -7,7 +7,8 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 }
 
 export default async function TrainerPage({ params }: { params: { id: string } }) {
-  const id = Number(params.id)
+  const resolvedParams = await Promise.resolve(params as any)
+  const id = Number(resolvedParams.id)
   if (isNaN(id)) return notFound()
 
   // Fetch trainer data

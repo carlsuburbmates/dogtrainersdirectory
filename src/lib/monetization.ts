@@ -99,13 +99,14 @@ export async function createCheckoutSessionForBusiness({ businessId, origin }: C
   const stripe = getStripeClient()
 
   const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
+    mode: 'payment',
     success_url: `${origin}/promote?businessId=${businessId}&status=success`,
     cancel_url: `${origin}/promote?businessId=${businessId}&status=cancelled`,
     customer_email: business.email || undefined,
     metadata: {
       business_id: `${businessId}`,
-      plan_id: planId
+      plan_id: planId,
+      tier: 'featured_placement_30d'
     },
     line_items: [
       {
