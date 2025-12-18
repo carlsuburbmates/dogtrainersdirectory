@@ -6,7 +6,7 @@
 
 # Dog Trainers Directory - Development Setup Guide
 
-Documentation home: `DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
+Documentation home: `dtd-docs-private/DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
 
 
 
@@ -199,15 +199,15 @@ supabase/
 - `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
 - `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
-> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
+> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `dtd-docs-private/DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
 
 ---
 
 ## ABN verification — developer & ops workflow
-The project implements a canonical ABN/ABR verification flow (see `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
+The project implements a canonical ABN/ABR verification flow (see `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
 
 Core developer files and scripts
-- `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`, `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
+- `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`, `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
 - `scripts/generate_allowlist.py` — validate CSVs and write `scripts/controlled_abn_list.{staging,prod}.json`. Example (archived) at `scripts/examples/controlled_abn_list.example.json`. Generated files are git-ignored; use the generator when needed.
 - `scripts/abn_controlled_batch.py` — ops-only controlled batch runner (dry-run default; `--apply` required to write). Requires `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING` and `ABR_GUID` environment variables for applied runs.
 - `scripts/abn_recheck.py` — scheduled re-check implementation used by `.github/workflows/abn-recheck.yml`.
@@ -231,7 +231,7 @@ python3 scripts/test_abn_recheck.py -q
 ```
 
 Safety & governance
-- The roll-out checklist in `DOCS/ABN-Rollout-Checklist.md` is your canonical runbook for staging→production.
+- The roll-out checklist in `dtd-docs-private/DOCS/ABN-Rollout-Checklist.md` is your canonical runbook for staging→production.
 - Always run dry-runs first and use small selected allowlists for tests.
 - Keep `AUTO_APPLY` off in scheduled runs until you're ready to gradually enable writes in production (monitor for 48–72 hours after enabling).
 
@@ -375,7 +375,7 @@ const FEATURE_FLAGS = {
 
 1. Check the Phase 1 Implementation Plan: `PHASE1_IMPLEMENTATION_PLAN.md`
 2. Review database schema: `supabase/schema.sql`
-3. Consult project documentation in `DOCS/` directory
+3. Consult project documentation in `dtd-docs-private/DOCS/` directory
 
 ## 12. Next Steps
 

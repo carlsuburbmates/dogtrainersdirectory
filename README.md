@@ -6,7 +6,7 @@
 
 # dogtrainersdirectory.com.au
 
-Docs home: `DOCS/README.md` — single place to discover authoritative design, automation runbooks, DB/migration index, and AI playbooks.
+Docs now live in the sibling private repo `dtd-docs-private`. Clone it adjacent to this repo and open `dtd-docs-private/DOCS/README.md` for authoritative runbooks, design notes, and evidence.
 
 
 
@@ -33,9 +33,9 @@ This project implements a single canonical ABN/ABR verification behaviour across
 - ABN exists in the ABR response AND
 - ABNStatus === "Active"
 
-Full developer and runbook guidance is in `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md` (contract + parsing rules). Key operational artefacts are:
+Full developer and runbook guidance is in `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md` (contract + parsing rules). Key operational artefacts are:
 
-- CSV templates (for ops): `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` and `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — use these to maintain curated allowlists for controlled batch runs.
+- CSV templates (for ops): `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` and `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — use these to maintain curated allowlists for controlled batch runs.
 - Generator script: `scripts/generate_allowlist.py` — reads CSV templates, validates rows, and writes `scripts/controlled_abn_list.staging.json` or `scripts/controlled_abn_list.prod.json`.
 - Example (archived): `scripts/examples/controlled_abn_list.example.json`. Generated allowlists are git-ignored and should be produced by the generator when needed.
 - Controlled batch runner: `scripts/abn_controlled_batch.py` — intended for ops-only manual or one-off write runs (dry-run by default). Use the `--apply` flag plus environment variables (`SUPABASE_SERVICE_ROLE_KEY`, `ABR_GUID`, and `SUPABASE_CONNECTION_STRING`) to perform writes.
@@ -43,14 +43,14 @@ Full developer and runbook guidance is in `DOCS/automation/ABN-ABR-GUID_automati
 
 Convenience npm scripts (wrappers) have been added so maintainers can quickly generate allowlists and run dry-run/apply workflows:
 
-- `npm run allowlist:staging` — generate `scripts/controlled_abn_list.staging.json` from `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`
-- `npm run allowlist:prod` — generate `scripts/controlled_abn_list.prod.json` from `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv`
+- `npm run allowlist:staging` — generate `scripts/controlled_abn_list.staging.json` from `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`
+- `npm run allowlist:prod` — generate `scripts/controlled_abn_list.prod.json` from `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv`
 - `npm run abn:batch:staging` — dry-run against `scripts/controlled_abn_list.staging.json`
 - `npm run abn:batch:staging:apply` — apply with AUTO_APPLY=true (use only after sign-off)
 - `npm run abn:batch:prod` — dry-run against `scripts/controlled_abn_list.prod.json`
 - `npm run abn:batch:prod:apply` — apply with AUTO_APPLY=true (production apply requires service-role and backups)
 
-See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → production runbook with safety checks, DB queries, and monitoring guidance.
+See `dtd-docs-private/DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → production runbook with safety checks, DB queries, and monitoring guidance.
 
 ## Stack
 - Next.js 14 (App Router), React (latest supported), TypeScript recommended
@@ -60,11 +60,11 @@ See `DOCS/ABN-Rollout-Checklist.md` for a full, conservative staging → product
 - Optional: Sentry or Logflare for observability; Resend/BYO SMTP for email; OpenAI/Anthropic for AI agent flows
 
 ## Data Sources
-- `DOCS/blueprint_ssot_v1.1.md` — product/UX rules, taxonomies, geography
-- `DOCS/suburbs_councils_mapping.csv` — 28 councils, 138 suburb rows with postcode/lat/lon
-- `DOCS/MONETIZATION_ROLLOUT_PLAN.md` — Stripe monetization SSOT (product scope, metadata contract, legal requirements)
-- `DOCS/implementation/master_plan.md` — phased rollout, governance
-- `DOCS/ai/ai_agent_execution_v2_corrected.md` — phase prompts/checklists
+- `dtd-docs-private/DOCS/blueprint_ssot_v1.1.md` — product/UX rules, taxonomies, geography
+- `dtd-docs-private/DOCS/suburbs_councils_mapping.csv` — 28 councils, 138 suburb rows with postcode/lat/lon
+- `dtd-docs-private/DOCS/MONETIZATION_ROLLOUT_PLAN.md` — Stripe monetization SSOT (product scope, metadata contract, legal requirements)
+- `dtd-docs-private/DOCS/implementation/master_plan.md` — phased rollout, governance
+- `dtd-docs-private/DOCS/ai/ai_agent_execution_v2_corrected.md` — phase prompts/checklists
 
 ## Getting started (remote Supabase — default)
 Prereqs: `nvm install 24 && nvm use 24`, Yarn/PNPM/NPM.
@@ -133,7 +133,7 @@ OPENAI_API_KEY=<key>   # or ANTHROPIC_API_KEY=<key>
 ## TODO
 - Wire Vercel/Supabase cron to hit `/api/emergency/verify` daily and `/api/emergency/triage/weekly` weekly (currently invoked manually).
 - Add CI checks for CSV counts/enums and distance calculations.
-- Formalise ops runbooks for AI review moderation and emergency verification alerts (see `DOCS/automation/automation-checklist.md`).
+- Formalise ops runbooks for AI review moderation and emergency verification alerts (see `dtd-docs-private/DOCS/automation/automation-checklist.md`).
 
 ## Maintainer checklist — rolling schema changes into migrations
 When you need to change the database schema follow these steps to keep `supabase/migrations/` canonical and avoid drift:
@@ -155,4 +155,3 @@ Notes:
 - Monetization stays off until Phase 4+ criteria (≥50 claimed trainers, stable ABN verifications).
 - Emergency data requires periodic verification; prefer automation over manual calls.
 - AI moderation: AI flags, human approves; transparency copy required in UI.
-
