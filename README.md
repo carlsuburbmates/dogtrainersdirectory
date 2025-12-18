@@ -8,7 +8,24 @@
 
 Docs now live in the sibling private repo `dtd-docs-private`. Clone it adjacent to this repo and open `dtd-docs-private/DOCS/README.md` for authoritative runbooks, design notes, and evidence.
 
+## Quick Setup (Developer Convenience)
 
+Clone both repositories side-by-side:
+
+```bash
+# Parent directory — clone both repos here
+git clone git@github.com:carlsuburbmates/dtd-app.git
+git clone git@github.com:carlsuburbmates/dtd-docs-private.git
+
+# Then enter dtd-app and continue with normal setup
+cd dtd-app
+npm install
+npm run dev
+```
+
+All documentation references (`DOCS/`, automation runbooks, etc.) are in the adjacent `dtd-docs-private` folder. Refer to `../dtd-docs-private/DOCS/README.md` when reading setup or deployment guides.
+
+---
 
 Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 14 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).
 
