@@ -8,7 +8,7 @@ set -eo pipefail
 # Purpose: Optional tool for advanced contributors wanting a disposable local Postgres
 # instance for migration testing or offline experiments.
 # NOT required for normal development — this repo defaults to using a remote Supabase
-# dev/staging project (see README.md and DOCS/SUPABASE-QUICKSTART.md).
+# dev/staging project (see README.md and ../dtd-docs-private/DOCS/SUPABASE-QUICKSTART.md).
 # Safety: the script will refuse to run if SUPABASE_CONNECTION_STRING appears to
 # point at a remote host (non-localhost) or matches a production host found in
 # `.env.production`, `.env.preview` or `.env.local`. Do NOT use this script to target production.

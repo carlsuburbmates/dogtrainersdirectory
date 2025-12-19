@@ -11,11 +11,13 @@
 
 **Read these BEFORE any code change:**
 
-1. `DOCS/blueprint_ssot_v1.1.md` – Master spec: locked taxonomies (ages, 13 behavior issues, 5 service types, regions), "age-first" UX invariant, 28 councils + 138 suburbs, ABN verification rules (≥85% auto-match).
-2. `DOCS/IMPLEMENTATION_REALITY_MAP.md` – Truth table of what works now (frontend flows, APIs, automations, scripts). Specifies CONFIRMED-WORKING vs UNKNOWN for rapid triage.
-3. `DOCS/LAUNCH_READY_CHECKLIST.md` – Go/no-go gates: `npm run verify:launch` (AI-ready FAIL=0), environment checks, emergency APIs, ABN fallback metrics.
-4. `DOCS/MONETIZATION_ROLLOUT_PLAN.md` – Stripe webhook contract, payment audit schema, feature-flag guards (`FEATURE_MONETIZATION_ENABLED`), Playwright E2E bypass (`E2E_TEST_MODE`).
-5. `DOCS/operator-runbook.md` – Ops procedures: ABN allowlist generation, controlled batch runs, cron job triggers, alert escalation.
+1. `../dtd-docs-private/DOCS/blueprint_ssot_v1.1.md` – Master spec: locked taxonomies (ages, 13 behavior issues, 5 service types, regions), "age-first" UX invariant, 28 councils + 138 suburbs, ABN verification rules (≥85% auto-match).
+2. `../dtd-docs-private/DOCS/IMPLEMENTATION_REALITY_MAP.md` – Truth table of what works now (frontend flows, APIs, automations, scripts). Specifies CONFIRMED-WORKING vs UNKNOWN for rapid triage.
+3. `../dtd-docs-private/DOCS/LAUNCH_READY_CHECKLIST.md` – Go/no-go gates: `npm run verify:launch` (AI-ready FAIL=0), environment checks, emergency APIs, ABN fallback metrics.
+4. `../dtd-docs-private/DOCS/MONETIZATION_ROLLOUT_PLAN.md` – Stripe webhook contract, payment audit schema, feature-flag guards (`FEATURE_MONETIZATION_ENABLED`), Playwright E2E bypass (`E2E_TEST_MODE`).
+5. `../dtd-docs-private/DOCS/operator-runbook.md` – Ops procedures: ABN allowlist generation, controlled batch runs, cron job triggers, alert escalation.
+ 
+Docs live in the sibling repo: `../dtd-docs-private/DOCS/`.
 
 Cross-check these whenever planning UX, API, or data changes. If contradictions exist, update the SSOT first (RFC → merge → implement code).
 
@@ -86,7 +88,7 @@ Cross-check these whenever planning UX, API, or data changes. If contradictions 
 - `ResourceType`: trainer, behaviour_consultant, emergency_vet, urgent_care, emergency_shelter
 - `Region`: Inner City, Northern, Eastern, South Eastern, Western (auto-derived from suburb)
 
-**Geography** (`DOCS/suburbs_councils_mapping.csv`)  
+**Geography** (`../dtd-docs-private/DOCS/suburbs_councils_mapping.csv`)  
 - 138 suburb rows, 28 unique councils.
 - Never expose LGA acronyms in UI; always derive council/region from suburb selection.
 - CSV is immutable; any change requires RFC + FILE_MANIFEST update + CI drift check.
@@ -117,7 +119,7 @@ npm run smoke                   # Vitest unit tests (trainer profiles, search, e
 npm run test                    # Full Vitest suite
 npm run test:watch              # Dev mode
 npm run e2e                     # Playwright E2E (search, emergency, monetization, admin)
-npm run verify:launch           # AI Launch Gate: type-check → smoke → lint → doc-divergence → env-ready
+npm run verify:launch           # AI Launch Gate: type-check → smoke → lint → env-ready (docs checks live in dtd-docs-private)
 ```
 
 **Pre-prod verification:**  
@@ -147,7 +149,7 @@ npm run dev:local                # Run app against local Supabase
 
 ## Critical Rules & Constraints
 
-1. **Phase 2 is locked.** UI (`src/app/page.tsx`, `src/app/search/`), helpers (`src/lib/triage.ts`), and RPC (`search_trainers`) must NOT revert to "radius only" behavior. See `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md` for QA evidence.
+1. **Phase 2 is locked.** UI (`src/app/page.tsx`, `src/app/search/`), helpers (`src/lib/triage.ts`), and RPC (`search_trainers`) must NOT revert to "radius only" behavior. See `../dtd-docs-private/DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md` for QA evidence.
 
 2. **Taxonomy enums are immutable.** Never add free-text categories for age, issues, or service types. Instead, propose RFC to blueprint if genuinely missing.
 
@@ -181,7 +183,7 @@ npm run dev:local                # Run app against local Supabase
 - Webhook endpoint: `/api/webhooks/stripe/route.ts` (always verify signature)
 - Test locally: `stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd` (custom harness at port 4243, not :3000)
 - E2E bypass: `E2E_TEST_MODE=true` env var stubs real Stripe calls for Playwright
-- Metadata contract: See `DOCS/MONETIZATION_ROLLOUT_PLAN.md` (required fields for featured placements, subscriptions)
+- Metadata contract: See `../dtd-docs-private/DOCS/MONETIZATION_ROLLOUT_PLAN.md` (required fields for featured placements, subscriptions)
 
 ### LLM Provider (Z.AI or OpenAI)
 - Default: `LLM_PROVIDER=zai` (Z.AI) with `ZAI_API_KEY` and `ZAI_BASE_URL=https://api.z.ai/api/paas/v4`
@@ -248,7 +250,7 @@ const result = await supabaseAdmin.from('businesses').select('*')
 
 **Search for references to a constant or function:**  
 ```bash
-grep -r "search_trainers\|BehaviorIssue" src/ DOCS/
+grep -r "search_trainers\\|BehaviorIssue" src/ ../dtd-docs-private/DOCS/
 ```
 
 **Check schema against migrations:**  
@@ -267,19 +269,20 @@ SUPABASE_CONNECTION_STRING="..." psql \
 
 **Check for doc divergence locally:**  
 ```bash
-python3 scripts/check_docs_divergence.py --base-ref origin/main
+cd ../dtd-docs-private
+python3 scripts/check_docs_divergence.py --base-ref origin/master
 ```
 
 ---
 
 ## When You Get Stuck
 
-1. **Spec questions?** Start at `DOCS/blueprint_ssot_v1.1.md` (domain model, UX rules).
-2. **Implementation status unclear?** Check `DOCS/IMPLEMENTATION_REALITY_MAP.md` (CONFIRMED-WORKING vs UNKNOWN grid).
-3. **Launch gates?** See `DOCS/LAUNCH_READY_CHECKLIST.md` (AI-ready vs Operator-only).
-4. **ABN workflow?** See `DOCS/automation/ABN-ABR-GUID_automation/` (contract, parsing, allowlists, batch runs).
-5. **Monetization contract?** See `DOCS/MONETIZATION_ROLLOUT_PLAN.md` (Stripe webhook, product scope, metadata).
-6. **Emergency ops?** See `DOCS/automation/OPS_RUNBOOK_EMERGENCY_VERIFICATION.md` and `operator-runbook.md`.
+1. **Spec questions?** Start at `../dtd-docs-private/DOCS/blueprint_ssot_v1.1.md` (domain model, UX rules).
+2. **Implementation status unclear?** Check `../dtd-docs-private/DOCS/IMPLEMENTATION_REALITY_MAP.md` (CONFIRMED-WORKING vs UNKNOWN grid).
+3. **Launch gates?** See `../dtd-docs-private/DOCS/LAUNCH_READY_CHECKLIST.md` (AI-ready vs Operator-only).
+4. **ABN workflow?** See `../dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/` (contract, parsing, allowlists, batch runs).
+5. **Monetization contract?** See `../dtd-docs-private/DOCS/MONETIZATION_ROLLOUT_PLAN.md` (Stripe webhook, product scope, metadata).
+6. **Emergency ops?** See `../dtd-docs-private/DOCS/automation/OPS_RUNBOOK_EMERGENCY_VERIFICATION.md` and `../dtd-docs-private/DOCS/operator-runbook.md`.
 
 **Secrets & credentials:** Intentionally absent from repo. Contact maintainer for ABR GUID, Stripe keys, LLM keys, Supabase connection strings.
 

@@ -22,7 +22,13 @@ run_step() {
 run_step "Type Check" npm run type-check
 run_step "Smoke Tests" npm run smoke
 run_step "Lint" npm run lint
-run_step "Doc Divergence Detector" python3 scripts/check_docs_divergence.py --base-ref origin/main
+DOCS_DIVERGENCE_SCRIPT="$ROOT_DIR/../dtd-docs-private/scripts/check_docs_divergence.py"
+if [[ -f "$DOCS_DIVERGENCE_SCRIPT" ]]; then
+  run_step "Doc Divergence Detector" python3 "$DOCS_DIVERGENCE_SCRIPT" --base-ref origin/master
+else
+  echo "[FAIL] Doc Divergence Detector (missing docs repo at ../dtd-docs-private)"
+  failures=$((failures + 1))
+fi
 run_step "Env Ready Check" ./scripts/check_env_ready.sh "${ENV_TARGET:-production}"
 
 if [[ "$failures" -eq 0 ]]; then

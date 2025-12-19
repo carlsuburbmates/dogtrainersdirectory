@@ -270,7 +270,7 @@ function printMarkdownSummary() {
 
   console.log(`\n**Overall:** ${overallStatus}`);
   console.log('> Note: Manual Stripe drill (Steps 4.1, 4.3) and production UI checks (Step 7) still required.');
-  console.log('> Use `DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md` to continue.\n');
+  console.log('> Use `../dtd-docs-private/DOCS/automation/PHASE_9B_OPERATOR_CHECKLIST.md` to continue.\n');
 }
 
 /**

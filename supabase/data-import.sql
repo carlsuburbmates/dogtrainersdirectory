@@ -1,4 +1,4 @@
--- Generated suburb import based on DOCS/suburbs_councils_mapping.csv
+-- Generated suburb import based on suburbs_councils_mapping.csv (from dtd-docs-private)
 TRUNCATE TABLE suburbs RESTART IDENTITY CASCADE;
 TRUNCATE TABLE councils RESTART IDENTITY CASCADE;
 

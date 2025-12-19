@@ -2,13 +2,6 @@ node_modules
 .next
 .env*
 .DS_Store
-DOCS/
-assessment/
-IMPLEMENTATION_SUMMARY.md
-PHASE5_MERGE_PLAN.md
-WEEK4_ERROR_FIXES.md
-WEEK4_IMPLEMENTATION_SUMMARY.md
-blueprint_handoff.zip
 supabase/.branches
 supabase/.temp
 .supabase

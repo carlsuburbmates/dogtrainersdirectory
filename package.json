@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "validate-import": "python3 scripts/validate_import.py",
+    "docs:guard": "python3 scripts/guard_docs_location.py",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

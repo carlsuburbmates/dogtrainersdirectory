@@ -52,5 +52,6 @@ jobs:
         with:
           name: verify-launch-${{ github.run_id }}
           path: |
-            DOCS/launch_runs/launch-prod-*-ai-preflight.md
-            DOCS/launch_runs/launch-prod-*-ai-preflight.json
+            launch_runs/launch-prod-*-ai-preflight.md
+            launch_runs/launch-prod-*-ai-preflight.json
+            launch_runs/dns-evidence-*.txt

@@ -35,8 +35,12 @@ SERVICE_ENUM = [
     "private_training",
 ]
 
-TARGETS = Path("DOCS/phase2_scraper_targets.csv")
-OUTPUT = Path("supabase/phase2_scraped.json")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DOCS_DIR = (REPO_ROOT.parent / "dtd-docs-private" / "DOCS").resolve()
+DOCS_DIR = Path(os.environ.get("DTD_DOCS_DIR", str(DEFAULT_DOCS_DIR))).resolve()
+
+TARGETS = DOCS_DIR / "phase2_scraper_targets.csv"
+OUTPUT = REPO_ROOT / "supabase" / "phase2_scraped.json"
 
 SCRAPER_FLAG = os.environ.get("SCRAPER_ENABLED", "false").lower()
 
@@ -56,7 +60,7 @@ def run():
     if SCRAPER_FLAG not in {"1", "true", "yes"}:
         raise SystemExit("SCRAPER_ENABLED flag is not enabled. Set SCRAPER_ENABLED=true before running the scraper output generator.")
     if not TARGETS.exists():
-        raise FileNotFoundError("Missing DOCS/phase2_scraper_targets.csv")
+        raise FileNotFoundError(f"Missing phase2_scraper_targets.csv (looked in: {TARGETS})")
 
     rows = []
     with TARGETS.open() as csvfile:

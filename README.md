@@ -14,11 +14,11 @@ Clone both repositories side-by-side:
 
 ```bash
 # Parent directory — clone both repos here
-git clone git@github.com:carlsuburbmates/dtd-app.git
+git clone git@github.com:carlsuburbmates/dogtrainersdirectory.git DTD
 git clone git@github.com:carlsuburbmates/dtd-docs-private.git
 
-# Then enter dtd-app and continue with normal setup
-cd dtd-app
+# Then enter the app repo and continue with normal setup
+cd DTD
 npm install
 npm run dev
 ```

@@ -585,16 +585,38 @@ function getStatusCounts() {
   }
 }
 
+function getLaunchRunsDir() {
+  const candidates = [
+    process.env.DTD_DOCS_DIR,
+    path.resolve(process.cwd(), '..', 'dtd-docs-private', 'DOCS')
+  ].filter(Boolean) as string[]
+
+  for (const candidate of candidates) {
+    const resolved = path.isAbsolute(candidate) ? candidate : path.resolve(process.cwd(), candidate)
+    try {
+      if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) {
+        return path.join(resolved, 'launch_runs')
+      }
+    } catch {
+      // ignore and try next candidate
+    }
+  }
+
+  // CI-safe fallback: keep artifacts inside this repo so GitHub Actions can upload them.
+  return path.join(process.cwd(), 'launch_runs')
+}
+
 function writeArtifacts() {
   const now = new Date()
   const date = now.toISOString().slice(0, 10).replace(/-/g, '')
-  const mdPath = path.join(process.cwd(), 'DOCS', 'launch_runs', `launch-prod-${date}-ai-preflight.md`)
-  const jsonPath = path.join(process.cwd(), 'DOCS', 'launch_runs', `launch-prod-${date}-ai-preflight.json`)
+  const runsDir = getLaunchRunsDir()
+  const mdPath = path.join(runsDir, `launch-prod-${date}-ai-preflight.md`)
+  const jsonPath = path.join(runsDir, `launch-prod-${date}-ai-preflight.json`)
   const sha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim()
   const counts = getStatusCounts()
   const envTarget = process.env.ENV_TARGET ?? 'staging'
 
-  fs.mkdirSync(path.dirname(mdPath), { recursive: true })
+  fs.mkdirSync(runsDir, { recursive: true })
   if (!fs.existsSync(mdPath)) {
     fs.writeFileSync(mdPath, `${DOCS_DIVERGENCE_OPT_OUT}\n# Launch Run – production – ${date}\n\n`)
   } else {
@@ -646,7 +668,7 @@ function writeArtifacts() {
   // Write DNS evidence artifact if we captured any dig outputs
   if (Object.keys(dnsEvidence).length > 0) {
     const tsSafe = now.toISOString().replace(/[:.]/g, '').slice(0, 15)
-    const dnsPath = path.join(process.cwd(), 'DOCS', 'launch_runs', `dns-evidence-${tsSafe}.txt`)
+    const dnsPath = path.join(runsDir, `dns-evidence-${tsSafe}.txt`)
     const dnsLines = Object.entries(dnsEvidence)
       .map(([d, v]) => `### ${d}\n\n${v}`)
       .join('\n\n')

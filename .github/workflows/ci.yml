@@ -9,16 +9,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate suburb CSV counts and distance sanity
+      - name: Validate suburb import counts and distance sanity
         run: |
           python3 - <<'PY'
-          import csv
+          import re
           from math import radians, sin, cos, atan2, sqrt
 
-          rows = list(csv.DictReader(open('DOCS/suburbs_councils_mapping.csv')))
-          assert len(rows) == 138, f"Expected 138 suburb rows (excl header), got {len(rows)}"
-          councils = {r['council'] for r in rows}
-          assert len(councils) == 28, f"Expected 28 councils, got {len(councils)}"
+          sql = open('supabase/data-import.sql', encoding='utf-8').read().splitlines()
+
+          def extract_insert_values(lines, table):
+            start = None
+            for i, line in enumerate(lines):
+              if re.match(rf"^INSERT\\s+INTO\\s+{table}\\b", line, re.IGNORECASE):
+                start = i + 1
+                break
+            assert start is not None, f"Missing INSERT INTO {table} in supabase/data-import.sql"
+
+            values = []
+            for line in lines[start:]:
+              s = line.strip()
+              if not s:
+                continue
+              values.append(s)
+              if s.endswith(";"):
+                break
+            assert values and values[-1].endswith(";"), f"INSERT INTO {table} did not terminate with ';'"
+            return values
+
+          councils_values = extract_insert_values(sql, "councils")
+          suburbs_values = extract_insert_values(sql, "suburbs")
+
+          council_tuples = [v for v in councils_values if v.startswith("(")]
+          suburb_tuples = [v for v in suburbs_values if v.startswith("(")]
+
+          assert len(council_tuples) == 28, f"Expected 28 councils, got {len(council_tuples)}"
+          assert len(suburb_tuples) == 138, f"Expected 138 suburbs, got {len(suburb_tuples)}"
 
           def haversine(p1, p2):
             lat1, lon1 = p1; lat2, lon2 = p2
@@ -29,15 +54,22 @@ jobs:
             c = 2 * atan2(sqrt(a), sqrt(1 - a))
             return R * c
 
-          coords = {r['suburb']: (float(r['latitude']), float(r['longitude'])) for r in rows}
-          try:
-            dist = haversine(coords['Fitzroy'], coords['Brighton'])
-          except KeyError as e:
-            raise SystemExit(f"Missing suburb in CSV: {e}")
+          def parse_coords(tuple_line):
+            # Example:
+            # ('Fitzroy', 3065, -37.8010382, 144.9792611, (SELECT id FROM councils WHERE name = 'City of Yarra')),
+            m = re.match(r"^\\('([^']+)'\\s*,\\s*\\d+\\s*,\\s*([\\-0-9.]+)\\s*,\\s*([\\-0-9.]+)\\s*,", tuple_line)
+            assert m, f"Could not parse suburb tuple: {tuple_line}"
+            return m.group(1), (float(m.group(2)), float(m.group(3)))
+
+          coords = dict(parse_coords(t) for t in suburb_tuples)
+          for suburb in ("Fitzroy", "Brighton"):
+            assert suburb in coords, f"Missing suburb in data-import.sql: {suburb}"
+
+          dist = haversine(coords["Fitzroy"], coords["Brighton"])
 
           # Allow small drift due to coordinate updates
           assert 9.0 <= dist <= 13.5, f"Expected Fitzroy->Brighton ~12km (+/-), got {dist:.2f} km"
-          print('CSV counts and distance checks passed.')
+          print('Import counts and distance checks passed.')
           PY
 
   secret-scan:
