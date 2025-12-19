@@ -335,14 +335,17 @@ export interface EmergencyResource {
 }
 
 export interface EmergencyTriageLog {
-  id: number
+  id: string
+  created_at: string
+  dog_age: string | null
+  issues: string[] | null
+  decision_source: 'llm' | 'deterministic' | 'manual_override'
+  classification: string
   situation?: string
   location?: string
   contact?: string
-  classification?: string
   priority?: string
   follow_up_actions?: string[]
-  decision_source?: 'llm' | 'deterministic' | 'manual_override'
   ai_mode?: string
   ai_provider?: string
   ai_model?: string
@@ -361,7 +364,6 @@ export interface EmergencyTriageLog {
   feedback_notes?: string
   metadata?: Record<string, unknown>
   ai_prompt_version?: string
-  created_at?: string
 }
 
 export interface FeaturedPlacement {

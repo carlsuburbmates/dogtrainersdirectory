@@ -9,6 +9,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const situation = body.situation || body.message || body.text
     const { location, contact } = body
+    const dogAge = body.dog_age ?? body.age ?? null
+    const issues = Array.isArray(body.issues) ? body.issues : null
 
     if (!situation) {
       return NextResponse.json(
@@ -81,6 +83,8 @@ export async function POST(request: Request) {
           situation,
           location,
           contact,
+          dog_age: dogAge,
+          issues,
           classification,
           priority,
           follow_up_actions: followUpActions,
