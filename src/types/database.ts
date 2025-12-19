@@ -334,6 +334,36 @@ export interface EmergencyResource {
   updated_at: string
 }
 
+export interface EmergencyTriageLog {
+  id: number
+  situation?: string
+  location?: string
+  contact?: string
+  classification?: string
+  priority?: string
+  follow_up_actions?: string[]
+  decision_source?: 'llm' | 'deterministic' | 'manual_override'
+  ai_mode?: string
+  ai_provider?: string
+  ai_model?: string
+  description?: string
+  predicted_category?: string
+  recommended_flow?: string
+  confidence?: number
+  classifier_version?: string
+  source?: string
+  user_suburb_id?: number
+  user_lat?: number
+  user_lng?: number
+  resolution_category?: string
+  was_correct?: boolean
+  resolved_at?: string
+  feedback_notes?: string
+  metadata?: Record<string, unknown>
+  ai_prompt_version?: string
+  created_at?: string
+}
+
 export interface FeaturedPlacement {
   id: number
   business_id: number
@@ -342,7 +372,11 @@ export interface FeaturedPlacement {
   stripe_payment_intent_id?: string
   start_date: string
   end_date: string
+  expiry_date?: string | null
   status: 'active' | 'expired' | 'cancelled'
+  priority: number
+  slot_type: 'hero' | 'premium' | 'standard'
+  active: boolean
   created_at: string
 }
 
@@ -374,6 +408,20 @@ export interface WebhookEvent {
   stripe_event_id: string
   event_type: string
   processed: boolean
+  created_at: string
+}
+
+export interface PaymentAudit {
+  id: string
+  business_id?: number | null
+  plan_id: string
+  event_type: string
+  status: string
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  metadata?: Record<string, unknown>
+  originating_route?: string | null
+  sync_error?: string | null
   created_at: string
 }
 
