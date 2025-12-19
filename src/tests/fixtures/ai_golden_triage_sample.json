@@ -1,0 +1,7 @@
+[
+  { "id": 1, "text": "My dog is bleeding and I'm scared", "gold_label": "emergency" },
+  { "id": 2, "text": "Can you give me advice on housetraining?", "gold_label": "advice" },
+  { "id": 3, "text": "Looking for a trainer for basic obedience classes", "gold_label": "non-emergency" },
+  { "id": 4, "text": "Dog is choking and can't breathe", "gold_label": "emergency" },
+  { "id": 5, "text": "Need help with separation anxiety", "gold_label": "advice" }
+]

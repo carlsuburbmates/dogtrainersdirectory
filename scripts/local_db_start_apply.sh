@@ -110,13 +110,9 @@ for i in {1..30}; do
 done
 
 # Apply schema and seed files
+MIGRATIONS_DIR="supabase/migrations"
 SCHEMA_FILE="supabase/schema.sql"
 SEED_FILE="supabase/data-import.sql"
-
-if [ ! -f "$SCHEMA_FILE" ]; then
-  echo "Schema file $SCHEMA_FILE not found in repo — aborting." >&2
-  exit 1
-fi
 
 # If seeding-only, confirm container is running and apply seeds only
 if [ "$SEED_ONLY" = true ]; then
@@ -137,11 +133,36 @@ if [ "$SEED_ONLY" = true ]; then
   exit 0
 fi
 
-# Normal path: apply schema (and seed unless --no-seed passed)
-echo "Applying schema: $SCHEMA_FILE to local DB (127.0.0.1:${PG_PORT})"
-PGPASSWORD="${PG_PASS}" psql "postgresql://postgres:${PG_PASS}@127.0.0.1:${PG_PORT}/postgres?sslmode=disable" -f "$SCHEMA_FILE" || {
-  echo "Schema apply reported errors — check output above. Continuing so you can inspect the DB." >&2
-}
+# Prefer applying migrations first (if any exist). Otherwise fall back to schema.sql
+if [ -d "$MIGRATIONS_DIR" ] && ls "$MIGRATIONS_DIR"/*.sql >/dev/null 2>&1; then
+  echo "Found SQL migrations in $MIGRATIONS_DIR — applying in lexical order"
+  for f in $(ls "$MIGRATIONS_DIR"/*.sql | sort); do
+    echo "Applying migration $f"
+    MIGRATION_OUTPUT=$(PGPASSWORD="${PG_PASS}" psql "postgresql://postgres:${PG_PASS}@127.0.0.1:${PG_PORT}/postgres?sslmode=disable" -f "$f" 2>&1)
+    MIGRATION_EXIT=$?
+    if [ $MIGRATION_EXIT -ne 0 ]; then
+      # Check if error is due to idempotent operations (already exists)
+      if echo "$MIGRATION_OUTPUT" | grep -qiE "already exists|duplicate key value|relation .* already exists|column .* already exists"; then
+        echo "Warning: Migration $f reported 'already exists' or duplicate errors. Continuing. Output:"
+        echo "$MIGRATION_OUTPUT"
+      else
+        echo "Migration $f reported errors — aborting. Check output below." >&2
+        echo "$MIGRATION_OUTPUT" >&2
+        exit 1
+      fi
+    fi
+  done
+else
+  # Fallback to applying schema snapshot
+  if [ ! -f "$SCHEMA_FILE" ]; then
+    echo "Schema file $SCHEMA_FILE not found in repo — aborting." >&2
+    exit 1
+  fi
+  echo "Applying schema: $SCHEMA_FILE to local DB (127.0.0.1:${PG_PORT})"
+  PGPASSWORD="${PG_PASS}" psql "postgresql://postgres:${PG_PASS}@127.0.0.1:${PG_PORT}/postgres?sslmode=disable" -f "$SCHEMA_FILE" || {
+    echo "Schema apply reported errors — check output above. Continuing so you can inspect the DB." >&2
+  }
+fi
 
 if [ "$NO_SEED" = false ]; then
   if [ -f "$SEED_FILE" ]; then

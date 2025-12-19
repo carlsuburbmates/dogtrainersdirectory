@@ -6,7 +6,7 @@
 
 # Dog Trainers Directory - Development Setup Guide
 
-Documentation home: `DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
+Documentation home: `dtd-docs-private/DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
 
 
 
@@ -60,6 +60,18 @@ We recommend using a remote Supabase dev/staging project as the default developm
    - Generate a Service Role Key from Settings > API
    - Get ABR GUID from Australian Business Register (for ABN workflows)
    - Optional (admin tasks / CI): SUPABASE_CONNECTION_STRING — secure secret for migrations and backups
+
+   #### Optional: auto-export your `.env.local`
+
+   The repo now includes a `.envrc` that tells [direnv](https://direnv.net/) to export `.env.local` automatically. This keeps local workflows consistent with the harness export step.
+
+   ```bash
+   brew install direnv         # or follow the instructions for your shell
+   echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc   # or bashrc/fish config
+   direnv allow
+   ```
+
+   After `direnv allow`, every time you `cd` into the repo the `.env.local` values become available to `npm run dev`, `npm run verify:launch`, etc., so you no longer need to run `set -a && source .env.local && set +a` manually.
 
 4. **Recommended remote DB / dashboard approach (default — no Docker required)**
 
@@ -187,15 +199,15 @@ supabase/
 - `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
 - `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
-> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
+> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `dtd-docs-private/DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
 
 ---
 
 ## ABN verification — developer & ops workflow
-The project implements a canonical ABN/ABR verification flow (see `DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
+The project implements a canonical ABN/ABR verification flow (see `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/ABR-ABN-Lookup.md`). Key principles: we only mark an ABN as `verified` when ABN exists in the ABR response and `ABNStatus === 'Active'`. All writes are gated and we persist raw/parsed `matched_json` for auditability.
 
 Core developer files and scripts
-- `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`, `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
+- `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv`, `dtd-docs-private/DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` — CSV templates for ops-controlled allowlists.
 - `scripts/generate_allowlist.py` — validate CSVs and write `scripts/controlled_abn_list.{staging,prod}.json`. Example (archived) at `scripts/examples/controlled_abn_list.example.json`. Generated files are git-ignored; use the generator when needed.
 - `scripts/abn_controlled_batch.py` — ops-only controlled batch runner (dry-run default; `--apply` required to write). Requires `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING` and `ABR_GUID` environment variables for applied runs.
 - `scripts/abn_recheck.py` — scheduled re-check implementation used by `.github/workflows/abn-recheck.yml`.
@@ -219,7 +231,7 @@ python3 scripts/test_abn_recheck.py -q
 ```
 
 Safety & governance
-- The roll-out checklist in `DOCS/ABN-Rollout-Checklist.md` is your canonical runbook for staging→production.
+- The roll-out checklist in `dtd-docs-private/DOCS/ABN-Rollout-Checklist.md` is your canonical runbook for staging→production.
 - Always run dry-runs first and use small selected allowlists for tests.
 - Keep `AUTO_APPLY` off in scheduled runs until you're ready to gradually enable writes in production (monitor for 48–72 hours after enabling).
 
@@ -240,6 +252,37 @@ Safety & governance
    ```bash
    npm run lint          # Check code style
    npm run type-check     # Verify TypeScript types
+
+## Optional UI: shadcn/ui (manual install — for humans)
+
+If you want to adopt shadcn/ui primitives (table, card, badge, button) for the admin UI, follow these manual install steps locally.
+
+> These are *instructions only* — do not run from CI. Execute locally and commit any frontend changes in a separate PR.
+
+1) Install packages
+
+```bash
+# npm
+npm install @shadcn/ui @radix-ui/react-icons
+
+# or pnpm
+pnpm add @shadcn/ui @radix-ui/react-icons
+```
+
+2) Optional: use the CLI to scaffold components
+
+```bash
+# one-time scaffold via npx
+npx shadcn-ui@latest init
+# add core components (button, card, table, badge)
+npx shadcn-ui add button card table badge
+```
+
+3) Follow CLI prompts to place components under `src/components` and update `tailwind.config.js` if requested.
+
+Notes:
+- Prefer server-rendered shadcn components or light client wrappers to avoid large client bundles.
+- If you want me to scaffold the components and port the admin page to use them, say “scaffold UI” and I’ll implement the follow-up PR.
    ```
 
    > **Note:** Vitest suites (`*.test.ts*` / `*.spec.ts*`) are excluded from the TypeScript project until their helper typings are refactored. `npm run type-check` covers application/runtime code only.
@@ -253,6 +296,8 @@ npm test
 # Type checking
 npm run type-check
 ```
+
+> **Local DB note:** All harness and application tests assume the remote Supabase dev/staging project defined in `.env.local`. Do **not** point tests at a local Postgres instance unless you’re explicitly running the optional Docker scripts. Missing remote credentials (e.g., no `SUPABASE_SERVICE_ROLE_KEY`/`SUPABASE_CONNECTION_STRING`) is the most common reason harness checks fail.
 
 ## 7. Environment Variables Reference
 
@@ -330,7 +375,7 @@ const FEATURE_FLAGS = {
 
 1. Check the Phase 1 Implementation Plan: `PHASE1_IMPLEMENTATION_PLAN.md`
 2. Review database schema: `supabase/schema.sql`
-3. Consult project documentation in `DOCS/` directory
+3. Consult project documentation in `dtd-docs-private/DOCS/` directory
 
 ## 12. Next Steps
 
@@ -405,3 +450,27 @@ node scripts/verify_decryption.js
 Integration tests (CI/local):
 - The repo now contains a vitest integration test at `src/tests/integration/decrypt.integration.test.ts`.
 - This test is skipped unless both `SUPABASE_CONNECTION_STRING` and `SUPABASE_PGCRYPTO_KEY` are present in the environment. It uses `pg` to insert an encrypted test record, validates `get_trainer_profile(id, p_key)` returns decrypted fields, and validates `get_trainer_profile(id, NULL)` returns NULL.
+
+## AI evaluation harness (offline golden sets)
+
+We include a small, dependency-light evaluation runner to run offline "golden set" evaluations and optionally persist results to the DB (uses `ai_evaluation_runs`). The script is intentionally safe and will not persist anything unless you provide a Supabase service-role key.
+
+Examples (zsh):
+
+# Dry-run (no DB creds) — prints results only
+node ./scripts/evaluate_ai.ts --pipeline=triage --input=src/tests/fixtures/ai_golden_triage_sample.json --dataset-version=dev-1
+
+# Persist results (one-off) — set service role key in the shell only for the run
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="$YOUR_SUPABASE_SERVICE_ROLE_KEY" \
+node ./scripts/evaluate_ai.ts --pipeline=triage --input=src/tests/fixtures/ai_golden_triage_sample.json --dataset-version=v1
+
+# Local dev: export envs for the session and run multiple commands
+export NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+export NEXT_PUBLIC_SUPABASE_ANON_KEY="public-anon-key"
+export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+node ./scripts/evaluate_ai.ts --pipeline=triage --dataset-version=v1
+
+Notes:
+- Avoid pasting secrets into public places. Use the shell or CI secrets to provide SUPABASE_SERVICE_ROLE_KEY.
+- For CI runs, add the service role key to your secret store so this script can persist results in a controlled test environment.

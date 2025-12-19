@@ -16,24 +16,26 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry'
   },
-  webServer: {
-    command: `PORT=${PORT} NEXT_TELEMETRY_DISABLED=1 E2E_TEST_MODE=1 npm run dev -- --hostname 127.0.0.1 --port ${PORT}`,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'anon',
-      SUPABASE_URL: process.env.SUPABASE_URL || 'http://localhost',
-      SUPABASE_PGCRYPTO_KEY: process.env.SUPABASE_PGCRYPTO_KEY || 'test-key',
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-role-key',
-      FEATURE_MONETIZATION_ENABLED: '1',
-      NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED: '1',
-      STRIPE_PRICE_FEATURED: 'price_test_e2e',
-      E2E_TEST_MODE: '1',
-      NEXT_PUBLIC_E2E_TEST_MODE: '1'
+  ...(process.env.SKIP_PLAYWRIGHT_WEBSERVER === '1' ? {} : {
+    webServer: {
+      command: `PORT=${PORT} NEXT_TELEMETRY_DISABLED=1 E2E_TEST_MODE=1 npm run dev -- --hostname 127.0.0.1 --port ${PORT}`,
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      env: {
+        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'anon',
+        SUPABASE_URL: process.env.SUPABASE_URL || 'http://localhost',
+        SUPABASE_PGCRYPTO_KEY: process.env.SUPABASE_PGCRYPTO_KEY || 'test-key',
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-role-key',
+        FEATURE_MONETIZATION_ENABLED: '1',
+        NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED: '1',
+        STRIPE_PRICE_FEATURED: 'price_test_e2e',
+        E2E_TEST_MODE: '1',
+        NEXT_PUBLIC_E2E_TEST_MODE: '1'
+      }
     }
-  },
+  }),
   projects: [
     {
       name: 'chromium',

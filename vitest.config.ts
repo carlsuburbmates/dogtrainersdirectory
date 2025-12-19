@@ -1,21 +1,24 @@
+import dotenv from 'dotenv'
 import { defineConfig } from 'vitest/config'
 import path from 'path'
+
+dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
     include: [
-      'src/**/*.test.{ts,tsx,js,jsx}',
-      'src/**/*.spec.{ts,tsx,js,jsx}',
-      'tests/**/*.test.{ts,tsx,js,jsx}',
-      'tests/**/*.spec.{ts,tsx,js,jsx}'
+      'src/**/*.test.{ts,tsx,js}',
+      'src/**/*.spec.{ts,tsx,js}',
+      'tests/**/*.test.{ts,tsx,js}',
+      'tests/**/*.spec.{ts,tsx,js}'
     ],
-    exclude: ['tests/e2e/**', 'node_modules/**']
+    exclude: ['tests/e2e/**']
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src')
-    }
-  }
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
 })

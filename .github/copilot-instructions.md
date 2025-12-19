@@ -1,73 +1,286 @@
-<!-- Copilot / AI agent instructions for quick onboarding -->
-# Quick guide for AI coding agents — dogtrainersdirectory.com.au
+<!-- Copilot / AI agent instructions for dogtrainersdirectory.com.au -->
+# AI Agent Onboarding: dogtrainersdirectory.com.au
 
-Focus: be precise and make only changes that align with the single-source-of-truth docs contained in /DOCS. When in doubt, prefer preserving canonical files (blueprint_ssot_v1.1.md, suburbs_councils_mapping.csv, implementation/*).
+**Purpose:** Hyperlocal dog trainer directory for Melbourne (28 councils, 138 suburbs).  
+**Stack:** Next.js 14 App Router, React 19, TypeScript, Supabase (Postgres + Auth + Edge Functions), Stripe (monetization, deferred).  
+**Node:** v24 (Active LTS, mandatory).
 
-Core summary
-- Purpose: hyperlocal trainer directory for 28 Melbourne councils (see `blueprint_ssot_v1.1.md`).
-- Stack (official / repo-aligned): **Next.js 14 App Router**, **Node.js v24 (Active LTS)** for dev/CI/prod, and **React at the latest stable version supported by Next.js** (React 19 once GA). Supabase (Postgres + Edge Functions + CLI) is the canonical backend; treat Supabase DB as the only source of persisted state.
-- Phase 2 (triage + filtering) is **complete and locked**. The UI (`src/app/page.tsx`, `src/app/search/page.tsx`), shared helpers (`src/lib/triage.ts`), and RPC (`search_trainers`) must not be rewritten back to the pre-fix “radius only” implementation. Reference `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md` for the accepted behavior and QA evidence.
+---
 
-High-value files to read first
-- `DOCS/blueprint_ssot_v1.1.md` — architecture, domain model, taxonomies, and UX rules.
-- `DOCS/MONETIZATION_ROLLOUT_PLAN.md` — Stripe monetization SSOT (product scope, metadata contract, webhook/legal requirements).
-- `DOCS/implementation/master_plan.md` — rollout phases, priorities, and constraints.
-- `suburbs_councils_mapping.csv` — authoritative geographic dataset (used for seeding and lookup).
+## Start Here: The Five Key Docs
 
-Project-specific patterns & constraints (do not change unless spec updates)
-- Taxonomies are locked enums (age/stage, 13 behaviour issues, service types). Never add free-text categories instead of enum values.
-- "Age-first" UX: all search flows must collect age/stage before other filters (this is a product invariant in the blueprint).
-- Geography: users select suburbs only; council/region must be derived from the CSV mapping — never expose LGA acronyms in UI.
-- Verification: ABN verification flows are automatic via ABR API. Accept name matches >=~85% as verified; otherwise flag for manual review (see ABN doc for tolerance and DB schema examples).
-- Data hygiene: no hard-deletes for Businesses; prefer soft-delete flags and store verification audit records as described in ABN doc.
+**Read these BEFORE any code change:**
 
--Integration & infra notes (discoverable here — secrets are not in repo)
-- ABR (ATO) API: example usage shown in ABN doc: GET /abr/abn/{ABN}?businessName={name}. A GUID credential is required (not in repo).
-- Stripe: webhook-driven flows — expect webhook endpoints that create/renew featured placements and future subscriptions; **always verify signatures**, return a 2xx as soon as persistence succeeds, and make handlers idempotent. Test locally with the Stripe CLI (`stripe listen`) before deploying. See flow + sample events in `DOCS/MONETIZATION_ROLLOUT_PLAN.md`.
-- DeepAgent / LLM orchestration: design references exist in the docs (webhook parsing, LLM-triggered workflows). Confirm runtime endpoints and secrets with maintainers.
+1. `DOCS/blueprint_ssot_v1.1.md` – Master spec: locked taxonomies (ages, 13 behavior issues, 5 service types, regions), "age-first" UX invariant, 28 councils + 138 suburbs, ABN verification rules (≥85% auto-match).
+2. `DOCS/IMPLEMENTATION_REALITY_MAP.md` – Truth table of what works now (frontend flows, APIs, automations, scripts). Specifies CONFIRMED-WORKING vs UNKNOWN for rapid triage.
+3. `DOCS/LAUNCH_READY_CHECKLIST.md` – Go/no-go gates: `npm run verify:launch` (AI-ready FAIL=0), environment checks, emergency APIs, ABN fallback metrics.
+4. `DOCS/MONETIZATION_ROLLOUT_PLAN.md` – Stripe webhook contract, payment audit schema, feature-flag guards (`FEATURE_MONETIZATION_ENABLED`), Playwright E2E bypass (`E2E_TEST_MODE`).
+5. `DOCS/operator-runbook.md` – Ops procedures: ABN allowlist generation, controlled batch runs, cron job triggers, alert escalation.
 
--Practical dev tasks & commands (docs-driven)
-- Regenerate PDFs from markdown (docs mention pandoc):
-  - `pandoc DOCS/blueprint_ssot_v1.1.md -o blueprint_ssot_v1.1.pdf`
-- Quick data checks for CSV:
-  - `wc -l DOCS/suburbs_councils_mapping.csv` # expect header + 138 rows
-  - `cut -d',' -f2 DOCS/suburbs_councils_mapping.csv | sort -u | wc -l` # expect header + 28 councils
+Cross-check these whenever planning UX, API, or data changes. If contradictions exist, update the SSOT first (RFC → merge → implement code).
 
-- ABN allowlists & ops helpers:
-  - `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv` & `DOCS/automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv` are CSV templates to maintain curated allowlists for controlled writes
-  - `scripts/generate_allowlist.py` converts the CSV to `scripts/controlled_abn_list.{staging,prod}.json` and validates entries
-  - convenient npm scripts are available: `npm run allowlist:staging|prod`, `npm run abn:batch:staging|prod` (dry-run), `npm run abn:batch:staging:apply|prod:apply` (applies changes with AUTO_APPLY and service-role)
+---
 
-- Recommended development setup — REMOTE-FIRST (default):
-  - Use Node.js v24 everywhere:
-    - `nvm install 24 && nvm use 24`
-  - Next.js 14 App Router + TypeScript (matching blueprint expectations).
-  - Default workflow: use a remote Supabase dev/staging project for local app development (this provides Auth, Edge Functions, and Storage without needing to run local services). Configure `.env.local` to point at the remote project.
-  - Optional/local (advanced): Start Supabase locally for functions/DB tests using the Supabase CLI if you specifically need local emulation:
-    - `supabase start`
-  - Test Stripe webhooks locally with the Stripe CLI (optional):
-    - Prefer using the repo's dedicated webhook dev harness so you don't accidentally forward events to another local project (for example something bound to :3000). The repo provides `webhook/server_dtd.py` which defaults to port **4243** and endpoint `/api/webhooks/stripe-dtd`.
-    - Example (recommended for dogtrainersdirectory development):
-      - `stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd`
+## Architecture Essentials
 
-- Linting: `npm run lint` now invokes the ESLint CLI directly (`eslint .` via `eslint.config.mjs`) because `next lint` was removed in Next.js 16.
-- CI safety: The `Check schema vs migrations` PR check applies every migration to a scratch Postgres and diffs `supabase/schema.sql`. Keep the snapshot aligned with migrations before opening PRs.
-Risk & governance reminders
-- Treat `DOCS/blueprint_ssot_v1.1.md`, `DOCS/suburbs_councils_mapping.csv`, and `DOCS/FILE_MANIFEST.md` as immutable; any geography change needs an approved RFC plus manifest note, and CI should fail if council/suburb counts drift.
-- Phase 2+ ingestion (web scrapers, bulk imports) must remain behind feature flags with QA sampling (≥10 scaffolded listings/run) until accuracy >95% and product sign-off.
-- Keep Stripe/monetization features dark until master-plan metrics are met (≥50 claimed trainers, stable ABN verification rate, review volume). Reference the master plan before exposing paid UI.
-- AI moderation only flags—humans approve/reject reviews and profiles. Track false positives and add transparency copy when touching moderation flows.
-- Maintain the ≥85% ABN auto-match rule, review mismatches within 24 hours, log ABR responses, and schedule yearly re-verification jobs.
-- Assign ownership for emergency vet/shelter data; verify contacts quarterly via `/api/emergency/verify` + admin queue surfacing, and highlight records older than 90 days in admin tooling before relying on them in UX.
+### Frontend (Locked Flows — Read Phase 2 Completion Report)
 
-When you need to change something
-- If a change affects product invariants (taxonomies, age-first rules, geography mapping), update `DOCS/blueprint_ssot_v1.1.md` or `implementation/master_plan.md` first — those are the SSOT.
-- If you must change CSV data, document the change in FILE_MANIFEST.md and ensure the mapping remains consistent with the blueprint.
-- Add tests or data migrations where relevant (e.g., migration enforcing enum values, ABN verification audit retention).
+**Home & Search** (`src/app/page.tsx`, `src/app/search/`)  
+- Age-first triage enforced: age select → issue multi-select → suburb search → results.
+- Uses locked enums from `src/types/database.ts`: `AgeSpecialty`, `BehaviorIssue`, `ServiceType`.
+- Calls `/api/triage` (RPC wrapper) → `search_trainers` Postgres function.
 
-If you can't find infra details
-- Secrets, credentials, and runtime endpoints are intentionally absent — contact a repo maintainer or check the deployment repository/environment for: ABR GUID, Stripe keys, DeepAgent webhook URL, and any Supabase/DB connection info.
- - Secrets, credentials, and runtime endpoints are intentionally absent — contact a repo maintainer or check the deployment repository/environment for: ABR GUID, Stripe keys, DeepAgent webhook URL, and any Supabase/DB connection info.
- - CI/security guardrail: Do NOT commit Stripe secret keys or webhook signing secrets. CI should include a secrets-scan (fail on `sk_live_|sk_test_|whsec_` patterns) — developers should store secrets in CI secrets manager or local `.env` files excluded from the repo.
+**Directory Browse** (`src/app/directory/page.tsx`)  
+- Displays `SearchResult` with `is_featured` and `abn_verified` metadata.
+- No client-side filtering; all filtering is server-side or RPC.
 
-Follow-up: ask maintainers if you'd like a runnable example app or seed scripts; current repo contains authoritative design & data only.
+**Emergency Triage** (`src/app/emergency`, `src/components/triage/EmergencyGate.tsx`)  
+- Server-rendered shell + minimal client controls.
+- Maps medical/behavior inputs only to SSOT-approved issues (no free-text).
+- Calls `/api/emergency/triage` → `medicalDetector.ts` for LLM fallback.
+
+**Trainer Profile** (`src/app/trainers/[id]/page.tsx`)  
+- Server-renders business details + reviews.
+- Note: legacy slug profile (`src/app/trainer/[slug]`) was **removed in Phase 4** — all links now point to `/trainers/[id]`.
+
+**Admin Dashboards** (`src/app/admin/{page,ai-health,cron-health}`)  
+- Real-time health status, telemetry overrides, ABN fallback stats, latency metrics.
+- `AdminStatusStrip.tsx` injects cron/ABN heartbeat into every admin page footer.
+
+**Monetization Upgrade** (`src/app/promote/page.tsx`)  
+- Feature-flagged: dark unless `FEATURE_MONETIZATION_ENABLED` (server) AND `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED` (client).
+- Playwright E2E mode (`E2E_TEST_MODE=true`) stubs Stripe calls for testing without real keys.
+
+### Backend (APIs, Automations, Verification)
+
+**Search & Triage RPC** (`src/lib/api.ts`, `/api/triage`)  
+- Calls Postgres `search_trainers(lat, lon, radius, age, issue, suburb, is_featured)` function.
+- Results include `is_featured`, `abn_verified`, verification status.
+
+**ABN Verification** (`src/lib/abr.ts`, `/api/abn/verify`)  
+- Canonical parser for ABR API responses (JSON + SOAP fallback).
+- Name match ≥~85% + ABNStatus='Active' → verified badge.
+- Fallback events logged to `abn_fallback_events` table; metrics exposed in `/api/admin/abn/fallback-stats`.
+
+**Emergency APIs** (`src/app/api/emergency/*`)  
+- `/api/emergency/triage` – detects medical/behavior emergencies, calls LLM if needed, routes to crisis trainers or vets.
+- `/api/emergency/verify` – cron job that re-verifies emergency resource contacts (quarterly, fallible on API errors).
+- `/api/emergency/triage/weekly` – aggregates triage stats for ops weekly bulletin.
+
+**Stripe Webhooks** (`src/app/api/webhooks/stripe/route.ts`)  
+- Verifies signature (critical: never skip).
+- Idempotent handler: dedupes events, upserts `business_subscription_status`, logs to `payment_audit`.
+- Returns 2xx as soon as DB succeeds (async failures logged as `sync_error`).
+
+**Moderation & AI** (`src/lib/moderation.ts`, `src/lib/llm.ts`, `/api/admin/queues`)  
+- AI flags reviews/profiles only; humans approve/reject.
+- LLM provider configurable: `LLM_PROVIDER=zai` (Z.AI) or `openai`. Fallback to deterministic rules on LLM unavailability.
+- False positives tracked for transparency updates.
+
+### Data & Validation
+
+**Taxonomies** (locked enums, never add free-text)  
+- `AgeSpecialty`: `puppies_0_6m`, `adolescent_6_18m`, `adult_18m_7y`, `senior_7y_plus`, `rescue_dogs`
+- `BehaviorIssue`: 13 values (pulling_on_lead, separation_anxiety, excessive_barking, … socialisation)
+- `ServiceType`: 5 values (Puppy training, Obedience training, Behaviour consultations, Group classes, Private training)
+- `ResourceType`: trainer, behaviour_consultant, emergency_vet, urgent_care, emergency_shelter
+- `Region`: Inner City, Northern, Eastern, South Eastern, Western (auto-derived from suburb)
+
+**Geography** (`DOCS/suburbs_councils_mapping.csv`)  
+- 138 suburb rows, 28 unique councils.
+- Never expose LGA acronyms in UI; always derive council/region from suburb selection.
+- CSV is immutable; any change requires RFC + FILE_MANIFEST update + CI drift check.
+
+**Verification Status** (computed, not free-text)  
+- ABN verified: `ABNStatus='Active' && name_match >= 0.85`
+- Unclaimed trainer: new Businesses are marked `claimed=false` until trainer confirms email.
+- Soft-delete only: `is_deleted=true` flag, never hard-delete.
+
+---
+
+## Development Workflow
+
+### Quick Start
+
+```bash
+nvm install 24 && nvm use 24
+npm ci                          # Use remote Supabase dev/staging (default)
+npm run dev                     # Start Next.js at :3000
+```
+
+### Verification & QA
+
+```bash
+npm run type-check              # tsc --noEmit (strict mode)
+npm run lint                    # eslint . (via eslint.config.mjs)
+npm run smoke                   # Vitest unit tests (trainer profiles, search, emergency, admin, error logging)
+npm run test                    # Full Vitest suite
+npm run test:watch              # Dev mode
+npm run e2e                     # Playwright E2E (search, emergency, monetization, admin)
+npm run verify:launch           # AI Launch Gate: type-check → smoke → lint → doc-divergence → env-ready
+```
+
+**Pre-prod verification:**  
+```bash
+ENV_TARGET=staging ./scripts/preprod_verify.sh    # Validates staging env
+ENV_TARGET=prod ./scripts/preprod_verify.sh       # Validates prod env (operator only)
+```
+
+**ABN scripts:**  
+```bash
+npm run allowlist:staging                         # Generate staging allowlist from CSV
+npm run allowlist:prod                            # Generate prod allowlist from CSV
+npm run abn:batch:staging                         # Dry-run against staging allowlist
+npm run abn:batch:staging:apply                   # Apply with AUTO_APPLY=true
+```
+
+### Local Database (Optional, Advanced)
+
+For isolated migration testing:
+```bash
+npm run db:start                 # Start Supabase emulator, apply migrations, seed
+npm run db:seed                  # Seed only (no reset)
+npm run dev:local                # Run app against local Supabase
+```
+
+---
+
+## Critical Rules & Constraints
+
+1. **Phase 2 is locked.** UI (`src/app/page.tsx`, `src/app/search/`), helpers (`src/lib/triage.ts`), and RPC (`search_trainers`) must NOT revert to "radius only" behavior. See `DOCS/PHASE_2_FINAL_COMPLETION_REPORT.md` for QA evidence.
+
+2. **Taxonomy enums are immutable.** Never add free-text categories for age, issues, or service types. Instead, propose RFC to blueprint if genuinely missing.
+
+3. **"Age-first" is non-negotiable.** All search flows must collect age/stage before other filters. Product invariant.
+
+4. **ABN rules are strict.** Auto-match ≥~85% + ABNStatus='Active' ONLY. Anything else → flag for manual review. Maintain yearly re-verification jobs.
+
+5. **No hard-deletes for Businesses.** Use `is_deleted=true` flag and store verification audit records. Compliance requirement.
+
+6. **Monetization is feature-flagged.** Both `FEATURE_MONETIZATION_ENABLED` (server) and `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED` (client) must be set; dark by default. Keep hidden until master-plan metrics met (≥50 claimed trainers, stable ABN rate, review volume).
+
+7. **Stripe webhooks are idempotent.** Dedup events, return 2xx on DB success, log async failures as sync_error. Always verify signature.
+
+8. **AI flags only.** Humans approve/reject reviews and profiles. Track false positives; add transparency copy on UX changes.
+
+9. **Emergency verification is quarterly.** Re-verify vet/shelter contacts every 3 months; highlight records >90 days old in admin tools.
+
+10. **Doc divergence blocks CI.** `npm run verify:launch` fails if SSOT docs drift from code. Keep schema, migrations, and docs in sync.
+
+---
+
+## Integration & External Dependencies
+
+### ABR (Australian Business Register) API
+- Endpoint: `GET /abr/abn/{ABN}?businessName={name}`
+- Credential: GUID (store in `ABR_GUID` secret, not in repo)
+- Parser: `src/lib/abr.ts` handles JSON + SOAP fallback
+- Fallback tracking: `abn_fallback_events` table + `/api/admin/abn/fallback-stats` dashboard
+
+### Stripe (Webhooks & Subscriptions)
+- Webhook endpoint: `/api/webhooks/stripe/route.ts` (always verify signature)
+- Test locally: `stripe listen --forward-to http://localhost:4243/api/webhooks/stripe-dtd` (custom harness at port 4243, not :3000)
+- E2E bypass: `E2E_TEST_MODE=true` env var stubs real Stripe calls for Playwright
+- Metadata contract: See `DOCS/MONETIZATION_ROLLOUT_PLAN.md` (required fields for featured placements, subscriptions)
+
+### LLM Provider (Z.AI or OpenAI)
+- Default: `LLM_PROVIDER=zai` (Z.AI) with `ZAI_API_KEY` and `ZAI_BASE_URL=https://api.z.ai/api/paas/v4`
+- Fallback: `LLM_PROVIDER=openai` with `OPENAI_API_KEY` and `OPENAI_BASE_URL`
+- Timeouts & retries configured in `src/lib/llm.ts`; graceful fallback to deterministic rules on unavailability
+- Used for emergency triage LLM mode, moderation flags, weekly digest summaries
+
+### Supabase (Postgres + Auth + Edge Functions)
+- Default dev/staging: remote Supabase project (no Docker required)
+- Configure `.env.local` with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING`
+- Local emulation: `supabase start` (optional, for isolated testing)
+- Migrations: `supabase/migrations/*` (apply with Supabase CLI or GitHub Actions)
+- Schema snapshot: `supabase/schema.sql` (kept in sync by CI check "Schema vs migrations")
+
+---
+
+## Common Patterns & Gotchas
+
+### Enum Validation
+All enum values use runtime validators:
+```ts
+// In src/types/database.ts
+export const isValidAgeSpecialty = (value: string): value is AgeSpecialty => {
+  return ['puppies_0_6m', 'adolescent_6_18m', ...].includes(value)
+}
+export const validateAgeSpecialty = (value: string): AgeSpecialty => {
+  if (!isValidAgeSpecialty(value)) throw new Error(`Invalid age: ${value}`)
+  return value
+}
+// Use validateAgeSpecialty() when converting untrusted input; is* variants for type guards.
+```
+
+### Error Logging & Context
+Error context now lives under `extra` payload (see `src/lib/errorLog.ts`):
+```ts
+logError('ABR lookup failed', {
+  extra: { abn: abr_record.abn, matchScore: 0.82, reason: 'name_mismatch' }
+})
+```
+
+### Feature Flags (Monetization Example)
+```ts
+// Server-side check (Next.js env)
+if (process.env.FEATURE_MONETIZATION_ENABLED !== '1') {
+  return { notFound: true }
+}
+// Client-side check (React)
+if (process.env.NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED !== '1') {
+  return <PromoteDisabled />
+}
+```
+
+### Supabase Admin Client (Service Role)
+Use sparingly; server-side only:
+```ts
+import { supabaseAdmin } from '@/lib/supabase'
+// Only in Node.js contexts (API routes, scripts); never expose to client
+const result = await supabaseAdmin.from('businesses').select('*')
+```
+
+---
+
+## Common Tasks & Commands
+
+**Search for references to a constant or function:**  
+```bash
+grep -r "search_trainers\|BehaviorIssue" src/ DOCS/
+```
+
+**Check schema against migrations:**  
+CI job `.github/workflows/verify-launch.yml` runs this automatically; manual check:
+```bash
+supabase db pull  # Syncs remote schema to supabase/schema.sql
+git diff supabase/schema.sql
+```
+
+**Audit ABN verification records:**  
+```bash
+# Local Supabase
+SUPABASE_CONNECTION_STRING="..." psql \
+  -c "SELECT abn, verification_status, name_match_score, last_verified_at FROM businesses WHERE abn IS NOT NULL ORDER BY last_verified_at DESC LIMIT 20;"
+```
+
+**Check for doc divergence locally:**  
+```bash
+python3 scripts/check_docs_divergence.py --base-ref origin/main
+```
+
+---
+
+## When You Get Stuck
+
+1. **Spec questions?** Start at `DOCS/blueprint_ssot_v1.1.md` (domain model, UX rules).
+2. **Implementation status unclear?** Check `DOCS/IMPLEMENTATION_REALITY_MAP.md` (CONFIRMED-WORKING vs UNKNOWN grid).
+3. **Launch gates?** See `DOCS/LAUNCH_READY_CHECKLIST.md` (AI-ready vs Operator-only).
+4. **ABN workflow?** See `DOCS/automation/ABN-ABR-GUID_automation/` (contract, parsing, allowlists, batch runs).
+5. **Monetization contract?** See `DOCS/MONETIZATION_ROLLOUT_PLAN.md` (Stripe webhook, product scope, metadata).
+6. **Emergency ops?** See `DOCS/automation/OPS_RUNBOOK_EMERGENCY_VERIFICATION.md` and `operator-runbook.md`.
+
+**Secrets & credentials:** Intentionally absent from repo. Contact maintainer for ABR GUID, Stripe keys, LLM keys, Supabase connection strings.
+
+**CI safety:** Never commit Stripe secret keys, webhook signing secrets. Scan pattern: `sk_live_|sk_test_|whsec_`. Use `.env.local` (git-ignored) locally; CI secrets manager in production.
