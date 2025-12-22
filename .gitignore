@@ -37,3 +37,7 @@ next-env.d.ts
 
 # Build / dist artifacts
 dist/
+_archive/
+_bmad-output/
+_bmad-archive/
+_bmad-output.zip
