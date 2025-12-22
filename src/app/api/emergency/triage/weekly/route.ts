@@ -21,20 +21,23 @@ export async function GET() {
     }
 
     // Classification breakdown
-    const classifications = allTriages?.reduce((acc, triage) => {
-      acc[triage.classification] = (acc[triage.classification] || 0) + 1
+    const classifications = allTriages?.reduce((acc: Record<string, number>, triage: { classification?: string | null }) => {
+      const key = triage.classification || 'unknown'
+      acc[key] = (acc[key] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
     // Priority breakdown
-    const priorities = allTriages?.reduce((acc, triage) => {
-      acc[triage.priority] = (acc[triage.priority] || 0) + 1
+    const priorities = allTriages?.reduce((acc: Record<string, number>, triage: { priority?: string | null }) => {
+      const key = triage.priority || 'unknown'
+      acc[key] = (acc[key] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
     // Decision source breakdown
-    const decisionSources = allTriages?.reduce((acc, triage) => {
-      acc[triage.decision_source] = (acc[triage.decision_source] || 0) + 1
+    const decisionSources = allTriages?.reduce((acc: Record<string, number>, triage: { decision_source?: string | null }) => {
+      const key = triage.decision_source || 'unknown'
+      acc[key] = (acc[key] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 

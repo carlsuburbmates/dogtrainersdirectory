@@ -8,14 +8,14 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 function CardHeader({ children }: { children: React.ReactNode }) {
   return <div className="border-b pb-2 mb-4">{children}</div>
 }
-function CardTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-lg font-semibold">{children}</h2>
+function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <h2 className={`text-lg font-semibold ${className || ''}`.trim()}>{children}</h2>
 }
 function CardDescription({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-gray-600">{children}</p>
 }
-function CardContent({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>
+function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>
 }
 
 function Table({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -27,14 +27,14 @@ function TableHeader({ children }: { children: React.ReactNode }) {
 function TableBody({ children }: { children: React.ReactNode }) {
   return <tbody>{children}</tbody>
 }
-function TableRow({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b">{children}</tr>
+function TableRow({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <tr className={`border-b ${className || ''}`.trim()}>{children}</tr>
 }
 function TableHead({ children }: { children: React.ReactNode }) {
   return <th className="text-left py-3 px-4 font-medium">{children}</th>
 }
-function TableCell({ children }: { children: React.ReactNode }) {
-  return <td className="py-3 px-4">{children}</td>
+function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={`py-3 px-4 ${className || ''}`.trim()}>{children}</td>
 }
 
 function Badge({ children, variant }: { children: React.ReactNode; variant?: string }) {

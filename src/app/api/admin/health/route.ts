@@ -21,11 +21,18 @@ export async function GET(request: Request) {
     const includeExtended = url.searchParams.get('extended') === '1'
 
     // Health status for each critical dependency
-    const [llmHealth, supabaseHealth, webhookHealth] = await Promise.all([
+    const [llmHealthRaw, supabaseHealth, webhookHealth] = await Promise.all([
       checkLLMHealth(),
       checkSupabaseHealth(),
       checkStripeHealth()
     ])
+
+    const llmHealth = {
+      status: llmHealthRaw.ok ? 'healthy' : 'degraded',
+      message: llmHealthRaw.detail || (llmHealthRaw.ok ? 'LLM configured' : 'LLM not configured'),
+      provider: llmHealthRaw.provider,
+      mode: llmHealthRaw.mode
+    }
 
     // Determine overall system health
     const allHealthy = llmHealth.status === 'healthy' && 

@@ -6,7 +6,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   return <div className={className}>{children}</div>
 }
 
-export default async function TrainerPage({ params, searchParams }: { params: { id: string }, searchParams?: Record<string, string> }) {
+export default async function TrainerPage({ params }: { params: { id: string } }) {
   const resolvedParams = await Promise.resolve(params as any)
   const id = Number(resolvedParams.id)
   if (isNaN(id)) return notFound()
@@ -19,19 +19,14 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
     .single()
 
   if (!trainer) {
-    const resolvedSearchParams = await Promise.resolve(searchParams as any)
-    if (resolvedSearchParams?.e2eName) {
-      return (
-        <div className="container mx-auto p-6">
-          <h1 className="text-2xl font-bold mb-6">{resolvedSearchParams.e2eName}</h1>
-          <div className="p-4">Trainer profile page (E2E fallback via query)</div>
+    return (
+      <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-6">Profile unavailable</h1>
+        <div className="p-4 text-sm text-gray-600">
+          We couldn’t load this trainer profile. Please check back later.
         </div>
-      )
-    }
-
-    // render a client-side fallback that reads test fixtures from sessionStorage
-    const TrainerFallback = (await import('@/components/e2e/TrainerFallbackClient')).default
-    return <TrainerFallback id={id} />
+      </div>
+    )
   }
 
   return (

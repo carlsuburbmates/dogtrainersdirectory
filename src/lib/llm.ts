@@ -114,3 +114,40 @@ export function resolveLlmMode(pipeline: string): string {
 }
 
 export type LlmPipeline = 'triage' | 'moderation' | 'verification' | 'ops_digest'
+
+export type LlmHealth = {
+  ok: boolean
+  provider: string | null
+  mode: string | null
+  detail?: string
+}
+
+export async function checkLLMHealth(): Promise<LlmHealth> {
+  const provider = process.env.LLM_PROVIDER || 'zai'
+  const mode = process.env.AI_GLOBAL_MODE || 'live'
+  const apiKey = process.env.ZAI_API_KEY
+
+  if (mode === 'disabled') {
+    return {
+      ok: true,
+      provider,
+      mode,
+      detail: 'AI disabled via AI_GLOBAL_MODE'
+    }
+  }
+
+  if (!apiKey) {
+    return {
+      ok: false,
+      provider,
+      mode,
+      detail: 'Missing ZAI_API_KEY'
+    }
+  }
+
+  return {
+    ok: true,
+    provider,
+    mode
+  }
+}

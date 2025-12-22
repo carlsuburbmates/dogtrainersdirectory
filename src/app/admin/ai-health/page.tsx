@@ -14,8 +14,8 @@ function CardTitle({ children }: { children: React.ReactNode }) {
 function CardDescription({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-gray-600">{children}</p>
 }
-function CardContent({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>
+function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>
 }
 
 function Table({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -33,8 +33,8 @@ function TableRow({ children }: { children: React.ReactNode }) {
 function TableHead({ children }: { children: React.ReactNode }) {
   return <th className="text-left py-3 px-4 font-medium">{children}</th>
 }
-function TableCell({ children }: { children: React.ReactNode }) {
-  return <td className="py-3 px-4">{children}</td>
+function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={`py-3 px-4 ${className || ''}`.trim()}>{children}</td>
 }
 
 function Badge({ children, variant }: { children: React.ReactNode; variant?: string }) {

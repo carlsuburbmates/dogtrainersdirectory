@@ -16,8 +16,16 @@ export async function GET(request: Request) {
     
     return NextResponse.json({
       suggestions: [
-        ...businesses.map(b => ({ type: 'business', display: b.business_name, id: b.id })),
-        ...suburbs.map(s => ({ type: 'suburb', display: s.suburb, id: s.suburb }))
+        ...businesses.map((b: { id: number; business_name: string | null }) => ({
+          type: 'business',
+          display: b.business_name || 'Unknown business',
+          id: b.id
+        })),
+        ...suburbs.map((s: { suburb: string | null }) => ({
+          type: 'suburb',
+          display: s.suburb || 'Unknown suburb',
+          id: s.suburb || 'unknown'
+        }))
       ]
     })
   } catch (error: any) {
@@ -48,8 +56,9 @@ async function searchSuburbs(query: string) {
     .limit(5)
 
   // Remove duplicates
-  const uniqueSuburbs = suburbs?.filter((item, index, arr) => 
-    arr.findIndex(t => t.suburb === item.suburb) === index
+  const uniqueSuburbs = suburbs?.filter(
+    (item: { suburb: string | null }, index: number, arr: { suburb: string | null }[]) =>
+      arr.findIndex(t => t.suburb === item.suburb) === index
   ) || []
 
   return { suburbs: uniqueSuburbs }
