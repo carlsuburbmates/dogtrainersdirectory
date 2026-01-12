@@ -11,14 +11,19 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
   const id = Number(resolvedParams.id)
   if (isNaN(id)) return notFound()
 
-  // Fetch trainer data
-  const { data: trainer } = await supabaseAdmin
-    .from('trainers')
-    .select('*')
-    .eq('id', id)
-    .single()
+  // Use get_trainer_profile RPC to fetch trainer data
+  // Pass decryption key for sensitive fields
+  const decryptKey = process.env.SUPABASE_PGCRYPTO_KEY || null
+  const { data, error } = await supabaseAdmin
+    .rpc('get_trainer_profile', {
+      p_business_id: id,
+      p_key: decryptKey
+    })
 
-  if (!trainer) {
+  // RPC returns array, get first result
+  const trainer = data?.[0]
+
+  if (!trainer || error) {
     const resolvedSearchParams = await Promise.resolve(searchParams as any)
     if (resolvedSearchParams?.e2eName) {
       return (
@@ -43,7 +48,11 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
         </p>
         <div className="mt-4">
           <p>Trainer ID: {id}</p>
-          <p>Location: {trainer.suburb || "Not specified"}</p>
+          <p>Location: {trainer.suburb_name || "Not specified"}</p>
+          {trainer.email && <p>Email: {trainer.email}</p>}
+          {trainer.phone && <p>Phone: {trainer.phone}</p>}
+          <p>Average Rating: {trainer.average_rating || 0}</p>
+          <p>Reviews: {trainer.review_count || 0}</p>
         </div>
       </Card>
     </div>
