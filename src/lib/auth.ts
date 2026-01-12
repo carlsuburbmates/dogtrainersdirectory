@@ -4,8 +4,30 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from './supabase'
 
 /**
- * Server-side admin authentication check
- * Used in API routes and server components
+ * Check if a user has admin role
+ * 
+ * Server-side admin authentication check that queries the profiles table
+ * to verify if the given user ID has an 'admin' role.
+ * 
+ * @param {string} userId - The Supabase user ID to check
+ * @returns {Promise<boolean>} True if user is an admin, false otherwise
+ * 
+ * @example
+ * ```typescript
+ * const userId = 'abc-123-def-456';
+ * const hasAdminAccess = await isAdmin(userId);
+ * if (hasAdminAccess) {
+ *   // Grant admin access
+ * }
+ * ```
+ * 
+ * @remarks
+ * - Uses Supabase admin client for elevated database access
+ * - Returns false on any errors (fail-safe)
+ * - Logs errors for debugging
+ * 
+ * @see {@link requireAdmin} for combined auth + admin check
+ * @see {@link checkAdminAuthFromRequest} for middleware usage
  */
 export async function isAdmin(userId: string): Promise<boolean> {
   try {
@@ -28,8 +50,34 @@ export async function isAdmin(userId: string): Promise<boolean> {
 }
 
 /**
- * Get authenticated user from request (for API routes)
- * Returns user ID if authenticated, null otherwise
+ * Get authenticated user from current request context
+ * 
+ * Extracts the currently authenticated user from the Supabase session
+ * by reading cookies from the Next.js request context. This function
+ * is designed for use in API routes and server components.
+ * 
+ * @returns {Promise<string | null>} User ID if authenticated, null if not authenticated or on error
+ * 
+ * @example
+ * ```typescript
+ * // In an API route
+ * export async function GET() {
+ *   const userId = await getAuthenticatedUser();
+ *   if (!userId) {
+ *     return new Response('Unauthorized', { status: 401 });
+ *   }
+ *   // Proceed with authenticated request
+ * }
+ * ```
+ * 
+ * @remarks
+ * - Uses Next.js cookies() to access request cookies
+ * - Creates Supabase client with SSR cookie handling
+ * - Returns null on authentication errors (fail-safe)
+ * - Logs errors for debugging
+ * 
+ * @see {@link requireAdmin} for admin-specific authentication
+ * @see {@link checkAdminAuthFromRequest} for middleware usage with NextRequest
  */
 export async function getAuthenticatedUser(): Promise<string | null> {
   try {
@@ -70,8 +118,43 @@ export async function getAuthenticatedUser(): Promise<string | null> {
 }
 
 /**
- * Check if the current user is an admin
- * Used in API routes
+ * Require admin authentication for API routes
+ * 
+ * Combined authentication and authorization check that verifies both:
+ * 1. User is authenticated (has valid Supabase session)
+ * 2. User has admin role in profiles table
+ * 
+ * @returns {Promise<{authorized: boolean, userId: string | null}>} Object with authorization status and user ID
+ * @returns {boolean} authorized - True if user is authenticated AND has admin role
+ * @returns {string | null} userId - User ID if authorized, null otherwise
+ * 
+ * @example
+ * ```typescript
+ * // In an admin API route
+ * export async function POST() {
+ *   const { authorized, userId } = await requireAdmin();
+ *   
+ *   if (!authorized) {
+ *     return new Response(
+ *       JSON.stringify({ error: 'Admin access required' }), 
+ *       { status: 401 }
+ *     );
+ *   }
+ *   
+ *   // Proceed with admin operation
+ *   console.log('Admin user:', userId);
+ * }
+ * ```
+ * 
+ * @remarks
+ * - Combines getAuthenticatedUser() and isAdmin() checks
+ * - Returns { authorized: false, userId: null } if not authenticated
+ * - Returns { authorized: false, userId: null } if authenticated but not admin
+ * - Returns { authorized: true, userId: '...' } if authenticated admin
+ * 
+ * @see {@link getAuthenticatedUser} for authentication only
+ * @see {@link isAdmin} for admin role check only
+ * @see {@link checkAdminAuthFromRequest} for middleware usage
  */
 export async function requireAdmin(): Promise<{ authorized: boolean; userId: string | null }> {
   const userId = await getAuthenticatedUser()
@@ -86,8 +169,55 @@ export async function requireAdmin(): Promise<{ authorized: boolean; userId: str
 }
 
 /**
- * Middleware helper to check admin authentication from NextRequest
- * Returns user ID if admin, null otherwise
+ * Check admin authentication from Next.js middleware request
+ * 
+ * Middleware-compatible authentication check that extracts user from
+ * NextRequest cookies and verifies admin role. Specifically designed
+ * for use in Next.js middleware (src/middleware.ts) where the standard
+ * cookies() API is not available.
+ * 
+ * @param {NextRequest} request - The Next.js middleware request object
+ * @returns {Promise<string | null>} User ID if authenticated admin, null otherwise
+ * 
+ * @example
+ * ```typescript
+ * // In src/middleware.ts
+ * import { NextRequest, NextResponse } from 'next/server';
+ * import { checkAdminAuthFromRequest } from '@/lib/auth';
+ * 
+ * export async function middleware(request: NextRequest) {
+ *   const adminUserId = await checkAdminAuthFromRequest(request);
+ *   
+ *   if (!adminUserId) {
+ *     // Not an admin - redirect or return 401
+ *     if (request.nextUrl.pathname.startsWith('/api/')) {
+ *       return NextResponse.json(
+ *         { error: 'Admin access required' },
+ *         { status: 401 }
+ *       );
+ *     }
+ *     return NextResponse.redirect(new URL('/login', request.url));
+ *   }
+ *   
+ *   // Admin authenticated - proceed
+ *   return NextResponse.next();
+ * }
+ * ```
+ * 
+ * @remarks
+ * - Uses NextRequest.cookies instead of Next.js cookies() API
+ * - Cannot set cookies in middleware (setAll is a no-op)
+ * - Combines user authentication and admin role verification
+ * - Returns null on any errors (fail-safe)
+ * - Logs errors for debugging
+ * 
+ * **Key difference from requireAdmin():**
+ * - requireAdmin() uses cookies() API (for API routes/server components)
+ * - checkAdminAuthFromRequest() uses NextRequest.cookies (for middleware)
+ * 
+ * @see {@link requireAdmin} for API route authentication
+ * @see {@link isAdmin} for admin role check only
+ * @see {@link getAuthenticatedUser} for authentication only
  */
 export async function checkAdminAuthFromRequest(request: NextRequest): Promise<string | null> {
   try {
