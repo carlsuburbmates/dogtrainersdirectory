@@ -37,3 +37,6 @@ next-env.d.ts
 
 # Build / dist artifacts
 dist/
+
+# Generated PDF documentation files
+*.pdf
