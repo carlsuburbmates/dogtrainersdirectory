@@ -6,10 +6,14 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 }
 
 export default async function TrainersPage() {
-  // Fetch trainers data
+  // Fetch trainers data from businesses table
+  // Filter by resource_type to get trainers and behaviour consultants
   const { data: trainers } = await supabaseAdmin
-    .from('trainers')
+    .from('businesses')
     .select('*')
+    .in('resource_type', ['trainer', 'behaviour_consultant'])
+    .eq('is_active', true)
+    .eq('is_deleted', false)
     .limit(10)
 
   return (
