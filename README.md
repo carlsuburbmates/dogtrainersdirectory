@@ -35,6 +35,27 @@ Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, b
 - Monetization: Deferred until Phase 4+ criteria are met
 - Policy: No uptime/delivery/quality guarantees; best-effort only with explicit disclaimers
 
+### Recent Updates (Phase 1 - January 2026)
+
+**Batch 1 - Critical Fixes & Search Implementation**
+- ✅ **Admin authentication middleware** - All `/admin/**` and `/api/admin/**` routes now protected by Next.js middleware with role-based access control
+- ✅ **Public search API** - Full-text search with 11+ filters at `/api/public/search` including location, service type, behavior issues, verification status
+- ✅ **Search UI** - Complete search interface at `/search` with filtering, pagination, and result cards
+- ✅ **Data contract cleanup** - Replaced deprecated `trainers` table references with `businesses` table throughout codebase
+- ✅ **Wizard cleanup** - Removed deprecated `/wizard` directory
+
+**Batch 2 - User-Facing Features**
+- ✅ **Emergency page enhancements** - Resources lookup by location/type and AI triage form with priority classification at `/emergency`
+- ✅ **Admin review moderation** - Complete review moderation interface at `/admin/reviews` with AI suggestion display, filtering, and approve/reject actions
+- ✅ **Enhanced trainer profiles** - Comprehensive trainer profile pages at `/trainers/[id]` with full details, reviews, contact sidebar, and integrated contact form
+- ✅ **Backward compatibility** - 301 redirect from `/trainer/[id]` to `/trainers/[id]` for legacy URLs
+
+**Batch 3 - Cleanup & Documentation** (Current)
+- ✅ **SSOT documentation updates** - All canonical documentation updated to reflect Phase 1 implementations
+- ✅ **API organization review** - Identified duplicate endpoints and consolidation opportunities
+- ✅ **JSDoc comments** - Comprehensive documentation added to auth helpers, middleware, and API routes
+- ✅ **Code quality** - Enhanced type safety and error handling across new implementations
+
 ## Core Features (per SSOT)
 - Age-first triage (age → issue → suburb), locked enums (ages, 13 issues, 5 service types)
 - Suburb-to-council mapping (28 councils, 138 suburb rows with postcode/lat/lon)
@@ -124,7 +145,8 @@ Create `.env.local` (and `.env` for Supabase functions) with:
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role>          # server-side only
+SUPABASE_SERVICE_ROLE_KEY=<service-role>          # server-side only, required for admin APIs
+SUPABASE_PGCRYPTO_KEY=<pgcrypto-key>              # server-side only, required for decrypting sensitive fields (email/phone)
 
 # ABN / Verification
 ABR_GUID=9c72aac8-8cfc-4a77-b4c9-18aa308669ed     # server-side only
