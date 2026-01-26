@@ -114,3 +114,40 @@ export function resolveLlmMode(pipeline: string): string {
 }
 
 export type LlmPipeline = 'triage' | 'moderation' | 'verification' | 'ops_digest'
+
+
+export async function checkLLMHealth(): Promise<{ status: 'healthy' | 'degraded' | 'down', message: string }> {
+  const provider = process.env.LLM_PROVIDER || 'zai'
+  const apiKey = process.env.ZAI_API_KEY
+  
+  if (!apiKey) {
+    return {
+      status: 'degraded',
+      message: 'LLM not configured (API key missing)'
+    }
+  }
+
+  try {
+    const response = await generateLLMResponse({
+      userPrompt: 'Respond with OK',
+      maxTokens: 10
+    })
+
+    if (response.provider === 'deterministic') {
+      return {
+        status: 'degraded',
+        message: `LLM unavailable: ${response.text}`
+      }
+    }
+
+    return {
+      status: 'healthy',
+      message: `LLM operational (${provider})`
+    }
+  } catch (error: any) {
+    return {
+      status: 'down',
+      message: `LLM health check failed: ${error?.message || 'Unknown error'}`
+    }
+  }
+}
