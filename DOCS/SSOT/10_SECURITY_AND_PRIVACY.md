@@ -62,6 +62,7 @@ Bundle indicates encrypted columns exist for contact fields and are decrypted vi
 **Rules:**
 - Decrypt on server only.
 - Never return decrypted data to unauthorised clients.
+- Encryption is server-side via `encrypt_sensitive` using `SUPABASE_PGCRYPTO_KEY`.
 
 **Implementation:**
 - ✅ Search API (`/api/public/search`) decrypts contact fields server-side using `SUPABASE_PGCRYPTO_KEY`

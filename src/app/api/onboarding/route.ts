@@ -113,6 +113,12 @@ export async function POST(request: Request) {
     })
 
     const abnScore = computeSimilarity(abn)
+    const [encryptedPhone, encryptedEmail, encryptedAbn] = await Promise.all([
+      businessPhone ? encryptValue(businessPhone) : Promise.resolve(null),
+      encryptValue(businessEmail || email),
+      encryptValue(abn)
+    ])
+
     // Insert business - support both chainable supabase mock that uses .select().single()
     // and simpler test mocks that return a promise result directly.
     const businessInsertCall = supabaseAdmin.from('businesses').insert({
@@ -127,9 +133,9 @@ export async function POST(request: Request) {
         abn_verified: abnStatus === 'verified',
         verification_status: abnStatus,
         resource_type: 'trainer',
-        phone_encrypted: businessPhone ? encryptValue(businessPhone) : null,
-        email_encrypted: businessEmail ? encryptValue(businessEmail) : encryptValue(email),
-        abn_encrypted: encryptValue(abn)
+        phone_encrypted: encryptedPhone,
+        email_encrypted: encryptedEmail,
+        abn_encrypted: encryptedAbn
       })
     
     let business: any = null
@@ -173,11 +179,14 @@ export async function POST(request: Request) {
         business_id: businessId,
         behavior_issue: issue
       }))
-      await supabaseAdmin.from('trainer_behaviors').insert(behaviors)
+      await supabaseAdmin.from('trainer_behavior_issues').insert(behaviors)
     }
 
-    if (secondaryServices.length > 0) {
-      const services = secondaryServices.map((s) => ({ business_id: businessId, service: s }))
+    const services = [
+      { business_id: businessId, service_type: primaryService, is_primary: true },
+      ...secondaryServices.map((s) => ({ business_id: businessId, service_type: s, is_primary: false }))
+    ]
+    if (services.length > 0) {
       await supabaseAdmin.from('trainer_services').insert(services)
     }
 

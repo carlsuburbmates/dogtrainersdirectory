@@ -74,7 +74,8 @@ export async function POST(request: Request) {
     }
 
     // Fetch AI decisions for these reviews
-    const reviewIds = reviewsData?.map(r => r.id) || []
+    type ReviewRow = { id: number | string }
+    const reviewIds = ((reviewsData ?? []) as ReviewRow[]).map((r) => r.id)
     let aiDecisions: Record<number, any> = {}
 
     if (reviewIds.length > 0) {
@@ -85,7 +86,13 @@ export async function POST(request: Request) {
           .in('review_id', reviewIds)
 
         if (decisionsData) {
-          aiDecisions = decisionsData.reduce((acc, d) => {
+          type ReviewDecisionRow = {
+            review_id: number
+            ai_decision: string | null
+            confidence: number | null
+            reason: string | null
+          }
+          aiDecisions = (decisionsData as ReviewDecisionRow[]).reduce((acc: Record<number, any>, d) => {
             acc[d.review_id] = {
               ai_decision: d.ai_decision,
               ai_confidence: d.confidence,

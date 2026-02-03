@@ -13,7 +13,7 @@ describe('admin dashboard smoke render', () => {
         baseUrl="https://api.z.ai/test"
         model="glm-4.6"
         initialSnapshot={{
-          status: 'ok',
+          status: 'healthy',
           message: 'All systems nominal',
           metrics: { successRate: 99, avgLatency: 200, errorTrend: 0, totalCalls: 123 }
         }}
@@ -26,7 +26,7 @@ describe('admin dashboard smoke render', () => {
     const html = renderToString(
       <CronHealthDashboard
         initialSnapshot={{
-          status: 'ok',
+          status: 'healthy',
           message: 'Crons healthy',
           metrics: { successRate: 100, avgLatency: 100, errorTrend: 0, totalRuns: 100 }
         }}

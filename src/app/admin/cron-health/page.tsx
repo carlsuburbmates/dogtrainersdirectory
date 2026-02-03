@@ -2,42 +2,45 @@ import { supabaseAdmin } from '@/lib/supabase'
 // Simple components without shadcnUI for compatibility
 import Link from 'next/link'
 
+type WithChildren = { children: React.ReactNode }
+type WithChildrenAndClassName = { children: React.ReactNode; className?: string }
+
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={className}>{children}</div>
 }
-function CardHeader({ children }: { children: React.ReactNode }) {
-  return <div className="border-b pb-2 mb-4">{children}</div>
+function CardHeader({ children, className }: WithChildrenAndClassName) {
+  return <div className={['border-b pb-2 mb-4', className].filter(Boolean).join(' ')}>{children}</div>
 }
-function CardTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-lg font-semibold">{children}</h2>
+function CardTitle({ children, className }: WithChildrenAndClassName) {
+  return <h2 className={['text-lg font-semibold', className].filter(Boolean).join(' ')}>{children}</h2>
 }
-function CardDescription({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-gray-600">{children}</p>
+function CardDescription({ children, className }: WithChildrenAndClassName) {
+  return <p className={['text-sm text-gray-600', className].filter(Boolean).join(' ')}>{children}</p>
 }
-function CardContent({ children }: { children: React.ReactNode }) {
-  return <div>{children}</div>
+function CardContent({ children, className }: WithChildrenAndClassName) {
+  return <div className={className}>{children}</div>
 }
 
-function Table({ children, className }: { children: React.ReactNode; className?: string }) {
+function Table({ children, className }: WithChildrenAndClassName) {
   return <table className={className}>{children}</table>
 }
-function TableHeader({ children }: { children: React.ReactNode }) {
+function TableHeader({ children }: WithChildren) {
   return <thead>{children}</thead>
 }
-function TableBody({ children }: { children: React.ReactNode }) {
+function TableBody({ children }: WithChildren) {
   return <tbody>{children}</tbody>
 }
-function TableRow({ children }: { children: React.ReactNode }) {
-  return <tr className="border-b">{children}</tr>
+function TableRow({ children, className }: WithChildrenAndClassName) {
+  return <tr className={['border-b', className].filter(Boolean).join(' ')}>{children}</tr>
 }
-function TableHead({ children }: { children: React.ReactNode }) {
-  return <th className="text-left py-3 px-4 font-medium">{children}</th>
+function TableHead({ children, className }: WithChildrenAndClassName) {
+  return <th className={['text-left py-3 px-4 font-medium', className].filter(Boolean).join(' ')}>{children}</th>
 }
-function TableCell({ children }: { children: React.ReactNode }) {
-  return <td className="py-3 px-4">{children}</td>
+function TableCell({ children, className }: WithChildrenAndClassName) {
+  return <td className={['py-3 px-4', className].filter(Boolean).join(' ')}>{children}</td>
 }
 
-function Badge({ children, variant }: { children: React.ReactNode; variant?: string }) {
+function Badge({ children, variant, className }: { children: React.ReactNode; variant?: string; className?: string }) {
   const base = "inline-flex px-2 py-1 text-xs rounded-full"
   const variantMap = {
     default: "bg-blue-100 text-blue-800",
@@ -45,7 +48,11 @@ function Badge({ children, variant }: { children: React.ReactNode; variant?: str
     outline: "border border-gray-300 text-gray-700",
     destructive: "bg-red-100 text-red-800"
   }
-  return <span className={`${base} ${variantMap[variant as keyof typeof variantMap] || variantMap.default}`}>{children}</span>
+  return (
+    <span className={[base, variantMap[variant as keyof typeof variantMap] || variantMap.default, className].filter(Boolean).join(' ')}>
+      {children}
+    </span>
+  )
 }
 
 function Button({ children, variant, ...props }: { children: React.ReactNode; variant?: string; [key: string]: any }) {

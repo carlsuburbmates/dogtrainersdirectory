@@ -374,6 +374,13 @@ async function checkRlsStatus(client: Client) {
 async function checkPolicyCoverage(client: Client) {
   const start = Date.now()
   try {
+    type PgPolicyRow = {
+      policyname: string
+      permissive: string | boolean | null
+      qual: string | null
+      cmd: string | null
+    }
+
     const missing: string[] = []
     const overlyPermissive: Array<{ table: string; policies: string[] }> = []
     const perTablePolicies: Array<{ table: string; policies: Array<{ name: string; permissive: boolean; usingClause: string }> }> = []
@@ -385,7 +392,7 @@ async function checkPolicyCoverage(client: Client) {
          order by policyname`,
         ['public', table]
       )
-      const tablePolicies = res.rows.map(row => ({
+      const tablePolicies = (res.rows as PgPolicyRow[]).map((row) => ({
         name: row.policyname as string,
         permissive: String(row.permissive ?? '').toUpperCase() === 'PERMISSIVE',
         usingClause: (row.qual as string | null)?.trim() || 'true',
@@ -398,10 +405,10 @@ async function checkPolicyCoverage(client: Client) {
       if (SENSITIVE_POLICY_TABLES.has(table)) {
         const permissiveUsingTrue = tablePolicies
           .filter(
-            policy =>
+            (policy) =>
               policy.permissive && policy.usingClause.toLowerCase() === 'true' && policy.command !== 'insert'
           )
-          .map(policy => policy.name)
+          .map((policy) => policy.name)
         if (permissiveUsingTrue.length > 0) {
           overlyPermissive.push({ table, policies: permissiveUsingTrue })
         }
@@ -430,16 +437,17 @@ async function checkMigrationParity(client: Client) {
       .sort()
 
     const ledger = await client.query('select version, name from supabase_migrations.schema_migrations order by version')
-    const applied = new Set<string>(ledger.rows.map(row => row.version))
+    type MigrationLedgerRow = { version: string; name?: string | null }
+    const ledgerRows = ledger.rows as MigrationLedgerRow[]
+    const applied = new Set<string>(ledgerRows.map((row) => row.version))
     const baseline = Number(process.env.MIGRATION_BASELINE_VERSION ?? '20251100000000')
     const relevantFiles = files.filter(file => {
       const numeric = Number(file.split('_')[0])
       return Number.isFinite(numeric) && numeric >= baseline
     })
     const missing = relevantFiles.filter(file => !applied.has(file))
-    const appliedTimeline = ledger.rows.slice(-5).map(row => {
-      const rowAny = row as Record<string, any>
-      return `${row.version} (name: ${rowAny.name ?? 'n/a'}, appliedAt: not tracked)`
+    const appliedTimeline = ledgerRows.slice(-5).map((row) => {
+      return `${row.version} (name: ${row.name ?? 'n/a'}, appliedAt: not tracked)`
     })
 
     addResult({
@@ -448,7 +456,7 @@ async function checkMigrationParity(client: Client) {
       durationMs: Date.now() - start,
       details: {
         totalMigrations: files.length,
-        appliedCount: ledger.rows.length,
+        appliedCount: ledgerRows.length,
         checkedAfterBaseline: relevantFiles.length,
         missing,
         recentApplied: appliedTimeline,

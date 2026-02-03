@@ -43,7 +43,7 @@ BEGIN
         c.name,
         c.region,
         COALESCE(AVG(r.rating), 0),
-        COUNT(r.id),
+        COUNT(r.id)::INTEGER,
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT ts.age_specialty), NULL), ARRAY[]::age_specialty[]),
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT tbi.behavior_issue), NULL), ARRAY[]::behavior_issue[]),
         COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT tsvc.service_type), NULL), ARRAY[]::service_type[])

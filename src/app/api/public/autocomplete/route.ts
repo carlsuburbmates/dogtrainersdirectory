@@ -16,8 +16,8 @@ export async function GET(request: Request) {
     
     return NextResponse.json({
       suggestions: [
-        ...businesses.map(b => ({ type: 'business', display: b.business_name, id: b.id })),
-        ...suburbs.map(s => ({ type: 'suburb', display: s.suburb, id: s.suburb }))
+        ...businesses.map((b) => ({ type: 'business', display: b.business_name, id: b.id })),
+        ...suburbs.map((s) => ({ type: 'suburb', display: s.suburb, id: s.suburb }))
       ]
     })
   } catch (error: any) {
@@ -29,6 +29,7 @@ export async function GET(request: Request) {
 }
 
 async function searchBusinesses(query: string) {
+  type BusinessRow = { id: number; business_name: string; suburb: string | null }
   const { data: businesses, error } = await supabaseAdmin
     .from('businesses')
     .select('id, business_name, suburb')
@@ -36,10 +37,11 @@ async function searchBusinesses(query: string) {
     .eq('is_active', true)
     .limit(5)
   
-  return { businesses: businesses || [] }
+  return { businesses: ((businesses ?? []) as BusinessRow[]) }
 }
 
 async function searchSuburbs(query: string) {
+  type SuburbRow = { suburb: string | null }
   const { data: suburbs, error } = await supabaseAdmin
     .from('businesses')
     .select('suburb')
@@ -48,9 +50,10 @@ async function searchSuburbs(query: string) {
     .limit(5)
 
   // Remove duplicates
-  const uniqueSuburbs = suburbs?.filter((item, index, arr) => 
-    arr.findIndex(t => t.suburb === item.suburb) === index
-  ) || []
+  const suburbsList = ((suburbs ?? []) as SuburbRow[])
+  const uniqueSuburbs = suburbsList.filter((item, index, arr) =>
+    arr.findIndex((t) => t.suburb === item.suburb) === index
+  )
 
   return { suburbs: uniqueSuburbs }
 }

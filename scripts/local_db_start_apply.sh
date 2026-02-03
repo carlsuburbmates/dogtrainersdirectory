@@ -71,8 +71,10 @@ if [[ -n "$LOCAL_HOST" && "$LOCAL_HOST" != "127.0.0.1" && "$LOCAL_HOST" != "loca
   # don't exit — only warn; we check connection string explicitly above
 fi
 
-# Pull image and reset container when requested
-docker pull postgres:15-alpine
+# Pull image and reset container when requested.
+# Keep this aligned with Supabase's current Postgres major to reduce drift during
+# local migration testing.
+docker pull postgres:17-alpine
 
 if $RESET; then
   if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -90,7 +92,7 @@ else
     docker start ${CONTAINER_NAME} >/dev/null
   else
     echo "Starting local Postgres container (${CONTAINER_NAME}) on port ${PG_PORT}..."
-    docker run --name ${CONTAINER_NAME} -e POSTGRES_PASSWORD=${PG_PASS} -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -p ${PG_PORT}:5432 -d postgres:15-alpine
+    docker run --name ${CONTAINER_NAME} -e POSTGRES_PASSWORD=${PG_PASS} -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -p ${PG_PORT}:5432 -d postgres:17-alpine
   fi
 fi
 

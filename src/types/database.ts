@@ -59,7 +59,7 @@ export const isValidBehaviorIssue = (value: string): value is BehaviorIssue => {
 // Runtime validation function for age specialties
 export const validateAgeSpecialty = (value: string): AgeSpecialty => {
   if (!isValidAgeSpecialty(value)) {
-    throw new Error(`Invalid age specialty: ${value}. Must be one of: puppies_0_6m, adolescent_6_18m, adult_18m_7y, senior_7y_plus, rescue_rehomed`)
+    throw new Error(`Invalid age specialty: ${value}. Must be one of: puppies_0_6m, adolescent_6_18m, adult_18m_7y, senior_7y_plus, rescue_dogs`)
   }
   return value as AgeSpecialty
 }
@@ -67,7 +67,7 @@ export const validateAgeSpecialty = (value: string): AgeSpecialty => {
 // Runtime validation function for behavior issues
 export const validateBehaviorIssue = (value: string): BehaviorIssue => {
   if (!isValidBehaviorIssue(value)) {
-    throw new Error(`Invalid behavior issue: ${value}. Must be one of: pulling_lead, separation_anxiety, excessive_barking, dog_aggression, leash_reactivity, jumping_up, destructive_behaviour, recall_issues, anxiety_general, resource_guarding, mouthing_nipping_biting, rescue_support, socialisation`)
+    throw new Error(`Invalid behaviour issue: ${value}. Must be one of: pulling_on_lead, separation_anxiety, excessive_barking, dog_aggression, leash_reactivity, jumping_up, destructive_behaviour, recall_issues, anxiety_general, resource_guarding, mouthing_nipping_biting, rescue_dog_support, socialisation`)
   }
   return value as BehaviorIssue
 }
@@ -269,18 +269,34 @@ export interface Profile {
 
 export interface Business {
   id: number
-  profile_id: string
+  profile_id: string | null
   name: string
-  phone?: string
-  email?: string
+  phone?: string | null
+  email?: string | null
+  emergency_phone?: string | null
   website?: string
   address?: string
-  suburb_id: number
+  suburb_id: number | null
   bio?: string
   pricing?: string
   abn?: string
   abn_verified: boolean
   verification_status: VerificationStatus
+  resource_type: ResourceType
+  emergency_hours?: string | null
+  emergency_services?: string[] | null
+  cost_indicator?: string | null
+  capacity_notes?: string | null
+  emergency_verification_status?: VerificationStatus | null
+  emergency_verification_notes?: string | null
+  service_type_primary?: ServiceType | null
+  phone_encrypted?: string | null
+  email_encrypted?: string | null
+  abn_encrypted?: string | null
+  is_scaffolded: boolean
+  is_claimed: boolean
+  is_deleted: boolean
+  deleted_at?: string | null
   featured_until?: string
   is_active: boolean
   created_at: string
@@ -315,6 +331,8 @@ export interface Review {
   title?: string
   content?: string
   is_approved: boolean
+  is_rejected: boolean
+  rejection_reason?: string | null
   created_at: string
   updated_at: string
 }
@@ -324,18 +342,25 @@ export interface EmergencyResource {
   name: string
   resource_type: ResourceType
   phone: string
-  email?: string
+  email?: string | null
+  emergency_phone?: string | null
   website?: string
   address?: string
-  suburb_id: number
+  suburb_id: number | null
   is_24_hour: boolean
+  emergency_hours?: string | null
+  emergency_services?: string[] | null
+  cost_indicator?: string | null
+  capacity_notes?: string | null
+  emergency_verification_status?: VerificationStatus | null
+  emergency_verification_notes?: string | null
   is_active: boolean
   created_at: string
   updated_at: string
 }
 
 export interface EmergencyTriageLog {
-  id: string
+  id: number
   created_at: string
   dog_age: string | null
   issues: string[] | null
@@ -401,6 +426,7 @@ export interface AbnVerification {
   verification_method: 'api' | 'manual_upload'
   status: VerificationStatus
   admin_notes?: string
+  matched_json?: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }
@@ -423,8 +449,196 @@ export interface PaymentAudit {
   stripe_subscription_id?: string | null
   metadata?: Record<string, unknown>
   originating_route?: string | null
-  sync_error?: string | null
   created_at: string
+}
+
+export interface CouncilContact {
+  council_id: number
+  phone?: string | null
+  after_hours_phone?: string | null
+  report_url?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface DailyOpsDigest {
+  id: number
+  digest_date: string
+  summary: string
+  metrics: Record<string, unknown>
+  model?: string | null
+  generated_by?: string | null
+  created_at: string
+}
+
+export interface CronJobRun {
+  id: number
+  job_name: string
+  started_at: string
+  completed_at?: string | null
+  status: string
+  duration_ms?: number | null
+  error_message?: string | null
+  metadata?: Record<string, unknown>
+  created_at?: string
+}
+
+export interface FeaturedPlacementEvent {
+  id: number
+  placement_id: number
+  event_type: string
+  previous_status?: string | null
+  new_status?: string | null
+  triggered_by?: string | null
+  metadata?: Record<string, unknown>
+  created_at?: string
+}
+
+export interface ErrorLog {
+  id: string
+  level: string
+  category: string
+  route?: string | null
+  method?: string | null
+  status_code?: number | null
+  message: string
+  stack?: string | null
+  context?: Record<string, unknown>
+  user_id?: string | null
+  session_id?: string | null
+  request_id?: string | null
+  duration_ms?: number | null
+  env: string
+  created_at: string
+}
+
+export interface ErrorAlert {
+  id: string
+  alert_type: string
+  severity: string
+  threshold: Record<string, unknown>
+  status: string
+  last_triggered_at?: string | null
+  created_at: string
+}
+
+export interface ErrorAlertEvent {
+  id: string
+  alert_id: string
+  message: string
+  meta?: Record<string, unknown>
+  created_at: string
+}
+
+export interface AiReviewDecision {
+  id: number
+  review_id: number
+  ai_decision: string
+  confidence?: number | null
+  reason?: string | null
+  decision_source?: string | null
+  ai_mode?: string | null
+  ai_provider?: string | null
+  ai_model?: string | null
+  ai_prompt_version?: string | null
+  raw_response?: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AiEvaluationRun {
+  id: number
+  pipeline: string
+  dataset_version?: string | null
+  total_cases: number
+  correct_predictions: number
+  accuracy_pct?: number | null
+  false_positives?: number | null
+  false_negatives?: number | null
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+export interface EmergencyTriageFeedback {
+  id: number
+  triage_id: number
+  was_helpful?: boolean | null
+  feedback_text?: string | null
+  created_at: string
+}
+
+export interface EmergencyTriageWeeklyMetric {
+  id: number
+  week_start: string
+  total_triages: number
+  classification_breakdown?: Record<string, number>
+  priority_breakdown?: Record<string, number>
+  decision_source_breakdown?: Record<string, number>
+  accuracy_pct?: number | null
+  created_at: string
+}
+
+export interface EmergencyResourceVerificationEvent {
+  id: number
+  resource_id?: number | null
+  phone?: string | null
+  website?: string | null
+  is_valid?: boolean | null
+  reason?: string | null
+  confidence?: number | null
+  verification_method?: string | null
+  created_at: string
+}
+
+export interface EmergencyResourceVerificationRun {
+  id: number
+  started_at: string
+  completed_at?: string | null
+  total_resources?: number | null
+  auto_updates?: number | null
+  flagged_manual?: number | null
+  created_at: string
+}
+
+export interface TriageLog {
+  id: string
+  source: string
+  message: string
+  suburb_id?: number | null
+  classification?: string | null
+  confidence?: number | null
+  summary?: string | null
+  recommended_action?: string | null
+  urgency?: string | null
+  medical?: Record<string, unknown>
+  llm_provider?: string | null
+  llm_model?: string | null
+  tokens_prompt?: number | null
+  tokens_completion?: number | null
+  tokens_total?: number | null
+  duration_ms?: number | null
+  request_meta?: Record<string, unknown>
+  tags?: string[]
+  error_id?: string | null
+  created_at: string
+}
+
+export interface TriageEvent {
+  id: string
+  triage_log_id: string
+  stage: string
+  payload?: Record<string, unknown>
+  duration_ms?: number | null
+  created_at: string
+}
+
+export interface TriageMetricsHourly {
+  hour: string
+  total: number
+  medical_count: number
+  immediate_count: number
+  avg_latency_ms: number
+  total_tokens: number
 }
 
 // Joins and complex types
