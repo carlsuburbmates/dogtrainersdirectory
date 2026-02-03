@@ -7,6 +7,7 @@
 ## 1. Authority tiers
 - **Tier-0:** Blueprint SSOT (`00_BLUEPRINT_SSOT.md`)
 - **Tier-1:** Canonical support docs in this folder
+- **Pointer-only:** `README.md`, `README_DEVELOPMENT.md`, `supabase/LOCAL_SETUP.md` (summaries only; no contracts or procedures)
 - **Tier-2+:** Non-canonical (design notes, drafts, historical) — not included here by design
 
 ## 2. Canonical set (must read)
@@ -29,36 +30,3 @@ The following are intentionally excluded from the post-launch canonical set:
 - raw test output logs
 - legacy rollout plans superseded by launch reality
 - incident dumps (unless converted into a runbook entry)
-
-## 4. Key implementation files (Phase 1)
-
-### 4.1 New files created (Batch 1 & 2)
-**Authentication & Middleware:**
-- `src/lib/auth.ts` — Admin authentication helper functions
-- `src/middleware.ts` — Next.js middleware for route protection
-
-**API Endpoints:**
-- `src/app/api/public/search/route.ts` — Full-text search API with filtering
-- `src/app/api/admin/reviews/list/route.ts` — Admin reviews list with AI moderation data
-
-**UI Components:**
-- `src/app/trainers/[id]/ContactForm.tsx` — Contact form for trainer inquiries
-
-### 4.2 Deleted files (Batch 1)
-- `src/app/wizard/layout.tsx` — **REMOVED** (entire wizard directory deleted)
-- `src/app/wizard/**` — **REMOVED** (directory cleanup)
-
-### 4.3 Significantly modified files (Batch 1 & 2)
-**Pages:**
-- `src/app/search/page.tsx` — Enhanced with full search functionality
-- `src/app/emergency/page.tsx` — Enhanced with resources lookup and AI triage
-- `src/app/trainers/[id]/page.tsx` — Comprehensive trainer profile with full details
-- `src/app/trainer/[id]/page.tsx` — Redirect handler for backward compatibility
-- `src/app/admin/reviews/page.tsx` — Full review moderation interface
-
-**Database Access:**
-- `src/app/trainers/page.tsx` — Updated to use businesses table (not deprecated trainers table)
-
-### 4.4 Configuration
-- `next.config.js` — Middleware matcher configuration for protected routes
-- `.env.example` — Updated with required environment variables

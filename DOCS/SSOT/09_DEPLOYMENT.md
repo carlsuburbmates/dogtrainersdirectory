@@ -5,6 +5,7 @@
 
 ## 1. Hosting
 - Deployed on Vercel using Next.js build.
+- Operational procedures and scripts live in `08_OPS_RUNBOOK.md`.
 
 ## 2. Vercel cron schedule (canonical)
 From `vercel.json`:
