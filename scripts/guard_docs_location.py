@@ -13,8 +13,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+DOCS_ROOT = REPO_ROOT / "DOCS"
+ALLOWED_DOCS_PATHS = {
+    DOCS_ROOT / "SSOT",
+}
+
 FORBIDDEN_PATHS = [
-    REPO_ROOT / "DOCS",
     REPO_ROOT / "assessment",
     REPO_ROOT / "blueprint_handoff.zip",
     REPO_ROOT / "IMPLEMENTATION_SUMMARY.md",
@@ -27,6 +31,14 @@ FORBIDDEN_PATHS = [
 def main() -> int:
     docs_repo_hint = os.environ.get("DTD_DOCS_DIR") or "../dtd-docs-private/DOCS"
     existing = [p for p in FORBIDDEN_PATHS if p.exists()]
+
+    if DOCS_ROOT.exists():
+        non_ssot = [
+            p for p in DOCS_ROOT.iterdir()
+            if p not in ALLOWED_DOCS_PATHS
+        ]
+        if non_ssot:
+            existing.append(DOCS_ROOT)
     if not existing:
         return 0
 

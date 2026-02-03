@@ -18,18 +18,28 @@ create index if not exists idx_search_telemetry_timestamp on public.search_telem
 create index if not exists idx_search_telemetry_operation on public.search_telemetry(operation);
 create index if not exists idx_search_telemetry_success on public.search_telemetry(success, timestamp desc);
 create index if not exists idx_search_telemetry_suburb on public.search_telemetry(suburb_id, timestamp desc);
-create index if not exists idx_search_telemetry_latency on public.search_telemetry(latency, timestamp desc);
+create index if not exists idx_search_telemetry_latency on public.search_telemetry(latency_ms, timestamp desc);
 
 -- Row level security
 alter table public.search_telemetry enable row level security;
 
 -- Only service role can write telemetry
-create policy "Service role full access to search telemetry" on public.search_telemetry
-    for all using (auth.role() = 'service_role')
-    with check (auth.role() = 'service_role');
+do $$
+begin
+    if not exists (
+        select 1 from pg_policies
+        where schemaname = 'public'
+          and tablename = 'search_telemetry'
+          and policyname = 'Service role full access to search telemetry'
+    ) then
+        execute 'create policy "Service role full access to search telemetry" on public.search_telemetry
+          for all using (auth.role() = ''service_role'')
+          with check (auth.role() = ''service_role'')';
+    end if;
+end $$;
 
 -- Grant necessary permissions
-grant usage on schema public to service_role, authenticated_role, anon_role;
+grant usage on schema public to service_role, authenticated, anon;
 grant select, insert, update on public.search_telemetry to service_role;
 
 -- Function to calculate P50/P95 latency for a time window
@@ -41,7 +51,7 @@ returns table (
     p50_latency float,
     p95_latency float,
     avg_latency float,
-    total_operations bigserial,
+    total_operations bigint,
     success_rate decimal(5,2)
 ) as $$
 declare
@@ -52,7 +62,7 @@ begin
         percentile_cont(0.5) within group (order by latency_ms) as p50_latency,
         percentile_cont(0.95) within group (order by latency_ms) as p95_latency,
         round(avg(latency_ms)::numeric, 2) as avg_latency,
-        count(*)::bigserial as total_operations,
+        count(*)::bigint as total_operations,
         round(100.0 * count(nullif(success, false)) / count(*), 2) as success_rate
     from public.search_telemetry
     where timestamp >= min_timestamp
@@ -61,7 +71,17 @@ end;
 $$ language plpgsql stable security definer;
 
 -- Row level security for the function
-create policy "Allow authenticated access to latency stats" on public.search_telemetry
-    for select using (auth.role() = 'authenticated_role');
+do $$
+begin
+    if not exists (
+        select 1 from pg_policies
+        where schemaname = 'public'
+          and tablename = 'search_telemetry'
+          and policyname = 'Allow authenticated access to latency stats'
+    ) then
+        execute 'create policy "Allow authenticated access to latency stats" on public.search_telemetry
+          for select using (auth.role() = ''authenticated'')';
+    end if;
+end $$;
 
-grant execute on function public.get_search_latency_stats to authenticated_role, service_role;
+grant execute on function public.get_search_latency_stats to authenticated, service_role;

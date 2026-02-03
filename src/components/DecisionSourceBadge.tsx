@@ -1,14 +1,29 @@
 // Simple Badge implementation inline
 import type { DecisionSource } from '@/lib/ai-types'
 
-function Badge({ children, variant }: { children: React.ReactNode; variant?: string }) {
+function Badge({
+  children,
+  variant,
+  className,
+  title
+}: {
+  children: React.ReactNode
+  variant?: string
+  className?: string
+  title?: string
+}) {
   const base = "inline-flex px-2 py-1 text-xs rounded-full"
   const variantMap = {
     default: "bg-blue-100 text-blue-800",
     secondary: "bg-gray-100 text-gray-800",
     outline: "border border-gray-300 text-gray-700"
   }
-  return <span className={`${base} ${variantMap[variant as keyof typeof variantMap] || variantMap.default}`}>{children}</span>
+  const merged = [base, variantMap[variant as keyof typeof variantMap] || variantMap.default, className].filter(Boolean).join(' ')
+  return (
+    <span className={merged} title={title}>
+      {children}
+    </span>
+  )
 }
 
 interface DecisionSourceBadgeProps {

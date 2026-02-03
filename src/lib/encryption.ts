@@ -1,16 +1,23 @@
-import { createCipheriv, randomBytes } from 'crypto'
+import { supabaseAdmin } from './supabase'
 
-const KEY = process.env.PGCRYPTO_KEY
-if (!KEY) {
-  throw new Error('PGCRYPTO_KEY is required for encryption')
-}
+export async function encryptValue(value: string): Promise<string> {
+  const key = process.env.SUPABASE_PGCRYPTO_KEY
+  if (!key) {
+    throw new Error('SUPABASE_PGCRYPTO_KEY is required for encryption')
+  }
 
-const KEY_BUFFER = Buffer.from(KEY, 'hex')
+  const { data, error } = await supabaseAdmin.rpc('encrypt_sensitive', {
+    p_input: value,
+    p_key: key
+  })
 
-export function encryptValue(value: string): string {
-  const iv = randomBytes(16)
-  const cipher = createCipheriv('aes-256-gcm', KEY_BUFFER, iv)
-  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()])
-  const tag = cipher.getAuthTag()
-  return Buffer.concat([iv, tag, encrypted]).toString('base64')
+  if (error) {
+    throw new Error(`encrypt_sensitive failed: ${error.message}`)
+  }
+
+  if (!data || typeof data !== 'string') {
+    throw new Error('encrypt_sensitive returned no data')
+  }
+
+  return data
 }
