@@ -6,7 +6,9 @@
 
 # Dog Trainers Directory - Development Setup Guide
 
-Documentation home: `dtd-docs-private/DOCS/README.md` — use this as your starting point for automation runbooks, DB/migrations docs, and AI agent instructions.
+Documentation home (SSOT): `DOCS/SSOT/FILE_MANIFEST.md`.
+
+Optional private docs: if you have access to `dtd-docs-private`, it contains operator runbooks/evidence, but the implementation SSOT is in this repo under `DOCS/SSOT/`.
 
 
 
@@ -199,7 +201,7 @@ supabase/
 - `/api/emergency/triage/weekly` — aggregates `emergency_triage_logs` into `emergency_triage_weekly_metrics`. Schedule weekly (Mon 00:05 AEST recommended).
 - `/api/admin/overview` — generates/stores the Daily Ops Digest (LLM-backed) and exposes KPIs for the admin dashboard. Optionally hit this via cron each morning to refresh summaries before humans log in.
 
-> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the Phase 5 migration (`supabase/migrations/20250208103000_phase5_emergency_automation.sql`). See `dtd-docs-private/DOCS/automation/REMOTE_DB_MIGRATIONS.md` for safe, step-by-step instructions.
+> To fully enable emergency automation & ops digest persistence on a remote Supabase instance, apply the migrations in `supabase/migrations/` (notably `supabase/migrations/20260203171000_add_missing_ops_and_emergency_tables.sql`) and ensure `supabase/schema.sql` is treated as a *derived snapshot* (refresh it from the DB when needed).
 
 ---
 

@@ -6,15 +6,19 @@
 
 # dogtrainersdirectory.com.au
 
-Docs now live in the sibling private repo `dtd-docs-private`. Clone it adjacent to this repo and open `dtd-docs-private/DOCS/README.md` for authoritative runbooks, design notes, and evidence.
+The canonical Single Source of Truth (SSOT) for this repo lives in `DOCS/SSOT/` (start at `DOCS/SSOT/FILE_MANIFEST.md`).
+
+There is also an optional sibling private repo, `dtd-docs-private`, used for operator evidence/runbooks. If you have access, clone it adjacent to this repo.
 
 ## Quick Setup (Developer Convenience)
 
-Clone both repositories side-by-side:
+Clone the app repo (and optionally the private docs repo) side-by-side:
 
 ```bash
-# Parent directory — clone both repos here
+# Parent directory — clone the app repo here
 git clone git@github.com:carlsuburbmates/dogtrainersdirectory.git DTD
+
+# Optional (if you have access): clone the private docs repo adjacent
 git clone git@github.com:carlsuburbmates/dtd-docs-private.git
 
 # Then enter the app repo and continue with normal setup
@@ -23,11 +27,11 @@ npm install
 npm run dev
 ```
 
-All documentation references (`DOCS/`, automation runbooks, etc.) are in the adjacent `dtd-docs-private` folder. Refer to `../dtd-docs-private/DOCS/README.md` when reading setup or deployment guides.
+SSOT docs for implementation live in this repo under `DOCS/SSOT/`. If you also have `dtd-docs-private`, it contains operator runbooks and evidence artefacts.
 
 ---
 
-Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 14 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetization deferred) with strong disclaimers (no SLAs).
+Docs-first, AI-assisted directory connecting Melbourne dog owners to trainers, behaviour consultants, and emergency resources across 28 councils. Built on Next.js 16 App Router, Supabase (Postgres/Auth/Functions/Storage), and Stripe-ready (monetisation deferred) with strong disclaimers (no SLAs).
 
 ## Status
 - Phases 1–5 delivered (database/auth, triage/search, directory/profiles, manual onboarding with ABN verification, emergency ops + admin dashboard). Monetization and web-scraper automation remain deferred until post-launch criteria are met.

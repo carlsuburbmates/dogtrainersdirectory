@@ -26,6 +26,13 @@ Notes & safety
 - This remote path provides the full Supabase service surface (auth, functions, storage) without needing Docker locally.
 - Keep sensitive values (SUPABASE_SERVICE_ROLE_KEY, SUPABASE_CONNECTION_STRING) in secure storage and never commit them.
 
+Connection strings (IPv6 vs pooler)
+- Some Supabase direct DB hosts are IPv6-only. If your network/client cannot resolve IPv6, use the **session pooler** connection string for `SUPABASE_CONNECTION_STRING` so scripts work reliably.
+
+Refreshing `supabase/schema.sql`
+- `supabase/schema.sql` is treated as a derived snapshot (not the primary source of truth).
+- Refresh from the live DB with `npm run schema:refresh` (uses Postgres 17 `pg_dump`, with a Docker fallback if needed).
+
 Advanced (optional): local Postgres / offline migration testing with Docker
 
 If you require an isolated local Postgres for tough migration-edge testing or for running scripts against synthetic data, this repo contains helper scripts and schema snapshots — these are optional and for advanced contributors only.
