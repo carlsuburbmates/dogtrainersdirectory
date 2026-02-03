@@ -29,12 +29,12 @@ import re
 import sys
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DEFAULT_DOCS_DIR = os.path.abspath(os.path.join(REPO_ROOT, "..", "dtd-docs-private", "DOCS"))
-DOCS_DIR = os.environ.get("DTD_DOCS_DIR", DEFAULT_DOCS_DIR)
+DEFAULT_DATA_DIR = os.path.join(REPO_ROOT, "data")
+DATA_DIR = os.environ.get("DTD_DATA_DIR") or os.environ.get("DTD_DOCS_DIR") or DEFAULT_DATA_DIR
 
 SRC_MAP = {
-    'staging': os.path.join(DOCS_DIR, 'automation/ABN-ABR-GUID_automation/abn_allowlist.staging.csv'),
-    'prod': os.path.join(DOCS_DIR, 'automation/ABN-ABR-GUID_automation/abn_allowlist.prod.csv')
+    'staging': os.path.join(DATA_DIR, 'abn_allowlist.staging.csv'),
+    'prod': os.path.join(DATA_DIR, 'abn_allowlist.prod.csv')
 }
 OUT_MAP = {
     'staging': 'scripts/controlled_abn_list.staging.json',

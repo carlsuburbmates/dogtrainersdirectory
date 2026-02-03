@@ -595,8 +595,8 @@ function getStatusCounts() {
 
 function getLaunchRunsDir() {
   const candidates = [
-    process.env.DTD_DOCS_DIR,
-    path.resolve(process.cwd(), '..', 'dtd-docs-private', 'DOCS')
+    process.env.DTD_ARTIFACTS_DIR,
+    process.env.DTD_DOCS_DIR
   ].filter(Boolean) as string[]
 
   for (const candidate of candidates) {

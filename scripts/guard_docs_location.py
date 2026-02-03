@@ -29,9 +29,7 @@ POINTER_ONLY_FILES = {
     REPO_ROOT / "supabase" / "LOCAL_SETUP.md": {"Where to look"},
 }
 
-FORBIDDEN_POINTER_TOKENS = {
-    "dtd-docs-private",
-}
+FORBIDDEN_POINTER_TOKENS: set[str] = set()
 
 
 def check_pointer_only(file_path: Path, allowed_headings: set[str]) -> list[str]:

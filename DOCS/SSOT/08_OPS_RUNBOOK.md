@@ -45,6 +45,7 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 - `supabase/schema.sql` is a **derived snapshot**; refresh with `npm run schema:refresh`.
 - Remote apply helper (ops-only): `scripts/try_remote_apply.sh` (prefer CI or Supabase dashboard).
 - Data import validator: `npm run validate-import` (checks `supabase/schema.sql` and `supabase/data-import.sql`).
+- Suburb/council source data lives in `data/suburbs_councils_mapping.csv` (generated from current SQL).
 
 ## 9. Local DB helpers (optional)
 - `npm run db:start` — start local Postgres and apply migrations.
@@ -56,7 +57,7 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 ## 10. ABN / ABR operations
 - Controlled batch runner: `scripts/abn_controlled_batch.py` (dry-run by default; use `--apply` with `AUTO_APPLY=true`).
 - Re-check job: `scripts/abn_recheck.py` (scheduled).
-- Allowlist generation: `scripts/generate_allowlist.py` (writes `scripts/controlled_abn_list.*.json`, git-ignored).
+- Allowlist generation: `scripts/generate_allowlist.py` reads `data/abn_allowlist.{staging,prod}.csv` and writes `scripts/controlled_abn_list.*.json` (git-ignored).
 - Required envs for writes: `ABR_GUID`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_CONNECTION_STRING`.
 - Raw ABR matches are persisted in `abn_verifications.matched_json` for auditability.
 
@@ -69,3 +70,7 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 ## 12. AI evaluation harness
 - Offline evaluation: `scripts/evaluate_ai.ts` (reads golden sets, prints metrics).
 - Optional DB persistence when service role key is present.
+
+## 13. Phase 2 scraper inputs (optional)
+- Inputs live in `data/phase2_scraper_targets.csv`.
+- Generator: `scripts/run_phase2_scraper.py` (writes `supabase/phase2_scraped.json`).
