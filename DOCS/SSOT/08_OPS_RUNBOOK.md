@@ -45,7 +45,7 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 - `supabase/schema.sql` is a **derived snapshot**; refresh with `npm run schema:refresh`.
 - Remote apply helper (ops-only): `scripts/try_remote_apply.sh` (prefer CI or Supabase dashboard).
 - Data import validator: `npm run validate-import` (checks `supabase/schema.sql` and `supabase/data-import.sql`).
-- Suburb/council source data lives in `data/suburbs_councils_mapping.csv` (generated from current SQL).
+- Suburb/council source data lives in `data/suburbs_councils_mapping.csv` (regenerate from SQL via `npm run data:refresh`).
 
 ## 9. Local DB helpers (optional)
 - `npm run db:start` — start local Postgres and apply migrations.

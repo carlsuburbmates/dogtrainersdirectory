@@ -19,8 +19,8 @@ Validation:
   - abn must contain exactly 11 digits (digits-only)
 
 Exit codes:
-  - 0 success
-  - non-zero: failure (missing CSV or no valid rows)
+  - 0 success (empty allowlist is permitted)
+  - non-zero: failure (missing CSV)
 """
 import csv
 import json
@@ -113,8 +113,7 @@ def main():
     rows = read_csv(src)
     entries = validate_and_build(rows)
     if not entries:
-        print(f"ERROR: No valid rows found in {src}", file=sys.stderr)
-        sys.exit(2)
+        print(f"WARN: No valid rows found in {src}; writing empty allowlist.", file=sys.stderr)
 
     with open(out, 'w', encoding='utf-8') as fh:
         json.dump(entries, fh, indent=2, ensure_ascii=False)
