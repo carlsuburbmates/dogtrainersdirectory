@@ -67,6 +67,7 @@
 
 ### 1.3 ABN verification
 - `/api/abn/verify`
+  **Rule:** ABN is **verified** only when `ABNStatus === "Active"` in the ABR response. All other outcomes are `manual_review` or `rejected` (see `abn_fallback_events` and `abn_verifications`).
 
 ### 1.4 Onboarding
 - `/api/onboarding`
