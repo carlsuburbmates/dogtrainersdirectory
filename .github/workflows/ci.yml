@@ -9,6 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure suburbs CSV matches SQL seed
+        run: |
+          set -euo pipefail
+          python3 scripts/refresh_suburbs_csv.py
+          git diff --exit-code data/suburbs_councils_mapping.csv
       - name: Validate suburb import counts and distance sanity
         run: |
           python3 - <<'PY'
