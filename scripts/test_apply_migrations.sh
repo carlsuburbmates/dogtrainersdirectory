@@ -24,8 +24,9 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
   docker rm -f ${CONTAINER} >/dev/null || true
 fi
 
-# Start a new Postgres container
-docker run --name ${CONTAINER} -e POSTGRES_PASSWORD=${PG_PASS} -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -p ${PG_PORT}:5432 -d postgres:15-alpine
+# Start a new Postgres container.
+# Keep this aligned with Supabase's current Postgres major (17) to reduce drift during local testing.
+docker run --name ${CONTAINER} -e POSTGRES_PASSWORD=${PG_PASS} -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -p ${PG_PORT}:5432 -d postgres:17-alpine
 
 # Wait for Postgres to be ready
 echo "Waiting for Postgres to accept connections..."

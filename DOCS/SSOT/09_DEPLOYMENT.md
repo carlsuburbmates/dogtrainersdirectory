@@ -5,6 +5,7 @@
 
 ## 1. Hosting
 - Deployed on Vercel using Next.js build.
+- Operational procedures and scripts live in `08_OPS_RUNBOOK.md`.
 
 ## 2. Vercel cron schedule (canonical)
 From `vercel.json`:
@@ -28,8 +29,10 @@ From `package.json`:
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret. (server)
 
 ### 4.2 Supabase
-- `SUPABASE_CONNECTION_STRING` — Direct Postgres connection for verification scripts. (ops script)
-- `SUPABASE_PGCRYPTO_KEY` — Decryption key passed into search_trainers RPC. (server + edge function)
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL. (client + server)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key. (client + server)
+- `SUPABASE_CONNECTION_STRING` — Postgres connection for ops scripts (recommended: **session pooler** string to avoid IPv6-only direct hosts). (ops)
+- `SUPABASE_PGCRYPTO_KEY` — Encryption/decryption key used with `encrypt_sensitive`/`decrypt_sensitive`. Server-only. (server)
 - `SUPABASE_SERVICE_ROLE_KEY` — Service-role key for admin DB access. (server + edge functions)
 - `SUPABASE_URL` — Supabase URL for server-side logging / edge functions. (server + edge function)
 

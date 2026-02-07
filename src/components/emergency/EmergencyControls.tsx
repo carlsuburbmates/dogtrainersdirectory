@@ -22,7 +22,7 @@ export function EmergencyControls({ defaultMessage = '' }: EmergencyControlsProp
             {emergencyMode ? 'Disable Emergency Mode' : 'Enable Emergency Mode'}
           </button>
           <p className="mt-2 text-xs text-gray-500">
-            Toggling this switch simulates the ops-only kill switch described in ../dtd-docs-private/DOCS/automation/OPS_RUNBOOK_EMERGENCY_VERIFICATION.md.
+            Toggling this switch simulates the ops-only kill switch described in DOCS/SSOT/08_OPS_RUNBOOK.md.
           </p>
         </div>
         <div>

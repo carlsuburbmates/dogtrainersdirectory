@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DOCS_DIR = (REPO_ROOT.parent / "dtd-docs-private" / "DOCS").resolve()
-DOCS_DIR = Path(os.environ.get("DTD_DOCS_DIR", str(DEFAULT_DOCS_DIR))).resolve()
+DEFAULT_DATA_DIR = (REPO_ROOT / "data").resolve()
+DATA_DIR = Path(os.environ.get("DTD_DATA_DIR") or os.environ.get("DTD_DOCS_DIR") or str(DEFAULT_DATA_DIR)).resolve()
 
-CSV_PATH = DOCS_DIR / "suburbs_councils_mapping.csv"
+CSV_PATH = DATA_DIR / "suburbs_councils_mapping.csv"
 OUTPUT_PATH = REPO_ROOT / "supabase" / "data-import.sql"
 
 def main():
@@ -35,7 +35,7 @@ def main():
             f"('{suburb}', {postcode!s}, {latitude!s}, {longitude!s}, (SELECT id FROM councils WHERE name = '{council}'))"
         )
 
-    content = """-- Generated suburb import based on suburbs_councils_mapping.csv (from dtd-docs-private)\n"""
+    content = """-- Generated suburb import based on data/suburbs_councils_mapping.csv\n"""
     content += "TRUNCATE TABLE suburbs RESTART IDENTITY CASCADE;\n"
     content += "TRUNCATE TABLE councils RESTART IDENTITY CASCADE;\n\n"
     content += "INSERT INTO councils (name, region) VALUES\n"

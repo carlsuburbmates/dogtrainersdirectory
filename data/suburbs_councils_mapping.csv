@@ -1,0 +1,139 @@
+suburb,council,region,postcode,latitude,longitude
+Carlton,City of Melbourne,Inner City,3053,-37.8004228,144.9684343
+Docklands,City of Melbourne,Inner City,3008,-37.8175423,144.9394923
+Flemington,City of Melbourne,Inner City,3031,-37.7867587,144.9193668
+Kensington,City of Melbourne,Inner City,3031,-37.7939378,144.9305645
+North Melbourne,City of Melbourne,Inner City,3003,-37.8076092,144.9423514
+Parkville,City of Melbourne,Inner City,3052,-37.7871148,144.9515533
+Albert Park,City of Port Phillip,Inner City,3206,-37.8452062,144.9571050
+Balaclava,City of Port Phillip,Inner City,3183,-37.8695430,144.9934871
+Elwood,City of Port Phillip,Inner City,3184,-37.8788568,144.9855487
+St Kilda,City of Port Phillip,Inner City,3182,-37.8638261,144.9816370
+South Melbourne,City of Port Phillip,Inner City,3205,-37.8334400,144.9570533
+Abbotsford,City of Yarra,Inner City,3067,-37.8045508,144.9988542
+Collingwood,City of Yarra,Inner City,3066,-37.8021040,144.9881387
+Fitzroy,City of Yarra,Inner City,3065,-37.8010382,144.9792611
+Richmond,City of Yarra,Inner City,3121,-37.8074500,144.9907213
+Heidelberg,City of Banyule,Northern,3084,-37.7524788,145.0701284
+Ivanhoe,City of Banyule,Northern,3079,-37.7688774,145.0454487
+Watsonia,City of Banyule,Northern,3087,-37.7109468,145.0837808
+Greensborough,City of Banyule,Northern,3088,-37.7037383,145.1079105
+Eltham,City of Banyule,Northern,3095,-37.7137360,145.1476730
+Preston,City of Darebin,Northern,3072,-37.7418658,145.0078205
+Reservoir,City of Darebin,Northern,3073,-37.7168415,145.0069944
+Thornbury,City of Darebin,Northern,3071,-37.7549944,144.9985944
+West Preston,City of Darebin,Northern,3072,-37.7378429,144.9956343
+Fairfield,City of Darebin,Northern,3078,-37.7791763,145.0169241
+Broadmeadows,City of Hume,Northern,3047,-37.6830526,144.9194859
+Sunbury,City of Hume,Northern,3429,-37.5791363,144.7279832
+Craigieburn,City of Hume,Northern,3064,-37.6022613,144.9430882
+Roxburgh Park,City of Hume,Northern,3064,-37.6381563,144.9353302
+Tullamarine,City of Hume,Northern,3043,-37.7046580,144.8717732
+Brunswick,City of Merri-bek,Northern,3056,-37.7664715,144.9613103
+Coburg,City of Merri-bek,Northern,3058,-37.7449752,144.9643314
+Fawkner,City of Merri-bek,Northern,3046,-37.7146535,144.9605402
+Glenroy,City of Merri-bek,Northern,3046,-37.7044232,144.9173351
+Pascoe Vale,City of Merri-bek,Northern,3044,-37.7308567,144.9281950
+South Morang,City of Whittlesea,Northern,3076,-37.6492441,145.0672450
+Epping,City of Whittlesea,Northern,3076,-37.6523847,145.0315487
+Doreen,City of Whittlesea,Northern,3754,-37.5963874,145.1428928
+Mernda,City of Whittlesea,Northern,3754,-37.6025021,145.1009024
+Kinglake,City of Whittlesea,Northern,3763,-37.5327424,145.3411310
+Diamond Creek,Shire of Nillumbik,Northern,3089,-37.6733272,145.1588075
+Eltham,Shire of Nillumbik,Northern,3095,-37.7137360,145.1476730
+Kallista,Shire of Nillumbik,Northern,3791,-37.8858076,145.3729123
+Monbulk,Shire of Nillumbik,Northern,3793,-37.8741771,145.4286024
+Lilydale East,Shire of Nillumbik,Northern,3140,-37.7574316,145.3457906
+Camberwell,City of Boroondara,Eastern,3124,-37.8384623,145.0740767
+Hawthorn,City of Boroondara,Eastern,3122,-37.8244246,145.0317207
+Kew,City of Boroondara,Eastern,3101,-37.8033586,145.0333285
+Balwyn,City of Boroondara,Eastern,3103,-37.8091737,145.0833678
+Glen Iris,City of Boroondara,Eastern,3146,-37.8558140,145.0646117
+Bayswater,City of Knox,Eastern,3153,-37.8417390,145.2681208
+Boronia,City of Knox,Eastern,3155,-37.8606450,145.2848446
+Mountain Gate,City of Knox,Eastern,3156,-37.8857353,145.2760908
+Knoxfield,City of Knox,Eastern,3180,-37.8897731,145.2496342
+Ferntree Gully,City of Knox,Eastern,3156,-37.8815825,145.2951466
+Doncaster,City of Manningham,Eastern,3108,-37.7848299,145.1238431
+Templestowe,City of Manningham,Eastern,3106,-37.7540588,145.1486152
+Bulleen,City of Manningham,Eastern,3105,-37.7688992,145.0871992
+Park Orchards,City of Manningham,Eastern,3114,-37.7778362,145.2140351
+Croydon,City of Maroondah,Eastern,3136,-37.7955004,145.2801507
+Ringwood,City of Maroondah,Eastern,3134,-37.8158726,145.2291113
+Heathmont,City of Maroondah,Eastern,3135,-37.8283636,145.2445770
+Donvale,City of Maroondah,Eastern,3111,-37.7898094,145.1914915
+Warranwood,City of Maroondah,Eastern,3134,-37.7730016,145.2505908
+Box Hill,City of Whitehorse,Eastern,3128,-37.8215116,145.1261267
+Nunawading,City of Whitehorse,Eastern,3131,-37.8205030,145.1751332
+Vermont,City of Whitehorse,Eastern,3133,-37.8379913,145.1983600
+Mitcham,City of Whitehorse,Eastern,3132,-37.8180929,145.1928003
+Blackburn,City of Whitehorse,Eastern,3130,-37.8201373,145.1500496
+Lilydale,Shire of Yarra Ranges,Eastern,3140,-37.7571582,145.3458656
+Belgrave,Shire of Yarra Ranges,Eastern,3160,-37.9090141,145.3552538
+Emerald,Shire of Yarra Ranges,Eastern,3782,-37.9321282,145.4407282
+Coldstream,Shire of Yarra Ranges,Eastern,3770,-37.7291014,145.3784240
+Yarra Glen,Shire of Yarra Ranges,Eastern,3775,-37.6573475,145.3743964
+Beaumaris,City of Bayside,South Eastern,3193,-37.9822122,145.0389098
+Brighton,City of Bayside,South Eastern,3186,-37.9081962,144.9957991
+Hampton,City of Bayside,South Eastern,3188,-37.9381127,145.0014764
+Black Rock,City of Bayside,South Eastern,3193,-37.9706564,145.0212822
+Sandringham,City of Bayside,South Eastern,3191,-37.9502592,145.0043868
+Caulfield,City of Glen Eira,South Eastern,3145,-37.8775177,145.0424939
+Carnegie,City of Glen Eira,South Eastern,3163,-37.8862295,145.0585695
+Bentleigh,City of Glen Eira,South Eastern,3204,-37.9175354,145.0369346
+Elsternwick,City of Glen Eira,South Eastern,3185,-37.8849937,145.0010231
+Murrumbeena,City of Glen Eira,South Eastern,3163,-37.8903150,145.0675972
+Mentone,City of Kingston,South Eastern,3194,-37.9835633,145.0663436
+Moorabbin,City of Kingston,South Eastern,3189,-37.9343919,145.0368952
+Aspendale,City of Kingston,South Eastern,3195,-38.0272365,145.1021263
+Highett,City of Kingston,South Eastern,3190,-37.9484438,145.0418800
+Sandown,City of Kingston,South Eastern,3174,-37.9503548,145.1665966
+Narre Warren,City of Casey,South Eastern,3805,-38.0275167,145.3037408
+Cranbourne,City of Casey,South Eastern,3977,-38.0997308,145.2807256
+Fountain Gate,City of Casey,South Eastern,3805,-38.0199515,145.3029094
+Clyde,City of Casey,South Eastern,3978,-38.1326345,145.3290375
+Frankston,City of Frankston,South Eastern,3199,-38.1457064,145.1263742
+Seaford,City of Frankston,South Eastern,3198,-38.1040134,145.1282259
+Karingal,City of Frankston,South Eastern,3199,-38.1431944,145.1526389
+Skye,City of Frankston,South Eastern,3977,-38.1051265,145.2162331
+Langwarrin,City of Frankston,South Eastern,3910,-38.1545829,145.1973931
+Pakenham,Shire of Cardinia,South Eastern,3810,-38.0806283,145.4863217
+Officer,Shire of Cardinia,South Eastern,3809,-38.0662897,145.4116963
+Beaconsfield,Shire of Cardinia,South Eastern,3807,-38.0510344,145.3663421
+Emerald,Shire of Cardinia,South Eastern,3782,-37.9321282,145.4407282
+Bunyip,Shire of Cardinia,South Eastern,3815,-38.0971242,145.7208993
+Mornington,Mornington Peninsula Shire,South Eastern,3931,-38.2202151,145.0411089
+Mount Martha,Mornington Peninsula Shire,South Eastern,3934,-38.2754676,145.0307737
+Red Hill,Mornington Peninsula Shire,South Eastern,3937,-38.3683762,145.0209335
+Sorrento,Mornington Peninsula Shire,South Eastern,3943,-38.3447273,144.7420938
+Portsea,Mornington Peninsula Shire,South Eastern,3944,-38.3228212,144.7004208
+Sunshine,City of Brimbank,Western,3020,-37.7887617,144.8331303
+St Albans,City of Brimbank,Western,3021,-37.7445560,144.7996864
+Keilor,City of Brimbank,Western,3036,-37.7113545,144.8250696
+Albanvale,City of Brimbank,Western,3021,-37.7460824,144.7685623
+Deer Park,City of Brimbank,Western,3023,-37.7686602,144.7713077
+Williamstown,City of Hobsons Bay,Western,3016,-37.8611788,144.8898569
+Altona,City of Hobsons Bay,Western,3018,-37.8671503,144.8294637
+Newport,City of Hobsons Bay,Western,3015,-37.8423064,144.8835622
+Hobsons Bay,City of Hobsons Bay,Western,3207,-37.8533828,144.9233220
+Werribee South,City of Hobsons Bay,Western,3030,-37.9396270,144.6975460
+Footscray,City of Maribyrnong,Western,3011,-37.7981339,144.8973450
+Yarraville,City of Maribyrnong,Western,3013,-37.8157451,144.8899677
+Seddon,City of Maribyrnong,Western,3011,-37.8089777,144.8956702
+Kingsville,City of Maribyrnong,Western,3012,-37.8088622,144.8794356
+West Footscray,City of Maribyrnong,Western,3011,-37.8017412,144.8840743
+Caroline Springs,City of Melton,Western,3023,-37.7340623,144.7370017
+Melton,City of Melton,Western,3337,-37.6835714,144.5828446
+Hillside,City of Melton,Western,3037,-37.6904862,144.7417358
+Toolern,City of Melton,Western,3337,-37.6074215,144.5941995
+Brookfield,City of Melton,Western,3338,-37.6993389,144.5405513
+Essendon,City of Moonee Valley,Western,3040,-37.7498293,144.9109062
+Moonee Ponds,City of Moonee Valley,Western,3039,-37.7659350,144.9192614
+Ascot Vale,City of Moonee Valley,Western,3032,-37.7753252,144.9218250
+Strathmore,City of Moonee Valley,Western,3041,-37.7333202,144.9182433
+Avondale Heights,City of Moonee Valley,Western,3034,-37.7614537,144.8621410
+Werribee,City of Wyndham,Western,3030,-37.9079840,144.6416748
+Point Cook,City of Wyndham,Western,3030,-37.9064862,144.7533059
+Williams Landing,City of Wyndham,Western,3027,-37.8700300,144.7469304
+Tarneit,City of Wyndham,Western,3029,-37.8321522,144.6946200
+Manor Lakes,City of Wyndham,Western,3024,-37.8686285,144.5950127

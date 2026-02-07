@@ -36,10 +36,10 @@ SERVICE_ENUM = [
 ]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DOCS_DIR = (REPO_ROOT.parent / "dtd-docs-private" / "DOCS").resolve()
-DOCS_DIR = Path(os.environ.get("DTD_DOCS_DIR", str(DEFAULT_DOCS_DIR))).resolve()
+DEFAULT_DATA_DIR = (REPO_ROOT / "data").resolve()
+DATA_DIR = Path(os.environ.get("DTD_DATA_DIR") or os.environ.get("DTD_DOCS_DIR") or str(DEFAULT_DATA_DIR)).resolve()
 
-TARGETS = DOCS_DIR / "phase2_scraper_targets.csv"
+TARGETS = DATA_DIR / "phase2_scraper_targets.csv"
 OUTPUT = REPO_ROOT / "supabase" / "phase2_scraped.json"
 
 SCRAPER_FLAG = os.environ.get("SCRAPER_ENABLED", "false").lower()
