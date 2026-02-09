@@ -49,8 +49,8 @@ See `07_AI_AUTOMATION.md`.
 See `08_OPS_RUNBOOK.md` and `09_DEPLOYMENT.md` (cron, health checks, runbooks).
 
 ## 9. Known gaps requiring confirmation
-The input bundle indicates several references in code to tables/RPCs not present in migrations included in the bundle (e.g., `cron_job_runs`, `error_logs`, `webhook_events`, and some RPCs).  
-**Rule:** treat these as **unknown** until verified in the real repo schema files. Track resolutions in `CHANGE_PROTOCOL.md`.
+The input bundle indicated references in code to tables/RPCs not present in the bundle migrations (e.g., `cron_job_runs`, `error_logs`, `webhook_events`, and some RPCs).  
+**Resolved:** these are now verified in repo schema/migrations and listed in `03_DATA_CONTRACTS.md` (as of 2026-02-09). Track any future drift in `CHANGE_PROTOCOL.md`.
 
 ## 10. Canonical documents (Tier-1)
 - `01_SYSTEM_MODEL.md`

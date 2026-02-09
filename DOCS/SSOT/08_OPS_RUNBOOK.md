@@ -24,7 +24,7 @@ There is **no support inbox** concept in code.
 - DLQ replay: `/api/admin/dlq/replay`
 
 ## 4. Known gaps / risks (from bundle)
-- Admin auth is inconsistent across `/api/admin/**` endpoints (some TODO/no checks). Treat as a launch risk: tighten auth.
+- **Resolved:** Admin auth enforcement is now consistent across `/admin/**` and `/api/admin/**` (see `10_SECURITY_AND_PRIVACY.md`).
 - No background worker framework is present; cron + request-driven work are primary.
 
 ## 5. Verification harnesses

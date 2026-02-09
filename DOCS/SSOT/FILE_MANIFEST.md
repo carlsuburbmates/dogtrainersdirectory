@@ -22,6 +22,7 @@
 - `08_OPS_RUNBOOK.md`
 - `09_DEPLOYMENT.md`
 - `10_SECURITY_AND_PRIVACY.md` — ✅ Updated (Phase 1 Batch 3)
+- `11_PRODUCT_CONTEXT.md`
 - `CHANGE_PROTOCOL.md`
 
 ## 3. Exclusions (explicit)

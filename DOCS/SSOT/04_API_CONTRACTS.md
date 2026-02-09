@@ -11,24 +11,22 @@
 - `/api/public/search` — ✅ **Implemented (Phase 1 Batch 1)**  
   **Method:** GET  
   **Purpose:** Full-text search for trainers/businesses with filtering capabilities  
-  **Query Parameters:**
-    - `q` (string, optional): Search query text
-    - `location` (string, optional): Suburb, postcode, or council name
-    - `service_type` (string, optional): Service type filter (e.g., group_class, private_session)
-    - `behavior_issue` (string, optional): Behavior issue specialization
-    - `age_specialty` (string, optional): Age group specialization
-    - `certification` (string, optional): Certification filter
-    - `availability` (string, optional): Availability status
-    - `min_rating` (number, optional): Minimum rating filter
-    - `max_price` (number, optional): Maximum price filter
-    - `featured_only` (boolean, optional): Show only featured trainers
+  **Query Parameters (implementation-aligned):**
+    - `query` (string, optional): Search query text
+    - `lat` (number, optional): User latitude (requires `lng`)
+    - `lng` (number, optional): User longitude (requires `lat`)
+    - `distance` (string, optional): Distance filter (`any`, `0-5`, `5-15`, `greater`)
+    - `age_specialties` (string, optional): Comma-separated age specialties (values from `age_specialty` enum)
+    - `behavior_issues` (string, optional): Comma-separated behaviour issues (values from `behavior_issue` enum)
+    - `service_type` (string, optional): Single service type (values from `service_type` enum)
     - `verified_only` (boolean, optional): Show only ABN-verified trainers
-    - `page` (number, optional, default: 1): Pagination page number
-    - `limit` (number, optional, default: 20): Results per page
-  **Response Schema:**
+    - `rescue_only` (boolean, optional): Show only rescue-dog specialists
+    - `price_max` (number, optional): Maximum price filter
+    - `limit` (number, optional, default: 50): Results per page (max 100)
+    - `offset` (number, optional, default: 0): Pagination offset
+  **Response Schema (implementation-aligned):**
     ```json
     {
-      "success": true,
       "results": [
         {
           "id": "uuid",
@@ -48,9 +46,15 @@
       ],
       "metadata": {
         "total": 50,
-        "page": 1,
-        "limit": 20,
-        "has_more": true
+        "limit": 50,
+        "offset": 0,
+        "hasMore": true,
+        "filters": {
+          "query": "string | null",
+          "distance": "string",
+          "serviceType": "string | null",
+          "verifiedOnly": false
+        }
       }
     }
     ```
