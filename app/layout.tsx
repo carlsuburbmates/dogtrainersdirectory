@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { DM_Sans, JetBrains_Mono } from "next/font/google"
+import { ChatWidget } from "@/components/chat-widget"
 import "./globals.css"
 
 const dmSans = DM_Sans({
@@ -45,7 +46,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${dmSans.variable} ${jetbrainsMono.variable}`}>
-      <body className="font-sans min-h-dvh flex flex-col">{children}</body>
+      <body className="font-sans min-h-dvh flex flex-col">
+        {children}
+        <ChatWidget />
+      </body>
     </html>
   )
 }
