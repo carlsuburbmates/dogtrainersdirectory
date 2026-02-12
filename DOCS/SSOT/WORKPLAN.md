@@ -12,9 +12,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it as a new task at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-02-12)
+## Current State (as of 2026-02-13)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
-- Working tree currently has uncommitted changes (see `git status`).
+- Working tree clean and synced with `origin/main` at verification time.
 
 ## Task List
 
@@ -64,6 +64,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/admin/ai-health` uses real metrics where tables exist; otherwise shows "not instrumented yet" (no implied real-time data).
 
 ## Execution Log
+- 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
 - 2026-02-13: `P1-011` completed by refactoring `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, and `09_DEPLOYMENT.md` to reference `DOCS/SSOT/_generated/*` and remove duplicated endpoint/route inventories.
 - 2026-02-13: `P2-020` verified complete in implementation review. Checks passed: `/triage -> /search -> /trainers/[id]` path present; no `window.alert` placeholders in core journey pages; footer legal links resolve to implemented pages.
 - 2026-02-13: `P2-021` completed. `/admin/ai-health` now counts `manual_override` and `manual` for moderation decisions, degrades to `Not instrumented yet.` when metric tables are unavailable, and explicitly labels `24h Errors` as not instrumented.
