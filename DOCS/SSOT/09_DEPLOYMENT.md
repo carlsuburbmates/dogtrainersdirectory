@@ -60,3 +60,18 @@ From `package.json`:
 
 ## 5. Public env exposure
 Only `NEXT_PUBLIC_*` vars are exposed to the client. Do not leak secrets via `NEXT_PUBLIC_*`.
+
+## 6. Supabase Edge Functions
+This repo invokes Supabase Edge Functions directly from the browser via `supabase-js` (anon key) for:
+- Suburb search (`suburbs`)
+- Triage search (`triage`) (legacy; prefer `/api/public/search` for canonical results where possible)
+
+### 6.1 Deploy (manual)
+1. `supabase login`
+2. Ensure `NEXT_PUBLIC_SUPABASE_URL` is set (or set `SUPABASE_PROJECT_REF` explicitly).
+3. Deploy:
+   - `./scripts/deploy_supabase_functions.sh suburbs`
+   - `./scripts/deploy_supabase_functions.sh triage` (if still used)
+
+### 6.2 JWT verification
+These functions are called without an authenticated user session in most public flows. Ensure JWT verification is disabled (the deploy script uses `--no-verify-jwt`).

@@ -30,10 +30,24 @@
 - `/triage` — src/app/triage/page.tsx  
   **Status:** Implemented
 
+- `/login` — src/app/login/page.tsx  
+  **Status:** Implemented  
+  **Notes:** Admin sign-in via one-time email link
+
+### Legal & policy pages
+- `/privacy` — src/app/privacy/page.tsx  
+  **Status:** Implemented
+
+- `/terms` — src/app/terms/page.tsx  
+  **Status:** Implemented
+
+- `/disclaimer` — src/app/disclaimer/page.tsx  
+  **Status:** Implemented
+
 ### Trainer Profile Pages
 - `/trainers` — src/app/trainers/page.tsx  
-  **Status:** Implemented  
-  **Notes:** Lists active trainer businesses (uses businesses table, not deprecated trainers table)
+  **Status:** Redirects to `/directory`  
+  **Notes:** Canonical directory listing is `/directory`
 
 - `/trainers/[id]` — src/app/trainers/[id]/page.tsx  
   **Status:** ✅ **Enhanced (Phase 1 Batch 2)**  

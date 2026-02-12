@@ -1,7 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
+import type { SuburbResult } from '@/lib/api'
 
 // Simple UI components
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -62,6 +65,7 @@ interface SearchResult {
 }
 
 export default function SearchPage() {
+  const searchParams = useSearchParams()
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     lat: '',
@@ -73,7 +77,7 @@ export default function SearchPage() {
     verified_only: false,
     rescue_only: false
   })
-  
+  const [selectedSuburb, setSelectedSuburb] = useState<SuburbResult | null>(null)
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -119,29 +123,39 @@ export default function SearchPage() {
     { value: 'greater', label: 'Greater than 15 km' }
   ]
 
-  const handleSearch = async (newOffset = 0) => {
+  const handleSearch = useCallback(async (newOffset = 0, overrideFilters?: SearchFilters, overrideSuburb?: SuburbResult | null) => {
     setLoading(true)
     setError(null)
     
     try {
+      const activeFilters = overrideFilters ?? filters
+      const activeSuburb = overrideSuburb ?? selectedSuburb
+
       // Build query parameters
       const params = new URLSearchParams()
       
-      if (filters.query) params.append('query', filters.query)
-      if (filters.lat && filters.lng) {
-        params.append('lat', filters.lat)
-        params.append('lng', filters.lng)
+      if (activeFilters.query) params.append('query', activeFilters.query)
+      if (activeSuburb) {
+        params.append('lat', String(activeSuburb.latitude))
+        params.append('lng', String(activeSuburb.longitude))
+        params.append('suburbId', String(activeSuburb.id))
+        params.append('suburbName', activeSuburb.name)
+        params.append('postcode', activeSuburb.postcode)
+        params.append('councilId', String(activeSuburb.council_id))
+      } else if (activeFilters.lat && activeFilters.lng) {
+        params.append('lat', activeFilters.lat)
+        params.append('lng', activeFilters.lng)
       }
-      if (filters.distance !== 'any') params.append('distance', filters.distance)
-      if (filters.age_specialties.length > 0) {
-        params.append('age_specialties', filters.age_specialties.join(','))
+      if (activeFilters.distance !== 'any') params.append('distance', activeFilters.distance)
+      if (activeFilters.age_specialties.length > 0) {
+        params.append('age_specialties', activeFilters.age_specialties.join(','))
       }
-      if (filters.behavior_issues.length > 0) {
-        params.append('behavior_issues', filters.behavior_issues.join(','))
+      if (activeFilters.behavior_issues.length > 0) {
+        params.append('behavior_issues', activeFilters.behavior_issues.join(','))
       }
-      if (filters.service_type) params.append('service_type', filters.service_type)
-      if (filters.verified_only) params.append('verified_only', 'true')
-      if (filters.rescue_only) params.append('rescue_only', 'true')
+      if (activeFilters.service_type) params.append('service_type', activeFilters.service_type)
+      if (activeFilters.verified_only) params.append('verified_only', 'true')
+      if (activeFilters.rescue_only) params.append('rescue_only', 'true')
       
       params.append('limit', limit.toString())
       params.append('offset', newOffset.toString())
@@ -168,7 +182,73 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, selectedSuburb, limit])
+
+  useEffect(() => {
+    const parseList = (value: string | null) =>
+      value ? value.split(',').map((item) => item.trim()).filter(Boolean) : []
+
+    const queryParam = searchParams.get('query') || ''
+    const latParam = searchParams.get('lat') || ''
+    const lngParam = searchParams.get('lng') || ''
+    const distanceParam = searchParams.get('distance') || 'any'
+    const ageParam = searchParams.get('age_specialties')
+    const behaviorParam = searchParams.get('behavior_issues')
+    const serviceTypeParam = searchParams.get('service_type') || ''
+    const verifiedOnlyParam = searchParams.get('verified_only') === 'true'
+    const rescueOnlyParam = searchParams.get('rescue_only') === 'true'
+
+    const distanceValues = new Set(['any', '0-5', '5-15', 'greater'])
+    const nextFilters: SearchFilters = {
+      query: queryParam,
+      lat: latParam,
+      lng: lngParam,
+      distance: distanceValues.has(distanceParam) ? distanceParam : 'any',
+      age_specialties: parseList(ageParam),
+      behavior_issues: parseList(behaviorParam),
+      service_type: serviceTypeParam,
+      verified_only: verifiedOnlyParam,
+      rescue_only: rescueOnlyParam
+    }
+
+    setFilters(nextFilters)
+
+    const suburbName = searchParams.get('suburbName')
+    const postcode = searchParams.get('postcode')
+    const suburbId = searchParams.get('suburbId')
+    const councilId = searchParams.get('councilId')
+
+    let suburbFromParams: SuburbResult | null = null
+    if (suburbName && postcode && latParam && lngParam) {
+      suburbFromParams = {
+        id: suburbId ? Number(suburbId) : -1,
+        name: suburbName,
+        postcode,
+        latitude: Number(latParam),
+        longitude: Number(lngParam),
+        council_id: councilId ? Number(councilId) : 0
+      }
+    }
+
+    setSelectedSuburb(suburbFromParams)
+
+    const shouldAutoSearch = Boolean(
+      queryParam ||
+      (latParam && lngParam) ||
+      nextFilters.age_specialties.length > 0 ||
+      nextFilters.behavior_issues.length > 0 ||
+      nextFilters.service_type ||
+      nextFilters.verified_only ||
+      nextFilters.rescue_only ||
+      nextFilters.distance !== 'any'
+    )
+
+    if (shouldAutoSearch) {
+      handleSearch(0, nextFilters, suburbFromParams)
+    } else {
+      setHasSearched(false)
+    }
+  }, [searchParams, handleSearch])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -212,6 +292,32 @@ export default function SearchPage() {
           </div>
 
           {/* Location Inputs */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Suburb</label>
+            <SuburbAutocomplete
+              value={selectedSuburb}
+              onChange={(suburb) => {
+                setSelectedSuburb(suburb)
+                if (suburb) {
+                  setFilters(prev => ({
+                    ...prev,
+                    lat: String(suburb.latitude),
+                    lng: String(suburb.longitude)
+                  }))
+                } else {
+                  setFilters(prev => ({
+                    ...prev,
+                    lat: '',
+                    lng: ''
+                  }))
+                }
+              }}
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              We use suburb coordinates for distance filtering. You can also enter coordinates manually below.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium mb-2">Latitude</label>
@@ -219,7 +325,10 @@ export default function SearchPage() {
                 type="number"
                 step="any"
                 value={filters.lat}
-                onChange={(e) => setFilters(prev => ({ ...prev, lat: e.target.value }))}
+                onChange={(e) => {
+                  setFilters(prev => ({ ...prev, lat: e.target.value }))
+                  setSelectedSuburb(null)
+                }}
                 placeholder="e.g., -37.8136"
                 className="w-full p-2 border border-gray-300 rounded"
               />
@@ -230,7 +339,10 @@ export default function SearchPage() {
                 type="number"
                 step="any"
                 value={filters.lng}
-                onChange={(e) => setFilters(prev => ({ ...prev, lng: e.target.value }))}
+                onChange={(e) => {
+                  setFilters(prev => ({ ...prev, lng: e.target.value }))
+                  setSelectedSuburb(null)
+                }}
                 placeholder="e.g., 144.9631"
                 className="w-full p-2 border border-gray-300 rounded"
               />
@@ -267,9 +379,9 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Behavior Issues */}
+          {/* Behaviour Issues */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Behavior Issues</label>
+            <label className="block text-sm font-medium mb-2">Behaviour issues</label>
             <div className="flex flex-wrap gap-2">
               {behaviorIssueOptions.map(opt => (
                 <label key={opt.value} className="inline-flex items-center">

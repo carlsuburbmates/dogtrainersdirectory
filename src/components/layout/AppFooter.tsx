@@ -23,7 +23,7 @@ export const AppFooter = () => {
                 </a>
               </li>
               <li>
-                <a href="/help/emergency" className="text-gray-300 hover:text-white transition">
+                <a href="/emergency" className="text-gray-300 hover:text-white transition">
                   Emergency Help
                 </a>
               </li>

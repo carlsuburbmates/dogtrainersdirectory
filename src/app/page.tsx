@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { apiService, SearchResult, SuburbResult } from '../lib/api'
-import { AgeSpecialty, BehaviorIssue, validateAgeSpecialty, validateBehaviorIssue } from '../types/database'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
+import type { SuburbResult } from '@/lib/api'
+import { AgeSpecialty, BehaviorIssue } from '@/types/database'
 
 const ageOptions: { value: AgeSpecialty; label: string }[] = [
   { value: 'puppies_0_6m', label: 'Puppies (0–6 months)' },
@@ -28,46 +30,19 @@ const issueOptions: { value: BehaviorIssue; label: string }[] = [
   { value: 'socialisation', label: 'Socialisation' }
 ]
 
-const formatLabel = (value: string) =>
-  value
-    .replace(/_/g, ' ')
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+const mapRadiusToDistance = (radius: number) => {
+  if (radius <= 5) return '0-5'
+  if (radius <= 15) return '5-15'
+  return 'greater'
+}
 
 export default function HomePage() {
+  const router = useRouter()
   const [age, setAge] = useState<AgeSpecialty>(ageOptions[0].value)
   const [issues, setIssues] = useState<BehaviorIssue[]>([])
-  const [suburbQuery, setSuburbQuery] = useState('')
-  const [suburbSuggestions, setSuburbSuggestions] = useState<SuburbResult[]>([])
   const [selectedSuburb, setSelectedSuburb] = useState<SuburbResult | null>(null)
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [radius, setRadius] = useState(15)
-
-  useEffect(() => {
-    if (suburbQuery.length < 2) {
-      setSuburbSuggestions([])
-      return
-    }
-
-    let isCurrent = true
-    apiService
-      .searchSuburbs(suburbQuery)
-      .then((items) => {
-        if (isCurrent) {
-          setSuburbSuggestions(items)
-        }
-      })
-      .catch(() => {
-        if (isCurrent) setSuburbSuggestions([])
-      })
-
-    return () => {
-      isCurrent = false
-    }
-  }, [suburbQuery])
 
   const handleIssueToggle = (issue: BehaviorIssue) => {
     setIssues((prev) =>
@@ -84,21 +59,18 @@ export default function HomePage() {
       return
     }
 
-    setLoading(true)
-    try {
-      const response = await apiService.getTriageResults({
-        age: validateAgeSpecialty(age),
-        issues,
-        suburbId: selectedSuburb.id,
-        radius
-      })
-      setResults(response)
-    } catch (err) {
-      console.error(err)
-      setError('Unable to fetch results right now; please try again later.')
-    } finally {
-      setLoading(false)
-    }
+    const qs = new URLSearchParams()
+    qs.set('age_specialties', age)
+    if (issues.length > 0) qs.set('behavior_issues', issues.join(','))
+    qs.set('distance', mapRadiusToDistance(radius))
+    qs.set('lat', String(selectedSuburb.latitude))
+    qs.set('lng', String(selectedSuburb.longitude))
+    qs.set('suburbId', String(selectedSuburb.id))
+    qs.set('suburbName', selectedSuburb.name)
+    qs.set('postcode', selectedSuburb.postcode)
+    qs.set('councilId', String(selectedSuburb.council_id))
+
+    router.push(`/search?${qs.toString()}`)
   }
 
   return (
@@ -144,34 +116,12 @@ export default function HomePage() {
 
             <div>
               <label className="font-semibold text-sm" htmlFor="suburb">Suburb</label>
-              <input
-                id="suburb"
-                value={suburbQuery}
-                onChange={(event) => {
-                  setSuburbQuery(event.target.value)
-                  setSelectedSuburb(null)
-                }}
-                placeholder="Start typing a suburb…"
-                className="mt-2 w-full border rounded-md px-3 py-2"
-              />
-              {suburbSuggestions.length > 0 && (
-                <ul className="border border-gray-200 rounded-md mt-2 bg-white max-h-60 overflow-y-auto">
-                  {suburbSuggestions.map((suburb) => (
-                    <li
-                      key={suburb.id}
-                      onClick={() => {
-                        setSelectedSuburb(suburb)
-                        setSuburbQuery(`${suburb.name} (${suburb.postcode})`)
-                        setSuburbSuggestions([])
-                      }}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                    >
-                      <div className="font-semibold">{suburb.name}</div>
-                      <div className="text-xs text-gray-500">{suburb.postcode} • {suburb.latitude.toFixed(3)}, {suburb.longitude.toFixed(3)}</div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="mt-2">
+                <SuburbAutocomplete
+                  value={selectedSuburb}
+                  onChange={setSelectedSuburb}
+                />
+              </div>
               {selectedSuburb && (
                 <p className="text-xs text-green-600 mt-1">Selected suburb: {selectedSuburb.name}</p>
               )}
@@ -198,85 +148,9 @@ export default function HomePage() {
               type="submit"
               className="w-full btn-primary px-4 py-3 text-white rounded-md font-semibold"
             >
-              {loading ? 'Searching...' : 'Find trainers'}
+              Find trainers
             </button>
           </form>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Search results</h2>
-          {loading && (
-            <div className="text-center py-8 text-gray-600">Fetching trainers near your pup…</div>
-          )}
-          {!loading && results.length === 0 && (
-            <div className="text-gray-600">No results yet. Fill out the form above.</div>
-          )}
-          <div className="space-y-6">
-            {results.map((trainer) => (
-              <article key={trainer.business_id} className="card border p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow">
-                <header className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">{trainer.business_name}</h3>
-                    <p className="text-sm text-gray-600">{trainer.suburb_name} • {trainer.distance_km.toFixed(1)} km away</p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    {trainer.verified && (
-                      <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                        ✓ Verified
-                      </span>
-                    )}
-                    <div className="flex items-center justify-end text-sm text-gray-500">
-                      <span className="mr-1">⭐</span>
-                      <span>{trainer.average_rating?.toFixed(1) || 'N/A'}</span>
-                    </div>
-                    <p className="text-xs text-gray-400">{trainer.review_count} reviews</p>
-                  </div>
-                </header>
-
-                <div className="grid gap-3 md:grid-cols-3 md:gap-4 mb-4">
-                  <div>
-                    <p className="text-xs uppercase font-semibold text-gray-500">Specialties</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {trainer.age_specialties.map((tag) => (
-                        <span key={tag} className="badge badge-blue">{formatLabel(tag)}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase font-semibold text-gray-500">Issues</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {trainer.behavior_issues.map((tag) => (
-                        <span key={tag} className="badge badge-orange">{formatLabel(tag)}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase font-semibold text-gray-500">Services</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {trainer.services.map((tag) => (
-                        <span key={tag} className="badge badge-purple">{formatLabel(tag)}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-sm text-gray-700 space-y-2">
-                  {trainer.business_phone && <p>📞 {trainer.business_phone}</p>}
-                  {trainer.business_email && <p>✉ {trainer.business_email}</p>}
-                  {trainer.business_website && <p>🌐 <a href={trainer.business_website} className="text-blue-600 underline" target="_blank" rel="noreferrer">{trainer.business_website}</a></p>}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button className="btn-secondary" type="button" onClick={() => window.alert(`Contacting ${trainer.business_name}`)}>
-                    Contact trainer
-                  </button>
-                  <button className="btn-outline" type="button" onClick={() => window.alert(`Viewing profile for ${trainer.business_name}`)}>
-                    View profile
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
         </section>
       </div>
     </main>

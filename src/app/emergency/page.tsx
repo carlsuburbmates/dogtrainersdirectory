@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import EmergencyE2EControls from '@/components/e2e/EmergencyE2EControls'
 
 interface EmergencyResource {
@@ -39,6 +40,7 @@ interface TriageResponse {
 }
 
 export default function EmergencyPage() {
+  const searchParams = useSearchParams()
   // Emergency Resources state
   const [location, setLocation] = useState('')
   const [resourceType, setResourceType] = useState('')
@@ -54,6 +56,20 @@ export default function EmergencyPage() {
   const [triageResponse, setTriageResponse] = useState<TriageResponse | null>(null)
   const [triageLoading, setTriageLoading] = useState(false)
   const [triageError, setTriageError] = useState('')
+
+  useEffect(() => {
+    const flow = searchParams.get('flow')
+    if (!flow) return
+    const flowMap: Record<string, string> = {
+      medical: 'emergency_vet',
+      stray: 'emergency_shelter',
+      crisis: 'behaviour_consultant'
+    }
+    const nextResourceType = flowMap[flow]
+    if (nextResourceType) {
+      setResourceType(nextResourceType)
+    }
+  }, [searchParams])
 
   const handleResourceSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -197,10 +213,11 @@ export default function EmergencyPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Types</option>
-                <option value="emergency_vet">Emergency Vet</option>
-                <option value="shelter">Animal Shelter</option>
+                <option value="emergency_vet">Emergency vet</option>
+                <option value="urgent_care">Urgent care</option>
+                <option value="emergency_shelter">Emergency shelter</option>
                 <option value="trainer">Trainer</option>
-                <option value="behaviorist">Behaviorist</option>
+                <option value="behaviour_consultant">Behaviour consultant</option>
               </select>
             </div>
 
@@ -330,7 +347,7 @@ export default function EmergencyPage() {
 
             <div>
               <label htmlFor="dogAge" className="block text-sm font-medium text-gray-700 mb-1">
-                Dog's Age (years)
+                Dog&apos;s age (years)
               </label>
               <input
                 id="dogAge"

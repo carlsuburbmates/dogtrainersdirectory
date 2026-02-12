@@ -42,6 +42,15 @@ export interface SearchResult {
   abn_verified?: boolean
 }
 
+type DistanceFilter = 'any' | '0-5' | '5-15' | 'greater'
+
+const mapRadiusToDistanceFilter = (radius?: number): DistanceFilter => {
+  if (!radius) return 'any'
+  if (radius <= 5) return '0-5'
+  if (radius <= 15) return '5-15'
+  return 'greater'
+}
+
 // Helper function to log telemetry for API calls
 async function logApiTelemetry(
   operation: string,
@@ -85,17 +94,21 @@ export const apiService = {
   // Search suburbs by name
   async searchSuburbs(query: string): Promise<SuburbResult[]> {
     const startTime = Date.now()
-    
+    const trimmedQuery = query.trim()
+
     try {
+      if (!trimmedQuery) {
+        return []
+      }
       const { data, error } = await supabase.functions.invoke('suburbs', {
-        body: { query }
+        body: { query: trimmedQuery }
       })
       
       if (error) {
         await logApiTelemetry(
           'search_suburbs',
           undefined,
-          query,
+          trimmedQuery,
           0,
           Date.now() - startTime,
           false,
@@ -111,7 +124,7 @@ export const apiService = {
       await logApiTelemetry(
         'search_suburbs',
         undefined,
-        query,
+        trimmedQuery,
         suburbs.length,
         Date.now() - startTime,
         true
@@ -130,7 +143,12 @@ export const apiService = {
     
     try {
       const { data, error } = await supabase.functions.invoke('triage', {
-        body: request
+        body: {
+          ageFilters: [request.age],
+          issues: request.issues,
+          suburbId: request.suburbId,
+          distanceFilter: mapRadiusToDistanceFilter(request.radius)
+        }
       })
       
       if (error) {

@@ -1,5 +1,4 @@
 import { supabaseAdmin } from '@/lib/supabase'
-import { LlmPipeline } from '@/lib/ai-types'
 
 // Simple components without shadcn/ui for compatibility
 type WithChildren = { children: React.ReactNode }
@@ -59,6 +58,7 @@ interface PipelineHealth {
   aiDecisions: number
   deterministicDecisions: number
   manualOverrides: number
+  note?: string | null
 }
 
 function resolveLlmMode(pipeline: string): string {
@@ -74,6 +74,39 @@ function resolveLlmMode(pipeline: string): string {
 }
 
 async function getPipelineHealth(): Promise<PipelineHealth[]> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+  const countByDecisionSource = async (table: string) => {
+    const countFor = async (decisionSource: string) => {
+      const { count } = await supabaseAdmin
+        .from(table)
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', since)
+        .eq('decision_source', decisionSource)
+      return count ?? 0
+    }
+
+    const [llm, deterministic, manual] = await Promise.all([
+      countFor('llm'),
+      countFor('deterministic'),
+      countFor('manual')
+    ])
+
+    return { llm, deterministic, manual }
+  }
+
+  const lastAiSuccessFor = async (table: string) => {
+    const { data } = await supabaseAdmin
+      .from(table)
+      .select('created_at')
+      .gte('created_at', since)
+      .eq('decision_source', 'llm')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    return (data?.created_at as string | undefined) ?? null
+  }
+
   const pipelines: { name: string; dbPipeline: string }[] = [
     { name: 'Emergency Triage', dbPipeline: 'triage' },
     { name: 'Review Moderation', dbPipeline: 'moderation' },
@@ -86,7 +119,36 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
   for (const { name, dbPipeline } of pipelines) {
     const mode = resolveLlmMode(dbPipeline)
 
-    // Placeholder counts; real impl would query per-pipeline tables
+    if (dbPipeline === 'triage') {
+      const counts = await countByDecisionSource('emergency_triage_logs')
+      healthData.push({
+        pipeline: name,
+        mode,
+        lastSuccess: await lastAiSuccessFor('emergency_triage_logs'),
+        errors24h: 0,
+        aiDecisions: counts.llm,
+        deterministicDecisions: counts.deterministic,
+        manualOverrides: counts.manual,
+        note: 'Counts from emergency_triage_logs (last 24h).'
+      })
+      continue
+    }
+
+    if (dbPipeline === 'moderation') {
+      const counts = await countByDecisionSource('ai_review_decisions')
+      healthData.push({
+        pipeline: name,
+        mode,
+        lastSuccess: await lastAiSuccessFor('ai_review_decisions'),
+        errors24h: 0,
+        aiDecisions: counts.llm,
+        deterministicDecisions: counts.deterministic,
+        manualOverrides: counts.manual,
+        note: 'Counts from ai_review_decisions (last 24h).'
+      })
+      continue
+    }
+
     healthData.push({
       pipeline: name,
       mode,
@@ -94,7 +156,8 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
       errors24h: 0,
       aiDecisions: 0,
       deterministicDecisions: 0,
-      manualOverrides: 0
+      manualOverrides: 0,
+      note: 'Not instrumented yet.'
     })
   }
 
@@ -122,13 +185,13 @@ export default async function AIHealthPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">AI Health Monitor</h1>
-        <p className="text-gray-600 mt-2">Real-time status of AI pipelines and decision sources</p>
+        <p className="text-gray-600 mt-2">Last 24 hours of AI vs deterministic decisions (where instrumentation exists)</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Pipeline Status (Last 24h)</CardTitle>
-          <CardDescription>AI vs deterministic breakdown</CardDescription>
+          <CardDescription>AI vs deterministic breakdown (some pipelines are not instrumented yet)</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -176,6 +239,13 @@ export default async function AIHealthPage() {
               })}
             </TableBody>
           </Table>
+          <div className="mt-4 text-xs text-gray-500 space-y-1">
+            {healthData.filter((row) => row.note).map((row) => (
+              <div key={`${row.pipeline}-note`}>
+                <span className="font-medium">{row.pipeline}:</span> {row.note}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

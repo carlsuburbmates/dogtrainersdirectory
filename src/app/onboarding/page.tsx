@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { apiService } from '@/lib/api'
 import { AgeSpecialty, BehaviorIssue } from '@/types/database'
+import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
+import type { SuburbResult } from '@/lib/api'
 
 const ageOptions: { value: AgeSpecialty; label: string }[] = [
   { value: 'puppies_0_6m', label: 'Puppies (0–6 months)' },
@@ -42,6 +43,7 @@ const formatLabel = (value: string) =>
     .replace(/\b\w/g, (char) => char.toUpperCase())
 
 export default function OnboardingPage() {
+  const [selectedSuburb, setSelectedSuburb] = useState<SuburbResult | null>(null)
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -51,7 +53,6 @@ export default function OnboardingPage() {
     businessEmail: '',
     website: '',
     address: '',
-    suburbQuery: '',
     suburbId: 0,
     bio: '',
     pricing: '',
@@ -222,15 +223,24 @@ export default function OnboardingPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-semibold">Suburb ID (pick from search)</label>
-              <input
-                type="number"
-                min={1}
-                value={form.suburbId || ''}
-                onChange={(event) => setForm({ ...form, suburbId: Number(event.target.value) })}
-                className="input-field mt-2"
-              />
-              <small className="text-xs text-gray-500">Use the triage search to copy a suburb ID (Phase 1 override).</small>
+              <label className="text-sm font-semibold">Suburb</label>
+              <div className="mt-2">
+                <SuburbAutocomplete
+                  value={selectedSuburb}
+                  onChange={(suburb) => {
+                    setSelectedSuburb(suburb)
+                    setForm((prev) => ({ ...prev, suburbId: suburb?.id ?? 0 }))
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                Select a suburb to attach your listing to the correct council and region.
+              </p>
+              {selectedSuburb && (
+                <p className="mt-1 text-xs text-green-700">
+                  Selected: {selectedSuburb.name} ({selectedSuburb.postcode})
+                </p>
+              )}
             </div>
             <div>
               <label className="text-sm font-semibold">Bio</label>

@@ -25,13 +25,24 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const query = url.searchParams.get('q')
+    let query = url.searchParams.get('q')
+
+    if (!query && req.method !== 'GET') {
+      try {
+        const body = await req.json()
+        if (body && typeof body.query === 'string') {
+          query = body.query
+        }
+      } catch (_) {
+        // Ignore body parse errors; fall back to query param validation below.
+      }
+    }
 
     if (!query) {
       return new Response(
         JSON.stringify({
           error: 'Missing required parameter: query',
-          message: 'Please provide a search query using the "q" parameter'
+          message: 'Provide a search query using ?q= or JSON { "query": "..." }'
         }),
         {
           status: 400,

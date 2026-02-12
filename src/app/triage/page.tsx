@@ -6,7 +6,6 @@ import { AGE_SPECIALTIES, AGE_SPECIALTY_LABELS, BEHAVIOR_ISSUES, BEHAVIOR_ISSUE_
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/Loading'
 import { Alert } from '@/components/ui/Callout'
-import { apiService } from '@/lib/api'
 import type { BehaviorIssue, AgeSpecialty } from '@/types/database'
 import { TriageRequestSchema } from '@/lib/contracts'
 import { EmergencyGate } from '@/components/triage/EmergencyGate'
@@ -22,6 +21,19 @@ const RADIUS_PARAM = 'radius'
 
 // Steps per SSOT: age -> issues -> location -> review
 const steps = ['age', 'issues', 'location', 'review'] as const
+
+const mapRadiusToDistance = (radius: number) => {
+  if (radius <= 5) return '0-5'
+  if (radius <= 15) return '5-15'
+  return 'greater'
+}
+
+const buildSituationSummary = (age: AgeSpecialty, issues: BehaviorIssue[]) => {
+  const ageLabel = AGE_SPECIALTY_LABELS[age]
+  const issueLabels = issues.map((issue) => BEHAVIOR_ISSUE_LABELS[issue])
+  const issueText = issueLabels.length > 0 ? issueLabels.join(', ') : 'No specific behaviour issues'
+  return `Dog age/stage: ${ageLabel}. Issues: ${issueText}.`
+}
 
 function TriageContent() {
   const router = useRouter()
@@ -105,14 +117,50 @@ function TriageContent() {
     try {
       // Validate request
       const payload = TriageRequestSchema.parse({ age, issues, suburbId, radius })
-      const results = await apiService.getTriageResults(payload)
-      // Store results in session for SearchClient consumption
-      sessionStorage.setItem('searchResults', JSON.stringify(results))
-      sessionStorage.setItem('searchParams', JSON.stringify({ age, issues, suburbId, radius }))
-      // Navigate to results page with preserving filters
-      const qs = new URLSearchParams({ age, issues: issues.join(','), suburbId: String(suburbId), radius: String(radius) })
+
+      if (!selectedSuburb) {
+        setError('Please select a suburb from the list.')
+        return
+      }
+
+      const triageResponse = await fetch('/api/emergency/triage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          situation: buildSituationSummary(payload.age, payload.issues),
+          location: `${selectedSuburb.name} ${selectedSuburb.postcode}`,
+          age: payload.age,
+          issues: payload.issues
+        })
+      })
+
+      const triageData = await triageResponse.json()
+      if (!triageResponse.ok) {
+        throw new Error(triageData?.error || 'Triage classification failed')
+      }
+
+      const classification =
+        triageData?.triage?.classification ??
+        triageData?.classification?.classification ??
+        'normal'
+
+      if (classification && classification !== 'normal') {
+        router.push(`/emergency?flow=${encodeURIComponent(classification)}`)
+        return
+      }
+
+      const qs = new URLSearchParams()
+      qs.set('age_specialties', payload.age)
+      if (payload.issues.length > 0) qs.set('behavior_issues', payload.issues.join(','))
+      qs.set('distance', mapRadiusToDistance(payload.radius))
+      qs.set('lat', String(selectedSuburb.latitude))
+      qs.set('lng', String(selectedSuburb.longitude))
+      qs.set('suburbId', String(selectedSuburb.id))
+      qs.set('suburbName', selectedSuburb.name)
+      qs.set('postcode', selectedSuburb.postcode)
+      qs.set('councilId', String(selectedSuburb.council_id))
+
       router.push(`/search?${qs.toString()}`)
-      console.log('Triage produced results:', results.length)
     } catch (e: any) {
       setError(e?.message || 'Failed to fetch results. Please try again.')
     } finally {
@@ -248,10 +296,9 @@ function TriageContent() {
           <EmergencyGate
             selectedIssues={issues}
             onContinueNormal={() => { setShowEmergencyGate(false); goToStep('location') }}
-            onEmergencyFlow={(type) => { 
-              // TODO: Navigate to emergency resource page with type param
-              console.log('Emergency branch:', type)
+            onEmergencyFlow={(type) => {
               setShowEmergencyGate(false)
+              router.push(`/emergency?flow=${encodeURIComponent(type)}`)
             }}
             onClose={() => setShowEmergencyGate(false)}
           />

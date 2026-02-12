@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/Loading'
+import { apiService } from '@/lib/api'
 import type { SuburbResult } from '@/lib/api'
 
 interface SuburbAutocompleteProps {
@@ -29,7 +30,7 @@ export const SuburbAutocomplete = ({
   const [showSuggestions, setShowSuggestions] = useState(false)
 
   const inputRef = useRef<HTMLInputElement>(null)
-  const abortRef = useRef<AbortController | null>(null)
+  const requestIdRef = useRef(0)
 
   // Debounce local query
   const debouncedQuery = React.useMemo(() => {
@@ -44,6 +45,7 @@ export const SuburbAutocomplete = ({
 
   const fetchSuggestions = async (search: string) => {
     if (search.length < MIN_CHARS_FOR_QUERY) {
+      requestIdRef.current += 1
       setSuggestions([])
       setShowSuggestions(false)
       setLoading(false)
@@ -52,27 +54,15 @@ export const SuburbAutocomplete = ({
 
     setLoading(true)
     try {
-      // Cancel previous request if any
-      if (abortRef.current) abortRef.current.abort()
-      abortRef.current = new AbortController()
-      // Reuse existing edge function for now; later move to a pure /api/suburbs route
-      const response = await fetch('/api/v1/suburbs/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: search }),
-        signal: abortRef.current.signal
-      })
-      if (!response.ok) throw new Error('Failed to fetch suburbs')
-      const data = await response.json()
-      const suburbs = (data?.suburbs || []) as SuburbResult[]
+      const requestId = ++requestIdRef.current
+      const suburbs = await apiService.searchSuburbs(search)
+      if (requestId !== requestIdRef.current) return
       setSuggestions(suburbs)
       setShowSuggestions(true)
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Suburb search error:', err)
-        setSuggestions([])
-        setShowSuggestions(false)
-      }
+      console.error('Suburb search error:', err)
+      setSuggestions([])
+      setShowSuggestions(false)
     } finally {
       setLoading(false)
     }

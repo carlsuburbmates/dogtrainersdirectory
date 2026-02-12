@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface Review {
   id: number
@@ -39,11 +39,7 @@ export default function AdminReviewsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
-  useEffect(() => {
-    fetchReviews()
-  }, [statusFilter, ratingFilter])
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     setLoading(true)
     setError('')
 
@@ -69,7 +65,11 @@ export default function AdminReviewsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, ratingFilter])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   const handleAction = async (reviewId: number, action: 'approve' | 'reject', reason?: string) => {
     setActionLoading(reviewId)

@@ -14,6 +14,11 @@ jobs:
           set -euo pipefail
           python3 scripts/refresh_suburbs_csv.py
           git diff --exit-code data/suburbs_councils_mapping.csv
+      - name: Ensure generated SSOT snapshots are in sync
+        run: |
+          set -euo pipefail
+          python3 scripts/ssot_refresh.py
+          git diff --exit-code DOCS/SSOT/_generated
       - name: Validate suburb import counts and distance sanity
         run: |
           python3 - <<'PY'
