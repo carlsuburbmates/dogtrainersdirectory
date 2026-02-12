@@ -62,3 +62,6 @@ Anything not listed here is **not worked on** (to prevent drift).
 **P2-021: Operational visibility completeness**
 - Definition of done:
   - `/admin/ai-health` uses real metrics where tables exist; otherwise shows "not instrumented yet" (no implied real-time data).
+
+## Execution Log
+- 2026-02-13: `P1-011` completed by refactoring `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, and `09_DEPLOYMENT.md` to reference `DOCS/SSOT/_generated/*` and remove duplicated endpoint/route inventories.
