@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase'
+import { normalizeDecisionSourceCounts, toAiPercentage } from './model'
 
 // Simple components without shadcn/ui for compatibility
 type WithChildren = { children: React.ReactNode }
@@ -40,12 +41,12 @@ function TableCell({ children, className }: WithChildrenAndClassName) {
 }
 
 function Badge({ children, variant, className }: { children: React.ReactNode; variant?: string; className?: string }) {
-  const base = "inline-flex px-2 py-1 text-xs rounded-full"
+  const base = 'inline-flex px-2 py-1 text-xs rounded-full'
   const variantMap: Record<string, string> = {
-    default: "bg-blue-100 text-blue-800",
-    secondary: "bg-gray-100 text-gray-800",
-    outline: "border border-gray-300 text-gray-700",
-    destructive: "bg-red-100 text-red-800"
+    default: 'bg-blue-100 text-blue-800',
+    secondary: 'bg-gray-100 text-gray-800',
+    outline: 'border border-gray-300 text-gray-700',
+    destructive: 'bg-red-100 text-red-800'
   }
   return <span className={[base, variantMap[variant || 'default'], className].filter(Boolean).join(' ')}>{children}</span>
 }
@@ -78,25 +79,47 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
 
   const countByDecisionSource = async (table: string) => {
     const countFor = async (decisionSource: string) => {
-      const { count } = await supabaseAdmin
+      const { count, error } = await supabaseAdmin
         .from(table)
         .select('id', { count: 'exact', head: true })
         .gte('created_at', since)
         .eq('decision_source', decisionSource)
-      return count ?? 0
+
+      return { count: count ?? 0, error }
     }
 
-    const [llm, deterministic, manual] = await Promise.all([
+    const [llm, deterministic, manual, manualOverride] = await Promise.all([
       countFor('llm'),
       countFor('deterministic'),
-      countFor('manual')
+      countFor('manual'),
+      countFor('manual_override')
     ])
 
-    return { llm, deterministic, manual }
+    const instrumented = !llm.error && !deterministic.error && !manual.error && !manualOverride.error
+    if (!instrumented) {
+      return {
+        instrumented: false,
+        counts: {
+          aiDecisions: 0,
+          deterministicDecisions: 0,
+          manualOverrides: 0
+        }
+      }
+    }
+
+    return {
+      instrumented: true,
+      counts: normalizeDecisionSourceCounts({
+        llm: llm.count,
+        deterministic: deterministic.count,
+        manual: manual.count,
+        manualOverride: manualOverride.count
+      })
+    }
   }
 
   const lastAiSuccessFor = async (table: string) => {
-    const { data } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from(table)
       .select('created_at')
       .gte('created_at', since)
@@ -104,7 +127,15 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    return (data?.created_at as string | undefined) ?? null
+
+    if (error) {
+      return { instrumented: false, lastSuccess: null as string | null }
+    }
+
+    return {
+      instrumented: true,
+      lastSuccess: (data?.created_at as string | undefined) ?? null
+    }
   }
 
   const pipelines: { name: string; dbPipeline: string }[] = [
@@ -120,31 +151,43 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
     const mode = resolveLlmMode(dbPipeline)
 
     if (dbPipeline === 'triage') {
-      const counts = await countByDecisionSource('emergency_triage_logs')
+      const decisionData = await countByDecisionSource('emergency_triage_logs')
+      const successData = await lastAiSuccessFor('emergency_triage_logs')
+      const isInstrumented = decisionData.instrumented && successData.instrumented
+
       healthData.push({
         pipeline: name,
         mode,
-        lastSuccess: await lastAiSuccessFor('emergency_triage_logs'),
+        lastSuccess: successData.lastSuccess,
+        // Error counts are not yet tracked per pipeline in a canonical table.
         errors24h: 0,
-        aiDecisions: counts.llm,
-        deterministicDecisions: counts.deterministic,
-        manualOverrides: counts.manual,
-        note: 'Counts from emergency_triage_logs (last 24h).'
+        aiDecisions: decisionData.counts.aiDecisions,
+        deterministicDecisions: decisionData.counts.deterministicDecisions,
+        manualOverrides: decisionData.counts.manualOverrides,
+        note: isInstrumented
+          ? 'Counts from emergency_triage_logs (last 24h).'
+          : 'Not instrumented yet.'
       })
       continue
     }
 
     if (dbPipeline === 'moderation') {
-      const counts = await countByDecisionSource('ai_review_decisions')
+      const decisionData = await countByDecisionSource('ai_review_decisions')
+      const successData = await lastAiSuccessFor('ai_review_decisions')
+      const isInstrumented = decisionData.instrumented && successData.instrumented
+
       healthData.push({
         pipeline: name,
         mode,
-        lastSuccess: await lastAiSuccessFor('ai_review_decisions'),
+        lastSuccess: successData.lastSuccess,
+        // Error counts are not yet tracked per pipeline in a canonical table.
         errors24h: 0,
-        aiDecisions: counts.llm,
-        deterministicDecisions: counts.deterministic,
-        manualOverrides: counts.manual,
-        note: 'Counts from ai_review_decisions (last 24h).'
+        aiDecisions: decisionData.counts.aiDecisions,
+        deterministicDecisions: decisionData.counts.deterministicDecisions,
+        manualOverrides: decisionData.counts.manualOverrides,
+        note: isInstrumented
+          ? 'Counts from ai_review_decisions (last 24h).'
+          : 'Not instrumented yet.'
       })
       continue
     }
@@ -209,8 +252,7 @@ export default async function AIHealthPage() {
             </TableHeader>
             <TableBody>
               {healthData.map((row) => {
-                const total = row.aiDecisions + row.deterministicDecisions + row.manualOverrides
-                const aiPercentage = total > 0 ? Math.round((row.aiDecisions / total) * 100) : 0
+                const aiPercentage = toAiPercentage(row.aiDecisions, row.deterministicDecisions, row.manualOverrides)
                 return (
                   <TableRow key={row.pipeline}>
                     <TableCell className="font-medium">{row.pipeline}</TableCell>
@@ -245,6 +287,9 @@ export default async function AIHealthPage() {
                 <span className="font-medium">{row.pipeline}:</span> {row.note}
               </div>
             ))}
+            <div>
+              <span className="font-medium">24h Errors:</span> Not instrumented yet. Shown as 0.
+            </div>
           </div>
         </CardContent>
       </Card>
