@@ -77,5 +77,5 @@ Supabase Auth is used for authentication; authorisation is role‑based via `pro
 - `/triage` page behaviour is not specified beyond route existence.  
 - Payloads and responses for `/api/public/autocomplete`, `/api/emergency/*` (except existence), and `/api/onboarding` are not specified.  
 - Detailed admin page content for `/admin/ai-health`, `/admin/cron-health`, `/admin/errors`, `/admin/triage` is not specified beyond high‑level purpose.  
-- `ROUTE_INVENTORY.md` and `FLAGS_AND_AI_MODES.md` are referenced but are not canonical SSOT sources.  
+- Generated inventories under `DOCS/SSOT/_generated/*` are canonical implementation snapshots for routes, APIs, and edge functions.  
 **Source:** `DOCS/SSOT/04_API_CONTRACTS.md`, `DOCS/SSOT/05_ROUTES_AND_NAV.md`, `DOCS/SSOT/FILE_MANIFEST.md`
