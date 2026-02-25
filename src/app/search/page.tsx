@@ -82,7 +82,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
-  const [offset, setOffset] = useState(0)
+  const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const limit = 20
 
@@ -123,7 +123,7 @@ export default function SearchPage() {
     { value: 'greater', label: 'Greater than 15 km' }
   ]
 
-  const handleSearch = useCallback(async (newOffset = 0, overrideFilters?: SearchFilters, overrideSuburb?: SuburbResult | null) => {
+  const handleSearch = useCallback(async (nextPage = 1, overrideFilters?: SearchFilters, overrideSuburb?: SuburbResult | null) => {
     setLoading(true)
     setError(null)
     
@@ -134,7 +134,7 @@ export default function SearchPage() {
       // Build query parameters
       const params = new URLSearchParams()
       
-      if (activeFilters.query) params.append('query', activeFilters.query)
+      if (activeFilters.query) params.append('q', activeFilters.query)
       if (activeSuburb) {
         params.append('lat', String(activeSuburb.latitude))
         params.append('lng', String(activeSuburb.longitude))
@@ -158,7 +158,7 @@ export default function SearchPage() {
       if (activeFilters.rescue_only) params.append('rescue_only', 'true')
       
       params.append('limit', limit.toString())
-      params.append('offset', newOffset.toString())
+      params.append('page', nextPage.toString())
 
       const response = await fetch(`/api/public/search?${params.toString()}`)
       const data = await response.json()
@@ -167,14 +167,17 @@ export default function SearchPage() {
         throw new Error(data.message || 'Search failed')
       }
 
-      if (newOffset === 0) {
-        setResults(data.results)
+      const nextResults = Array.isArray(data.results) ? data.results : []
+
+      if (nextPage === 1) {
+        setResults(nextResults)
       } else {
-        setResults(prev => [...prev, ...data.results])
+        setResults(prev => [...prev, ...nextResults])
       }
       
-      setHasMore(data.metadata.hasMore)
-      setOffset(newOffset)
+      const metadata = data?.metadata ?? {}
+      setHasMore(Boolean(metadata.hasMore ?? metadata.has_more))
+      setPage(nextPage)
       setHasSearched(true)
     } catch (err: any) {
       setError(err.message || 'An error occurred during search')
@@ -188,7 +191,7 @@ export default function SearchPage() {
     const parseList = (value: string | null) =>
       value ? value.split(',').map((item) => item.trim()).filter(Boolean) : []
 
-    const queryParam = searchParams.get('query') || ''
+    const queryParam = searchParams.get('q') || searchParams.get('query') || ''
     const latParam = searchParams.get('lat') || ''
     const lngParam = searchParams.get('lng') || ''
     const distanceParam = searchParams.get('distance') || 'any'
@@ -252,11 +255,11 @@ export default function SearchPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    handleSearch(0)
+    handleSearch(1)
   }
 
   const handleLoadMore = () => {
-    handleSearch(offset + limit)
+    handleSearch(page + 1)
   }
 
   const toggleArrayFilter = (filterName: 'age_specialties' | 'behavior_issues', value: string) => {
@@ -539,7 +542,7 @@ export default function SearchPage() {
             </div>
           )}
 
-          {loading && offset > 0 && (
+          {loading && page > 1 && (
             <div className="mt-6 text-center text-gray-500">
               Loading more results...
             </div>

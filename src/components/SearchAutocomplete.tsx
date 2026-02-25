@@ -117,7 +117,7 @@ export default function SearchAutocomplete() {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     if (!query.trim()) return
-    router.push(`/search?query=${encodeURIComponent(query.trim())}`)
+    router.push(`/search?q=${encodeURIComponent(query.trim())}`)
   }
 
   useEffect(() => {

@@ -108,20 +108,29 @@ export async function GET(request: Request) {
   
   try {
     const url = new URL(request.url)
+    const parseIntSafe = (value: string | null, fallback: number) => {
+      if (!value) return fallback
+      const parsed = parseInt(value, 10)
+      return Number.isFinite(parsed) ? parsed : fallback
+    }
     
     // Parse query parameters
-    const query = url.searchParams.get('query') || null
+    const query = url.searchParams.get('query') || url.searchParams.get('q') || null
     const lat = url.searchParams.get('lat') ? parseFloat(url.searchParams.get('lat')!) : null
     const lng = url.searchParams.get('lng') ? parseFloat(url.searchParams.get('lng')!) : null
     const distance = url.searchParams.get('distance') || 'any'
     const ageSpecialtiesParam = url.searchParams.get('age_specialties')
     const behaviorIssuesParam = url.searchParams.get('behavior_issues')
-    const serviceType = url.searchParams.get('service_type') || null
+    const serviceType = url.searchParams.get('service_type') || url.searchParams.get('service') || null
     const verifiedOnly = url.searchParams.get('verified_only') === 'true'
     const rescueOnly = url.searchParams.get('rescue_only') === 'true'
     const priceMax = url.searchParams.get('price_max') ? parseFloat(url.searchParams.get('price_max')!) : null
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100)
-    const offset = parseInt(url.searchParams.get('offset') || '0')
+    const limit = Math.min(parseIntSafe(url.searchParams.get('limit'), 50), 100)
+    const offsetParam = url.searchParams.get('offset')
+    const pageParam = url.searchParams.get('page')
+    const offset = offsetParam !== null
+      ? Math.max(parseIntSafe(offsetParam, 0), 0)
+      : Math.max(parseIntSafe(pageParam, 1) - 1, 0) * limit
     
     // Parse array parameters
     const ageSpecialties = ageSpecialtiesParam 
@@ -166,13 +175,16 @@ export async function GET(request: Request) {
 
       return NextResponse.json(
         { 
+          success: false,
           error: 'Search failed', 
           message: error.message,
           results: [],
           metadata: {
             total: 0,
             limit,
-            offset
+            offset,
+            hasMore: false,
+            has_more: false
           }
         },
         { status: 500 }
@@ -192,12 +204,14 @@ export async function GET(request: Request) {
 
     // Return results with metadata
     return NextResponse.json({
+      success: true,
       results,
       metadata: {
         total: results.length,
         limit,
         offset,
         hasMore: results.length === limit, // If we got exactly the limit, there might be more
+        has_more: results.length === limit,
         filters: {
           query,
           location: lat && lng ? { lat, lng } : null,
@@ -226,11 +240,14 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       { 
+        success: false,
         error: 'Server error', 
         message: error.message,
         results: [],
         metadata: {
-          total: 0
+          total: 0,
+          hasMore: false,
+          has_more: false
         }
       },
       { status: 500 }

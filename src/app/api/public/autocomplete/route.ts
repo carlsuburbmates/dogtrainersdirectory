@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
-    const query = url.searchParams.get('q')
+    const query = url.searchParams.get('q') || url.searchParams.get('query')
     
     if (!query || query.length < 2) {
       return NextResponse.json({ suggestions: [] })

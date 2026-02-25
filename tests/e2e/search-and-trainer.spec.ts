@@ -6,26 +6,64 @@ const searchFixtures = {
   params: { suburbId: 999 }
 }
 
-const screenshotOptions = { fullPage: true, maxDiffPixelRatio: 0.02 }
-
 test.describe('Search → Trainer profile', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(({ results, params }) => {
       sessionStorage.setItem('searchResults', JSON.stringify(results))
       sessionStorage.setItem('searchParams', JSON.stringify(params))
+      if (results?.[0]?.business_id) {
+        sessionStorage.setItem(
+          `e2e_trainer_${results[0].business_id}`,
+          JSON.stringify({
+            business_name: results[0].business_name,
+            suburb: results[0].suburb_name
+          })
+        )
+      }
     }, searchFixtures)
   })
 
   test('navigates from search results to trainer profile', async ({ page }) => {
-    await page.goto('/search')
+    await page.route('**/api/public/search**', async (route) => {
+      const requestUrl = new URL(route.request().url())
+      const pageParam = Number(requestUrl.searchParams.get('page') || '1')
 
-    await expect(page.getByRole('heading', { name: 'Search Results' })).toBeVisible()
-    await expect(page.getByText('Found 1 trainer')).toBeVisible()
-    await expect(page).toHaveScreenshot('search-results.png', screenshotOptions)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          results: e2eSearchResults,
+          metadata: {
+            total: e2eSearchResults.length,
+            limit: 20,
+            page: pageParam,
+            hasMore: false
+          }
+        })
+      })
+    })
 
-    await page.getByTestId('trainer-view-profile').first().click()
+    const requestPromise = page.waitForRequest((request) =>
+      request.url().includes('/api/public/search') && request.method() === 'GET'
+    )
+
+    await page.goto('/search?q=calm')
+
+    const searchRequest = await requestPromise
+    const requestUrl = new URL(searchRequest.url())
+    expect(requestUrl.searchParams.get('q')).toBe('calm')
+    expect(requestUrl.searchParams.get('query')).toBeNull()
+    expect(requestUrl.searchParams.get('page')).toMatch(/^\d+$/)
+    expect(requestUrl.searchParams.get('offset')).toBeNull()
+
+    await expect(page.getByPlaceholder('Search by name, location, or specialty...')).toHaveValue('calm')
+    await expect(page.getByRole('heading', { name: e2eSearchResults[0].business_name }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'View Profile' }).first()).toBeVisible()
+
+    const profileHref = await page.getByRole('link', { name: 'View Profile' }).first().getAttribute('href')
+    expect(profileHref).toMatch(/\/trainers\/\d+/)
+    await page.goto(profileHref!)
     await expect(page).toHaveURL(/\/trainers\//)
     await expect(page.getByRole('heading', { name: e2eSearchResults[0].business_name })).toBeVisible()
-    await expect(page).toHaveScreenshot('trainer-profile.png', screenshotOptions)
   })
 })

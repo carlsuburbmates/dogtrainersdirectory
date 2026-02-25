@@ -5,13 +5,19 @@ export const runtime = 'nodejs'
 
 type RequestPayload = {
   businessId?: number
+  business_id?: number
 }
 
 export async function POST(request: Request) {
   const started = Date.now()
   try {
-    const payload = (await request.json()) as RequestPayload
-    const businessId = Number(payload?.businessId)
+    let payload: RequestPayload = {}
+    try {
+      payload = (await request.json()) as RequestPayload
+    } catch {
+      payload = {}
+    }
+    const businessId = Number(payload?.businessId ?? payload?.business_id)
 
     if (!businessId) {
       await logMonetizationLatency('stripe_create_checkout_session', Date.now() - started, false, 400)

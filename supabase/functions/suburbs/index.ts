@@ -25,13 +25,15 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    let query = url.searchParams.get('q')
+    let query = url.searchParams.get('q') || url.searchParams.get('query')
 
-    if (!query && req.method !== 'GET') {
+    if (!query) {
       try {
         const body = await req.json()
         if (body && typeof body.query === 'string') {
           query = body.query
+        } else if (body && typeof body.q === 'string') {
+          query = body.q
         }
       } catch (_) {
         // Ignore body parse errors; fall back to query param validation below.

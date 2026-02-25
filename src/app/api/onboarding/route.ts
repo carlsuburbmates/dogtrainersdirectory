@@ -47,7 +47,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as RequestBody
+    const body = (await request.json()) as Partial<RequestBody> & {
+      suburb_id?: number
+      primary_service?: string
+      secondary_services?: string[]
+    }
+    const ages = Array.isArray(body.ages) ? body.ages : []
+    const issues = Array.isArray(body.issues) ? body.issues : []
+    const secondaryServices = Array.isArray(body.secondaryServices)
+      ? body.secondaryServices
+      : Array.isArray(body.secondary_services)
+        ? body.secondary_services
+        : []
+    const primaryService = body.primaryService || body.primary_service || ''
+    const suburbId = Number(body.suburbId ?? body.suburb_id ?? 0)
     const {
       email,
       password,
@@ -57,13 +70,8 @@ export async function POST(request: Request) {
       businessEmail,
       website,
       address,
-      suburbId,
       bio,
       pricing,
-      ages,
-      issues,
-      primaryService,
-      secondaryServices,
       abn
     } = body
 
@@ -72,12 +80,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const { data: user, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: { full_name: fullName }
     })
+    const user = (userData as any)?.user ?? userData
+    if (createError || !user?.id) {
+      await finish(500, false, { reason: 'user_create_failed', message: createError?.message })
+      return NextResponse.json(
+        { error: 'Failed to create user account', message: createError?.message },
+        { status: 500 }
+      )
+    }
     // Server-side ABN validation and authoritative ABR lookup
     if (!abrLib.isValidAbn(abn)) {
       await finish(400, false, { reason: 'invalid_abn' })
