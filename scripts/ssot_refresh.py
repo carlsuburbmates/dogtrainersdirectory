@@ -161,6 +161,7 @@ def generate_edge_functions_md() -> str:
 
 
 _CREATE_TABLE_RE = re.compile(r"^CREATE\s+TABLE\s+public\.([a-zA-Z0-9_]+)\s*\(")
+_CREATE_VIEW_RE = re.compile(r"^CREATE\s+VIEW\s+public\.([a-zA-Z0-9_]+)\s+AS\b")
 _CREATE_TYPE_RE = re.compile(r"^CREATE\s+TYPE\s+public\.([a-zA-Z0-9_]+)\s+AS\s+ENUM\s*\(")
 _CREATE_FUNCTION_RE = re.compile(r"^CREATE\s+FUNCTION\s+public\.([a-zA-Z0-9_]+)\s*\(")
 
@@ -179,6 +180,7 @@ def generate_schema_md() -> str:
     text = SCHEMA_SQL.read_text(encoding="utf-8", errors="replace").splitlines()
 
     tables: set[str] = set()
+    views: set[str] = set()
     enums: set[str] = set()
     functions: set[str] = set()
 
@@ -187,6 +189,10 @@ def generate_schema_md() -> str:
         m = _CREATE_TABLE_RE.match(line)
         if m:
             tables.add(m.group(1))
+            continue
+        m = _CREATE_VIEW_RE.match(line)
+        if m:
+            views.add(m.group(1))
             continue
         m = _CREATE_TYPE_RE.match(line)
         if m:
@@ -201,6 +207,12 @@ def generate_schema_md() -> str:
     for t in sorted(tables):
         lines.append(f"- `{t}`")
 
+    if views:
+        lines.append("")
+        lines.append("## Views")
+        for v in sorted(views):
+            lines.append(f"- `{v}`")
+
     lines.append("")
     lines.append("## Enums")
     for e in sorted(enums):
@@ -214,6 +226,7 @@ def generate_schema_md() -> str:
     lines.append("")
     lines.append("## Notes")
     lines.append("- Source: `supabase/schema.sql` (derived snapshot in this repo).")
+    lines.append("- Views are listed separately from tables.")
 
     return "\n".join(lines)
 
