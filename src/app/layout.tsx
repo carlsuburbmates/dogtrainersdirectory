@@ -1,5 +1,6 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { AppFooter } from '@/components/layout/AppFooter'
 
@@ -25,6 +26,7 @@ export default function RootLayout({
           </main>
           <AppFooter />
         </div>
+        <SpeedInsights />
       </body>
     </html>
   )
