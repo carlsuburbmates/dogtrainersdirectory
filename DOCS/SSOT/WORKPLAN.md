@@ -19,9 +19,10 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
 - Build Completion is complete.
 - Production Hardening was completed through `PH-202`, then reopened by `MO-302` findings.
+- `PH-203` is now complete and the live triage write path is restored.
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
-- Current top priority: `PH-203`.
+- Current top priority: `PH-204`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -100,7 +101,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ### Phase 2 Follow-on Recovery (opened by `MO-302`)
 
-**PH-203: Restore emergency triage write compatibility with live schema**
+**PH-203: Restore emergency triage write compatibility with live schema (completed 2026-03-01)**
 - Purpose: fix the live `POST /api/emergency/triage` failure uncovered during the first controlled funnel baseline.
 - Definition of done:
   - `POST /api/emergency/triage` no longer returns `500` for normal non-emergency submissions.
@@ -129,3 +130,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `PH-202` completed by aligning `.env.local` to the live `xqytwtmdilipxnjetvoe` Supabase project, applying the missing remote migrations (`20251209093000`, `20260203171000`, `20260203182000`), repairing remote migration history for the two 20260203 versions, refreshing `supabase/schema.sql`, and re-running remote-backed smoke with `6/6` passing once `SUPABASE_PGCRYPTO_KEY` was present.
 - 2026-03-01: `MO-301` completed by adding `commercial_funnel` instrumentation to the canonical `latency_metrics` path for `triage_submit`, `search_results`, `trainer_profile_view`, `promote_page_view`, and `promote_checkout_session`; wiring stage summaries and drop-off calculations into `/api/admin/telemetry/latency`; and preserving triage-origin attribution through `flow_source` from `/triage` into `/search` and trainer profile views.
 - 2026-03-01: `MO-302` completed by running one controlled engineering sample through the live-backed funnel (`/api/emergency/triage`, `/api/public/search`, `/trainers/999999`, `/promote`, and `/api/stripe/create-checkout-session`) and recording the first baseline in `08_OPS_RUNBOOK.md`. The sample confirmed telemetry is writing, but it also exposed two live blockers: `POST /api/emergency/triage` currently fails with `null value in column "description" of relation "emergency_triage_logs"`, and the live database is missing the `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs. Those findings reopen Production Hardening as `PH-203` and `PH-204`.
+- 2026-03-01: `PH-203` completed by extracting a dedicated triage persistence helper that writes the required `emergency_triage_logs` columns (`description`, `predicted_category`, `recommended_flow`) and normalizes persisted classifications to the live enum-safe set. Unit coverage was added for the insert payload, and live verification confirmed `POST /api/emergency/triage` now returns `200` and inserts rows successfully against the current Supabase schema.

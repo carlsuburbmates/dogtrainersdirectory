@@ -4,6 +4,10 @@ import { generateLLMResponse } from '@/lib/llm'
 import { resolveLlmMode } from '@/lib/llm'
 import { detectMedicalEmergency } from '@/lib/medicalDetector'
 import {
+  buildEmergencyTriageLogInsert,
+  normaliseEmergencyClassificationForPersistence
+} from './persistence'
+import {
   recordCommercialFunnelMetric,
   recordLatencyMetric
 } from '@/lib/telemetryLatency'
@@ -92,24 +96,28 @@ export async function POST(request: Request) {
       }
     }
 
+    const persistedClassification = normaliseEmergencyClassificationForPersistence(classification)
+    classification = persistedClassification
+
     // Store triage result (best-effort for tests/mocks)
     let data: any = null
     let error: any = null
     try {
       const res = await supabaseAdmin
         .from('emergency_triage_logs')
-        .insert({
-          situation,
-          location,
-          contact,
-          dog_age: dogAge,
-          issues,
-          classification,
-          priority,
-          follow_up_actions: followUpActions,
-          decision_source: mode === 'live' ? 'llm' : 'deterministic',
-          created_at: new Date().toISOString()
-        })
+        .insert(
+          buildEmergencyTriageLogInsert({
+            situation,
+            location,
+            contact,
+            dogAge,
+            issues,
+            classification,
+            priority,
+            followUpActions,
+            decisionSource: mode === 'live' ? 'llm' : 'deterministic'
+          })
+        )
         .select()
         .single()
       data = res.data

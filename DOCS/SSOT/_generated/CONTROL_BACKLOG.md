@@ -23,8 +23,8 @@
 | PH-202 | Production Hardening | Restore real Supabase remote-path validation | completed | backend | `WORKPLAN` `PH-202` | remote-backed smoke paths run without DNS fallback skips |
 | MO-301 | Market Optimization | Add funnel and latency instrumentation | completed | main-control | `WORKPLAN` `MO-301` | core commercial flow metrics are captured |
 | MO-302 | Market Optimization | Establish baseline performance and conversion metrics | completed | main-control | `WORKPLAN` `MO-302` | baseline report exists for future optimization |
-| PH-203 | Production Hardening | Restore emergency triage write compatibility with live schema | in_progress | backend | `WORKPLAN` `PH-203` | live triage submissions stop failing on `emergency_triage_logs` inserts |
-| PH-204 | Production Hardening | Restore live public directory RPC availability | pending | backend | `WORKPLAN` `PH-204` | `search_trainers` and `get_trainer_profile` are callable in the live project again |
+| PH-203 | Production Hardening | Restore emergency triage write compatibility with live schema | completed | backend | `WORKPLAN` `PH-203` | live triage submissions stop failing on `emergency_triage_logs` inserts |
+| PH-204 | Production Hardening | Restore live public directory RPC availability | in_progress | backend | `WORKPLAN` `PH-204` | `search_trainers` and `get_trainer_profile` are callable in the live project again |
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
