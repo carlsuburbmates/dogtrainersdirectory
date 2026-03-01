@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { recordSearchTelemetry } from '@/lib/telemetryLatency'
+import {
+  recordCommercialFunnelMetric,
+  recordSearchTelemetry
+} from '@/lib/telemetryLatency'
 import {
   buildPublicSearchMetadata,
   parsePublicSearchParams
@@ -159,6 +162,17 @@ export async function GET(request: Request) {
         success: false,
         error: error.message
       })
+      await recordCommercialFunnelMetric({
+        stage: 'search_results',
+        durationMs: Date.now() - startTime,
+        success: false,
+        statusCode: 500,
+        metadata: {
+          flowSource: params.flowSource,
+          resultCount: 0,
+          hasResults: false
+        }
+      })
 
       return NextResponse.json(
         { 
@@ -182,6 +196,18 @@ export async function GET(request: Request) {
       success: true,
       error: null
     })
+    await recordCommercialFunnelMetric({
+      stage: 'search_results',
+      durationMs: Date.now() - startTime,
+      success: true,
+      statusCode: 200,
+      metadata: {
+        flowSource: params.flowSource,
+        queryPresent: Boolean(query),
+        resultCount: results.length,
+        hasResults: results.length > 0
+      }
+    })
 
     // Return results with metadata
     return NextResponse.json({
@@ -200,6 +226,17 @@ export async function GET(request: Request) {
       latencyMs: Date.now() - startTime,
       success: false,
       error: error.message || 'Unknown error'
+    })
+    await recordCommercialFunnelMetric({
+      stage: 'search_results',
+      durationMs: Date.now() - startTime,
+      success: false,
+      statusCode: 500,
+      metadata: {
+        flowSource: null,
+        resultCount: 0,
+        hasResults: false
+      }
     })
 
     return NextResponse.json(

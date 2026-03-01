@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { isMonetizationEnabled } from '@/lib/monetization'
 import { isE2ETestMode, e2eTrainerProfile } from '@/lib/e2eTestUtils'
 import { PromotePanel } from './promote-panel'
+import { recordCommercialFunnelMetric } from '@/lib/telemetryLatency'
 
 type PromoteSearchParams = {
   businessId?: string
@@ -41,6 +42,13 @@ export default async function PromotePage({ searchParams }: PromotePageProps) {
   const featureEnabled = serverFlag && clientFlag && !featureFlagOverride
 
   if (!featureEnabled) {
+    await recordCommercialFunnelMetric({
+      stage: 'promote_page_view',
+      durationMs: 0,
+      success: false,
+      statusCode: 200,
+      metadata: { reason: 'feature_disabled' }
+    })
     return (
       <main className="max-w-3xl mx-auto px-4 py-16">
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center space-y-4">
@@ -72,6 +80,19 @@ export default async function PromotePage({ searchParams }: PromotePageProps) {
   } else {
     business = await loadBusiness(Number.isFinite(businessIdParam) ? businessIdParam : undefined)
   }
+
+  await recordCommercialFunnelMetric({
+    stage: 'promote_page_view',
+    durationMs: 0,
+    success: Boolean(business?.id),
+    statusCode: 200,
+    metadata: {
+      businessId: business?.id ?? null,
+      businessFound: Boolean(business?.id),
+      abnVerified: business ? Boolean(business.abn_verified) : null,
+      statusParam
+    }
+  })
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-12 px-4">

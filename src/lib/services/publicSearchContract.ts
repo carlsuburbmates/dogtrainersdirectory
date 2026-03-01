@@ -1,5 +1,6 @@
 export type ParsedPublicSearchParams = {
   query: string | null
+  flowSource: string | null
   lat: number | null
   lng: number | null
   distance: string
@@ -40,6 +41,7 @@ export const parsePublicSearchParams = (
 
   return {
     query: searchParams.get('query') || searchParams.get('q') || null,
+    flowSource: searchParams.get('flow_source') || null,
     lat: parseFloatSafe(searchParams.get('lat')),
     lng: parseFloatSafe(searchParams.get('lng')),
     distance: searchParams.get('distance') || 'any',
@@ -68,6 +70,7 @@ export const buildPublicSearchMetadata = (
     has_more: hasMore,
     filters: {
       query: params.query,
+      flowSource: params.flowSource,
       location: params.lat !== null && params.lng !== null
         ? { lat: params.lat, lng: params.lng }
         : null,

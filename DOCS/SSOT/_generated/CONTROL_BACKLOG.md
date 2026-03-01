@@ -21,8 +21,8 @@
 | BC-103 | Build Completion | Harden onboarding validation after alias normalization | completed | backend | `WORKPLAN` `BC-103` | normalized required fields fail fast with deterministic `400`s |
 | PH-201 | Production Hardening | Add contract/regression tests for alias handling and metadata | completed | main-control | `WORKPLAN` `PH-201` | compatibility behavior is covered by tests |
 | PH-202 | Production Hardening | Restore real Supabase remote-path validation | completed | backend | `WORKPLAN` `PH-202` | remote-backed smoke paths run without DNS fallback skips |
-| MO-301 | Market Optimization | Add funnel and latency instrumentation | in_progress | main-control | `WORKPLAN` `MO-301` | core commercial flow metrics are captured |
-| MO-302 | Market Optimization | Establish baseline performance and conversion metrics | pending | main-control | `WORKPLAN` `MO-302` | baseline report exists for future optimization |
+| MO-301 | Market Optimization | Add funnel and latency instrumentation | completed | main-control | `WORKPLAN` `MO-301` | core commercial flow metrics are captured |
+| MO-302 | Market Optimization | Establish baseline performance and conversion metrics | in_progress | main-control | `WORKPLAN` `MO-302` | baseline report exists for future optimization |
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

@@ -159,6 +159,7 @@ function TriageContent() {
       qs.set('suburbName', selectedSuburb.name)
       qs.set('postcode', selectedSuburb.postcode)
       qs.set('councilId', String(selectedSuburb.council_id))
+      qs.set('flow_source', 'triage')
 
       router.push(`/search?${qs.toString()}`)
     } catch (e: any) {

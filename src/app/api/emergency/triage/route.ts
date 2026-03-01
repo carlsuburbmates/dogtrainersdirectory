@@ -3,8 +3,13 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
 import { resolveLlmMode } from '@/lib/llm'
 import { detectMedicalEmergency } from '@/lib/medicalDetector'
+import {
+  recordCommercialFunnelMetric,
+  recordLatencyMetric
+} from '@/lib/telemetryLatency'
 
 export async function POST(request: Request) {
+  const started = Date.now()
   try {
     const body = await request.json()
     const situation = body.situation || body.message || body.text
@@ -13,6 +18,20 @@ export async function POST(request: Request) {
     const issues = Array.isArray(body.issues) ? body.issues : null
 
     if (!situation) {
+      await recordLatencyMetric({
+        area: 'emergency_triage_api',
+        route: '/api/emergency/triage',
+        durationMs: Date.now() - started,
+        success: false,
+        statusCode: 400
+      })
+      await recordCommercialFunnelMetric({
+        stage: 'triage_submit',
+        durationMs: Date.now() - started,
+        success: false,
+        statusCode: 400,
+        metadata: { reason: 'missing_situation' }
+      })
       return NextResponse.json(
         { error: 'Missing situation description' },
         { status: 400 }
@@ -102,6 +121,24 @@ export async function POST(request: Request) {
     }
 
     if (error) {
+      await recordLatencyMetric({
+        area: 'emergency_triage_api',
+        route: '/api/emergency/triage',
+        durationMs: Date.now() - started,
+        success: false,
+        statusCode: 500
+      })
+      await recordCommercialFunnelMetric({
+        stage: 'triage_submit',
+        durationMs: Date.now() - started,
+        success: false,
+        statusCode: 500,
+        metadata: {
+          classification,
+          priority,
+          decisionSource: mode === 'live' ? 'llm' : 'deterministic'
+        }
+      })
       return NextResponse.json(
         { error: 'Failed to save triage result', message: error.message },
         { status: 500 }
@@ -123,6 +160,32 @@ export async function POST(request: Request) {
       }
     }
 
+    await recordLatencyMetric({
+      area: 'emergency_triage_api',
+      route: '/api/emergency/triage',
+      durationMs: Date.now() - started,
+      success: true,
+      statusCode: 200,
+      metadata: {
+        classification,
+        priority,
+        decisionSource: mode === 'live' ? 'llm' : 'deterministic'
+      }
+    })
+    await recordCommercialFunnelMetric({
+      stage: 'triage_submit',
+      durationMs: Date.now() - started,
+      success: true,
+      statusCode: 200,
+      metadata: {
+        classification,
+        priority,
+        routesToSearch: classification === 'normal',
+        decisionSource: mode === 'live' ? 'llm' : 'deterministic',
+        triageId: data.id
+      }
+    })
+
     return NextResponse.json({
       success: true,
       classification: classificationPayload,
@@ -136,6 +199,22 @@ export async function POST(request: Request) {
       }
     })
   } catch (error: any) {
+    await recordLatencyMetric({
+      area: 'emergency_triage_api',
+      route: '/api/emergency/triage',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 500
+    })
+    await recordCommercialFunnelMetric({
+      stage: 'triage_submit',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 500,
+      metadata: {
+        reason: error.message || 'unknown'
+      }
+    })
     return NextResponse.json(
       { error: 'Server error', message: error.message },
       { status: 500 }

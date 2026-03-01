@@ -111,6 +111,7 @@ const parseAllowedList = (value: string | null, allowedValues: Set<string>) => {
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
+  const [flowSource, setFlowSource] = useState('')
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     lat: '',
@@ -134,7 +135,8 @@ export default function SearchPage() {
   const runSearch = useCallback(async (
     nextPage: number,
     activeFilters: SearchFilters,
-    activeSuburb: SuburbResult | null
+    activeSuburb: SuburbResult | null,
+    activeFlowSource = flowSource
   ) => {
     setLoading(true)
     setError(null)
@@ -165,6 +167,7 @@ export default function SearchPage() {
       if (activeFilters.service_type) params.append('service_type', activeFilters.service_type)
       if (activeFilters.verified_only) params.append('verified_only', 'true')
       if (activeFilters.rescue_only) params.append('rescue_only', 'true')
+      if (activeFlowSource) params.append('flow_source', activeFlowSource)
       
       params.append('limit', limit.toString())
       params.append('page', nextPage.toString())
@@ -194,11 +197,11 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }, [limit])
+  }, [flowSource, limit])
 
   const handleSearch = useCallback((nextPage = 1) => {
-    return runSearch(nextPage, filters, selectedSuburb)
-  }, [filters, runSearch, selectedSuburb])
+    return runSearch(nextPage, filters, selectedSuburb, flowSource)
+  }, [filters, flowSource, runSearch, selectedSuburb])
 
   useEffect(() => {
     const queryParam = searchParams.get('q') || searchParams.get('query') || ''
@@ -210,6 +213,7 @@ export default function SearchPage() {
     const serviceTypeParam = searchParams.get('service_type') || ''
     const verifiedOnlyParam = searchParams.get('verified_only') === 'true'
     const rescueOnlyParam = searchParams.get('rescue_only') === 'true'
+    const flowSourceParam = searchParams.get('flow_source') || ''
 
     const distanceValues = new Set(['any', '0-5', '5-15', 'greater'])
     const nextFilters: SearchFilters = {
@@ -225,6 +229,7 @@ export default function SearchPage() {
     }
 
     setFilters(nextFilters)
+    setFlowSource(flowSourceParam)
 
     const suburbName = searchParams.get('suburbName')
     const postcode = searchParams.get('postcode')
@@ -257,7 +262,7 @@ export default function SearchPage() {
     )
 
     if (shouldAutoSearch) {
-      runSearch(1, nextFilters, suburbFromParams)
+      runSearch(1, nextFilters, suburbFromParams, flowSourceParam)
     } else {
       setHasSearched(false)
     }
@@ -531,7 +536,9 @@ export default function SearchPage() {
 
                     <div>
                       <Link 
-                        href={`/trainers/${trainer.business_id}`}
+                        href={flowSource
+                          ? `/trainers/${trainer.business_id}?flow_source=${encodeURIComponent(flowSource)}`
+                          : `/trainers/${trainer.business_id}`}
                         className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                       >
                         View Profile

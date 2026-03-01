@@ -20,6 +20,7 @@
 | 2026-03-01 | D-110 | `BC-102` and `BC-103` accepted as complete | search filter enums now resolve from shared SSOT taxonomies, and onboarding rejects invalid normalized payloads before database writes | Build Completion is closed and `PH-201` is now the active priority |
 | 2026-03-01 | D-111 | `PH-201` accepted as complete | request alias parsing and dual metadata compatibility are now enforced by unit tests instead of relying on route memory | next active task is `PH-202` |
 | 2026-03-01 | D-112 | `PH-202` accepted as complete | live Supabase schema now matches the repo’s required incremental migrations and remote-backed smoke runs without skips | Production Hardening is closed and `MO-301` is now the active priority |
+| 2026-03-01 | D-113 | `MO-301` accepted as complete | the core funnel now writes stage metrics into `latency_metrics` and exposes an admin-readable drop-off summary without adding a second telemetry store | next active task is `MO-302` |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -33,6 +34,7 @@
 | 2026-03-01 | main-control | BC-102/BC-103 | `src/app/search/page.tsx`, `src/app/api/onboarding/route.ts`, `src/lib/services/onboardingPayload.ts`, `tests/unit/onboarding-payload.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npm run lint`, `npm run test`, `npx playwright test tests/e2e/search-and-trainer.spec.ts`, `npm run docs:guard` | pass | execute `PH-201` |
 | 2026-03-01 | main-control | PH-201 | `src/app/api/public/search/route.ts`, `src/app/api/stripe/create-checkout-session/route.ts`, `src/lib/services/publicSearchContract.ts`, `src/lib/services/checkoutPayload.ts`, `tests/unit/public-search-contract.test.ts`, `tests/unit/checkout-payload.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npm run lint`, `npm run test`, `npm run docs:guard` | pass | execute `PH-202` |
 | 2026-03-01 | backend | PH-202 | `.env.local (local-only)`, `supabase/schema.sql` | remote `psql` apply for `20251209093000`, `20260203171000`, `20260203182000`; `supabase migration repair` for `20260203171000` + `20260203182000`; `npm run schema:refresh`; `./scripts/remote_db_info.sh`; `npm run smoke` | pass (remote-backed smoke `6/6`) | execute `MO-301` |
+| 2026-03-01 | main-control | MO-301 | `src/lib/telemetryLatency.ts`, `src/lib/services/publicSearchContract.ts`, `src/app/api/emergency/triage/route.ts`, `src/app/api/public/search/route.ts`, `src/app/api/stripe/create-checkout-session/route.ts`, `src/app/triage/page.tsx`, `src/app/search/page.tsx`, `src/app/trainers/[id]/page.tsx`, `src/app/promote/page.tsx`, `src/app/api/admin/telemetry/latency/route.ts`, `tests/unit/commercial-funnel.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`, `npm run lint`, `npm run test`, `npx playwright test tests/e2e/search-and-trainer.spec.ts`, `npm run docs:guard` | pass | execute `MO-302` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

@@ -1,6 +1,10 @@
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
 import ContactForm from './ContactForm'
+import {
+  recordCommercialFunnelMetric,
+  recordLatencyMetric
+} from '@/lib/telemetryLatency'
 
 interface Review {
   id: number
@@ -12,9 +16,31 @@ interface Review {
 }
 
 export default async function TrainerPage({ params, searchParams }: { params: { id: string }, searchParams?: Record<string, string> }) {
+  const started = Date.now()
   const resolvedParams = await Promise.resolve(params as any)
+  const resolvedSearchParams = await Promise.resolve(searchParams as any)
+  const flowSource = typeof resolvedSearchParams?.flow_source === 'string'
+    ? resolvedSearchParams.flow_source
+    : null
   const id = Number(resolvedParams.id)
-  if (isNaN(id)) return notFound()
+  if (isNaN(id)) {
+    await recordLatencyMetric({
+      area: 'trainer_profile_page',
+      route: '/trainers/[id]',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 404,
+      metadata: { reason: 'invalid_id', flowSource }
+    })
+    await recordCommercialFunnelMetric({
+      stage: 'trainer_profile_view',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 404,
+      metadata: { reason: 'invalid_id', flowSource }
+    })
+    return notFound()
+  }
 
   // Use get_trainer_profile RPC to fetch trainer data
   // Pass decryption key for sensitive fields
@@ -29,8 +55,22 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
   const trainer = data?.[0]
 
   if (!trainer || error) {
-    const resolvedSearchParams = await Promise.resolve(searchParams as any)
     if (resolvedSearchParams?.e2eName) {
+      await recordLatencyMetric({
+        area: 'trainer_profile_page',
+        route: '/trainers/[id]',
+        durationMs: Date.now() - started,
+        success: true,
+        statusCode: 200,
+        metadata: { businessId: id, flowSource, e2eFallback: true }
+      })
+      await recordCommercialFunnelMetric({
+        stage: 'trainer_profile_view',
+        durationMs: Date.now() - started,
+        success: true,
+        statusCode: 200,
+        metadata: { businessId: id, flowSource, e2eFallback: true }
+      })
       return (
         <div className="container mx-auto p-6">
           <h1 className="text-2xl font-bold mb-6">{resolvedSearchParams.e2eName}</h1>
@@ -40,6 +80,21 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
     }
 
     // render a client-side fallback that reads test fixtures from sessionStorage
+    await recordLatencyMetric({
+      area: 'trainer_profile_page',
+      route: '/trainers/[id]',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 404,
+      metadata: { businessId: id, flowSource, fallback: 'sessionStorage' }
+    })
+    await recordCommercialFunnelMetric({
+      stage: 'trainer_profile_view',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 404,
+      metadata: { businessId: id, flowSource, fallback: 'sessionStorage' }
+    })
     const TrainerFallback = (await import('@/components/e2e/TrainerFallbackClient')).default
     return <TrainerFallback id={id} />
   }
@@ -62,6 +117,31 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
   }
 
   const isFeatured = trainer.featured_until && new Date(trainer.featured_until) > new Date()
+
+  await recordLatencyMetric({
+    area: 'trainer_profile_page',
+    route: '/trainers/[id]',
+    durationMs: Date.now() - started,
+    success: true,
+    statusCode: 200,
+    metadata: {
+      businessId: id,
+      flowSource,
+      reviewCount: trainer.review_count || 0
+    }
+  })
+  await recordCommercialFunnelMetric({
+    stage: 'trainer_profile_view',
+    durationMs: Date.now() - started,
+    success: true,
+    statusCode: 200,
+    metadata: {
+      businessId: id,
+      flowSource,
+      featured: Boolean(isFeatured),
+      reviewCount: trainer.review_count || 0
+    }
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">

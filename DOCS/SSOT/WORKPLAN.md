@@ -19,7 +19,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
 - Build Completion is complete.
 - Production Hardening is complete.
-- Current top priority: `MO-301`.
+- Market instrumentation baseline is now in place.
+- Current top priority: `MO-302`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -82,7 +83,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ### Phase 3 - Market Optimization
 
-**MO-301: Add funnel and latency instrumentation for core commercial flows**
+**MO-301: Add funnel and latency instrumentation for core commercial flows (completed 2026-03-01)**
 - Purpose: make product optimization measurable before market work starts.
 - Definition of done:
   - Instrument the core flow: `triage -> search -> trainer profile -> promote checkout`.
@@ -108,3 +109,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `BC-103` completed by moving onboarding payload normalization and validation into a dedicated parser, enforcing required normalized fields (`suburbId`, `primaryService`) and returning deterministic `400` responses for invalid enum values before any database writes. Unit coverage added in `tests/unit/onboarding-payload.test.ts`.
 - 2026-03-01: `PH-201` completed by extracting public search and checkout request parsing into dedicated contract helpers, then adding regression coverage for `q/query`, `service/service_type`, `page/offset`, dual metadata flags (`hasMore` + `has_more`), checkout body aliases, and the onboarding alias-validation path.
 - 2026-03-01: `PH-202` completed by aligning `.env.local` to the live `xqytwtmdilipxnjetvoe` Supabase project, applying the missing remote migrations (`20251209093000`, `20260203171000`, `20260203182000`), repairing remote migration history for the two 20260203 versions, refreshing `supabase/schema.sql`, and re-running remote-backed smoke with `6/6` passing once `SUPABASE_PGCRYPTO_KEY` was present.
+- 2026-03-01: `MO-301` completed by adding `commercial_funnel` instrumentation to the canonical `latency_metrics` path for `triage_submit`, `search_results`, `trainer_profile_view`, `promote_page_view`, and `promote_checkout_session`; wiring stage summaries and drop-off calculations into `/api/admin/telemetry/latency`; and preserving triage-origin attribution through `flow_source` from `/triage` into `/search` and trainer profile views.

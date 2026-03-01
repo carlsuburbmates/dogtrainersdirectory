@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getLatencySnapshot, type LatencyArea } from '@/lib/telemetryLatency'
+import {
+  getCommercialFunnelSummary,
+  getLatencySnapshot,
+  type LatencyArea
+} from '@/lib/telemetryLatency'
 
 const AREAS: Array<{ key: LatencyArea; label: string }> = [
+  { key: 'commercial_funnel', label: 'Commercial funnel' },
   { key: 'search_triage', label: 'Search → trainer API' },
   { key: 'trainer_profile_page', label: 'Trainer profile SSR' },
   { key: 'emergency_triage_api', label: 'Emergency triage API' },
@@ -18,9 +23,13 @@ export async function GET() {
 
   await Promise.all(
     AREAS.map(async ({ key, label }) => {
+      const summary = await getLatencySnapshot(key)
       metrics[key] = {
         label,
-        summary: await getLatencySnapshot(key)
+        summary,
+        ...(key === 'commercial_funnel'
+          ? { funnel: await getCommercialFunnelSummary() }
+          : {})
       }
     })
   )
