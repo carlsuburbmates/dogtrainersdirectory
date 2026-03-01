@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-02-25
+**Last Updated:** 2026-03-01
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -16,6 +16,8 @@
 | 2026-02-25 | D-106 | Unified main-lane gates passed on combined changeset | validates merged lane state before next step | marks `S-220` and `S-230` complete |
 | 2026-02-25 | D-107 | Track Playwright search spec drift as explicit follow-up | targeted e2e failed due legacy expectations, not compile/runtime break | new task `S-240` opened |
 | 2026-02-25 | D-108 | Frontend handoff `S-240` accepted | Playwright search spec now matches canonical `q/page` search flow | closes cross-lane verification gap |
+| 2026-03-01 | D-109 | `BC-101` accepted as complete | search auto-load now runs through a stable page-based executor and does not loop page-one requests | next active task is `BC-102` |
+| 2026-03-01 | D-110 | `BC-102` and `BC-103` accepted as complete | search filter enums now resolve from shared SSOT taxonomies, and onboarding rejects invalid normalized payloads before database writes | Build Completion is closed and `PH-201` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -25,6 +27,8 @@
 | 2026-02-25 | frontend | S-200 | `src/app/search/page.tsx`, `src/components/SearchAutocomplete.tsx` | `npm run type-check`, `npm run lint`, targeted playwright (`search-and-trainer`) | pass for type/lint; targeted e2e failed due legacy spec drift | `S-240` update e2e spec |
 | 2026-02-25 | main-control | S-220/S-230 | SSOT reconciliation check + unified verification | `npm run type-check`, `npm run lint`, `npm run test`, `npm run docs:guard`, `npm run ssot:refresh` | pass (smoke warnings only due unresolved Supabase DNS) | execute `S-240` |
 | 2026-02-25 | frontend | S-240 | `tests/e2e/search-and-trainer.spec.ts` | `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (1 passed) | consolidation / commit prep |
+| 2026-03-01 | main-control | BC-101 | `src/app/search/page.tsx`, `tests/e2e/search-and-trainer.spec.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npx playwright test tests/e2e/search-and-trainer.spec.ts`, `npm run docs:guard` | pass | execute `BC-102` |
+| 2026-03-01 | main-control | BC-102/BC-103 | `src/app/search/page.tsx`, `src/app/api/onboarding/route.ts`, `src/lib/services/onboardingPayload.ts`, `tests/unit/onboarding-payload.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npm run lint`, `npm run test`, `npx playwright test tests/e2e/search-and-trainer.spec.ts`, `npm run docs:guard` | pass | execute `PH-201` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

@@ -4,25 +4,7 @@ import { encryptValue } from '@/lib/encryption'
 import abrLib from '@/lib/abr'
 import { recordAbnFallbackEvent } from '@/lib/abnFallback'
 import { recordLatencyMetric } from '@/lib/telemetryLatency'
-
-type RequestBody = {
-  email: string
-  password: string
-  fullName: string
-  businessName: string
-  businessPhone?: string
-  businessEmail?: string
-  website?: string
-  address?: string
-  suburbId: number
-  bio?: string
-  pricing?: string
-  ages: string[]
-  issues: string[]
-  primaryService: string
-  secondaryServices: string[]
-  abn: string
-}
+import { parseOnboardingPayload } from '@/lib/services/onboardingPayload'
 
 const normalize = (value?: string) =>
   (value || '').replace(/\D/g, '').trim()
@@ -47,20 +29,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as Partial<RequestBody> & {
-      suburb_id?: number
-      primary_service?: string
-      secondary_services?: string[]
+    const parsedBody = parseOnboardingPayload(await request.json())
+    if (!parsedBody.ok) {
+      await finish(400, false, {
+        reason: parsedBody.error.code,
+        fields: parsedBody.error.fields
+      })
+      return NextResponse.json(
+        {
+          error: parsedBody.error.message,
+          fields: parsedBody.error.fields,
+          invalid_values: parsedBody.error.invalidValues
+        },
+        { status: 400 }
+      )
     }
-    const ages = Array.isArray(body.ages) ? body.ages : []
-    const issues = Array.isArray(body.issues) ? body.issues : []
-    const secondaryServices = Array.isArray(body.secondaryServices)
-      ? body.secondaryServices
-      : Array.isArray(body.secondary_services)
-        ? body.secondary_services
-        : []
-    const primaryService = body.primaryService || body.primary_service || ''
-    const suburbId = Number(body.suburbId ?? body.suburb_id ?? 0)
+
     const {
       email,
       password,
@@ -70,15 +54,15 @@ export async function POST(request: Request) {
       businessEmail,
       website,
       address,
+      suburbId,
       bio,
       pricing,
+      ages,
+      issues,
+      primaryService,
+      secondaryServices,
       abn
-    } = body
-
-    if (!email || !password || !businessName || !abn) {
-      await finish(400, false, { reason: 'missing_fields' })
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
+    } = parsedBody.data
 
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,

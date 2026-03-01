@@ -1,70 +1,107 @@
-# Workplan (SSOT Sync) - DTD
+# Workplan (Product Delivery Roadmap) - DTD
 
 **Status:** Canonical process (Tier-1)
 **Owner:** Repo maintainers + agent
 **WIP limit:** 1 active task at a time
 
-This file is the single tasklist for syncing **frontend <-> backend <-> database <-> SSOT**.
+This file is the single product backlog for finishing, hardening, and optimizing **frontend <-> backend <-> database <-> SSOT** as one unified application.
 Anything not listed here is **not worked on** (to prevent drift).
 
 ## Rules
 - Every change must map to a task ID below.
-- If a new issue is discovered, add it as a new task at the bottom (no inline fixes).
+- Keep exactly one active product priority at a time.
+- If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-02-13)
+## Current State (as of 2026-03-01)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
-- Working tree clean and synced with `origin/main` at verification time.
+- `main` is synced to `origin/main` at commit `5a80f58`.
+- Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
+- Build Completion is complete.
+- Current top priority: `PH-201`.
+- The current delivery sequence is:
+  1. Build Completion
+  2. Production Hardening
+  3. Market Optimization
 
-## Task List
+## Completed Foundation Milestones
 
-### P0 - Stabilise Current Changes
+- `P0-001`: Commit-ready baseline completed.
+- `P1-010`: Generated SSOT snapshots added and drift enforcement enabled.
+- `P1-011`: Tier-1 docs refactored to reference generated inventories.
+- `P2-020`: Core public journey aligned (`/triage -> /search -> /trainers/[id]`).
+- `P2-021`: Admin AI health instrumentation clarified and stabilized.
 
-**P0-001: Make the current working tree commit-ready**
-- Scope: Only files already touched in the current working tree.
+## Active Roadmap
+
+### Phase 1 - Build Completion
+
+**BC-101: Fix search page pagination initialization bug (completed 2026-03-01)**
+- Purpose: remove the remaining pagination defect in `/search` after moving to page-based query semantics.
 - Definition of done:
-  - `npm run type-check` passes.
-  - `npm run lint` passes.
-  - `npm test` passes, or any failing tests are made deterministic without live-network dependencies (documented).
-  - If SSOT docs were touched, `npm run docs:guard` passes.
-  - No changes outside this task.
-- Notes:
-  - If tests require live Supabase connectivity, convert to mocks/fixtures or gated env checks.
+  - URL-driven auto-search starts on page `1`, not page `0`.
+  - First "Load more" request advances to page `2` and does not repeat page `1`.
+  - Add or update regression coverage for pagination behavior.
 
-### P1 - Hybrid SSOT (Policy + Generated Snapshots)
-
-**P1-010: Add generated SSOT snapshots (first pass)**
-- Goal: Stop drift by making implementation-derived facts generated.
+**BC-102: Refactor search filters to shared taxonomy constants (completed 2026-03-01)**
+- Purpose: remove duplicated enum lists in the core search UI.
 - Definition of done:
-  - Add `DOCS/SSOT/_generated/` with committed markdown snapshots.
-  - Add `npm run ssot:refresh` (or equivalent) that regenerates snapshots.
-  - CI runs refresh and fails if repo is dirty.
-- Snapshots (minimum):
-  - `DOCS/SSOT/_generated/routes.md` (from `src/app/**/page.tsx` + redirects + middleware)
-  - `DOCS/SSOT/_generated/api.md` (from `src/app/api/**/route.ts`)
-  - `DOCS/SSOT/_generated/edge_functions.md` (from `supabase/functions/**`)
-  - `DOCS/SSOT/_generated/schema.md` (from migrations/schema.sql; choose one source)
+  - Search filter options derive from shared taxonomy constants or a single shared adapter.
+  - No duplicated age/behavior/service enum lists remain in the core search UI.
+  - Frontend labels remain aligned to `DOCS/SSOT/03_DATA_CONTRACTS.md`.
 
-**P1-011: Refactor Tier-1 docs to reference generated snapshots**
-- Goal: Keep Tier-1 docs as policy/intent, not duplicated inventories.
+**BC-103: Harden onboarding validation after alias normalization (completed 2026-03-01)**
+- Purpose: make onboarding fail fast and deterministically after payload alias normalization.
 - Definition of done:
-  - `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, `09_DEPLOYMENT.md` link to `_generated/*` where appropriate.
-  - Remove duplicated lists that are now generated (without changing Tier-0/Tier-1 meaning).
+  - Normalized `suburbId` and `primaryService` are validated before database writes.
+  - Invalid normalized payloads return deterministic `400` responses.
+  - Add tests or equivalent coverage for alias handling and required-field enforcement.
 
-### P2 - Remaining Product Gaps (After Stabilisation + SSOT Enforcement)
-
-**P2-020: Remove placeholder UX in core public journey**
+**BC-104: Keep `WORKPLAN.md` current with active priorities (completed 2026-02-28)**
+- Purpose: keep one canonical product roadmap and prevent parallel backlog drift.
 - Definition of done:
-  - `/triage -> /search -> /trainers/[id]` works end-to-end with consistent filters.
-  - No `window.alert` placeholders in core pages.
-  - All footer links resolve (no dead routes).
+  - This file reflects the current phased roadmap and current top priority.
+  - Completed milestones remain visible without competing with active tasks.
 
-**P2-021: Operational visibility completeness**
+### Phase 2 - Production Hardening
+
+**PH-201: Add contract/regression tests for alias handling and metadata**
+- Purpose: lock compatibility behavior in code, not only in live memory.
 - Definition of done:
-  - `/admin/ai-health` uses real metrics where tables exist; otherwise shows "not instrumented yet" (no implied real-time data).
+  - Add regression coverage for backend alias handling (`q/query`, `page/offset`, request body aliases).
+  - Add response-shape assertions for dual metadata compatibility (`hasMore` and `has_more`).
+  - Coverage includes the highest-risk public contracts and checkout/onboarding paths.
+
+**PH-202: Restore real Supabase remote-path validation**
+- Purpose: move from fallback-safe local verification to real environment validation.
+- Definition of done:
+  - `.env.local` points to a valid, DNS-resolvable Supabase project.
+  - Smoke tests exercise remote-backed paths without skip/fallback warnings.
+  - Remote crypto and alert-dependent checks are verified against a live project.
+
+### Phase 3 - Market Optimization
+
+**MO-301: Add funnel and latency instrumentation for core commercial flows**
+- Purpose: make product optimization measurable before market work starts.
+- Definition of done:
+  - Instrument the core flow: `triage -> search -> trainer profile -> promote checkout`.
+  - Capture drop-off and latency signals in canonical telemetry paths.
+  - Metrics are accessible for operational review and later market comparison.
+
+**MO-302: Establish baseline performance and conversion metrics**
+- Purpose: create a measurable baseline before any growth or positioning work.
+- Definition of done:
+  - Record baseline latency, search responsiveness, and core conversion behavior.
+  - Record known friction points in the current build.
+  - Baseline is documented in canonical docs/runbooks so future optimization is comparable.
 
 ## Execution Log
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
 - 2026-02-13: `P1-011` completed by refactoring `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, and `09_DEPLOYMENT.md` to reference `DOCS/SSOT/_generated/*` and remove duplicated endpoint/route inventories.
 - 2026-02-13: `P2-020` verified complete in implementation review. Checks passed: `/triage -> /search -> /trainers/[id]` path present; no `window.alert` placeholders in core journey pages; footer legal links resolve to implemented pages.
 - 2026-02-13: `P2-021` completed. `/admin/ai-health` now counts `manual_override` and `manual` for moderation decisions, degrades to `Not instrumented yet.` when metric tables are unavailable, and explicitly labels `24h Errors` as not instrumented.
+- 2026-02-28: `P0-001` closed after commit `5a80f58` with green verification (`type-check`, `lint`, `test`, `smoke`, `docs:guard`, `ssot:refresh`, targeted Playwright).
+- 2026-02-28: Product roadmap restructured into `Build Completion -> Production Hardening -> Market Optimization`; `BC-104` completed in the same update.
+- 2026-03-01: `BC-101` completed by fixing `/search` URL-driven auto-search to execute through a stable search runner, preventing repeated page-1 fetches and restoring correct `Load More` progression (`page 1 -> page 2`). Regression coverage added in `tests/e2e/search-and-trainer.spec.ts` and targeted verification passed.
+- 2026-03-01: `BC-102` completed by replacing duplicated `/search` filter enums with shared taxonomy constants and labels from `src/lib/constants/taxonomies.ts`, including canonical filtering of URL-provided enum params before they hydrate UI state.
+- 2026-03-01: `BC-103` completed by moving onboarding payload normalization and validation into a dedicated parser, enforcing required normalized fields (`suburbId`, `primaryService`) and returning deterministic `400` responses for invalid enum values before any database writes. Unit coverage added in `tests/unit/onboarding-payload.test.ts`.

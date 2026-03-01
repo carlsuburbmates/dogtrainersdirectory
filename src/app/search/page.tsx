@@ -5,6 +5,14 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
 import type { SuburbResult } from '@/lib/api'
+import {
+  AGE_SPECIALTIES,
+  AGE_SPECIALTY_LABELS,
+  BEHAVIOR_ISSUES,
+  BEHAVIOR_ISSUE_LABELS,
+  SERVICE_TYPES,
+  SERVICE_TYPE_LABELS
+} from '@/lib/constants/taxonomies'
 
 // Simple UI components
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -64,6 +72,43 @@ interface SearchResult {
   services: string[]
 }
 
+const ageSpecialtyOptions = AGE_SPECIALTIES.map((value) => ({
+  value,
+  label: AGE_SPECIALTY_LABELS[value]
+}))
+
+const behaviorIssueOptions = BEHAVIOR_ISSUES.map((value) => ({
+  value,
+  label: BEHAVIOR_ISSUE_LABELS[value]
+}))
+
+const serviceTypeOptions = SERVICE_TYPES.map((value) => ({
+  value,
+  label: SERVICE_TYPE_LABELS[value]
+}))
+
+const distanceOptions = [
+  { value: 'any', label: 'Any Distance' },
+  { value: '0-5', label: 'Within 5 km' },
+  { value: '5-15', label: '5-15 km' },
+  { value: 'greater', label: 'Greater than 15 km' }
+]
+
+const ageSpecialtySet = new Set<string>(AGE_SPECIALTIES)
+const behaviorIssueSet = new Set<string>(BEHAVIOR_ISSUES)
+const serviceTypeSet = new Set<string>(SERVICE_TYPES)
+
+const parseAllowedList = (value: string | null, allowedValues: Set<string>) => {
+  if (!value) {
+    return []
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item && allowedValues.has(item))
+}
+
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const [filters, setFilters] = useState<SearchFilters>({
@@ -86,51 +131,15 @@ export default function SearchPage() {
   const [hasMore, setHasMore] = useState(false)
   const limit = 20
 
-  // Available filter options based on database enums
-  const ageSpecialtyOptions = [
-    { value: 'puppies_0_6m', label: 'Puppies (0-6 months)' },
-    { value: 'adolescent_6_18m', label: 'Adolescent (6-18 months)' },
-    { value: 'adult_18m_7y', label: 'Adult (18 months - 7 years)' },
-    { value: 'senior_7y_plus', label: 'Senior (7+ years)' },
-    { value: 'rescue_dogs', label: 'Rescue Dogs' }
-  ]
-
-  const behaviorIssueOptions = [
-    { value: 'pulling_on_lead', label: 'Pulling on Lead' },
-    { value: 'separation_anxiety', label: 'Separation Anxiety' },
-    { value: 'excessive_barking', label: 'Excessive Barking' },
-    { value: 'dog_aggression', label: 'Dog Aggression' },
-    { value: 'leash_reactivity', label: 'Leash Reactivity' },
-    { value: 'jumping_up', label: 'Jumping Up' },
-    { value: 'destructive_behaviour', label: 'Destructive Behaviour' },
-    { value: 'recall_issues', label: 'Recall Issues' },
-    { value: 'anxiety_general', label: 'General Anxiety' },
-    { value: 'resource_guarding', label: 'Resource Guarding' }
-  ]
-
-  const serviceTypeOptions = [
-    { value: 'puppy_training', label: 'Puppy Training' },
-    { value: 'obedience_training', label: 'Obedience Training' },
-    { value: 'behaviour_consultations', label: 'Behaviour Consultations' },
-    { value: 'group_classes', label: 'Group Classes' },
-    { value: 'private_training', label: 'Private Training' }
-  ]
-
-  const distanceOptions = [
-    { value: 'any', label: 'Any Distance' },
-    { value: '0-5', label: 'Within 5 km' },
-    { value: '5-15', label: '5-15 km' },
-    { value: 'greater', label: 'Greater than 15 km' }
-  ]
-
-  const handleSearch = useCallback(async (nextPage = 1, overrideFilters?: SearchFilters, overrideSuburb?: SuburbResult | null) => {
+  const runSearch = useCallback(async (
+    nextPage: number,
+    activeFilters: SearchFilters,
+    activeSuburb: SuburbResult | null
+  ) => {
     setLoading(true)
     setError(null)
     
     try {
-      const activeFilters = overrideFilters ?? filters
-      const activeSuburb = overrideSuburb ?? selectedSuburb
-
       // Build query parameters
       const params = new URLSearchParams()
       
@@ -185,12 +194,13 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }, [filters, selectedSuburb, limit])
+  }, [limit])
+
+  const handleSearch = useCallback((nextPage = 1) => {
+    return runSearch(nextPage, filters, selectedSuburb)
+  }, [filters, runSearch, selectedSuburb])
 
   useEffect(() => {
-    const parseList = (value: string | null) =>
-      value ? value.split(',').map((item) => item.trim()).filter(Boolean) : []
-
     const queryParam = searchParams.get('q') || searchParams.get('query') || ''
     const latParam = searchParams.get('lat') || ''
     const lngParam = searchParams.get('lng') || ''
@@ -207,9 +217,9 @@ export default function SearchPage() {
       lat: latParam,
       lng: lngParam,
       distance: distanceValues.has(distanceParam) ? distanceParam : 'any',
-      age_specialties: parseList(ageParam),
-      behavior_issues: parseList(behaviorParam),
-      service_type: serviceTypeParam,
+      age_specialties: parseAllowedList(ageParam, ageSpecialtySet),
+      behavior_issues: parseAllowedList(behaviorParam, behaviorIssueSet),
+      service_type: serviceTypeSet.has(serviceTypeParam) ? serviceTypeParam : '',
       verified_only: verifiedOnlyParam,
       rescue_only: rescueOnlyParam
     }
@@ -247,11 +257,11 @@ export default function SearchPage() {
     )
 
     if (shouldAutoSearch) {
-      handleSearch(0, nextFilters, suburbFromParams)
+      runSearch(1, nextFilters, suburbFromParams)
     } else {
       setHasSearched(false)
     }
-  }, [searchParams, handleSearch])
+  }, [searchParams, runSearch])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
