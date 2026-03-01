@@ -15,10 +15,10 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ## Current State (as of 2026-03-01)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
-- `main` is synced to `origin/main` at commit `5a80f58`.
+- `main` is synced to `origin/main` at commit `a1d89fe`.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
 - Build Completion is complete.
-- Current top priority: `PH-201`.
+- Current top priority: `PH-202`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -65,7 +65,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ### Phase 2 - Production Hardening
 
-**PH-201: Add contract/regression tests for alias handling and metadata**
+**PH-201: Add contract/regression tests for alias handling and metadata (completed 2026-03-01)**
 - Purpose: lock compatibility behavior in code, not only in live memory.
 - Definition of done:
   - Add regression coverage for backend alias handling (`q/query`, `page/offset`, request body aliases).
@@ -105,3 +105,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `BC-101` completed by fixing `/search` URL-driven auto-search to execute through a stable search runner, preventing repeated page-1 fetches and restoring correct `Load More` progression (`page 1 -> page 2`). Regression coverage added in `tests/e2e/search-and-trainer.spec.ts` and targeted verification passed.
 - 2026-03-01: `BC-102` completed by replacing duplicated `/search` filter enums with shared taxonomy constants and labels from `src/lib/constants/taxonomies.ts`, including canonical filtering of URL-provided enum params before they hydrate UI state.
 - 2026-03-01: `BC-103` completed by moving onboarding payload normalization and validation into a dedicated parser, enforcing required normalized fields (`suburbId`, `primaryService`) and returning deterministic `400` responses for invalid enum values before any database writes. Unit coverage added in `tests/unit/onboarding-payload.test.ts`.
+- 2026-03-01: `PH-201` completed by extracting public search and checkout request parsing into dedicated contract helpers, then adding regression coverage for `q/query`, `service/service_type`, `page/offset`, dual metadata flags (`hasMore` + `has_more`), checkout body aliases, and the onboarding alias-validation path.

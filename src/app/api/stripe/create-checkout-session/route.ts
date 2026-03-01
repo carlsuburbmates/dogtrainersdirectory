@@ -1,23 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createCheckoutSessionForBusiness, logMonetizationLatency } from '@/lib/monetization'
+import { parseCheckoutPayload } from '@/lib/services/checkoutPayload'
 
 export const runtime = 'nodejs'
-
-type RequestPayload = {
-  businessId?: number
-  business_id?: number
-}
 
 export async function POST(request: Request) {
   const started = Date.now()
   try {
-    let payload: RequestPayload = {}
+    let payload: unknown = {}
     try {
-      payload = (await request.json()) as RequestPayload
+      payload = await request.json()
     } catch {
       payload = {}
     }
-    const businessId = Number(payload?.businessId ?? payload?.business_id)
+    const { businessId } = parseCheckoutPayload(payload)
 
     if (!businessId) {
       await logMonetizationLatency('stripe_create_checkout_session', Date.now() - started, false, 400)

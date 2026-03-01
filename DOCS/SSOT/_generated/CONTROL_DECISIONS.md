@@ -18,6 +18,7 @@
 | 2026-02-25 | D-108 | Frontend handoff `S-240` accepted | Playwright search spec now matches canonical `q/page` search flow | closes cross-lane verification gap |
 | 2026-03-01 | D-109 | `BC-101` accepted as complete | search auto-load now runs through a stable page-based executor and does not loop page-one requests | next active task is `BC-102` |
 | 2026-03-01 | D-110 | `BC-102` and `BC-103` accepted as complete | search filter enums now resolve from shared SSOT taxonomies, and onboarding rejects invalid normalized payloads before database writes | Build Completion is closed and `PH-201` is now the active priority |
+| 2026-03-01 | D-111 | `PH-201` accepted as complete | request alias parsing and dual metadata compatibility are now enforced by unit tests instead of relying on route memory | next active task is `PH-202` |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -29,6 +30,7 @@
 | 2026-02-25 | frontend | S-240 | `tests/e2e/search-and-trainer.spec.ts` | `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (1 passed) | consolidation / commit prep |
 | 2026-03-01 | main-control | BC-101 | `src/app/search/page.tsx`, `tests/e2e/search-and-trainer.spec.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npx playwright test tests/e2e/search-and-trainer.spec.ts`, `npm run docs:guard` | pass | execute `BC-102` |
 | 2026-03-01 | main-control | BC-102/BC-103 | `src/app/search/page.tsx`, `src/app/api/onboarding/route.ts`, `src/lib/services/onboardingPayload.ts`, `tests/unit/onboarding-payload.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npm run lint`, `npm run test`, `npx playwright test tests/e2e/search-and-trainer.spec.ts`, `npm run docs:guard` | pass | execute `PH-201` |
+| 2026-03-01 | main-control | PH-201 | `src/app/api/public/search/route.ts`, `src/app/api/stripe/create-checkout-session/route.ts`, `src/lib/services/publicSearchContract.ts`, `src/lib/services/checkoutPayload.ts`, `tests/unit/public-search-contract.test.ts`, `tests/unit/checkout-payload.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md` | `npm run type-check`, `npm run lint`, `npm run test`, `npm run docs:guard` | pass | execute `PH-202` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`
