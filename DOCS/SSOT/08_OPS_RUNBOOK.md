@@ -74,3 +74,48 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 ## 13. Phase 2 scraper inputs (optional)
 - Inputs live in `data/phase2_scraper_targets.csv`.
 - Generator: `scripts/run_phase2_scraper.py` (writes `supabase/phase2_scraped.json`).
+
+## 14. Commercial Funnel Baseline (2026-03-01)
+- Baseline type: controlled engineering sample, not organic production traffic.
+- Environment: local Next.js dev server against the live-backed Supabase project `xqytwtmdilipxnjetvoe`.
+- Sample path exercised, in order:
+  - `POST /api/emergency/triage`
+  - `GET /api/public/search?q=anxious&limit=1&flow_source=triage`
+  - `GET /trainers/999999?flow_source=triage`
+  - `GET /promote`
+  - `POST /api/stripe/create-checkout-session` with an empty JSON body
+
+### 14.1 Funnel stage baseline (24h window)
+| Stage | Count | Avg ms | P95 ms | Success rate | Last seen (UTC) |
+|---|---:|---:|---:|---:|---|
+| `triage_submit` | 1 | 4155 | 4155 | 0.00 | `2026-03-01T14:24:44Z` |
+| `search_results` | 1 | 520 | 520 | 0.00 | `2026-03-01T14:24:45Z` |
+| `trainer_profile_view` | 1 | 368 | 368 | 0.00 | `2026-03-01T14:24:46Z` |
+| `promote_page_view` | 1 | 0 | 0 | 0.00 | `2026-03-01T14:24:46Z` |
+| `promote_checkout_session` | 1 | 283 | 283 | 0.00 | `2026-03-01T14:24:47Z` |
+
+### 14.2 Supporting latency baseline (24h window)
+| Area | Count | Avg ms | P95 ms | Success rate |
+|---|---:|---:|---:|---:|
+| `commercial_funnel` | 5 | 1065 | 4155 | 0.00 |
+| `emergency_triage_api` | 1 | 3976 | 3976 | 0.00 |
+| `search_suburbs` | 1 | 197 | 197 | 0.00 |
+| `trainer_profile_page` | 1 | 209 | 209 | 0.00 |
+
+### 14.3 Search responsiveness baseline (24h window)
+- `search_telemetry` samples: `1`
+- Average latency: `197 ms`
+- Max latency: `197 ms`
+- Success rate: `0.00`
+
+### 14.4 Observed friction points from the first baseline pass
+- `POST /api/emergency/triage` returned `500` with: `null value in column "description" of relation "emergency_triage_logs" violates not-null constraint`.
+- `GET /api/public/search` returned `500` because the live API surface could not find `public.search_trainers(...)`.
+- The live database also does not currently expose `public.get_trainer_profile(...)`, so trainer profile requests fall back instead of using the intended RPC path.
+- `GET /promote` rendered successfully, but the controlled sample had no business context, so this is only a page-render baseline, not a commercial conversion baseline.
+- `POST /api/stripe/create-checkout-session` returned `400` in the controlled sample because the request intentionally omitted `businessId`; this confirms instrumentation on invalid checkout attempts, not a successful payment path.
+
+### 14.5 Operational interpretation
+- The telemetry write path is working and the new `commercial_funnel` instrumentation is live.
+- This baseline is useful as an engineering reference point only; it is not representative of real user demand or conversion.
+- Market optimization should pause until `PH-203` and `PH-204` restore the live triage and public directory paths.

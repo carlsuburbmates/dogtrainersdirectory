@@ -15,12 +15,13 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ## Current State (as of 2026-03-01)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
-- Local `main` contains unpushed commits beyond `origin/main`; Production Hardening is now complete through `PH-202`.
+- Local `main` is kept synced to `origin/main` between task commits; `MO-302` reopened Production Hardening with newly verified live regressions.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
 - Build Completion is complete.
-- Production Hardening is complete.
+- Production Hardening was completed through `PH-202`, then reopened by `MO-302` findings.
 - Market instrumentation baseline is now in place.
-- Current top priority: `MO-302`.
+- Market baseline is now documented from a controlled engineering sample against the live-backed environment.
+- Current top priority: `PH-203`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -90,12 +91,29 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Capture drop-off and latency signals in canonical telemetry paths.
   - Metrics are accessible for operational review and later market comparison.
 
-**MO-302: Establish baseline performance and conversion metrics**
+**MO-302: Establish baseline performance and conversion metrics (completed 2026-03-01)**
 - Purpose: create a measurable baseline before any growth or positioning work.
 - Definition of done:
   - Record baseline latency, search responsiveness, and core conversion behavior.
   - Record known friction points in the current build.
   - Baseline is documented in canonical docs/runbooks so future optimization is comparable.
+
+### Phase 2 Follow-on Recovery (opened by `MO-302`)
+
+**PH-203: Restore emergency triage write compatibility with live schema**
+- Purpose: fix the live `POST /api/emergency/triage` failure uncovered during the first controlled funnel baseline.
+- Definition of done:
+  - `POST /api/emergency/triage` no longer returns `500` for normal non-emergency submissions.
+  - The route writes a schema-compatible payload into `public.emergency_triage_logs`.
+  - Add regression coverage for the insert payload shape or a dedicated compatibility helper.
+
+**PH-204: Restore live public directory RPC availability**
+- Purpose: re-enable the core public directory flow on the live Supabase project.
+- Definition of done:
+  - `public.search_trainers(...)` exists and is callable by the current search route contract.
+  - `public.get_trainer_profile(...)` exists and is callable by the current trainer profile page contract.
+  - `GET /api/public/search` and `GET /trainers/[id]` no longer rely on error/fallback behavior for standard live-backed requests.
+  - Verify the remote PostgREST/API surface recognizes the restored RPCs.
 
 ## Execution Log
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
@@ -110,3 +128,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `PH-201` completed by extracting public search and checkout request parsing into dedicated contract helpers, then adding regression coverage for `q/query`, `service/service_type`, `page/offset`, dual metadata flags (`hasMore` + `has_more`), checkout body aliases, and the onboarding alias-validation path.
 - 2026-03-01: `PH-202` completed by aligning `.env.local` to the live `xqytwtmdilipxnjetvoe` Supabase project, applying the missing remote migrations (`20251209093000`, `20260203171000`, `20260203182000`), repairing remote migration history for the two 20260203 versions, refreshing `supabase/schema.sql`, and re-running remote-backed smoke with `6/6` passing once `SUPABASE_PGCRYPTO_KEY` was present.
 - 2026-03-01: `MO-301` completed by adding `commercial_funnel` instrumentation to the canonical `latency_metrics` path for `triage_submit`, `search_results`, `trainer_profile_view`, `promote_page_view`, and `promote_checkout_session`; wiring stage summaries and drop-off calculations into `/api/admin/telemetry/latency`; and preserving triage-origin attribution through `flow_source` from `/triage` into `/search` and trainer profile views.
+- 2026-03-01: `MO-302` completed by running one controlled engineering sample through the live-backed funnel (`/api/emergency/triage`, `/api/public/search`, `/trainers/999999`, `/promote`, and `/api/stripe/create-checkout-session`) and recording the first baseline in `08_OPS_RUNBOOK.md`. The sample confirmed telemetry is writing, but it also exposed two live blockers: `POST /api/emergency/triage` currently fails with `null value in column "description" of relation "emergency_triage_logs"`, and the live database is missing the `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs. Those findings reopen Production Hardening as `PH-203` and `PH-204`.
