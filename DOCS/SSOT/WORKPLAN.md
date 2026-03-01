@@ -15,10 +15,11 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ## Current State (as of 2026-03-01)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
-- `main` is synced to `origin/main` at commit `a1d89fe`.
+- Local `main` contains unpushed commits beyond `origin/main`; Production Hardening is now complete through `PH-202`.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
 - Build Completion is complete.
-- Current top priority: `PH-202`.
+- Production Hardening is complete.
+- Current top priority: `MO-301`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -72,7 +73,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Add response-shape assertions for dual metadata compatibility (`hasMore` and `has_more`).
   - Coverage includes the highest-risk public contracts and checkout/onboarding paths.
 
-**PH-202: Restore real Supabase remote-path validation**
+**PH-202: Restore real Supabase remote-path validation (completed 2026-03-01)**
 - Purpose: move from fallback-safe local verification to real environment validation.
 - Definition of done:
   - `.env.local` points to a valid, DNS-resolvable Supabase project.
@@ -106,3 +107,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `BC-102` completed by replacing duplicated `/search` filter enums with shared taxonomy constants and labels from `src/lib/constants/taxonomies.ts`, including canonical filtering of URL-provided enum params before they hydrate UI state.
 - 2026-03-01: `BC-103` completed by moving onboarding payload normalization and validation into a dedicated parser, enforcing required normalized fields (`suburbId`, `primaryService`) and returning deterministic `400` responses for invalid enum values before any database writes. Unit coverage added in `tests/unit/onboarding-payload.test.ts`.
 - 2026-03-01: `PH-201` completed by extracting public search and checkout request parsing into dedicated contract helpers, then adding regression coverage for `q/query`, `service/service_type`, `page/offset`, dual metadata flags (`hasMore` + `has_more`), checkout body aliases, and the onboarding alias-validation path.
+- 2026-03-01: `PH-202` completed by aligning `.env.local` to the live `xqytwtmdilipxnjetvoe` Supabase project, applying the missing remote migrations (`20251209093000`, `20260203171000`, `20260203182000`), repairing remote migration history for the two 20260203 versions, refreshing `supabase/schema.sql`, and re-running remote-backed smoke with `6/6` passing once `SUPABASE_PGCRYPTO_KEY` was present.
