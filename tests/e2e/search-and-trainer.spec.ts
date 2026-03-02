@@ -62,7 +62,7 @@ test.describe('Search → Trainer profile', () => {
     expect(requestUrl.searchParams.get('page')).toBe('1')
     expect(requestUrl.searchParams.get('offset')).toBeNull()
 
-    await expect(page.getByPlaceholder('Search by name, location, or specialty...')).toHaveValue('calm')
+    await expect(page.getByPlaceholder('Search by name, location, or speciality...')).toHaveValue('calm')
     await expect(page.getByRole('heading', { name: e2eSearchResults[0].business_name }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'View Profile' }).first()).toBeVisible()
 

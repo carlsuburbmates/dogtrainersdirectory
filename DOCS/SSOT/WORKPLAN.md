@@ -25,8 +25,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
-- The public UI/UX foundation is now complete across the primary public surfaces, so trust-density work now takes priority ahead of broader market optimization.
-- Current top priority: `MO-304`.
+- The public UI/UX foundation is now complete across the primary public surfaces, and the first trust-density pass is complete on search and trainer profiles.
+- Current top priority: `MO-306`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -97,7 +97,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The visual hierarchy, CTA hierarchy, and information density support trust and action without relying on placeholder patterns.
   - The next trust/conversion tasks (`MO-304` and `MO-306`) can build on a stable, clearly defined UI foundation instead of compensating for unfinished UX.
 
-**MO-304: Increase public trust density on search and trainer profiles**
+**MO-304: Increase public trust density on search and trainer profiles (completed 2026-03-02)**
 - Purpose: close the largest visible trust gap between DTD and market leaders.
 - Definition of done:
   - Search results and trainer profiles surface stronger proof signals (for example: credentials, vetting state, review evidence, and clearer trust framing).
@@ -201,3 +201,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-02: `MO-303` completed from a sourced competitor scan covering Yellow Pages, Oneflare, APDT Australia, Bark Busters Victoria, Melbourne Dog Trainers, and Next Level Dog Training. The highest-confidence market gaps are: low visible inventory depth, weak public trust density, limited suburb/service landing coverage, higher post-discovery friction, and a business-side monetisation proposition that does not yet show clear public-facing ROI. The resulting prioritized implementation backlog is `MO-304` through `MO-308`.
 - 2026-03-02: The roadmap was reclassified to make `Website Completion` explicit before broader market optimization. `WC-301` is now the active priority because the public UI/UX is still unfinished, with `MO-304` and `MO-306` queued as the trust and conversion layers that depend on that foundation.
 - 2026-03-02: `WC-301` completed by rebuilding the core public presentation layer on `/`, `/search`, and `/trainers/[id]` around clearer hierarchy, stronger trust framing, and more intentional CTA placement. The route-intent SSOT in `05_ROUTES_AND_NAV.md` was updated alongside the implementation so the public journey expectations match the finished UI foundation. `MO-304` is now the active priority.
+- 2026-03-02: `MO-304` completed by increasing visible trust density on `/search` and `/trainers/[id]` using only existing canonical fields: ABN verification state, verification status, public review evidence, featured status, contact availability, pricing visibility, and disclosed fit details. No backend or schema change was required; the Playwright search/profile spec was updated only to keep the placeholder assertion aligned with the Australian-English copy. `MO-306` is now the active priority.

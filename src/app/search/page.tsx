@@ -138,6 +138,22 @@ const formatLabel = (value: string) => {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (label) => label.toUpperCase())
 }
 
+const formatVerificationStatus = (value: string) => {
+  if (!value) {
+    return 'Status not shown'
+  }
+
+  if (value === 'approved') {
+    return 'Approved profile'
+  }
+
+  if (value === 'verified') {
+    return 'Directory verified'
+  }
+
+  return formatLabel(value)
+}
+
 const getActiveFilterCount = (filters: SearchFilters, selectedSuburb: SuburbResult | null) => {
   let count = 0
   if (filters.query) count += 1
@@ -410,7 +426,7 @@ export default function SearchPage() {
                     onChange={(event) =>
                       setFilters((prev) => ({ ...prev, query: event.target.value }))
                     }
-                    placeholder="Search by name, location, or specialty..."
+                    placeholder="Search by name, location, or speciality..."
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
@@ -494,7 +510,7 @@ export default function SearchPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-800">
-                    Age specialties
+                    Age specialities
                   </label>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {ageSpecialtyOptions.map((option) => {
@@ -658,6 +674,12 @@ export default function SearchPage() {
                   <div className="space-y-4">
                     {results.map((trainer) => {
                       const rating = Number(trainer.average_rating || 0)
+                      const reviewCount = Number(trainer.review_count || 0)
+                      const hasPublicReviews = rating > 0 && reviewCount > 0
+                      const listedScopeCount =
+                        trainer.services.length +
+                        trainer.age_specialties.length +
+                        trainer.behavior_issues.length
                       const trainerHref = flowSource
                         ? `/trainers/${trainer.business_id}?flow_source=${encodeURIComponent(flowSource)}`
                         : `/trainers/${trainer.business_id}`
@@ -689,20 +711,63 @@ export default function SearchPage() {
                                 {trainer.distance_km ? (
                                   <span>{trainer.distance_km.toFixed(1)} km away</span>
                                 ) : null}
-                                {rating > 0 ? (
+                                {hasPublicReviews ? (
                                   <span>
-                                    {rating.toFixed(1)} from {trainer.review_count}{' '}
-                                    {trainer.review_count === 1 ? 'review' : 'reviews'}
+                                    {rating.toFixed(1)} from {reviewCount}{' '}
+                                    {reviewCount === 1 ? 'review' : 'reviews'}
                                   </span>
                                 ) : (
                                   <span>No public reviews yet</span>
                                 )}
                               </div>
 
+                              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                    Verification
+                                  </p>
+                                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                                    {trainer.abn_verified ? 'ABN verified' : 'ABN not verified'}
+                                  </p>
+                                  <p className="mt-1 text-sm text-slate-600">
+                                    {formatVerificationStatus(trainer.verification_status)}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                    Public reviews
+                                  </p>
+                                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                                    {hasPublicReviews ? `${rating.toFixed(1)} average` : 'No rating yet'}
+                                  </p>
+                                  <p className="mt-1 text-sm text-slate-600">
+                                    {reviewCount > 0
+                                      ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'} visible`
+                                      : 'No approved reviews listed'}
+                                  </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                    Match details
+                                  </p>
+                                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                                    {listedScopeCount > 0
+                                      ? `${listedScopeCount} fit signals listed`
+                                      : 'No fit details listed'}
+                                  </p>
+                                  <p className="mt-1 text-sm text-slate-600">
+                                    {trainer.services.length} services, {trainer.age_specialties.length}{' '}
+                                    age, {trainer.behavior_issues.length} behaviour
+                                  </p>
+                                </div>
+                              </div>
+
                               {trainer.age_specialties && trainer.age_specialties.length > 0 && (
                                 <div className="mt-4">
                                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                    Age fit
+                                    Age fit ({trainer.age_specialties.length})
                                   </p>
                                   <div className="mt-2 flex flex-wrap gap-2">
                                     {trainer.age_specialties.slice(0, 4).map((value) => (
@@ -720,7 +785,7 @@ export default function SearchPage() {
                               {trainer.behavior_issues && trainer.behavior_issues.length > 0 && (
                                 <div className="mt-4">
                                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                    Behaviour strengths
+                                    Behaviour strengths ({trainer.behavior_issues.length})
                                   </p>
                                   <p className="mt-2 text-sm leading-6 text-slate-600">
                                     {trainer.behavior_issues.slice(0, 4).map(formatLabel).join(', ')}
@@ -731,7 +796,7 @@ export default function SearchPage() {
                               {trainer.services && trainer.services.length > 0 && (
                                 <div className="mt-4">
                                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                    Services
+                                    Services ({trainer.services.length})
                                   </p>
                                   <p className="mt-2 text-sm leading-6 text-slate-600">
                                     {trainer.services.slice(0, 3).map(formatLabel).join(', ')}
@@ -745,8 +810,8 @@ export default function SearchPage() {
                                 Next step
                               </p>
                               <p className="mt-2 text-sm leading-6 text-slate-600">
-                                Open the profile to review contact details, pricing, and supporting
-                                credibility signals.
+                                Open the profile to confirm contact details, pricing, and the full
+                                credibility breakdown before reaching out.
                               </p>
                               <Link
                                 href={trainerHref}

@@ -119,6 +119,57 @@ export default async function TrainerPage({
 
   const isFeatured = trainer.featured_until && new Date(trainer.featured_until) > new Date()
   const averageRating = parseFloat(trainer.average_rating || '0')
+  const reviewCount = Number(trainer.review_count || 0)
+  const hasPublicReviews = averageRating > 0 && reviewCount > 0
+  const contactMethodCount = [trainer.phone, trainer.email, trainer.website].filter(Boolean).length
+  const listedFitSignals =
+    (trainer.services?.length || 0) +
+    (trainer.behavior_issues?.length || 0) +
+    (trainer.age_specialties?.length || 0)
+  const credibilitySignals = [
+    {
+      label: 'Business verification',
+      detail: trainer.abn_verified
+        ? 'ABN verification is visible on this listing.'
+        : 'ABN verification is not shown on this listing.'
+    },
+    {
+      label: 'Listing status',
+      detail: isFeatured
+        ? 'This trainer currently has a featured listing.'
+        : 'This trainer is shown as a standard directory listing.'
+    },
+    {
+      label: 'Public reviews',
+      detail: hasPublicReviews
+        ? `${averageRating.toFixed(1)} average from ${reviewCount} approved ${
+            reviewCount === 1 ? 'review' : 'reviews'
+          }.`
+        : 'This trainer does not yet have public reviews on the directory.'
+    },
+    {
+      label: 'Profile detail',
+      detail:
+        listedFitSignals > 0
+          ? `${listedFitSignals} fit details are disclosed below across services, age specialities, and behaviour support.`
+          : 'Services and speciality details are not listed on this profile.'
+    },
+    {
+      label: 'Direct contact',
+      detail:
+        contactMethodCount > 0
+          ? `${contactMethodCount} direct contact ${
+              contactMethodCount === 1 ? 'option is' : 'options are'
+            } shown in this profile.`
+          : 'Direct phone, email, or website details are not shown in this profile.'
+    },
+    {
+      label: 'Pricing',
+      detail: trainer.pricing
+        ? 'Pricing details are visible before you make contact.'
+        : 'Pricing is not listed on this profile.'
+    }
+  ]
 
   await recordLatencyMetric({
     area: 'trainer_profile_page',
@@ -184,7 +235,7 @@ export default async function TrainerPage({
                 </span>
                 {trainer.council_name && <span>{trainer.council_name}</span>}
                 <span>
-                  {averageRating > 0
+                  {hasPublicReviews
                     ? `${averageRating.toFixed(1)} rating`
                     : 'No public rating yet'}
                 </span>
@@ -196,20 +247,32 @@ export default async function TrainerPage({
                     Rating
                   </p>
                   <p className="mt-2 text-lg font-semibold text-white">
-                    {getRatingStars(Math.round(averageRating))}
+                    {hasPublicReviews ? getRatingStars(Math.round(averageRating)) : 'No rating yet'}
                   </p>
                   <p className="mt-1 text-sm text-slate-300">
-                    {averageRating.toFixed(1)} from {trainer.review_count || 0}{' '}
-                    {trainer.review_count === 1 ? 'review' : 'reviews'}
+                    {hasPublicReviews
+                      ? `${averageRating.toFixed(1)} from ${reviewCount} ${
+                          reviewCount === 1 ? 'review' : 'reviews'
+                        }`
+                      : 'No approved reviews published yet'}
                   </p>
                 </div>
 
                 <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
-                    Best for
+                    Profile evidence
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-200">
-                    Owners ready to shortlist a trainer and move directly into contact.
+                    {listedFitSignals > 0
+                      ? `${listedFitSignals} fit details listed`
+                      : 'Fit details are limited'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {contactMethodCount > 0
+                      ? `${contactMethodCount} direct contact ${
+                          contactMethodCount === 1 ? 'option' : 'options'
+                        } visible${trainer.pricing ? ' and pricing shown' : ''}.`
+                      : `Use the enquiry form${trainer.pricing ? ' while pricing stays visible' : ''}.`}
                   </p>
                 </div>
               </div>
@@ -217,23 +280,20 @@ export default async function TrainerPage({
 
             <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Quick trust check
+                Why this listing is credible
               </p>
               <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  {trainer.abn_verified
-                    ? 'Business verification is visible on this listing.'
-                    : 'Business verification is not currently shown for this listing.'}
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  {trainer.review_count > 0
-                    ? `${trainer.review_count} approved reviews are visible below.`
-                    : 'This trainer does not yet have public reviews on the directory.'}
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  Services, age specialties, and behaviour support are listed below so you can
-                  assess fit before contacting them.
-                </div>
+                {credibilitySignals.map((signal) => (
+                  <div
+                    key={signal.label}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                      {signal.label}
+                    </p>
+                    <p className="mt-1">{signal.detail}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -297,7 +357,7 @@ export default async function TrainerPage({
                   {trainer.age_specialties && trainer.age_specialties.length > 0 && (
                     <div>
                       <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        Age specialties
+                        Age specialities
                       </h3>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {trainer.age_specialties.map((specialty: string, index: number) => (
@@ -319,7 +379,7 @@ export default async function TrainerPage({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-950">
-                    Reviews ({trainer.review_count || 0})
+                    Reviews ({reviewCount})
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
                     Use reviews as context, then confirm fit directly with the trainer.
