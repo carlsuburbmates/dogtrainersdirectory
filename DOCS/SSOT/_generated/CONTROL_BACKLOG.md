@@ -29,9 +29,9 @@
 | MO-303 | Market Optimization | Run external market scan and create the next optimization backlog | completed | main-control | `WORKPLAN` `MO-303` | market findings are converted into a prioritized optimization backlog |
 | WC-301 | Website Completion | Complete the public UI/UX foundation | completed | main-control | `WORKPLAN` `WC-301` | the public experience is visually and interactionally complete enough for trust and conversion work |
 | MO-304 | Website Completion | Increase public trust density on search and trainer profiles | completed | main-control | `WORKPLAN` `MO-304` | public trust signals are materially stronger before contact |
-| MO-305 | Market Optimization | Build suburb and service landing-page coverage for local SEO | in_progress | main-control | `WORKPLAN` `MO-305` | DTD gains a repeatable local landing and metadata strategy |
+| MO-305 | Market Optimization | Build suburb and service landing-page coverage for local SEO | completed | main-control | `WORKPLAN` `MO-305` | DTD gains a repeatable local landing and metadata strategy |
 | MO-306 | Website Completion | Reduce buyer friction with clearer primary conversion actions | completed | main-control | `WORKPLAN` `MO-306` | results and profiles expose a clear measurable primary CTA |
-| MO-307 | Market Optimization | Expand live directory inventory depth beyond the verification fixture | pending | backend | `WORKPLAN` `MO-307` | live directory depth is no longer a one-record environment |
+| MO-307 | Market Optimization | Expand live directory inventory depth beyond the verification fixture | in_progress | backend | `WORKPLAN` `MO-307` | live directory depth is no longer a one-record environment |
 | MO-308 | Market Optimization | Repackage business-side monetisation around visible ROI | pending | main-control | `WORKPLAN` `MO-308` | featured placement has clear public-facing value and business messaging |
 
 ## Recently completed sync cycle (archived)

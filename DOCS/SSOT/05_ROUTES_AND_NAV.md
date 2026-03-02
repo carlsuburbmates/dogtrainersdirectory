@@ -1,7 +1,7 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.4
+**Version:** v1.5
 **Last Updated:** 2026-03-02
 
 ## 1. Inventory source
@@ -15,6 +15,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - `/` is the guided public launch point: it should support fast shortlist setup (stage, suburb, key issues) while also clearly routing to triage, directory browse, and emergency help.
 - `/triage` is the needs-first flow that routes users to either emergency help or focused search.
 - `/search` is the shortlist refinement surface: filters and results must coexist in a way that keeps the next move to a trainer profile obvious and low-friction.
+- `/search` is also the canonical first-slice landing surface for locality and service intent. When canonical query params are present (`suburbName`, `service_type`, `age_specialties`, `behavior_issues`, `q/query`), page heading, metadata, structured data, and internal discovery links should reflect that context without requiring a second route family.
 - `/directory` and `/trainers/[id]` are discovery and profile surfaces.
 - `/trainers/[id]` is the trust and contact decision surface: it must make fit, proof, and direct contact options visible before the user leaves the directory, and it should prioritise the fastest available direct contact path while retaining the enquiry form as a written fallback.
 - `/trainer/[id]` exists for backward compatibility and must redirect to `/trainers/[id]`.

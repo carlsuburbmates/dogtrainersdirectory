@@ -25,8 +25,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
-- The public UI/UX foundation is now complete across the primary public surfaces, and the first trust + conversion clarity passes are complete on search and trainer profiles.
-- Current top priority: `MO-305`.
+- The public UI/UX foundation is complete, and the first search-landing SEO slice is now in place on the canonical `/search` route.
+- Current top priority: `MO-307`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -135,7 +135,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Produce a prioritized optimization backlog that maps market findings to concrete implementation tasks.
   - Keep findings and the resulting backlog in canonical SSOT documents.
 
-**MO-305: Build suburb and service landing-page coverage for local SEO**
+**MO-305: Build suburb and service landing-page coverage for local SEO (completed 2026-03-02)**
 - Purpose: match the location/service discovery patterns used by strong directory and local trainer competitors.
 - Definition of done:
   - DTD has a defined landing-page strategy for suburb/region and service-specific discovery.
@@ -203,3 +203,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-02: `WC-301` completed by rebuilding the core public presentation layer on `/`, `/search`, and `/trainers/[id]` around clearer hierarchy, stronger trust framing, and more intentional CTA placement. The route-intent SSOT in `05_ROUTES_AND_NAV.md` was updated alongside the implementation so the public journey expectations match the finished UI foundation. `MO-304` is now the active priority.
 - 2026-03-02: `MO-304` completed by increasing visible trust density on `/search` and `/trainers/[id]` using only existing canonical fields: ABN verification state, verification status, public review evidence, featured status, contact availability, pricing visibility, and disclosed fit details. No backend or schema change was required; the Playwright search/profile spec was updated only to keep the placeholder assertion aligned with the Australian-English copy. `MO-306` is now the active priority.
 - 2026-03-02: `MO-306` completed by making the next action clearer on `/search` and `/trainers/[id]` without changing routes, telemetry, or API contracts. Search result cards now explain the profile as the next decision step more explicitly, and trainer profiles prioritise the fastest available direct contact method (phone, then email, then website) while retaining the enquiry form as the written-first fallback. The route-intent SSOT was updated in `05_ROUTES_AND_NAV.md` to reflect the refined contact hierarchy. `MO-305` is now the active priority.
+- 2026-03-02: `MO-305` completed by moving `/search` onto a server-rendered metadata path, replacing placeholder SEO content with canonical query-driven metadata and `CollectionPage` structured data, and strengthening locality/service landing intent within the existing `/search` route model. The route-intent SSOT was updated in `05_ROUTES_AND_NAV.md` to make `/search` the explicit first-slice landing surface for locality and service SEO. `MO-307` is now the active priority.
