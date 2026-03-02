@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-02
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -26,6 +26,7 @@
 | 2026-03-01 | D-116 | `PH-204` accepted as complete and follow-on data recovery opened | the live RPC layer is restored, but the live project has zero business rows, so end-to-end directory verification still needs a controlled dataset | `PH-205` is now the active priority |
 | 2026-03-01 | D-117 | `PH-205` accepted as complete and Production Hardening closed again | the live project now has a minimal controlled listing that proves the restored directory RPC path end-to-end | `MO-303` is now the active priority |
 | 2026-03-02 | D-118 | `MO-303` accepted as complete | sourced competitor evidence confirms DTD’s next highest-value work is trust density, local landing coverage, contact friction reduction, inventory depth, and clearer business-side ROI | `MO-304` is now the active priority and `MO-305` to `MO-308` are queued |
+| 2026-03-02 | D-119 | Roadmap reclassified to make Website Completion explicit before broader optimization | the product is technically stable, but the public UI/UX is not finished yet | `WC-301` is now the active priority; `MO-304` and `MO-306` remain queued as completion-layer tasks before the broader optimization backlog |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -45,6 +46,7 @@
 | 2026-03-01 | backend | PH-204 | `supabase/schema.sql` | `git pull origin main`; remote `psql` apply for `20250210153000` + `20250210160000`; `NOTIFY pgrst, 'reload schema'`; PostgREST RPC checks; local `GET /api/public/search`; `npm run schema:refresh`; `npm run type-check`; `npm run lint`; `npm run test` | pass (RPCs restored, search route `200`); blocked only by empty live business dataset for trainer page proof | execute `PH-205` |
 | 2026-03-01 | backend | PH-205 | no repo file changes (live data only) | `git pull origin main`; remote `psql` controlled inserts for council, suburb link, business, and trainer relations; direct RPC checks; local `GET /api/public/search?q=PH205&limit=1`; local `GET /trainers/1`; `npm run type-check`; `npm run lint`; `npm run test` | pass (live search and trainer profile verified) | execute `MO-303` |
 | 2026-03-02 | main-control | MO-303 | `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/08_OPS_RUNBOOK.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | sourced read-only competitor scan reviewed against SSOT; `npm run docs:guard` | pass (optimization backlog derived without repo drift) | execute `MO-304` |
+| 2026-03-02 | main-control | WC-301 roadmap reset | `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run docs:guard` | pass (phase ordering corrected; UI/UX completion made explicit) | execute `WC-301` implementation |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

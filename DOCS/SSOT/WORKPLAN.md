@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-01)
+## Current State (as of 2026-03-02)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -24,12 +24,14 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PH-205` is now complete and the live project has a minimum controlled directory dataset for true end-to-end verification.
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
-- External competitor scan is complete and the next optimization backlog is now defined from sourced market evidence.
-- Current top priority: `MO-304`.
+- External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
+- The public UI/UX is not complete yet, so website completion now takes priority ahead of broader market optimization.
+- Current top priority: `WC-301`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
-  3. Market Optimization
+  3. Website Completion
+  4. Market Optimization
 
 ## Completed Foundation Milestones
 
@@ -86,7 +88,30 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Smoke tests exercise remote-backed paths without skip/fallback warnings.
   - Remote crypto and alert-dependent checks are verified against a live project.
 
-### Phase 3 - Market Optimization
+### Phase 3 - Website Completion
+
+**WC-301: Complete the public UI/UX foundation**
+- Purpose: finish the public-facing product experience so the site is credible before broader optimization work.
+- Definition of done:
+  - Core public surfaces (`/`, `/triage`, `/search`, `/directory`, `/trainers/[id]`, `/emergency`, `/promote`) feel intentional, cohesive, and complete on desktop and mobile.
+  - The visual hierarchy, CTA hierarchy, and information density support trust and action without relying on placeholder patterns.
+  - The next trust/conversion tasks (`MO-304` and `MO-306`) can build on a stable, clearly defined UI foundation instead of compensating for unfinished UX.
+
+**MO-304: Increase public trust density on search and trainer profiles**
+- Purpose: close the largest visible trust gap between DTD and market leaders.
+- Definition of done:
+  - Search results and trainer profiles surface stronger proof signals (for example: credentials, vetting state, review evidence, and clearer trust framing).
+  - Trust signals are sourced from canonical data fields or explicit new schema-backed fields, not static copy.
+  - The public user can distinguish why a listing is trustworthy before contacting the trainer.
+
+**MO-306: Reduce buyer friction with clearer primary conversion actions**
+- Purpose: make the post-discovery next step as obvious and low-friction as the strongest competitors.
+- Definition of done:
+  - Search and trainer profile surfaces expose a clear primary next action (contact, enquiry, booking, or equivalent handoff).
+  - The chosen CTA path is consistent from results to profile and measurable in telemetry.
+  - Conversion friction is reduced without breaking the triage-first differentiation.
+
+### Phase 4 - Market Optimization
 
 **MO-301: Add funnel and latency instrumentation for core commercial flows (completed 2026-03-01)**
 - Purpose: make product optimization measurable before market work starts.
@@ -110,26 +135,12 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Produce a prioritized optimization backlog that maps market findings to concrete implementation tasks.
   - Keep findings and the resulting backlog in canonical SSOT documents.
 
-**MO-304: Increase public trust density on search and trainer profiles**
-- Purpose: close the largest visible trust gap between DTD and market leaders.
-- Definition of done:
-  - Search results and trainer profiles surface stronger proof signals (for example: credentials, vetting state, review evidence, and clearer trust framing).
-  - Trust signals are sourced from canonical data fields or explicit new schema-backed fields, not static copy.
-  - The public user can distinguish why a listing is trustworthy before contacting the trainer.
-
 **MO-305: Build suburb and service landing-page coverage for local SEO**
 - Purpose: match the location/service discovery patterns used by strong directory and local trainer competitors.
 - Definition of done:
   - DTD has a defined landing-page strategy for suburb/region and service-specific discovery.
   - Search metadata and structured data stop relying on placeholder location/pricing values for core search surfaces.
   - The routing and content strategy is explicit enough to support repeatable SEO and local discovery work.
-
-**MO-306: Reduce buyer friction with clearer primary conversion actions**
-- Purpose: make the post-discovery next step as obvious and low-friction as the strongest competitors.
-- Definition of done:
-  - Search and trainer profile surfaces expose a clear primary next action (contact, enquiry, booking, or equivalent handoff).
-  - The chosen CTA path is consistent from results to profile and measurable in telemetry.
-  - Conversion friction is reduced without breaking the triage-first differentiation.
 
 **MO-307: Expand live directory inventory depth beyond the verification fixture**
 - Purpose: move from a technically verified live directory to a market-comparable discovery surface.
@@ -188,3 +199,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `PH-204` completed by restoring the canonical `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs from the repo’s existing 2025-02-10 migrations, refreshing the PostgREST schema cache, and refreshing `supabase/schema.sql`. Live verification confirmed PostgREST recognizes both RPCs and `GET /api/public/search` now returns `200`, but the live project still has `0` rows in `public.businesses`, so full trainer profile verification remains blocked and is now tracked as `PH-205`.
 - 2026-03-01: `PH-205` completed by adding one controlled verification dataset to the live project: a `City of Yarra` council row, a linked `Collingwood` suburb relationship, one active business (`DTD Verification Trainer PH205`, `business_id = 1`), and the minimum specialization/behavior/service relations. Live verification then confirmed `GET /api/public/search?q=PH205&limit=1` returns the inserted business and `GET /trainers/1` renders the real profile path without the fallback marker.
 - 2026-03-02: `MO-303` completed from a sourced competitor scan covering Yellow Pages, Oneflare, APDT Australia, Bark Busters Victoria, Melbourne Dog Trainers, and Next Level Dog Training. The highest-confidence market gaps are: low visible inventory depth, weak public trust density, limited suburb/service landing coverage, higher post-discovery friction, and a business-side monetisation proposition that does not yet show clear public-facing ROI. The resulting prioritized implementation backlog is `MO-304` through `MO-308`.
+- 2026-03-02: The roadmap was reclassified to make `Website Completion` explicit before broader market optimization. `WC-301` is now the active priority because the public UI/UX is still unfinished, with `MO-304` and `MO-306` queued as the trust and conversion layers that depend on that foundation.
