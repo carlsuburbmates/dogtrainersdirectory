@@ -21,9 +21,11 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Production Hardening was completed through `PH-202`, then reopened by `MO-302` findings.
 - `PH-203` is now complete and the live triage write path is restored.
 - `PH-204` is now complete and the live public directory RPC layer is restored.
+- `PH-205` is now complete and the live project has a minimum controlled directory dataset for true end-to-end verification.
+- Production Hardening is complete again.
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
-- Current top priority: `PH-205`.
+- Current top priority: `MO-303`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -100,6 +102,14 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Record known friction points in the current build.
   - Baseline is documented in canonical docs/runbooks so future optimization is comparable.
 
+**MO-303: Run external market scan and create the next optimization backlog**
+- Purpose: turn the now-stable live baseline into a deliberate optimization plan instead of ad-hoc feature work.
+- Definition of done:
+  - Compare the current build against a defined competitor set and direct market expectations.
+  - Record gaps across positioning, UX, trust signals, monetisation, and conversion flow.
+  - Produce a prioritized optimization backlog that maps market findings to concrete implementation tasks.
+  - Keep findings and the resulting backlog in canonical SSOT documents.
+
 ### Phase 2 Follow-on Recovery (opened by `MO-302`)
 
 **PH-203: Restore emergency triage write compatibility with live schema (completed 2026-03-01)**
@@ -117,7 +127,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `GET /api/public/search` and `GET /trainers/[id]` no longer rely on error/fallback behavior for standard live-backed requests.
   - Verify the remote PostgREST/API surface recognizes the restored RPCs.
 
-**PH-205: Restore minimum live directory data for end-to-end verification**
+**PH-205: Restore minimum live directory data for end-to-end verification (completed 2026-03-01)**
 - Purpose: re-establish enough live business data to validate the restored directory RPC path end-to-end.
 - Definition of done:
   - The live project contains at least one valid active business row with the required linked suburb/council and trainer relation data.
@@ -141,3 +151,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `MO-302` completed by running one controlled engineering sample through the live-backed funnel (`/api/emergency/triage`, `/api/public/search`, `/trainers/999999`, `/promote`, and `/api/stripe/create-checkout-session`) and recording the first baseline in `08_OPS_RUNBOOK.md`. The sample confirmed telemetry is writing, but it also exposed two live blockers: `POST /api/emergency/triage` currently fails with `null value in column "description" of relation "emergency_triage_logs"`, and the live database is missing the `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs. Those findings reopen Production Hardening as `PH-203` and `PH-204`.
 - 2026-03-01: `PH-203` completed by extracting a dedicated triage persistence helper that writes the required `emergency_triage_logs` columns (`description`, `predicted_category`, `recommended_flow`) and normalizes persisted classifications to the live enum-safe set. Unit coverage was added for the insert payload, and live verification confirmed `POST /api/emergency/triage` now returns `200` and inserts rows successfully against the current Supabase schema.
 - 2026-03-01: `PH-204` completed by restoring the canonical `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs from the repo’s existing 2025-02-10 migrations, refreshing the PostgREST schema cache, and refreshing `supabase/schema.sql`. Live verification confirmed PostgREST recognizes both RPCs and `GET /api/public/search` now returns `200`, but the live project still has `0` rows in `public.businesses`, so full trainer profile verification remains blocked and is now tracked as `PH-205`.
+- 2026-03-01: `PH-205` completed by adding one controlled verification dataset to the live project: a `City of Yarra` council row, a linked `Collingwood` suburb relationship, one active business (`DTD Verification Trainer PH205`, `business_id = 1`), and the minimum specialization/behavior/service relations. Live verification then confirmed `GET /api/public/search?q=PH205&limit=1` returns the inserted business and `GET /trainers/1` renders the real profile path without the fallback marker.

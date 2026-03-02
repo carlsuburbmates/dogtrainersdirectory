@@ -25,7 +25,8 @@
 | MO-302 | Market Optimization | Establish baseline performance and conversion metrics | completed | main-control | `WORKPLAN` `MO-302` | baseline report exists for future optimization |
 | PH-203 | Production Hardening | Restore emergency triage write compatibility with live schema | completed | backend | `WORKPLAN` `PH-203` | live triage submissions stop failing on `emergency_triage_logs` inserts |
 | PH-204 | Production Hardening | Restore live public directory RPC availability | completed | backend | `WORKPLAN` `PH-204` | `search_trainers` and `get_trainer_profile` are callable in the live project again |
-| PH-205 | Production Hardening | Restore minimum live directory data for end-to-end verification | in_progress | backend | `WORKPLAN` `PH-205` | live search returns at least one real business and `/trainers/<id>` renders via RPC |
+| PH-205 | Production Hardening | Restore minimum live directory data for end-to-end verification | completed | backend | `WORKPLAN` `PH-205` | live search returns at least one real business and `/trainers/<id>` renders via RPC |
+| MO-303 | Market Optimization | Run external market scan and create the next optimization backlog | in_progress | main-control | `WORKPLAN` `MO-303` | market findings are converted into a prioritized optimization backlog |
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
