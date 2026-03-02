@@ -20,9 +20,10 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Build Completion is complete.
 - Production Hardening was completed through `PH-202`, then reopened by `MO-302` findings.
 - `PH-203` is now complete and the live triage write path is restored.
+- `PH-204` is now complete and the live public directory RPC layer is restored.
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
-- Current top priority: `PH-204`.
+- Current top priority: `PH-205`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -108,13 +109,21 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The route writes a schema-compatible payload into `public.emergency_triage_logs`.
   - Add regression coverage for the insert payload shape or a dedicated compatibility helper.
 
-**PH-204: Restore live public directory RPC availability**
+**PH-204: Restore live public directory RPC availability (completed 2026-03-01)**
 - Purpose: re-enable the core public directory flow on the live Supabase project.
 - Definition of done:
   - `public.search_trainers(...)` exists and is callable by the current search route contract.
   - `public.get_trainer_profile(...)` exists and is callable by the current trainer profile page contract.
   - `GET /api/public/search` and `GET /trainers/[id]` no longer rely on error/fallback behavior for standard live-backed requests.
   - Verify the remote PostgREST/API surface recognizes the restored RPCs.
+
+**PH-205: Restore minimum live directory data for end-to-end verification**
+- Purpose: re-establish enough live business data to validate the restored directory RPC path end-to-end.
+- Definition of done:
+  - The live project contains at least one valid active business row with the required linked suburb/council and trainer relation data.
+  - `GET /api/public/search?q=<known-term>&limit=1` can return at least one live-backed result for a controlled verification query.
+  - `GET /trainers/<valid_business_id>` renders from `get_trainer_profile(...)` without falling back to the test/session fallback path.
+  - The verification data source is intentional and documented (seed/import path or controlled fixture source).
 
 ## Execution Log
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
@@ -131,3 +140,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `MO-301` completed by adding `commercial_funnel` instrumentation to the canonical `latency_metrics` path for `triage_submit`, `search_results`, `trainer_profile_view`, `promote_page_view`, and `promote_checkout_session`; wiring stage summaries and drop-off calculations into `/api/admin/telemetry/latency`; and preserving triage-origin attribution through `flow_source` from `/triage` into `/search` and trainer profile views.
 - 2026-03-01: `MO-302` completed by running one controlled engineering sample through the live-backed funnel (`/api/emergency/triage`, `/api/public/search`, `/trainers/999999`, `/promote`, and `/api/stripe/create-checkout-session`) and recording the first baseline in `08_OPS_RUNBOOK.md`. The sample confirmed telemetry is writing, but it also exposed two live blockers: `POST /api/emergency/triage` currently fails with `null value in column "description" of relation "emergency_triage_logs"`, and the live database is missing the `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs. Those findings reopen Production Hardening as `PH-203` and `PH-204`.
 - 2026-03-01: `PH-203` completed by extracting a dedicated triage persistence helper that writes the required `emergency_triage_logs` columns (`description`, `predicted_category`, `recommended_flow`) and normalizes persisted classifications to the live enum-safe set. Unit coverage was added for the insert payload, and live verification confirmed `POST /api/emergency/triage` now returns `200` and inserts rows successfully against the current Supabase schema.
+- 2026-03-01: `PH-204` completed by restoring the canonical `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs from the repo’s existing 2025-02-10 migrations, refreshing the PostgREST schema cache, and refreshing `supabase/schema.sql`. Live verification confirmed PostgREST recognizes both RPCs and `GET /api/public/search` now returns `200`, but the live project still has `0` rows in `public.businesses`, so full trainer profile verification remains blocked and is now tracked as `PH-205`.

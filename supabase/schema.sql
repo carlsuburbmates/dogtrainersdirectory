@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict qCAQbjVjLrVoyGuACD6GxFWZEhUQSGTxciiY9hvSAyCe3DfdcNILOZVVnvOhoqB
+\restrict CkxOiyK92YyRdyQeaf5bTPoakYFWaQwTDMKx3XOcFU5XGhQrjfxcovOUihz0vh8
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -1082,6 +1082,55 @@ $$;
 
 
 --
+-- Name: get_trainer_profile(integer, "text"); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION "public"."get_trainer_profile"("p_business_id" integer, "p_key" "text" DEFAULT NULL::"text") RETURNS TABLE("business_id" integer, "business_name" "text", "abn_verified" boolean, "verification_status" "public"."verification_status", "address" "text", "website" "text", "email" "text", "phone" "text", "bio" "text", "pricing" "text", "featured_until" timestamp with time zone, "suburb_name" "text", "suburb_postcode" "text", "council_name" "text", "region" "public"."region", "average_rating" numeric, "review_count" integer, "age_specialties" "public"."age_specialty"[], "behavior_issues" "public"."behavior_issue"[], "services" "public"."service_type"[])
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        b.id,
+        b.name,
+        b.abn_verified,
+        b.verification_status,
+        b.address,
+        b.website,
+        decrypt_sensitive(b.email_encrypted, p_key),
+        decrypt_sensitive(b.phone_encrypted, p_key),
+        b.bio,
+        b.pricing,
+        b.featured_until,
+        s.name,
+        s.postcode,
+        c.name,
+        c.region,
+        COALESCE(AVG(r.rating), 0),
+        COUNT(r.id)::INTEGER,
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT ts.age_specialty), NULL), ARRAY[]::age_specialty[]),
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT tbi.behavior_issue), NULL), ARRAY[]::behavior_issue[]),
+        COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT tsvc.service_type), NULL), ARRAY[]::service_type[])
+    FROM businesses b
+    JOIN suburbs s ON b.suburb_id = s.id
+    JOIN councils c ON s.council_id = c.id
+    LEFT JOIN reviews r ON b.id = r.business_id AND r.is_approved = true
+    LEFT JOIN trainer_specializations ts ON b.id = ts.business_id
+    LEFT JOIN trainer_behavior_issues tbi ON b.id = tbi.business_id
+    LEFT JOIN trainer_services tsvc ON b.id = tsvc.business_id
+    WHERE 
+        b.id = p_business_id
+        AND b.is_active = true
+        AND b.is_deleted = false
+    GROUP BY 
+        b.id, b.name, b.abn_verified, b.verification_status, b.address, b.website,
+        b.email_encrypted, b.phone_encrypted, b.bio, b.pricing, b.featured_until,
+        s.name, s.postcode, c.name, c.region;
+END;
+$$;
+
+
+--
 -- Name: search_emergency_resources(numeric, numeric, "text"[], integer, "text"); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1119,6 +1168,112 @@ begin
     b.name asc
   limit limit_entries;
 end;
+$$;
+
+
+--
+-- Name: search_trainers(numeric, numeric, "public"."age_specialty"[], "public"."behavior_issue"[], "public"."service_type", boolean, boolean, "text", numeric, "text", integer, integer, "text"); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION "public"."search_trainers"("user_lat" numeric DEFAULT NULL::numeric, "user_lng" numeric DEFAULT NULL::numeric, "age_filters" "public"."age_specialty"[] DEFAULT NULL::"public"."age_specialty"[], "issue_filters" "public"."behavior_issue"[] DEFAULT NULL::"public"."behavior_issue"[], "service_type_filter" "public"."service_type" DEFAULT NULL::"public"."service_type", "verified_only" boolean DEFAULT false, "rescue_only" boolean DEFAULT false, "distance_filter" "text" DEFAULT 'any'::"text", "price_max" numeric DEFAULT NULL::numeric, "search_term" "text" DEFAULT NULL::"text", "result_limit" integer DEFAULT 50, "result_offset" integer DEFAULT 0, "p_key" "text" DEFAULT NULL::"text") RETURNS TABLE("business_id" integer, "business_name" "text", "business_email" "text", "business_phone" "text", "business_website" "text", "business_address" "text", "business_bio" "text", "business_pricing" "text", "featured_until" timestamp with time zone, "is_featured" boolean, "pricing_min_rate" numeric, "abn_verified" boolean, "verification_status" "public"."verification_status", "suburb_name" "text", "council_name" "text", "region" "public"."region", "distance_km" numeric, "average_rating" numeric, "review_count" integer, "age_specialties" "public"."age_specialty"[], "behavior_issues" "public"."behavior_issue"[], "services" "public"."service_type"[])
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    search_pattern TEXT := CASE 
+        WHEN search_term IS NULL OR LENGTH(TRIM(search_term)) = 0 THEN NULL
+        ELSE '%' || TRIM(search_term) || '%'
+    END;
+BEGIN
+    RETURN QUERY
+    WITH trainer_base AS (
+        SELECT 
+            b.id as business_id,
+            b.name as business_name,
+            decrypt_sensitive(b.email_encrypted, p_key) as business_email,
+            decrypt_sensitive(b.phone_encrypted, p_key) as business_phone,
+            b.website as business_website,
+            b.address as business_address,
+            b.bio as business_bio,
+            b.pricing as business_pricing,
+            b.featured_until,
+            (b.featured_until IS NOT NULL AND b.featured_until > NOW()) as is_featured,
+            CASE 
+                WHEN b.pricing IS NULL THEN NULL
+                ELSE NULLIF((regexp_match(b.pricing, '([0-9]+(?:\\.[0-9]+)?)'))[1], '')::NUMERIC
+            END as pricing_min_rate,
+            b.abn_verified,
+            b.verification_status,
+            s.name as suburb_name,
+            c.name as council_name,
+            c.region,
+            CASE 
+                WHEN user_lat IS NULL OR user_lng IS NULL THEN NULL
+                ELSE calculate_distance(user_lat, user_lng, s.latitude, s.longitude)
+            END as distance_km,
+            COALESCE(AVG(r.rating), 0) as average_rating,
+            COUNT(r.id)::INTEGER as review_count,
+            COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT ts.age_specialty), NULL), ARRAY[]::age_specialty[]) as age_specialties,
+            COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT tbi.behavior_issue), NULL), ARRAY[]::behavior_issue[]) as behavior_issues,
+            COALESCE(ARRAY_REMOVE(ARRAY_AGG(DISTINCT tsvc.service_type), NULL), ARRAY[]::service_type[]) as services
+        FROM businesses b
+        JOIN suburbs s ON b.suburb_id = s.id
+        JOIN councils c ON s.council_id = c.id
+        LEFT JOIN reviews r ON b.id = r.business_id AND r.is_approved = true
+        LEFT JOIN trainer_specializations ts ON b.id = ts.business_id
+        LEFT JOIN trainer_behavior_issues tbi ON b.id = tbi.business_id
+        LEFT JOIN trainer_services tsvc ON b.id = tsvc.business_id
+        WHERE 
+            b.is_active = true 
+            AND b.is_deleted = false
+            AND b.resource_type IN ('trainer', 'behaviour_consultant')
+        GROUP BY 
+            b.id, b.name, b.email_encrypted, b.phone_encrypted, b.website, 
+            b.address, b.bio, b.pricing, b.featured_until, b.abn_verified, b.verification_status,
+            s.name, c.name, c.region, s.latitude, s.longitude
+    )
+    SELECT *
+    FROM trainer_base tb
+    WHERE
+        (age_filters IS NULL OR tb.age_specialties && age_filters)
+        AND (issue_filters IS NULL OR tb.behavior_issues && issue_filters)
+        AND (service_type_filter IS NULL OR service_type_filter = ANY(tb.services))
+        AND (verified_only = false OR tb.abn_verified = true)
+        AND (rescue_only = false OR ARRAY['rescue_dogs']::age_specialty[] && tb.age_specialties)
+        AND (
+            user_lat IS NULL 
+            OR distance_filter IS NULL 
+            OR distance_filter = 'any'
+            OR (distance_filter = '0-5' AND tb.distance_km <= 5)
+            OR (distance_filter = '5-15' AND tb.distance_km > 5 AND tb.distance_km <= 15)
+            OR (distance_filter = 'greater' AND tb.distance_km > 15)
+        )
+        AND (
+            price_max IS NULL 
+            OR tb.pricing_min_rate IS NULL 
+            OR tb.pricing_min_rate <= price_max
+        )
+        AND (
+            search_pattern IS NULL
+            OR tb.business_name ILIKE search_pattern
+            OR tb.suburb_name ILIKE search_pattern
+            OR tb.council_name ILIKE search_pattern
+            OR EXISTS (
+                SELECT 1 FROM unnest(tb.behavior_issues) bi
+                WHERE bi::text ILIKE search_pattern
+            )
+            OR EXISTS (
+                SELECT 1 FROM unnest(tb.age_specialties) ag
+                WHERE ag::text ILIKE search_pattern
+            )
+        )
+    ORDER BY 
+        tb.abn_verified DESC,
+        tb.distance_km NULLS LAST,
+        tb.average_rating DESC,
+        tb.business_name ASC
+    LIMIT result_limit
+    OFFSET result_offset;
+END;
 $$;
 
 
@@ -7710,5 +7865,5 @@ CREATE EVENT TRIGGER "pgrst_drop_watch" ON "sql_drop"
 -- PostgreSQL database dump complete
 --
 
-\unrestrict qCAQbjVjLrVoyGuACD6GxFWZEhUQSGTxciiY9hvSAyCe3DfdcNILOZVVnvOhoqB
+\unrestrict CkxOiyK92YyRdyQeaf5bTPoakYFWaQwTDMKx3XOcFU5XGhQrjfxcovOUihz0vh8
 
