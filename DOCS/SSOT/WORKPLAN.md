@@ -25,8 +25,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
-- The public UI/UX foundation is now complete across the primary public surfaces, and the first trust-density pass is complete on search and trainer profiles.
-- Current top priority: `MO-306`.
+- The public UI/UX foundation is now complete across the primary public surfaces, and the first trust + conversion clarity passes are complete on search and trainer profiles.
+- Current top priority: `MO-305`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -104,7 +104,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Trust signals are sourced from canonical data fields or explicit new schema-backed fields, not static copy.
   - The public user can distinguish why a listing is trustworthy before contacting the trainer.
 
-**MO-306: Reduce buyer friction with clearer primary conversion actions**
+**MO-306: Reduce buyer friction with clearer primary conversion actions (completed 2026-03-02)**
 - Purpose: make the post-discovery next step as obvious and low-friction as the strongest competitors.
 - Definition of done:
   - Search and trainer profile surfaces expose a clear primary next action (contact, enquiry, booking, or equivalent handoff).
@@ -202,3 +202,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-02: The roadmap was reclassified to make `Website Completion` explicit before broader market optimization. `WC-301` is now the active priority because the public UI/UX is still unfinished, with `MO-304` and `MO-306` queued as the trust and conversion layers that depend on that foundation.
 - 2026-03-02: `WC-301` completed by rebuilding the core public presentation layer on `/`, `/search`, and `/trainers/[id]` around clearer hierarchy, stronger trust framing, and more intentional CTA placement. The route-intent SSOT in `05_ROUTES_AND_NAV.md` was updated alongside the implementation so the public journey expectations match the finished UI foundation. `MO-304` is now the active priority.
 - 2026-03-02: `MO-304` completed by increasing visible trust density on `/search` and `/trainers/[id]` using only existing canonical fields: ABN verification state, verification status, public review evidence, featured status, contact availability, pricing visibility, and disclosed fit details. No backend or schema change was required; the Playwright search/profile spec was updated only to keep the placeholder assertion aligned with the Australian-English copy. `MO-306` is now the active priority.
+- 2026-03-02: `MO-306` completed by making the next action clearer on `/search` and `/trainers/[id]` without changing routes, telemetry, or API contracts. Search result cards now explain the profile as the next decision step more explicitly, and trainer profiles prioritise the fastest available direct contact method (phone, then email, then website) while retaining the enquiry form as the written-first fallback. The route-intent SSOT was updated in `05_ROUTES_AND_NAV.md` to reflect the refined contact hierarchy. `MO-305` is now the active priority.

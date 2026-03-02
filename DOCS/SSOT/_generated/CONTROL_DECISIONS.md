@@ -29,6 +29,7 @@
 | 2026-03-02 | D-119 | Roadmap reclassified to make Website Completion explicit before broader optimization | the product is technically stable, but the public UI/UX is not finished yet | `WC-301` is now the active priority; `MO-304` and `MO-306` remain queued as completion-layer tasks before the broader optimization backlog |
 | 2026-03-02 | D-120 | `WC-301` accepted as complete | the primary public surfaces now have a finished visual and interaction baseline, and the route-intent SSOT was updated to match | `MO-304` is now the active priority on top of a stable UI foundation |
 | 2026-03-02 | D-121 | `MO-304` accepted as complete with corrected handoff scope | trust density increased using existing canonical fields only; the implementation session also updated the Playwright spec to match Australian-English copy and that extra touched file was corrected in control review | `MO-306` is now the active priority |
+| 2026-03-02 | D-122 | `MO-306` accepted as complete | CTA hierarchy is now clearer on search and trainer profiles without changing route or contract behaviour, and the route-intent SSOT now explicitly reflects the direct-contact-first pattern | `MO-305` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -51,6 +52,7 @@
 | 2026-03-02 | main-control | WC-301 roadmap reset | `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run docs:guard` | pass (phase ordering corrected; UI/UX completion made explicit) | execute `WC-301` implementation |
 | 2026-03-02 | main-control | WC-301 | `src/app/page.tsx`, `src/app/search/page.tsx`, `src/app/trainers/[id]/page.tsx`, `DOCS/SSOT/05_ROUTES_AND_NAV.md`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`; `npm run lint`; `npx playwright test tests/e2e/search-and-trainer.spec.ts`; browser pass on `/`, `/search`, `/trainers/1`; `npm run docs:guard` | pass (public UI foundation upgraded and SSOT route intent aligned) | execute `MO-304` |
 | 2026-03-02 | implementation lane | MO-304 | `src/app/search/page.tsx`, `src/app/trainers/[id]/page.tsx`, `tests/e2e/search-and-trainer.spec.ts` | `git pull origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (trust density increased using existing data only; handoff corrected to include the test spec copy update) | execute `MO-306` |
+| 2026-03-02 | implementation lane | MO-306 | `src/app/search/page.tsx`, `src/app/trainers/[id]/page.tsx` | `git pull origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (primary CTA hierarchy clarified without route or contract drift) | execute `MO-305` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

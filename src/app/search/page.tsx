@@ -676,6 +676,10 @@ export default function SearchPage() {
                       const rating = Number(trainer.average_rating || 0)
                       const reviewCount = Number(trainer.review_count || 0)
                       const hasPublicReviews = rating > 0 && reviewCount > 0
+                      const directContactCount = [
+                        trainer.business_phone,
+                        trainer.business_email
+                      ].filter(Boolean).length
                       const listedScopeCount =
                         trainer.services.length +
                         trainer.age_specialties.length +
@@ -805,20 +809,35 @@ export default function SearchPage() {
                               )}
                             </div>
 
-                            <div className="w-full rounded-3xl border border-slate-200 bg-slate-50 p-5 xl:w-[240px]">
+                            <div className="w-full rounded-3xl border border-slate-200 bg-slate-50 p-5 xl:w-[260px]">
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                Next step
+                                Best next step
                               </p>
                               <p className="mt-2 text-sm leading-6 text-slate-600">
-                                Open the profile to confirm contact details, pricing, and the full
-                                credibility breakdown before reaching out.
+                                Open the full profile to confirm the fastest contact option,
+                                pricing, and the full credibility breakdown before you reach out.
                               </p>
+                              <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                                  What happens next
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-slate-700">
+                                  {directContactCount > 0
+                                    ? `${directContactCount} direct contact ${
+                                        directContactCount === 1 ? 'option is' : 'options are'
+                                      } already listed on the profile.`
+                                    : 'The profile shows the clearest available contact path for this listing.'}
+                                </p>
+                              </div>
                               <Link
                                 href={trainerHref}
                                 className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                               >
                                 View Profile
                               </Link>
+                              <p className="mt-3 text-xs leading-5 text-slate-500">
+                                Most buyers review the profile, then contact the trainer directly.
+                              </p>
                             </div>
                           </div>
                         </Panel>

@@ -122,6 +122,36 @@ export default async function TrainerPage({
   const reviewCount = Number(trainer.review_count || 0)
   const hasPublicReviews = averageRating > 0 && reviewCount > 0
   const contactMethodCount = [trainer.phone, trainer.email, trainer.website].filter(Boolean).length
+  const enquiryAnchorId = 'send-an-enquiry'
+  const directContactActions: Array<{
+    label: string
+    href: string
+    helper: string
+    openInNewTab?: boolean
+  }> = []
+  if (trainer.phone) {
+    directContactActions.push({
+      label: 'Call now',
+      href: `tel:${trainer.phone}`,
+      helper: 'Fastest if you are ready to speak with the trainer now.'
+    })
+  }
+  if (trainer.email) {
+    directContactActions.push({
+      label: 'Email now',
+      href: `mailto:${trainer.email}`,
+      helper: 'Best if you want a written first contact.'
+    })
+  }
+  if (trainer.website) {
+    directContactActions.push({
+      label: 'Visit website',
+      href: trainer.website,
+      helper: 'Useful if you want more background before making contact.',
+      openInNewTab: true
+    })
+  }
+  const primaryContactAction = directContactActions[0] ?? null
   const listedFitSignals =
     (trainer.services?.length || 0) +
     (trainer.behavior_issues?.length || 0) +
@@ -278,22 +308,61 @@ export default async function TrainerPage({
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Why this listing is credible
-              </p>
-              <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
-                {credibilitySignals.map((signal) => (
-                  <div
-                    key={signal.label}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-                      {signal.label}
+            <div className="space-y-4">
+              <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
+                  Ready to contact?
+                </p>
+                {primaryContactAction ? (
+                  <>
+                    <p className="mt-2 text-sm leading-6 text-slate-200">
+                      The fastest next step for this listing is the direct option below.
                     </p>
-                    <p className="mt-1">{signal.detail}</p>
-                  </div>
-                ))}
+                    <a
+                      href={primaryContactAction.href}
+                      target={primaryContactAction.openInNewTab ? '_blank' : undefined}
+                      rel={primaryContactAction.openInNewTab ? 'noopener noreferrer' : undefined}
+                      className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-100"
+                    >
+                      {primaryContactAction.label}
+                    </a>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      {primaryContactAction.helper}
+                    </p>
+                    {trainer.email && (
+                      <a
+                        href={`#${enquiryAnchorId}`}
+                        className="mt-3 inline-flex text-sm font-semibold text-blue-200 transition-colors hover:text-white"
+                      >
+                        Prefer a written first message? Send an enquiry.
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm leading-6 text-slate-200">
+                    Direct phone, email, or website details are not shown on this listing. Review
+                    the details below for the available contact path.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
+                  Why this listing is credible
+                </p>
+                <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
+                  {credibilitySignals.map((signal) => (
+                    <div
+                      key={signal.label}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                        {signal.label}
+                      </p>
+                      <p className="mt-1">{signal.detail}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -434,6 +503,25 @@ export default async function TrainerPage({
               </p>
 
               <div className="mt-5 space-y-4">
+                {primaryContactAction && (
+                  <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      Best next step
+                    </p>
+                    <a
+                      href={primaryContactAction.href}
+                      target={primaryContactAction.openInNewTab ? '_blank' : undefined}
+                      rel={primaryContactAction.openInNewTab ? 'noopener noreferrer' : undefined}
+                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                    >
+                      {primaryContactAction.label}
+                    </a>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      {primaryContactAction.helper}
+                    </p>
+                  </div>
+                )}
+
                 {trainer.phone && (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -444,6 +532,12 @@ export default async function TrainerPage({
                       className="mt-2 inline-block text-base font-semibold text-blue-700 hover:underline"
                     >
                       {trainer.phone}
+                    </a>
+                    <a
+                      href={`tel:${trainer.phone}`}
+                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                    >
+                      Call this trainer
                     </a>
                   </div>
                 )}
@@ -458,6 +552,12 @@ export default async function TrainerPage({
                       className="mt-2 inline-block break-all text-base font-semibold text-blue-700 hover:underline"
                     >
                       {trainer.email}
+                    </a>
+                    <a
+                      href={`mailto:${trainer.email}`}
+                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                    >
+                      Email this trainer
                     </a>
                   </div>
                 )}
@@ -474,6 +574,14 @@ export default async function TrainerPage({
                       className="mt-2 inline-flex items-center text-base font-semibold text-blue-700 hover:underline"
                     >
                       Visit website
+                    </a>
+                    <a
+                      href={trainer.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                    >
+                      Open the trainer website
                     </a>
                   </div>
                 )}
@@ -500,10 +608,13 @@ export default async function TrainerPage({
               )}
             </section>
 
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
-              <h3 className="text-xl font-bold text-slate-950">Send an enquiry</h3>
+            <section
+              id={enquiryAnchorId}
+              className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]"
+            >
+              <h3 className="text-xl font-bold text-slate-950">Prefer a written first message?</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Use the form if you want a documented first contact through the directory.
+                Use the enquiry form if you want a documented first contact through the directory.
               </p>
               <div className="mt-5 border-t border-slate-200 pt-5">
                 <ContactForm
