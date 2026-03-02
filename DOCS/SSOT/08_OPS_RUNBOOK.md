@@ -120,14 +120,24 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 - This baseline is useful as an engineering reference point only; it is not representative of real user demand or conversion.
 - Market optimization can proceed, but this baseline should still be treated as controlled engineering traffic rather than organic demand.
 
-### 14.6 Controlled verification dataset (PH-205)
-- To unblock true end-to-end live verification, a single controlled listing was inserted into the live project during `PH-205`.
-- Verification record:
-  - `business_id = 1`
-  - `name = DTD Verification Trainer PH205`
-  - linked suburb: `Collingwood`
-  - linked council: `City of Yarra`
-- Supporting relation rows were also added for one age specialty, one behavior issue, and one service type.
-- This record is for environment verification only; it is not a production-vetted directory listing.
-- If broader live validation is needed later, replace this narrow fixture with a controlled canonical import or vetted real onboarding data.
-- Reproducibility path: reuse `data/suburbs_councils_mapping.csv` for the location link and a controlled `psql` transaction for the minimal business + trainer relation rows; avoid broad seed imports unless explicitly intended.
+### 14.6 Controlled live verification dataset (PH-205 + MO-307)
+- The live project now uses a controlled demo baseline for directory verification and comparison depth.
+- Current controlled records:
+  - `business_id = 1` `DTD Verification Trainer PH205` (`Collingwood`, `City of Yarra`)
+  - `business_id = 2` `DTD Demo Trainer Carlton Foundation` (`Carlton`, `City of Melbourne`)
+  - `business_id = 3` `DTD Demo Trainer South Melbourne Reactive` (`South Melbourne`, `City of Port Phillip`)
+  - `business_id = 4` `DTD Demo Trainer Fitzroy Social` (`Fitzroy`, `City of Yarra`)
+- The controlled inventory now supports:
+  - `4` active searchable listings total
+  - `3` suburbs
+  - `3` councils
+  - multiple service types and non-homogeneous fit combinations
+- Deterministic live verification query:
+  - `GET /api/public/search?q=DTD%20Demo&limit=10`
+  - expected result set: business IDs `2`, `4`, `3`
+- These records are for controlled environment verification and product comparison only; they are not production-vetted customer businesses.
+- Reproducibility path:
+  - reuse `data/suburbs_councils_mapping.csv` for suburb/council linkage
+  - apply a controlled `psql` transaction for the minimal additive business + trainer relation rows
+  - preserve the `PH-205` verification fixture unless a later controlled import explicitly replaces it
+  - avoid broad seed imports unless explicitly intended

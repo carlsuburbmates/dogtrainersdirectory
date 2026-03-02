@@ -25,8 +25,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
-- The public UI/UX foundation is complete, and the first search-landing SEO slice is now in place on the canonical `/search` route.
-- Current top priority: `MO-307`.
+- The public UI/UX foundation is complete, the first search-landing SEO slice is in place on the canonical `/search` route, and the live directory now has a controlled comparison baseline beyond the single verification fixture.
+- Current top priority: `MO-308`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -142,7 +142,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Search metadata and structured data stop relying on placeholder location/pricing values for core search surfaces.
   - The routing and content strategy is explicit enough to support repeatable SEO and local discovery work.
 
-**MO-307: Expand live directory inventory depth beyond the verification fixture**
+**MO-307: Expand live directory inventory depth beyond the verification fixture (completed 2026-03-02)**
 - Purpose: move from a technically verified live directory to a market-comparable discovery surface.
 - Definition of done:
   - The live project contains more than the single controlled verification listing.
@@ -204,3 +204,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-02: `MO-304` completed by increasing visible trust density on `/search` and `/trainers/[id]` using only existing canonical fields: ABN verification state, verification status, public review evidence, featured status, contact availability, pricing visibility, and disclosed fit details. No backend or schema change was required; the Playwright search/profile spec was updated only to keep the placeholder assertion aligned with the Australian-English copy. `MO-306` is now the active priority.
 - 2026-03-02: `MO-306` completed by making the next action clearer on `/search` and `/trainers/[id]` without changing routes, telemetry, or API contracts. Search result cards now explain the profile as the next decision step more explicitly, and trainer profiles prioritise the fastest available direct contact method (phone, then email, then website) while retaining the enquiry form as the written-first fallback. The route-intent SSOT was updated in `05_ROUTES_AND_NAV.md` to reflect the refined contact hierarchy. `MO-305` is now the active priority.
 - 2026-03-02: `MO-305` completed by moving `/search` onto a server-rendered metadata path, replacing placeholder SEO content with canonical query-driven metadata and `CollectionPage` structured data, and strengthening locality/service landing intent within the existing `/search` route model. The route-intent SSOT was updated in `05_ROUTES_AND_NAV.md` to make `/search` the explicit first-slice landing surface for locality and service SEO. `MO-307` is now the active priority.
+- 2026-03-02: `MO-307` completed by expanding the live directory from the single `PH-205` verification fixture to a four-listing controlled demo baseline across three suburbs and three councils, while preserving the existing RPC layer and all schema/contracts. The controlled live inventory strategy is now documented in `08_OPS_RUNBOOK.md`, and the next active priority is `MO-308`.

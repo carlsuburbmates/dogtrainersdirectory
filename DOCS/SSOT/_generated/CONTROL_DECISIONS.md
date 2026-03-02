@@ -31,6 +31,7 @@
 | 2026-03-02 | D-121 | `MO-304` accepted as complete with corrected handoff scope | trust density increased using existing canonical fields only; the implementation session also updated the Playwright spec to match Australian-English copy and that extra touched file was corrected in control review | `MO-306` is now the active priority |
 | 2026-03-02 | D-122 | `MO-306` accepted as complete | CTA hierarchy is now clearer on search and trainer profiles without changing route or contract behaviour, and the route-intent SSOT now explicitly reflects the direct-contact-first pattern | `MO-305` is now the active priority |
 | 2026-03-02 | D-123 | `MO-305` accepted as complete | the search route now supports real query-driven landing metadata and structured data on first load, and the route-intent SSOT explicitly records `/search` as the first-slice locality/service landing surface | `MO-307` is now the active priority |
+| 2026-03-02 | D-124 | `MO-307` accepted as complete | the live directory now has a controlled four-listing comparison baseline across multiple suburbs/councils without any schema or contract change, and the ops runbook now documents the new controlled inventory state | `MO-308` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -55,6 +56,7 @@
 | 2026-03-02 | implementation lane | MO-304 | `src/app/search/page.tsx`, `src/app/trainers/[id]/page.tsx`, `tests/e2e/search-and-trainer.spec.ts` | `git pull origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (trust density increased using existing data only; handoff corrected to include the test spec copy update) | execute `MO-306` |
 | 2026-03-02 | implementation lane | MO-306 | `src/app/search/page.tsx`, `src/app/trainers/[id]/page.tsx` | `git pull origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (primary CTA hierarchy clarified without route or contract drift) | execute `MO-305` |
 | 2026-03-02 | implementation lane | MO-305 | `src/app/search/page.tsx`, `src/app/search/SearchPageClient.tsx`, `src/app/search/landing.ts`, `src/app/search/metadata.ts`, `tests/unit/search-landing.test.ts` | `git pull origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts` | pass (server-side metadata and first-slice landing intent added to canonical `/search` without route-family expansion) | execute `MO-307` |
+| 2026-03-02 | backend | MO-307 | no repo file changes (live data only) | `git pull origin main`; live `psql` counts and controlled inserts; `./scripts/remote_db_info.sh`; direct RPC checks; live `GET /api/public/search?q=DTD%20Demo&limit=10`; live `GET /trainers/2`; live `GET /trainers/3` | pass (live inventory expanded from 1 to 4 controlled records with real search/profile coverage) | execute `MO-308` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`
