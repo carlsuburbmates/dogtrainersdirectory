@@ -1,33 +1,51 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
 import type { SuburbResult } from '@/lib/api'
-import { AgeSpecialty, BehaviorIssue } from '@/types/database'
+import {
+  AGE_SPECIALTIES,
+  AGE_SPECIALTY_LABELS,
+  BEHAVIOR_ISSUES,
+  BEHAVIOR_ISSUE_LABELS
+} from '@/lib/constants/taxonomies'
+import type { AgeSpecialty, BehaviorIssue } from '@/types/database'
 
-const ageOptions: { value: AgeSpecialty; label: string }[] = [
-  { value: 'puppies_0_6m', label: 'Puppies (0–6 months)' },
-  { value: 'adolescent_6_18m', label: 'Adolescent (6–18 months)' },
-  { value: 'adult_18m_7y', label: 'Adult (18 months–7 years)' },
-  { value: 'senior_7y_plus', label: 'Senior (7+ years)' },
-  { value: 'rescue_dogs', label: 'Rescue/Rehomed (any age)' }
+const ageOptions = AGE_SPECIALTIES.map((value) => ({
+  value,
+  label: AGE_SPECIALTY_LABELS[value]
+}))
+
+const issueOptions = BEHAVIOR_ISSUES.map((value) => ({
+  value,
+  label: BEHAVIOR_ISSUE_LABELS[value]
+}))
+
+const reassurancePoints = [
+  'Triage-first matching that narrows the right type of trainer before you browse.',
+  'Distance-aware suburb search built for Melbourne owner journeys, not a generic directory.',
+  'Verified and emergency-aware paths so urgent cases move faster.'
 ]
 
-const issueOptions: { value: BehaviorIssue; label: string }[] = [
-  { value: 'pulling_on_lead', label: 'Pulling on the lead' },
-  { value: 'separation_anxiety', label: 'Separation anxiety' },
-  { value: 'excessive_barking', label: 'Excessive barking' },
-  { value: 'dog_aggression', label: 'Dog aggression' },
-  { value: 'leash_reactivity', label: 'Leash reactivity' },
-  { value: 'jumping_up', label: 'Jumping up' },
-  { value: 'destructive_behaviour', label: 'Destructive behaviour' },
-  { value: 'recall_issues', label: 'Recall issues' },
-  { value: 'anxiety_general', label: 'General anxiety' },
-  { value: 'resource_guarding', label: 'Resource guarding' },
-  { value: 'mouthing_nipping_biting', label: 'Mouthing/nipping/biting' },
-  { value: 'rescue_dog_support', label: 'Rescue dog support' },
-  { value: 'socialisation', label: 'Socialisation' }
+const quickRoutes = [
+  {
+    href: '/triage',
+    title: 'Start with triage',
+    body: 'Use the guided intake when you are unsure what type of help you need yet.'
+  },
+  {
+    href: '/directory',
+    title: 'Browse the directory',
+    body: 'Go straight to profiles if you already know you want to compare trainers.'
+  },
+  {
+    href: '/emergency',
+    title: 'Emergency support',
+    body: 'Jump to urgent resources first if your dog needs immediate help.'
+  }
 ]
 
 const mapRadiusToDistance = (radius: number) => {
@@ -55,7 +73,7 @@ export default function HomePage() {
     setError(null)
 
     if (!selectedSuburb) {
-      setError('Please select a suburb from the list below')
+      setError('Select a suburb from the suggestion list before continuing.')
       return
     }
 
@@ -74,83 +92,193 @@ export default function HomePage() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h1 className="text-3xl font-bold mb-4">Find a Melbourne dog trainer</h1>
-          <p className="text-gray-600 mb-6">Age-first triage ensures you get matched to trainers who specialise in your dog&apos;s current stage.</p>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="font-semibold text-sm" htmlFor="age">Dog&apos;s age/stage</label>
-              <select
-                id="age"
-                value={age}
-                onChange={(event) => setAge(event.target.value as AgeSpecialty)}
-                className="mt-2 w-full border rounded-md px-3 py-2"
-              >
-                {ageOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.18),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(249,115,22,0.12),_transparent_28%),linear-gradient(180deg,#f7fafc_0%,#eef4ff_42%,#f8fafc_100%)]">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] backdrop-blur">
+          <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="relative overflow-hidden bg-slate-950 px-6 py-8 text-white sm:px-8 lg:px-10 lg:py-10">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.35),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.22),_transparent_34%)]" />
+              <div className="relative">
+                <div className="mb-6 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-sky-100">
+                    Melbourne-first
+                  </span>
+                  <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200">
+                    Triage + directory
+                  </span>
+                  <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-100">
+                    Emergency-aware routing
+                  </span>
+                </div>
+
+                <h1 className="max-w-xl text-4xl font-black leading-tight sm:text-5xl">
+                  Find the right Melbourne dog trainer without guessing first.
+                </h1>
+                <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 sm:text-lg">
+                  Start with your dog&apos;s stage, location, and behaviour needs. We push you toward
+                  the right kind of trainer, not just the longest list.
+                </p>
+
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  {reassurancePoints.map((point) => (
+                    <div
+                      key={point}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-100"
+                    >
+                      {point}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  {quickRoutes.map((route) => (
+                    <Link
+                      key={route.href}
+                      href={route.href}
+                      className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors hover:bg-white/10"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <h2 className="text-sm font-semibold text-white">{route.title}</h2>
+                        <span className="text-sky-200 transition-transform group-hover:translate-x-1">
+                          →
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">{route.body}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="font-semibold text-sm">Behaviour issues (optional)</label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {issueOptions.map((option) => (
-                  <button
-                    type="button"
-                    key={option.value}
-                    onClick={() => handleIssueToggle(option.value)}
-                    className={`rounded-md border px-3 py-2 text-sm text-left ${
-                      issues.includes(option.value)
-                        ? 'bg-blue-600 text-white border-transparent'
-                        : 'bg-gray-100 text-gray-700 border-transparent'
-                    }`}
+            <div className="bg-white px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
+                    Find your shortlist
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                    Start with the essentials
+                  </h2>
+                </div>
+                <div className="rounded-2xl bg-slate-100 px-4 py-3 text-right">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Best for
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-700">
+                    first-time comparisons
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="text-sm font-semibold text-slate-800" htmlFor="age">
+                    Dog&apos;s age or stage
+                  </label>
+                  <select
+                    id="age"
+                    value={age}
+                    onChange={(event) => setAge(event.target.value as AgeSpecialty)}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                   >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+                    {ageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-sm font-semibold text-slate-800">
+                      Behaviour issues (optional)
+                    </label>
+                    <span className="text-xs text-slate-500">
+                      Pick the most important concerns
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {issueOptions.map((option) => {
+                      const selected = issues.includes(option.value)
+                      return (
+                        <button
+                          type="button"
+                          key={option.value}
+                          onClick={() => handleIssueToggle(option.value)}
+                          className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                            selected
+                              ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-slate-800" htmlFor="suburb">
+                    Suburb
+                  </label>
+                  <div className="mt-2">
+                    <SuburbAutocomplete value={selectedSuburb} onChange={setSelectedSuburb} />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-slate-500">
+                      Select a real suburb so distance filtering stays accurate.
+                    </span>
+                    {selectedSuburb && (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
+                        {selectedSuburb.name} selected
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-sm font-semibold text-slate-800" htmlFor="radius">
+                      Search radius
+                    </label>
+                    <span className="text-sm font-semibold text-slate-700">{radius} km</span>
+                  </div>
+                  <input
+                    id="radius"
+                    type="range"
+                    min={5}
+                    max={40}
+                    step={5}
+                    value={radius}
+                    onChange={(event) => setRadius(Number(event.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-blue-700"
+                  />
+                  <div className="mt-2 flex justify-between text-xs text-slate-500">
+                    <span>Local</span>
+                    <span>Broader Melbourne</span>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <Button type="submit" size="lg" className="w-full justify-center">
+                    Find trainers
+                  </Button>
+                  <p className="text-center text-xs leading-5 text-slate-500">
+                    You&apos;ll land on a searchable shortlist with your suburb, stage, and key needs
+                    already applied.
+                  </p>
+                </div>
+              </form>
             </div>
-
-            <div>
-              <label className="font-semibold text-sm" htmlFor="suburb">Suburb</label>
-              <div className="mt-2">
-                <SuburbAutocomplete
-                  value={selectedSuburb}
-                  onChange={setSelectedSuburb}
-                />
-              </div>
-              {selectedSuburb && (
-                <p className="text-xs text-green-600 mt-1">Selected suburb: {selectedSuburb.name}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="font-semibold text-sm" htmlFor="radius">Search radius (km)</label>
-              <input
-                id="radius"
-                type="number"
-                min={5}
-                max={100}
-                value={radius}
-                onChange={(event) => setRadius(Number(event.target.value))}
-                className="mt-2 w-full border rounded-md px-3 py-2"
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-red-600">{error}</div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full btn-primary px-4 py-3 text-white rounded-md font-semibold"
-            >
-              Find trainers
-            </button>
-          </form>
+          </div>
         </section>
       </div>
     </main>

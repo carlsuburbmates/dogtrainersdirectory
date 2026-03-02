@@ -1,8 +1,8 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.2
-**Last Updated:** 2026-02-13
+**Version:** v1.3
+**Last Updated:** 2026-03-02
 
 ## 1. Inventory source
 Implementation-discovered route inventory is generated and versioned at:
@@ -12,8 +12,11 @@ This file defines navigation intent, canonical route decisions, and separation r
 
 ## 2. Public journey intent
 - Entry points for public visitors are `/`, `/triage`, `/search`, `/directory`, and `/emergency`.
+- `/` is the guided public launch point: it should support fast shortlist setup (stage, suburb, key issues) while also clearly routing to triage, directory browse, and emergency help.
 - `/triage` is the needs-first flow that routes users to either emergency help or focused search.
+- `/search` is the shortlist refinement surface: filters and results must coexist in a way that keeps the next move to a trainer profile obvious.
 - `/directory` and `/trainers/[id]` are discovery and profile surfaces.
+- `/trainers/[id]` is the trust and contact decision surface: it must make fit, proof, and direct contact options visible before the user leaves the directory.
 - `/trainer/[id]` exists for backward compatibility and must redirect to `/trainers/[id]`.
 - Legal and policy pages (`/privacy`, `/terms`, `/disclaimer`) must remain publicly accessible.
 

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
 import ContactForm from './ContactForm'
@@ -15,14 +16,20 @@ interface Review {
   created_at: string
 }
 
-export default async function TrainerPage({ params, searchParams }: { params: { id: string }, searchParams?: Record<string, string> }) {
+export default async function TrainerPage({
+  params,
+  searchParams
+}: {
+  params: { id: string }
+  searchParams?: Record<string, string>
+}) {
   const started = Date.now()
   const resolvedParams = await Promise.resolve(params as any)
   const resolvedSearchParams = await Promise.resolve(searchParams as any)
-  const flowSource = typeof resolvedSearchParams?.flow_source === 'string'
-    ? resolvedSearchParams.flow_source
-    : null
+  const flowSource =
+    typeof resolvedSearchParams?.flow_source === 'string' ? resolvedSearchParams.flow_source : null
   const id = Number(resolvedParams.id)
+
   if (isNaN(id)) {
     await recordLatencyMetric({
       area: 'trainer_profile_page',
@@ -42,16 +49,12 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
     return notFound()
   }
 
-  // Use get_trainer_profile RPC to fetch trainer data
-  // Pass decryption key for sensitive fields
   const decryptKey = process.env.SUPABASE_PGCRYPTO_KEY || null
-  const { data, error } = await supabaseAdmin
-    .rpc('get_trainer_profile', {
-      p_business_id: id,
-      p_key: decryptKey
-    })
+  const { data, error } = await supabaseAdmin.rpc('get_trainer_profile', {
+    p_business_id: id,
+    p_key: decryptKey
+  })
 
-  // RPC returns array, get first result
   const trainer = data?.[0]
 
   if (!trainer || error) {
@@ -73,13 +76,12 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
       })
       return (
         <div className="container mx-auto p-6">
-          <h1 className="text-2xl font-bold mb-6">{resolvedSearchParams.e2eName}</h1>
+          <h1 className="mb-6 text-2xl font-bold">{resolvedSearchParams.e2eName}</h1>
           <div className="p-4">Trainer profile page (E2E fallback via query)</div>
         </div>
       )
     }
 
-    // render a client-side fallback that reads test fixtures from sessionStorage
     await recordLatencyMetric({
       area: 'trainer_profile_page',
       route: '/trainers/[id]',
@@ -99,7 +101,6 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
     return <TrainerFallback id={id} />
   }
 
-  // Fetch approved reviews for this trainer
   const { data: reviews } = await supabaseAdmin
     .from('reviews')
     .select('id, reviewer_name, rating, title, content, created_at')
@@ -112,11 +113,12 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating)
   }
 
-  const formatServiceType = (type: string) => {
-    return type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || type
+  const formatServiceType = (value: string) => {
+    return value?.replace(/_/g, ' ').replace(/\b\w/g, (label) => label.toUpperCase()) || value
   }
 
   const isFeatured = trainer.featured_until && new Date(trainer.featured_until) > new Date()
+  const averageRating = parseFloat(trainer.average_rating || '0')
 
   await recordLatencyMetric({
     area: 'trainer_profile_page',
@@ -144,214 +146,313 @@ export default async function TrainerPage({ params, searchParams }: { params: { 
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold">{trainer.business_name}</h1>
-                {isFeatured && (
-                  <span className="px-3 py-1 bg-yellow-400 text-yellow-900 text-sm font-semibold rounded-full">
-                    ⭐ Featured
-                  </span>
-                )}
-                {trainer.abn_verified && (
-                  <span className="px-3 py-1 bg-green-400 text-green-900 text-sm font-semibold rounded-full">
-                    ✓ Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 text-blue-100 mt-2">
-                <span className="text-2xl">{getRatingStars(Math.round(parseFloat(trainer.average_rating || '0')))}</span>
-                <span className="text-lg font-medium">
-                  {parseFloat(trainer.average_rating || '0').toFixed(1)} ({trainer.review_count || 0} reviews)
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.18),_transparent_30%),linear-gradient(180deg,#eff6ff_0%,#f8fafc_38%,#ffffff_100%)]">
+      <div className="border-b border-white/10 bg-slate-950 text-white">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+          <div className="mb-5 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+            <Link
+              href={flowSource ? `/search?flow_source=${encodeURIComponent(flowSource)}` : '/search'}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200 transition-colors hover:bg-white/10"
+            >
+              Back to search
+            </Link>
+            {isFeatured && (
+              <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100">
+                Featured listing
+              </span>
+            )}
+            {trainer.abn_verified && (
+              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100">
+                Verified business
+              </span>
+            )}
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
+                {trainer.business_name}
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-200 sm:text-lg">
+                Review fit, contact details, and proof points before you reach out. This page is
+                designed to help you decide quickly, not keep hunting for basics.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-200">
+                <span>
+                  {trainer.suburb_name}, {trainer.suburb_postcode}
+                </span>
+                {trainer.council_name && <span>{trainer.council_name}</span>}
+                <span>
+                  {averageRating > 0
+                    ? `${averageRating.toFixed(1)} rating`
+                    : 'No public rating yet'}
                 </span>
               </div>
-              <div className="mt-4 flex items-center gap-2 text-blue-100">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>{trainer.suburb_name}, {trainer.suburb_postcode}</span>
-                {trainer.council_name && <span className="text-blue-200">• {trainer.council_name}</span>}
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                    Rating
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    {getRatingStars(Math.round(averageRating))}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {averageRating.toFixed(1)} from {trainer.review_count || 0}{' '}
+                    {trainer.review_count === 1 ? 'review' : 'reviews'}
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+                    Best for
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">
+                    Owners ready to shortlist a trainer and move directly into contact.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Quick trust check
+              </p>
+              <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  {trainer.abn_verified
+                    ? 'Business verification is visible on this listing.'
+                    : 'Business verification is not currently shown for this listing.'}
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  {trainer.review_count > 0
+                    ? `${trainer.review_count} approved reviews are visible below.`
+                    : 'This trainer does not yet have public reviews on the directory.'}
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  Services, age specialties, and behaviour support are listed below so you can
+                  assess fit before contacting them.
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Main Content - Left Column (2/3) */}
-          <div className="md:col-span-2 space-y-6">
-            {/* About Section */}
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-6">
             {trainer.bio && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{trainer.bio}</p>
-              </div>
+              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+                <h2 className="text-2xl font-bold text-slate-950">About this trainer</h2>
+                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700 sm:text-base">
+                  {trainer.bio}
+                </p>
+              </section>
             )}
 
-            {/* Services Section */}
-            {trainer.services && trainer.services.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Services Offered</h2>
-                <div className="grid md:grid-cols-2 gap-3">
-                  {trainer.services.map((service: string, index: number) => (
-                    <div key={index} className="flex items-center gap-2 bg-blue-50 rounded-lg p-3">
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-gray-800 font-medium">{formatServiceType(service)}</span>
+            {(trainer.services?.length > 0 ||
+              trainer.behavior_issues?.length > 0 ||
+              trainer.age_specialties?.length > 0) && (
+              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+                <h2 className="text-2xl font-bold text-slate-950">Fit snapshot</h2>
+                <div className="mt-5 space-y-5">
+                  {trainer.services && trainer.services.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Services offered
+                      </h3>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {trainer.services.map((service: string, index: number) => (
+                          <div
+                            key={`${service}-${index}`}
+                            className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-slate-800"
+                          >
+                            {formatServiceType(service)}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {trainer.behavior_issues && trainer.behavior_issues.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Behaviour issues addressed
+                      </h3>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {trainer.behavior_issues.map((issue: string, index: number) => (
+                          <span
+                            key={`${issue}-${index}`}
+                            className="rounded-full bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700"
+                          >
+                            {formatServiceType(issue)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {trainer.age_specialties && trainer.age_specialties.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Age specialties
+                      </h3>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {trainer.age_specialties.map((specialty: string, index: number) => (
+                          <span
+                            key={`${specialty}-${index}`}
+                            className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700"
+                          >
+                            {formatServiceType(specialty)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </section>
             )}
 
-            {/* Behavior Issues Section */}
-            {trainer.behavior_issues && trainer.behavior_issues.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Behavior Issues Addressed</h2>
-                <div className="flex flex-wrap gap-2">
-                  {trainer.behavior_issues.map((issue: string, index: number) => (
-                    <span key={index} className="px-3 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
-                      {formatServiceType(issue)}
-                    </span>
-                  ))}
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-950">
+                    Reviews ({trainer.review_count || 0})
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Use reviews as context, then confirm fit directly with the trainer.
+                  </p>
                 </div>
               </div>
-            )}
 
-            {/* Age Specialties Section */}
-            {trainer.age_specialties && trainer.age_specialties.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Age Specialties</h2>
-                <div className="flex flex-wrap gap-2">
-                  {trainer.age_specialties.map((specialty: string, index: number) => (
-                    <span key={index} className="px-3 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                      {formatServiceType(specialty)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Reviews Section */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Reviews ({trainer.review_count || 0})</h2>
-              
               {reviews && reviews.length > 0 ? (
-                <div className="space-y-6">
+                <div className="mt-6 space-y-6">
                   {reviews.map((review: Review) => (
-                    <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
-                      <div className="flex items-center justify-between mb-2">
+                    <div
+                      key={review.id}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-sm font-semibold text-white">
                             {review.reviewer_name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">{review.reviewer_name}</h3>
-                            <p className="text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString()}</p>
+                            <h3 className="font-semibold text-slate-900">{review.reviewer_name}</h3>
+                            <p className="text-sm text-slate-500">
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                         <span className="text-lg">{getRatingStars(review.rating)}</span>
                       </div>
                       {review.title && (
-                        <h4 className="font-semibold text-gray-900 mb-2">{review.title}</h4>
+                        <h4 className="mt-4 text-base font-semibold text-slate-900">{review.title}</h4>
                       )}
                       {review.content && (
-                        <p className="text-gray-700 leading-relaxed">{review.content}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-700">{review.content}</p>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No reviews yet. Be the first to review this trainer!</p>
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-6 text-center text-sm text-slate-500">
+                  No reviews yet. Use the service fit, verification, and direct conversation to
+                  make the next decision.
                 </div>
               )}
-            </div>
+            </section>
           </div>
 
-          {/* Sidebar - Right Column (1/3) */}
-          <div className="space-y-6">
-            {/* Contact Information Card */}
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h3>
-              
-              <div className="space-y-4">
+          <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+              <h3 className="text-xl font-bold text-slate-950">Contact Information</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Reach out once the fit looks right. The fastest path is usually phone or email.
+              </p>
+
+              <div className="mt-5 space-y-4">
                 {trainer.phone && (
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Phone</p>
-                      <a href={`tel:${trainer.phone}`} className="text-blue-600 hover:underline font-medium">
-                        {trainer.phone}
-                      </a>
-                    </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Phone
+                    </p>
+                    <a
+                      href={`tel:${trainer.phone}`}
+                      className="mt-2 inline-block text-base font-semibold text-blue-700 hover:underline"
+                    >
+                      {trainer.phone}
+                    </a>
                   </div>
                 )}
 
                 {trainer.email && (
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Email</p>
-                      <a href={`mailto:${trainer.email}`} className="text-blue-600 hover:underline break-all">
-                        {trainer.email}
-                      </a>
-                    </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Email
+                    </p>
+                    <a
+                      href={`mailto:${trainer.email}`}
+                      className="mt-2 inline-block break-all text-base font-semibold text-blue-700 hover:underline"
+                    >
+                      {trainer.email}
+                    </a>
                   </div>
                 )}
 
                 {trainer.website && (
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Website</p>
-                      <a href={trainer.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
-                        Visit Website
-                      </a>
-                    </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Website
+                    </p>
+                    <a
+                      href={trainer.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center text-base font-semibold text-blue-700 hover:underline"
+                    >
+                      Visit website
+                    </a>
                   </div>
                 )}
 
                 {trainer.address && (
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <div>
-                      <p className="text-sm text-gray-600 font-medium">Address</p>
-                      <p className="text-gray-800">{trainer.address}</p>
-                    </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Address
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">{trainer.address}</p>
                   </div>
                 )}
               </div>
 
-              {/* Pricing Information */}
               {trainer.pricing && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Pricing</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap">{trainer.pricing}</p>
+                <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                    Pricing
+                  </h4>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                    {trainer.pricing}
+                  </p>
                 </div>
               )}
+            </section>
 
-              {/* Contact Form */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <ContactForm trainerId={id} trainerName={trainer.business_name} trainerEmail={trainer.email} />
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+              <h3 className="text-xl font-bold text-slate-950">Send an enquiry</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Use the form if you want a documented first contact through the directory.
+              </p>
+              <div className="mt-5 border-t border-slate-200 pt-5">
+                <ContactForm
+                  trainerId={id}
+                  trainerName={trainer.business_name}
+                  trainerEmail={trainer.email}
+                />
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </div>

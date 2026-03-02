@@ -25,8 +25,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
-- The public UI/UX is not complete yet, so website completion now takes priority ahead of broader market optimization.
-- Current top priority: `WC-301`.
+- The public UI/UX foundation is now complete across the primary public surfaces, so trust-density work now takes priority ahead of broader market optimization.
+- Current top priority: `MO-304`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -90,7 +90,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ### Phase 3 - Website Completion
 
-**WC-301: Complete the public UI/UX foundation**
+**WC-301: Complete the public UI/UX foundation (completed 2026-03-02)**
 - Purpose: finish the public-facing product experience so the site is credible before broader optimization work.
 - Definition of done:
   - Core public surfaces (`/`, `/triage`, `/search`, `/directory`, `/trainers/[id]`, `/emergency`, `/promote`) feel intentional, cohesive, and complete on desktop and mobile.
@@ -200,3 +200,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `PH-205` completed by adding one controlled verification dataset to the live project: a `City of Yarra` council row, a linked `Collingwood` suburb relationship, one active business (`DTD Verification Trainer PH205`, `business_id = 1`), and the minimum specialization/behavior/service relations. Live verification then confirmed `GET /api/public/search?q=PH205&limit=1` returns the inserted business and `GET /trainers/1` renders the real profile path without the fallback marker.
 - 2026-03-02: `MO-303` completed from a sourced competitor scan covering Yellow Pages, Oneflare, APDT Australia, Bark Busters Victoria, Melbourne Dog Trainers, and Next Level Dog Training. The highest-confidence market gaps are: low visible inventory depth, weak public trust density, limited suburb/service landing coverage, higher post-discovery friction, and a business-side monetisation proposition that does not yet show clear public-facing ROI. The resulting prioritized implementation backlog is `MO-304` through `MO-308`.
 - 2026-03-02: The roadmap was reclassified to make `Website Completion` explicit before broader market optimization. `WC-301` is now the active priority because the public UI/UX is still unfinished, with `MO-304` and `MO-306` queued as the trust and conversion layers that depend on that foundation.
+- 2026-03-02: `WC-301` completed by rebuilding the core public presentation layer on `/`, `/search`, and `/trainers/[id]` around clearer hierarchy, stronger trust framing, and more intentional CTA placement. The route-intent SSOT in `05_ROUTES_AND_NAV.md` was updated alongside the implementation so the public journey expectations match the finished UI foundation. `MO-304` is now the active priority.
