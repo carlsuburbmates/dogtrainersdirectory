@@ -25,6 +25,7 @@
 | 2026-03-01 | D-115 | `PH-203` accepted as complete | live triage submissions now persist against the current `emergency_triage_logs` schema instead of failing on missing required columns | `PH-204` is now the active priority |
 | 2026-03-01 | D-116 | `PH-204` accepted as complete and follow-on data recovery opened | the live RPC layer is restored, but the live project has zero business rows, so end-to-end directory verification still needs a controlled dataset | `PH-205` is now the active priority |
 | 2026-03-01 | D-117 | `PH-205` accepted as complete and Production Hardening closed again | the live project now has a minimal controlled listing that proves the restored directory RPC path end-to-end | `MO-303` is now the active priority |
+| 2026-03-02 | D-118 | `MO-303` accepted as complete | sourced competitor evidence confirms DTD’s next highest-value work is trust density, local landing coverage, contact friction reduction, inventory depth, and clearer business-side ROI | `MO-304` is now the active priority and `MO-305` to `MO-308` are queued |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -43,6 +44,7 @@
 | 2026-03-01 | backend | PH-203 | `src/app/api/emergency/triage/route.ts`, `src/app/api/emergency/triage/persistence.ts`, `tests/unit/emergency-triage-persistence.test.ts` | `git pull origin main`; `npm run type-check`; `npm run lint`; `npm run test`; real local `POST /api/emergency/triage` before and after fix; live DB row check | pass (`500 -> 200`, live insert verified) | execute `PH-204` |
 | 2026-03-01 | backend | PH-204 | `supabase/schema.sql` | `git pull origin main`; remote `psql` apply for `20250210153000` + `20250210160000`; `NOTIFY pgrst, 'reload schema'`; PostgREST RPC checks; local `GET /api/public/search`; `npm run schema:refresh`; `npm run type-check`; `npm run lint`; `npm run test` | pass (RPCs restored, search route `200`); blocked only by empty live business dataset for trainer page proof | execute `PH-205` |
 | 2026-03-01 | backend | PH-205 | no repo file changes (live data only) | `git pull origin main`; remote `psql` controlled inserts for council, suburb link, business, and trainer relations; direct RPC checks; local `GET /api/public/search?q=PH205&limit=1`; local `GET /trainers/1`; `npm run type-check`; `npm run lint`; `npm run test` | pass (live search and trainer profile verified) | execute `MO-303` |
+| 2026-03-02 | main-control | MO-303 | `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/08_OPS_RUNBOOK.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | sourced read-only competitor scan reviewed against SSOT; `npm run docs:guard` | pass (optimization backlog derived without repo drift) | execute `MO-304` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

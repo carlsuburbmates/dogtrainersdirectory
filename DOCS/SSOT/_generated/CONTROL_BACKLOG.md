@@ -26,7 +26,12 @@
 | PH-203 | Production Hardening | Restore emergency triage write compatibility with live schema | completed | backend | `WORKPLAN` `PH-203` | live triage submissions stop failing on `emergency_triage_logs` inserts |
 | PH-204 | Production Hardening | Restore live public directory RPC availability | completed | backend | `WORKPLAN` `PH-204` | `search_trainers` and `get_trainer_profile` are callable in the live project again |
 | PH-205 | Production Hardening | Restore minimum live directory data for end-to-end verification | completed | backend | `WORKPLAN` `PH-205` | live search returns at least one real business and `/trainers/<id>` renders via RPC |
-| MO-303 | Market Optimization | Run external market scan and create the next optimization backlog | in_progress | main-control | `WORKPLAN` `MO-303` | market findings are converted into a prioritized optimization backlog |
+| MO-303 | Market Optimization | Run external market scan and create the next optimization backlog | completed | main-control | `WORKPLAN` `MO-303` | market findings are converted into a prioritized optimization backlog |
+| MO-304 | Market Optimization | Increase public trust density on search and trainer profiles | in_progress | main-control | `WORKPLAN` `MO-304` | public trust signals are materially stronger before contact |
+| MO-305 | Market Optimization | Build suburb and service landing-page coverage for local SEO | pending | main-control | `WORKPLAN` `MO-305` | DTD gains a repeatable local landing and metadata strategy |
+| MO-306 | Market Optimization | Reduce buyer friction with clearer primary conversion actions | pending | main-control | `WORKPLAN` `MO-306` | results and profiles expose a clear measurable primary CTA |
+| MO-307 | Market Optimization | Expand live directory inventory depth beyond the verification fixture | pending | backend | `WORKPLAN` `MO-307` | live directory depth is no longer a one-record environment |
+| MO-308 | Market Optimization | Repackage business-side monetisation around visible ROI | pending | main-control | `WORKPLAN` `MO-308` | featured placement has clear public-facing value and business messaging |
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

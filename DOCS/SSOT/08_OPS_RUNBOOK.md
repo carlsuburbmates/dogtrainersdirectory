@@ -118,7 +118,7 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 ### 14.5 Operational interpretation
 - The telemetry write path is working and the new `commercial_funnel` instrumentation is live.
 - This baseline is useful as an engineering reference point only; it is not representative of real user demand or conversion.
-- Market optimization should pause until `PH-203` and `PH-204` restore the live triage and public directory paths.
+- Market optimization can proceed, but this baseline should still be treated as controlled engineering traffic rather than organic demand.
 
 ### 14.6 Controlled verification dataset (PH-205)
 - To unblock true end-to-end live verification, a single controlled listing was inserted into the live project during `PH-205`.
@@ -130,3 +130,4 @@ Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and
 - Supporting relation rows were also added for one age specialty, one behavior issue, and one service type.
 - This record is for environment verification only; it is not a production-vetted directory listing.
 - If broader live validation is needed later, replace this narrow fixture with a controlled canonical import or vetted real onboarding data.
+- Reproducibility path: reuse `data/suburbs_councils_mapping.csv` for the location link and a controlled `psql` transaction for the minimal business + trainer relation rows; avoid broad seed imports unless explicitly intended.

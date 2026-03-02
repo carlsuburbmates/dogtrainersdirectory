@@ -15,17 +15,17 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ## Current State (as of 2026-03-01)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
-- Local `main` is kept synced to `origin/main` between task commits; `MO-302` reopened Production Hardening with newly verified live regressions.
+- Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
 - Build Completion is complete.
-- Production Hardening was completed through `PH-202`, then reopened by `MO-302` findings.
+- Production Hardening is complete.
 - `PH-203` is now complete and the live triage write path is restored.
 - `PH-204` is now complete and the live public directory RPC layer is restored.
 - `PH-205` is now complete and the live project has a minimum controlled directory dataset for true end-to-end verification.
-- Production Hardening is complete again.
 - Market instrumentation baseline is now in place.
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
-- Current top priority: `MO-303`.
+- External competitor scan is complete and the next optimization backlog is now defined from sourced market evidence.
+- Current top priority: `MO-304`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -102,13 +102,48 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Record known friction points in the current build.
   - Baseline is documented in canonical docs/runbooks so future optimization is comparable.
 
-**MO-303: Run external market scan and create the next optimization backlog**
+**MO-303: Run external market scan and create the next optimization backlog (completed 2026-03-02)**
 - Purpose: turn the now-stable live baseline into a deliberate optimization plan instead of ad-hoc feature work.
 - Definition of done:
   - Compare the current build against a defined competitor set and direct market expectations.
   - Record gaps across positioning, UX, trust signals, monetisation, and conversion flow.
   - Produce a prioritized optimization backlog that maps market findings to concrete implementation tasks.
   - Keep findings and the resulting backlog in canonical SSOT documents.
+
+**MO-304: Increase public trust density on search and trainer profiles**
+- Purpose: close the largest visible trust gap between DTD and market leaders.
+- Definition of done:
+  - Search results and trainer profiles surface stronger proof signals (for example: credentials, vetting state, review evidence, and clearer trust framing).
+  - Trust signals are sourced from canonical data fields or explicit new schema-backed fields, not static copy.
+  - The public user can distinguish why a listing is trustworthy before contacting the trainer.
+
+**MO-305: Build suburb and service landing-page coverage for local SEO**
+- Purpose: match the location/service discovery patterns used by strong directory and local trainer competitors.
+- Definition of done:
+  - DTD has a defined landing-page strategy for suburb/region and service-specific discovery.
+  - Search metadata and structured data stop relying on placeholder location/pricing values for core search surfaces.
+  - The routing and content strategy is explicit enough to support repeatable SEO and local discovery work.
+
+**MO-306: Reduce buyer friction with clearer primary conversion actions**
+- Purpose: make the post-discovery next step as obvious and low-friction as the strongest competitors.
+- Definition of done:
+  - Search and trainer profile surfaces expose a clear primary next action (contact, enquiry, booking, or equivalent handoff).
+  - The chosen CTA path is consistent from results to profile and measurable in telemetry.
+  - Conversion friction is reduced without breaking the triage-first differentiation.
+
+**MO-307: Expand live directory inventory depth beyond the verification fixture**
+- Purpose: move from a technically verified live directory to a market-comparable discovery surface.
+- Definition of done:
+  - The live project contains more than the single controlled verification listing.
+  - Coverage strategy for real listings (controlled imports, onboarding, or vetted seed path) is explicit.
+  - Search depth and geography are sufficient to validate the discovery experience beyond a one-record environment.
+
+**MO-308: Repackage business-side monetisation around visible ROI**
+- Purpose: align the featured-placement offer with the trust and conversion expectations seen in competitor flows.
+- Definition of done:
+  - The business-side promotion proposition clearly explains what extra visibility or conversion benefit is purchased.
+  - Featured placement is reflected in public discovery surfaces with visible differentiation.
+  - Monetisation messaging and product packaging are coherent with the public trust and conversion model.
 
 ### Phase 2 Follow-on Recovery (opened by `MO-302`)
 
@@ -152,3 +187,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-01: `PH-203` completed by extracting a dedicated triage persistence helper that writes the required `emergency_triage_logs` columns (`description`, `predicted_category`, `recommended_flow`) and normalizes persisted classifications to the live enum-safe set. Unit coverage was added for the insert payload, and live verification confirmed `POST /api/emergency/triage` now returns `200` and inserts rows successfully against the current Supabase schema.
 - 2026-03-01: `PH-204` completed by restoring the canonical `public.search_trainers(...)` and `public.get_trainer_profile(...)` RPCs from the repo’s existing 2025-02-10 migrations, refreshing the PostgREST schema cache, and refreshing `supabase/schema.sql`. Live verification confirmed PostgREST recognizes both RPCs and `GET /api/public/search` now returns `200`, but the live project still has `0` rows in `public.businesses`, so full trainer profile verification remains blocked and is now tracked as `PH-205`.
 - 2026-03-01: `PH-205` completed by adding one controlled verification dataset to the live project: a `City of Yarra` council row, a linked `Collingwood` suburb relationship, one active business (`DTD Verification Trainer PH205`, `business_id = 1`), and the minimum specialization/behavior/service relations. Live verification then confirmed `GET /api/public/search?q=PH205&limit=1` returns the inserted business and `GET /trainers/1` renders the real profile path without the fallback marker.
+- 2026-03-02: `MO-303` completed from a sourced competitor scan covering Yellow Pages, Oneflare, APDT Australia, Bark Busters Victoria, Melbourne Dog Trainers, and Next Level Dog Training. The highest-confidence market gaps are: low visible inventory depth, weak public trust density, limited suburb/service landing coverage, higher post-discovery friction, and a business-side monetisation proposition that does not yet show clear public-facing ROI. The resulting prioritized implementation backlog is `MO-304` through `MO-308`.
