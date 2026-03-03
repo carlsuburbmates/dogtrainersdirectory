@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import EmergencyE2EControls from '@/components/e2e/EmergencyE2EControls'
 
@@ -39,7 +39,7 @@ interface TriageResponse {
   error?: string
 }
 
-export default function EmergencyPage() {
+function EmergencyPageContent() {
   const searchParams = useSearchParams()
   // Emergency Resources state
   const [location, setLocation] = useState('')
@@ -452,5 +452,19 @@ export default function EmergencyPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function EmergencyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-8 text-sm text-gray-500">
+          Loading emergency resources...
+        </div>
+      }
+    >
+      <EmergencyPageContent />
+    </Suspense>
   )
 }

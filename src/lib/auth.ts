@@ -178,23 +178,23 @@ export async function requireAdmin(): Promise<{ authorized: boolean; userId: str
 }
 
 /**
- * Check admin authentication from Next.js middleware request
+ * Check admin authentication from the Next.js proxy request
  * 
  * Middleware-compatible authentication check that extracts user from
  * NextRequest cookies and verifies admin role. Specifically designed
- * for use in Next.js middleware (src/middleware.ts) where the standard
+ * for use in Next.js proxy execution (src/proxy.ts) where the standard
  * cookies() API is not available.
  * 
- * @param {NextRequest} request - The Next.js middleware request object
+ * @param {NextRequest} request - The Next.js proxy request object
  * @returns {Promise<string | null>} User ID if authenticated admin, null otherwise
  * 
  * @example
  * ```typescript
- * // In src/middleware.ts
+ * // In src/proxy.ts
  * import { NextRequest, NextResponse } from 'next/server';
  * import { checkAdminAuthFromRequest } from '@/lib/auth';
  * 
- * export async function middleware(request: NextRequest) {
+ * export async function proxy(request: NextRequest) {
  *   const adminUserId = await checkAdminAuthFromRequest(request);
  *   
  *   if (!adminUserId) {
@@ -222,7 +222,7 @@ export async function requireAdmin(): Promise<{ authorized: boolean; userId: str
  * 
  * **Key difference from requireAdmin():**
  * - requireAdmin() uses cookies() API (for API routes/server components)
- * - checkAdminAuthFromRequest() uses NextRequest.cookies (for middleware)
+ * - checkAdminAuthFromRequest() uses NextRequest.cookies (for proxy execution)
  * 
  * @see {@link requireAdmin} for API route authentication
  * @see {@link isAdmin} for admin role check only

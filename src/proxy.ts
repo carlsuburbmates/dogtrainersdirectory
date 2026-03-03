@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { checkAdminAuthFromRequest } from '@/lib/auth'
 
 /**
- * Next.js middleware for admin route protection
+ * Next.js proxy for admin route protection
  * 
  * Intercepts all requests to admin surfaces and verifies that the user
  * is both authenticated (has valid Supabase session) and authorized
@@ -15,9 +15,9 @@ import { checkAdminAuthFromRequest } from '@/lib/auth'
  * @returns {Promise<NextResponse>} Response object (redirect, 401, or continue)
  * 
  * @example
- * // This middleware runs automatically for configured routes
+ * // This proxy runs automatically for configured routes
  * // User attempts to access /admin/reviews:
- * // 1. Middleware checks authentication via checkAdminAuthFromRequest()
+ * // 1. Proxy checks authentication via checkAdminAuthFromRequest()
  * // 2. If not admin: redirects to /login?redirectTo=/admin/reviews
  * // 3. If admin: allows access (NextResponse.next())
  * 
@@ -44,7 +44,7 @@ import { checkAdminAuthFromRequest } from '@/lib/auth'
  * - Fail-safe behavior (denies access on any auth errors)
  * 
  * **Route Matching:**
- * The middleware only runs for routes matching the patterns in `config.matcher`:
+ * The proxy only runs for routes matching the patterns in `config.matcher`:
  * - `/admin/:path*` - All admin pages and nested routes
  * - `/api/admin/:path*` - All admin API endpoints
  * 
@@ -52,7 +52,7 @@ import { checkAdminAuthFromRequest } from '@/lib/auth'
  * @see {@link config} for route matcher configuration
  * 
  * @security
- * This middleware is critical for protecting admin-only functionality.
+ * This proxy is critical for protecting admin-only functionality.
  * Do not modify without security review. Any changes must maintain:
  * - Session validation via Supabase
  * - Admin role verification via profiles table
@@ -60,7 +60,7 @@ import { checkAdminAuthFromRequest } from '@/lib/auth'
  * 
  * @since Phase 1 Batch 1 - Admin authentication implementation
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Check if this is an admin route
@@ -96,9 +96,9 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
- * Middleware configuration
+ * Proxy configuration
  * 
- * Specifies which routes should be intercepted by the middleware.
+ * Specifies which routes should be intercepted by the proxy.
  * Only paths matching these patterns will trigger the authentication check.
  * 
  * @property {string[]} matcher - Array of route patterns to match
@@ -112,10 +112,10 @@ export async function middleware(request: NextRequest) {
  * - `:path*` - Matches zero or more path segments (wildcard)
  * 
  * **Performance note:**
- * Next.js middleware is efficient, but runs on every matched request.
+ * Next.js proxy execution is efficient, but runs on every matched request.
  * Keep matcher patterns specific to minimize unnecessary invocations.
  * 
- * @see {@link https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher}
+ * @see {@link https://nextjs.org/docs/app/api-reference/file-conventions/proxy#matcher}
  */
 export const config = {
   matcher: [
