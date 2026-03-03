@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-03
+**Last Updated:** 2026-03-04
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -36,6 +36,7 @@
 | 2026-03-03 | D-126 | `PH-206` accepted as complete and the current roadmap cycle is closed | the admin monetisation Playwright path now renders through an E2E-only auth bypass, the stale admin queues mock is aligned, and the monetisation snapshot is refreshed | all currently planned roadmap tasks are complete pending the next prioritisation cycle |
 | 2026-03-04 | D-127 | `AUD-001` accepted and Product Completion Recovery opened | the completion audit proved the product is only partially complete despite the previous roadmap cycle being closed, with monetisation, triage logic, operator dead ends, and failure recovery still incomplete | `PC-401` is now the active priority and `PC-402` to `PC-406` are queued |
 | 2026-03-04 | D-128 | `PC-401` accepted as complete | featured placement is now safely gated in live mode, deterministically stubbed in E2E mode, the admin monetisation overview is aligned to the live schema, and the admin monetisation tab now fails cleanly instead of hanging | `PC-402` is now the active priority |
+| 2026-03-04 | D-129 | `PC-402` accepted as complete | triage gate visibility and `EmergencyGate` branch selection now share one canonical emergency mapping, removing the split logic that let some urgent issues bypass escalation | `PC-403` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -65,6 +66,7 @@
 | 2026-03-03 | main-control | PH-206 | `src/lib/auth.ts`, `tests/e2e/monetization.spec.ts`, `tests/e2e/monetization.spec.ts-snapshots/monetization-upgrade-chromium-darwin.png`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/monetization.spec.ts`; `npm run docs:guard` | pass (admin monetisation Playwright flow restored) | await next prioritisation cycle |
 | 2026-03-04 | audit lane | AUD-001 | no repo file changes (read-only audit) | source inspection of SSOT + route tree; local audit server with Playwright runtime checks across public/admin routes and edge states | pass (audit complete; completion gaps severity-ranked) | open Product Completion Recovery |
 | 2026-03-04 | implementation lane | PC-401 | `src/app/promote/page.tsx`, `src/app/promote/promote-panel.tsx`, `src/lib/monetization.ts`, `src/app/api/stripe/create-checkout-session/route.ts`, `src/app/api/admin/monetization/overview/route.ts`, `src/app/admin/enhanced-dashboard.tsx`, `tests/e2e/monetization.spec.ts`, `DOCS/SSOT/06_MONETISATION.md`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/monetization.spec.ts`; direct non-E2E `/promote?businessId=1` page check; `npm run docs:guard` | pass (featured placement flow is safely usable or terminal in live mode, and green in E2E mode) | execute `PC-402` |
+| 2026-03-04 | implementation lane | PC-402 | `src/app/triage/page.tsx`, `src/components/triage/EmergencyGate.tsx`, `src/lib/triageEmergency.ts`, `tests/unit/triage-emergency.test.ts`, `DOCS/SSOT/05_ROUTES_AND_NAV.md`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`; `npm run lint`; `npm run test`; `npm run docs:guard` | pass (triage and \`EmergencyGate\` now share one canonical emergency mapping with regression coverage) | execute `PC-403` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

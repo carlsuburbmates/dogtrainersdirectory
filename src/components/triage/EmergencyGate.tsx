@@ -2,6 +2,7 @@ import React from 'react'
 import { Button } from '@/components/ui/Button'
 import { Warning } from '@/components/ui/Callout'
 import type { BehaviorIssue } from '@/types/database'
+import { inferEmergencyFlow } from '@/lib/triageEmergency'
 
 interface EmergencyGateProps {
   selectedIssues: BehaviorIssue[]
@@ -10,36 +11,8 @@ interface EmergencyGateProps {
   onClose: () => void
 }
 
-// Per SSOT mapping of symptoms suggesting emergency branch.
-// Maps the supported BehaviourIssue enums to the nearest emergency flow.
-const MEDICAL_ISSUES: ReadonlySet<BehaviorIssue> = new Set([
-  'dog_aggression',
-  'mouthing_nipping_biting',
-  'destructive_behaviour'
-])
-const STRAY_ISSUES: ReadonlySet<BehaviorIssue> = new Set([
-  'rescue_dog_support'
-])
-const CRISIS_ISSUES: ReadonlySet<BehaviorIssue> = new Set([
-  'resource_guarding',
-  'anxiety_general'
-])
-
-// Determine the most appropriate emergency branch based on selected issues
-const inferEmergencyBranch = (
-  selectedIssues: BehaviorIssue[]
-): 'medical' | 'stray' | 'crisis' | null => {
-  // Medical takes precedence
-  if (selectedIssues.some(i => MEDICAL_ISSUES.has(i))) return 'medical'
-  // Then stray
-  if (selectedIssues.some(i => STRAY_ISSUES.has(i))) return 'stray'
-  // Crisis
-  if (selectedIssues.some(i => CRISIS_ISSUES.has(i))) return 'crisis'
-  return null
-}
-
 export const EmergencyGate = ({ selectedIssues, onContinueNormal, onEmergencyFlow, onClose }: EmergencyGateProps) => {
-  const branch = inferEmergencyBranch(selectedIssues)
+  const branch = inferEmergencyFlow(selectedIssues)
 
   const copy = {
     medical: {

@@ -11,6 +11,7 @@ import { TriageRequestSchema } from '@/lib/contracts'
 import { EmergencyGate } from '@/components/triage/EmergencyGate'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
 import type { SuburbResult } from '@/lib/api'
+import { hasEmergencyEscalation } from '@/lib/triageEmergency'
 
 // URL keys for step state
 const STEP_PARAM = 'step'
@@ -93,10 +94,7 @@ function TriageContent() {
   }
 
   const handleContinueFromIssues = () => {
-    // Show emergency gate if any of the selected issues suggest an emergency path
-    const emergencySuggestions = ['dog_aggression', 'mouthing_nipping_biting', 'anxiety_general']
-    const shouldShow = issues.some(i => emergencySuggestions.includes(i))
-    if (shouldShow) {
+    if (hasEmergencyEscalation(issues)) {
       setShowEmergencyGate(true)
     } else {
       goToStep('location')

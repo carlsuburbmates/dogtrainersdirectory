@@ -30,7 +30,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AUD-001` confirmed that the product is only partially complete: the core public experience is mostly usable, but urgent triage escalation logic is inconsistent and several operator/failure states still expose dead ends.
 - Product Completion Recovery is now reopened from the audit findings; no new optimisation work should start until the recovery slice is closed.
 - `PC-401` is now complete and the featured-placement flow is safely gated, schema-aligned, and operationally recoverable.
-- Current top priority: `PC-402`.
+- `PC-402` is now complete and triage emergency escalation now uses one canonical issue-to-flow mapping.
+- Current top priority: `PC-403`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -203,7 +204,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/api/admin/monetization/overview` matches the real schema contract and returns usable data instead of a `500`.
   - The admin monetisation tab shows a terminal error state and recovery path when data fails, never a perpetual loading placeholder.
 
-**PC-402: Unify triage emergency escalation logic**
+**PC-402: Unify triage emergency escalation logic (completed 2026-03-04)**
 - Purpose: make every escalation-worthy triage issue follow one canonical emergency decision path.
 - Definition of done:
   - The same issue mapping drives both the triage gate trigger and the `EmergencyGate` branch selection.
@@ -266,3 +267,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-03: `PH-206` completed by adding an E2E-only admin auth bypass in `src/lib/auth.ts` so Playwright can render `/admin` without a real login session, keeping production auth unchanged. The stale `/api/admin/queues` mock in `tests/e2e/monetization.spec.ts` was aligned to the current admin page contract, the monetisation snapshot was refreshed, and `tests/e2e/monetization.spec.ts` now passes fully.
 - 2026-03-04: `AUD-001` completed as a full-scope Product Experience & Functional Completion Audit across IA, interface, workflow, experience, conversion, and failure layers. The audit reopens product completion work with six recovery tasks: broken featured-placement monetisation, inconsistent triage emergency escalation, dead operator affordances, hard-stop failure states, mixed admin/public shell structure, and credibility/consistency debt. `PC-401` is now the active priority.
 - 2026-03-04: `PC-401` completed by introducing a shared checkout-availability contract, gating `/promote` when live checkout is unavailable, preserving deterministic E2E checkout stubs, rewriting the admin monetisation overview to merge business data without a broken implicit relation, and replacing the admin monetisation loading loop with a terminal error state plus retry action. The real-mode `/promote` page now also loads listing details against the actual `businesses` + `suburbs` schema. `PC-402` is now the active priority.
+- 2026-03-04: `PC-402` completed by extracting the triage emergency issue-to-flow mapping into a shared helper used by both `/triage` and `EmergencyGate`, removing the previous hardcoded gate subset that let `destructive_behaviour`, `rescue_dog_support`, and `resource_guarding` bypass escalation. Unit coverage now locks the full mapping and branch-priority behaviour. `PC-403` is now the active priority.
