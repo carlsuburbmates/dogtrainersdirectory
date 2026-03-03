@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-03)
+## Current State (as of 2026-03-04)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -27,13 +27,15 @@ Anything not listed here is **not worked on** (to prevent drift).
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
 - The public UI/UX foundation is complete, the first search-landing SEO slice is in place on the canonical `/search` route, and the live directory now has a controlled comparison baseline beyond the single verification fixture.
 - The first business-side monetisation packaging pass is complete on `/promote`, and the admin monetisation E2E path is restored and green.
-- All currently planned roadmap tasks are complete for this cycle.
-- Current top priority: none; the roadmap is awaiting the next prioritisation cycle.
+- `AUD-001` confirmed that the product is only partially complete: the core public experience is mostly usable, but monetisation is not functionally complete end-to-end, urgent triage escalation logic is inconsistent, and several operator/failure states still expose dead ends.
+- Product Completion Recovery is now reopened from the audit findings; no new optimisation work should start until the recovery slice is closed.
+- Current top priority: `PC-401`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
   3. Website Completion
   4. Market Optimization
+  5. Product Completion Recovery
 
 ## Completed Foundation Milestones
 
@@ -190,6 +192,51 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The admin monetisation navigation/assertion path is aligned to the current UI instead of a stale selector or stale assumption.
   - The promote-specific public assertions remain green after the admin test path is repaired.
 
+### Phase 5 - Product Completion Recovery (opened by `AUD-001`)
+
+**PC-401: Repair featured-placement monetisation to true end-to-end completeness**
+- Purpose: close the highest-severity product-completion gap by making the business-side revenue path actually work in real, non-stubbed conditions.
+- Definition of done:
+  - `/promote` does not expose a live upgrade CTA unless checkout can actually start with the required Stripe configuration.
+  - The Stripe checkout path works in real mode or fails with an intentional, terminal, user-facing state instead of a broken CTA loop.
+  - `/api/admin/monetization/overview` matches the real schema contract and returns usable data instead of a `500`.
+  - The admin monetisation tab shows a terminal error state and recovery path when data fails, never a perpetual loading placeholder.
+
+**PC-402: Unify triage emergency escalation logic**
+- Purpose: make every escalation-worthy triage issue follow one canonical emergency decision path.
+- Definition of done:
+  - The same issue mapping drives both the triage gate trigger and the `EmergencyGate` branch selection.
+  - No supported issue can be classified as emergency-worthy in one layer but bypass the gate in another.
+  - Regression coverage exists for each mapped emergency issue branch.
+
+**PC-403: Remove dead operator actions and broken internal affordances**
+- Purpose: eliminate visible operator dead ends that make the authenticated experience feel unfinished.
+- Definition of done:
+  - `/admin/triage` no longer exposes a CTA that opens a raw API endpoint and yields a `405`.
+  - Any remaining operator-facing test links are either converted into real tools or removed from production-like UI.
+  - Admin utility actions resolve to valid pages or valid bounded actions only.
+
+**PC-404: Add recovery paths for failure states**
+- Purpose: stop core user journeys from ending in hard dead ends when data is missing or a URL is stale.
+- Definition of done:
+  - Missing trainer profiles provide clear recovery actions back to search, directory, or home.
+  - High-risk empty/error states in the core public journey provide at least one meaningful next step.
+  - Recovery actions preserve useful context where practical.
+
+**PC-405: Separate admin IA and chrome from the public shell**
+- Purpose: make the authenticated operator experience structurally distinct from the public marketing shell.
+- Definition of done:
+  - `/admin/**` routes render inside an operator-specific shell.
+  - Public acquisition CTAs and public footer chrome are not shown on admin routes.
+  - Admin navigation reflects operator tasks rather than public-site discovery goals.
+
+**PC-406: Clean credibility and consistency debt**
+- Purpose: close the lower-severity but credibility-damaging gaps surfaced by the audit.
+- Definition of done:
+  - Legal pages use explicit revision dates rather than render-time dates.
+  - Internal admin overview fetches use same-origin logic (or a request-derived origin) instead of hidden fallback hosts.
+  - Compatibility redirects preserve query-string context where that context is still meaningful.
+
 ## Execution Log
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
 - 2026-02-13: `P1-011` completed by refactoring `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, and `09_DEPLOYMENT.md` to reference `DOCS/SSOT/_generated/*` and remove duplicated endpoint/route inventories.
@@ -216,3 +263,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-02: `MO-307` completed by expanding the live directory from the single `PH-205` verification fixture to a four-listing controlled demo baseline across three suburbs and three councils, while preserving the existing RPC layer and all schema/contracts. The controlled live inventory strategy is now documented in `08_OPS_RUNBOOK.md`, and the next active priority is `MO-308`.
 - 2026-03-03: `MO-308` completed by repackaging `/promote` around the real current featured-placement value: one-time payment, visible featured differentiation where it already exists (`/directory` and `/trainers/[id]`), and explicit non-goals around analytics, guaranteed ranking, and subscription changes. `06_MONETISATION.md` now records those support boundaries. The remaining blocker is a pre-existing admin-side timeout in `tests/e2e/monetization.spec.ts`, which is now tracked as `PH-206`.
 - 2026-03-03: `PH-206` completed by adding an E2E-only admin auth bypass in `src/lib/auth.ts` so Playwright can render `/admin` without a real login session, keeping production auth unchanged. The stale `/api/admin/queues` mock in `tests/e2e/monetization.spec.ts` was aligned to the current admin page contract, the monetisation snapshot was refreshed, and `tests/e2e/monetization.spec.ts` now passes fully.
+- 2026-03-04: `AUD-001` completed as a full-scope Product Experience & Functional Completion Audit across IA, interface, workflow, experience, conversion, and failure layers. The audit reopens product completion work with six recovery tasks: broken featured-placement monetisation, inconsistent triage emergency escalation, dead operator affordances, hard-stop failure states, mixed admin/public shell structure, and credibility/consistency debt. `PC-401` is now the active priority.
