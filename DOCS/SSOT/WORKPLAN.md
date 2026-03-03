@@ -31,7 +31,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Product Completion Recovery is now reopened from the audit findings; no new optimisation work should start until the recovery slice is closed.
 - `PC-401` is now complete and the featured-placement flow is safely gated, schema-aligned, and operationally recoverable.
 - `PC-402` is now complete and triage emergency escalation now uses one canonical issue-to-flow mapping.
-- Current top priority: `PC-403`.
+- `PC-403` is now complete and the authenticated admin UI no longer exposes raw API or test-endpoint links as operator actions.
+- Current top priority: `PC-404`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -211,7 +212,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No supported issue can be classified as emergency-worthy in one layer but bypass the gate in another.
   - Regression coverage exists for each mapped emergency issue branch.
 
-**PC-403: Remove dead operator actions and broken internal affordances**
+**PC-403: Remove dead operator actions and broken internal affordances (completed 2026-03-04)**
 - Purpose: eliminate visible operator dead ends that make the authenticated experience feel unfinished.
 - Definition of done:
   - `/admin/triage` no longer exposes a CTA that opens a raw API endpoint and yields a `405`.
@@ -268,3 +269,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-04: `AUD-001` completed as a full-scope Product Experience & Functional Completion Audit across IA, interface, workflow, experience, conversion, and failure layers. The audit reopens product completion work with six recovery tasks: broken featured-placement monetisation, inconsistent triage emergency escalation, dead operator affordances, hard-stop failure states, mixed admin/public shell structure, and credibility/consistency debt. `PC-401` is now the active priority.
 - 2026-03-04: `PC-401` completed by introducing a shared checkout-availability contract, gating `/promote` when live checkout is unavailable, preserving deterministic E2E checkout stubs, rewriting the admin monetisation overview to merge business data without a broken implicit relation, and replacing the admin monetisation loading loop with a terminal error state plus retry action. The real-mode `/promote` page now also loads listing details against the actual `businesses` + `suburbs` schema. `PC-402` is now the active priority.
 - 2026-03-04: `PC-402` completed by extracting the triage emergency issue-to-flow mapping into a shared helper used by both `/triage` and `EmergencyGate`, removing the previous hardcoded gate subset that let `destructive_behaviour`, `rescue_dog_support`, and `resource_guarding` bypass escalation. Unit coverage now locks the full mapping and branch-priority behaviour. `PC-403` is now the active priority.
+- 2026-03-04: `PC-403` completed by removing the remaining operator-facing links to raw API and test endpoints from `/admin/triage` and `/admin/errors`, while preserving valid internal operator navigation. The authenticated admin UI no longer exposes those dead affordances. `PC-404` is now the active priority.

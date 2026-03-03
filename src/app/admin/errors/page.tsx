@@ -92,16 +92,13 @@ export default function AdminErrorDashboard() {
         </div>
       </div>
 
-      <div className="mb-4 flex space-x-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <a href="/admin/triage" className="inline-block px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
           Triage Dashboard
         </a>
-        <a href="/api/admin/errors/trigger-alert" className="inline-block px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-          Trigger Alert Test
-        </a>
-        <a href="/api/test/triage" target="_blank" className="inline-block px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
-          Test Triage
-        </a>
+        <p className="text-sm text-gray-600">
+          Use the triage dashboard for live incident context and escalation review.
+        </p>
       </div>
 
       <ErrorMetricsChart data={errorData} />

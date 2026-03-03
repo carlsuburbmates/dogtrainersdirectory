@@ -36,14 +36,14 @@
 | PH-206 | Production Hardening | Restore green admin monetisation E2E verification | completed | main-control | `WORKPLAN` `PH-206` | admin monetisation flow is verifiable again in Playwright without timeout |
 | PC-401 | Product Completion Recovery | Repair featured-placement monetisation to true end-to-end completeness | completed | main-control | `WORKPLAN` `PC-401` | promote checkout and admin monetisation state are truly functional in real mode |
 | PC-402 | Product Completion Recovery | Unify triage emergency escalation logic | completed | frontend | `WORKPLAN` `PC-402` | triage and `EmergencyGate` share one canonical emergency mapping |
-| PC-403 | Product Completion Recovery | Remove dead operator actions and broken internal affordances | in_progress | main-control | `WORKPLAN` `PC-403` | operator UI no longer exposes dead links to raw APIs |
-| PC-404 | Product Completion Recovery | Add recovery paths for failure states | pending | frontend | `WORKPLAN` `PC-404` | core hard-stop dead ends now provide useful next-step recovery |
+| PC-403 | Product Completion Recovery | Remove dead operator actions and broken internal affordances | completed | main-control | `WORKPLAN` `PC-403` | operator UI no longer exposes dead links to raw APIs |
+| PC-404 | Product Completion Recovery | Add recovery paths for failure states | in_progress | frontend | `WORKPLAN` `PC-404` | core hard-stop dead ends now provide useful next-step recovery |
 | PC-405 | Product Completion Recovery | Separate admin IA and chrome from the public shell | pending | main-control | `WORKPLAN` `PC-405` | admin routes render inside an operator-specific shell |
 | PC-406 | Product Completion Recovery | Clean credibility and consistency debt | pending | main-control | `WORKPLAN` `PC-406` | legal dates, admin origin logic, and compatibility redirect context are aligned |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
-- `PC-403` is the single active product priority.
+- `PC-404` is the single active product priority.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

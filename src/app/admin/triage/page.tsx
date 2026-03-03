@@ -20,9 +20,11 @@ export default async function AdminTriagePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Emergency Triage</h1>
-        <Link href="/api/emergency/triage" className="text-blue-600 hover:underline">Open Test Page</Link>
+        <p className="text-sm text-gray-600">
+          Monitor recent emergency classifications, latency, and escalation trends from the live triage flow.
+        </p>
       </div>
 
       {/* KPI cards */}
