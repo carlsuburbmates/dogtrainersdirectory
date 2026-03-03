@@ -1,7 +1,7 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.6
+**Version:** v1.7
 **Last Updated:** 2026-03-04
 
 ## 1. Inventory source
@@ -18,6 +18,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - `/search` is also the canonical first-slice landing surface for locality and service intent. When canonical query params are present (`suburbName`, `service_type`, `age_specialties`, `behavior_issues`, `q/query`), page heading, metadata, structured data, and internal discovery links should reflect that context without requiring a second route family.
 - `/directory` and `/trainers/[id]` are discovery and profile surfaces.
 - `/trainers/[id]` is the trust and contact decision surface: it must make fit, proof, and direct contact options visible before the user leaves the directory, and it should prioritise the fastest available direct contact path while retaining the enquiry form as a written fallback.
+- If `/trainers/[id]` cannot resolve to a live profile, the failure state must provide clear recovery actions back to search, directory, or home instead of ending in a hard stop.
 - `/trainer/[id]` exists for backward compatibility and must redirect to `/trainers/[id]`.
 - Legal and policy pages (`/privacy`, `/terms`, `/disclaimer`) must remain publicly accessible.
 

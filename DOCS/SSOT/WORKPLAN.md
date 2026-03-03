@@ -32,7 +32,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-401` is now complete and the featured-placement flow is safely gated, schema-aligned, and operationally recoverable.
 - `PC-402` is now complete and triage emergency escalation now uses one canonical issue-to-flow mapping.
 - `PC-403` is now complete and the authenticated admin UI no longer exposes raw API or test-endpoint links as operator actions.
-- Current top priority: `PC-404`.
+- `PC-404` is now complete and missing trainer profiles now provide explicit recovery paths instead of hard-stop dead ends.
+- Current top priority: `PC-405`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -219,7 +220,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any remaining operator-facing test links are either converted into real tools or removed from production-like UI.
   - Admin utility actions resolve to valid pages or valid bounded actions only.
 
-**PC-404: Add recovery paths for failure states**
+**PC-404: Add recovery paths for failure states (completed 2026-03-04)**
 - Purpose: stop core user journeys from ending in hard dead ends when data is missing or a URL is stale.
 - Definition of done:
   - Missing trainer profiles provide clear recovery actions back to search, directory, or home.
@@ -270,3 +271,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-04: `PC-401` completed by introducing a shared checkout-availability contract, gating `/promote` when live checkout is unavailable, preserving deterministic E2E checkout stubs, rewriting the admin monetisation overview to merge business data without a broken implicit relation, and replacing the admin monetisation loading loop with a terminal error state plus retry action. The real-mode `/promote` page now also loads listing details against the actual `businesses` + `suburbs` schema. `PC-402` is now the active priority.
 - 2026-03-04: `PC-402` completed by extracting the triage emergency issue-to-flow mapping into a shared helper used by both `/triage` and `EmergencyGate`, removing the previous hardcoded gate subset that let `destructive_behaviour`, `rescue_dog_support`, and `resource_guarding` bypass escalation. Unit coverage now locks the full mapping and branch-priority behaviour. `PC-403` is now the active priority.
 - 2026-03-04: `PC-403` completed by removing the remaining operator-facing links to raw API and test endpoints from `/admin/triage` and `/admin/errors`, while preserving valid internal operator navigation. The authenticated admin UI no longer exposes those dead affordances. `PC-404` is now the active priority.
+- 2026-03-04: `PC-404` completed by adding explicit recovery actions to the missing trainer profile fallback, including links back to search, directory, and home while preserving any available query-string search context. The profile dead-end is now recoverable, and targeted Playwright coverage locks the fallback behaviour. `PC-405` is now the active priority.

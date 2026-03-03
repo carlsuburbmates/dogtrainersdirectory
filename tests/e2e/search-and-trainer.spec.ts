@@ -149,4 +149,19 @@ test.describe('Search → Trainer profile', () => {
     expect(new URL(secondRequest.url()).searchParams.get('page')).toBe('2')
     await expect(page.getByRole('heading', { name: secondPageResult.business_name }).first()).toBeVisible()
   })
+
+  test('missing trainer profile offers recovery actions', async ({ page }) => {
+    await page.goto('/trainers/999999?q=calm&suburbName=Richmond')
+
+    await expect(page.getByRole('heading', { name: 'Trainer Not Found' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Back to search' })).toHaveAttribute(
+      'href',
+      '/search?q=calm&suburbName=Richmond'
+    )
+    await expect(page.getByRole('link', { name: 'Browse directory' })).toHaveAttribute(
+      'href',
+      '/directory'
+    )
+    await expect(page.getByRole('link', { name: 'Go home' })).toHaveAttribute('href', '/')
+  })
 })
