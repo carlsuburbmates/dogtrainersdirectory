@@ -33,7 +33,10 @@
 | MO-306 | Website Completion | Reduce buyer friction with clearer primary conversion actions | completed | main-control | `WORKPLAN` `MO-306` | results and profiles expose a clear measurable primary CTA |
 | MO-307 | Market Optimization | Expand live directory inventory depth beyond the verification fixture | completed | backend | `WORKPLAN` `MO-307` | live directory depth is no longer a one-record environment |
 | MO-308 | Market Optimization | Repackage business-side monetisation around visible ROI | completed | main-control | `WORKPLAN` `MO-308` | featured placement has clear public-facing value and business messaging |
-| PH-206 | Production Hardening | Restore green admin monetisation E2E verification | in_progress | main-control | `WORKPLAN` `PH-206` | admin monetisation flow is verifiable again in Playwright without timeout |
+| PH-206 | Production Hardening | Restore green admin monetisation E2E verification | completed | main-control | `WORKPLAN` `PH-206` | admin monetisation flow is verifiable again in Playwright without timeout |
+
+## Current status
+- No product task is currently `in_progress`; the roadmap cycle is complete and awaiting the next prioritisation pass.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

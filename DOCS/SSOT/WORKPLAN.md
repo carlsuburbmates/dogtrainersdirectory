@@ -26,8 +26,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Market baseline is now documented from a controlled engineering sample against the live-backed environment.
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
 - The public UI/UX foundation is complete, the first search-landing SEO slice is in place on the canonical `/search` route, and the live directory now has a controlled comparison baseline beyond the single verification fixture.
-- The first business-side monetisation packaging pass is complete on `/promote`, but the admin monetisation E2E path is still failing on an existing `/admin` navigation step.
-- Current top priority: `PH-206`.
+- The first business-side monetisation packaging pass is complete on `/promote`, and the admin monetisation E2E path is restored and green.
+- All currently planned roadmap tasks are complete for this cycle.
+- Current top priority: none; the roadmap is awaiting the next prioritisation cycle.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -182,7 +183,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `GET /trainers/<valid_business_id>` renders from `get_trainer_profile(...)` without falling back to the test/session fallback path.
   - The verification data source is intentional and documented (seed/import path or controlled fixture source).
 
-**PH-206: Restore green admin monetisation E2E verification**
+**PH-206: Restore green admin monetisation E2E verification (completed 2026-03-03)**
 - Purpose: close the remaining verification gap left after the first `MO-308` monetisation packaging pass.
 - Definition of done:
   - `tests/e2e/monetization.spec.ts` no longer times out on the `/admin` monetisation path.
@@ -214,3 +215,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-02: `MO-305` completed by moving `/search` onto a server-rendered metadata path, replacing placeholder SEO content with canonical query-driven metadata and `CollectionPage` structured data, and strengthening locality/service landing intent within the existing `/search` route model. The route-intent SSOT was updated in `05_ROUTES_AND_NAV.md` to make `/search` the explicit first-slice landing surface for locality and service SEO. `MO-307` is now the active priority.
 - 2026-03-02: `MO-307` completed by expanding the live directory from the single `PH-205` verification fixture to a four-listing controlled demo baseline across three suburbs and three councils, while preserving the existing RPC layer and all schema/contracts. The controlled live inventory strategy is now documented in `08_OPS_RUNBOOK.md`, and the next active priority is `MO-308`.
 - 2026-03-03: `MO-308` completed by repackaging `/promote` around the real current featured-placement value: one-time payment, visible featured differentiation where it already exists (`/directory` and `/trainers/[id]`), and explicit non-goals around analytics, guaranteed ranking, and subscription changes. `06_MONETISATION.md` now records those support boundaries. The remaining blocker is a pre-existing admin-side timeout in `tests/e2e/monetization.spec.ts`, which is now tracked as `PH-206`.
+- 2026-03-03: `PH-206` completed by adding an E2E-only admin auth bypass in `src/lib/auth.ts` so Playwright can render `/admin` without a real login session, keeping production auth unchanged. The stale `/api/admin/queues` mock in `tests/e2e/monetization.spec.ts` was aligned to the current admin page contract, the monetisation snapshot was refreshed, and `tests/e2e/monetization.spec.ts` now passes fully.

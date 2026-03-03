@@ -128,7 +128,12 @@ async function wireAdminBasics(page: Page) {
 
   await page.route('**/api/admin/queues', async (route: Route) => {
     await route.fulfill({
-      json: { reviews: [], abn_verifications: [], flagged_businesses: [] }
+      json: {
+        emergency_verifications: [],
+        reviews: [],
+        abn_verifications: [],
+        flagged_businesses: []
+      }
     })
   })
 
