@@ -202,7 +202,7 @@ test.describe('Monetization upgrade flow', () => {
 
   test('hides upgrade CTA when feature flag disabled', async ({ page }) => {
     await page.goto('/promote?businessId=101&flag=off')
-    await expect(page.getByText('Monetization is currently disabled')).toBeVisible()
+    await expect(page.getByText('Monetisation is currently disabled')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Upgrade now' })).toHaveCount(0)
   })
 

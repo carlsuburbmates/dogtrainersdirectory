@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-02
+**Last Updated:** 2026-03-03
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -32,7 +32,8 @@
 | MO-305 | Market Optimization | Build suburb and service landing-page coverage for local SEO | completed | main-control | `WORKPLAN` `MO-305` | DTD gains a repeatable local landing and metadata strategy |
 | MO-306 | Website Completion | Reduce buyer friction with clearer primary conversion actions | completed | main-control | `WORKPLAN` `MO-306` | results and profiles expose a clear measurable primary CTA |
 | MO-307 | Market Optimization | Expand live directory inventory depth beyond the verification fixture | completed | backend | `WORKPLAN` `MO-307` | live directory depth is no longer a one-record environment |
-| MO-308 | Market Optimization | Repackage business-side monetisation around visible ROI | in_progress | main-control | `WORKPLAN` `MO-308` | featured placement has clear public-facing value and business messaging |
+| MO-308 | Market Optimization | Repackage business-side monetisation around visible ROI | completed | main-control | `WORKPLAN` `MO-308` | featured placement has clear public-facing value and business messaging |
+| PH-206 | Production Hardening | Restore green admin monetisation E2E verification | in_progress | main-control | `WORKPLAN` `PH-206` | admin monetisation flow is verifiable again in Playwright without timeout |
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

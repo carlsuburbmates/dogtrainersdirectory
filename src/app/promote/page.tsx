@@ -54,7 +54,7 @@ export default async function PromotePage({ searchParams }: PromotePageProps) {
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center space-y-4">
           <h1 className="text-3xl font-bold text-gray-900">Promote My Listing</h1>
           <p className="text-gray-600">
-            Monetization is currently disabled in this environment. Enable <code>FEATURE_MONETIZATION_ENABLED</code>{' '}
+            Monetisation is currently disabled in this environment. Enable <code>FEATURE_MONETIZATION_ENABLED</code>{' '}
             and <code>NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED</code> to preview the upgrade flow.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default async function PromotePage({ searchParams }: PromotePageProps) {
               ? {
                   id: business.id,
                   name: business.name ?? `Business #${business.id}`,
-                  suburb: business.suburb_name ?? 'Melbourne',
+                  suburb: business.suburb_name ?? null,
                   abnVerified: Boolean(business.abn_verified),
                   verificationStatus: business.verification_status ?? 'pending',
                   featuredUntil: business.featured_until ?? null

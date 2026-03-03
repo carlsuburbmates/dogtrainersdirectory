@@ -1,7 +1,7 @@
 # Monetisation — Stripe, Entitlements, Featured Placement
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.0
+**Version:** v1.1
 
 ## 1. Checkout mode (canonical)
 Stripe Checkout uses **`mode: payment`** (one-time charge) for Featured Placement.
@@ -25,6 +25,18 @@ Featured placement lifecycle:
 - `featured_placements` table stores placements with start/end dates and status.
 - Expiry is automated via Vercel cron calling `/api/admin/featured/expire` (see `09_DEPLOYMENT.md`).
 
+## 4.1 Current public-facing featured value (canonical)
+- The current featured-placement proposition is based on visible differentiation already present in the product.
+- Supported public-facing value today:
+  - featured listings display a visible featured badge in `/directory`
+  - featured listings sort ahead of standard listings within each directory region in `/directory`
+  - featured listings display a `Featured listing` label on `/trainers/[id]`
+- Unsupported claims today:
+  - guaranteed rank priority across all `/search` results
+  - impression counts, lead counts, or analytics dashboards
+  - changes to verification status, reviews, or contact methods
+- Monetisation copy and packaging must stay inside these boundaries unless the underlying public surfaces change in code and SSOT is updated in the same change.
+
 ## 5. Environment configuration
 Required server env vars (see `ENV_VARS_INVENTORY.md`):
 - `STRIPE_SECRET_KEY`
@@ -34,3 +46,4 @@ Required server env vars (see `ENV_VARS_INVENTORY.md`):
 
 ## 6. Non-goals
 Do not switch to subscription mode without explicitly updating Tier-0 and reworking entitlement logic.
+Do not market featured placement as analytics-enabled or as a guaranteed all-surface ranking boost unless those capabilities are actually implemented and promoted into SSOT.
