@@ -155,6 +155,18 @@ test.describe('Monetization upgrade flow', () => {
     monetizationState.status = 'inactive'
 
     await page.route('**/api/stripe/create-checkout-session', async (route: Route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          json: {
+            available: true,
+            mode: 'test',
+            reason: 'ready',
+            message: null
+          }
+        })
+        return
+      }
+
       await route.fulfill({
         json: {
           checkoutUrl: 'https://checkout.stripe.com/test-e2e?session=stub',

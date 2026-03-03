@@ -15,7 +15,12 @@ type SubscriptionStatusRow = {
   updated_at: string | null
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
-  businesses?: { name?: string; verification_status?: string } | { name?: string; verification_status?: string }[]
+}
+
+type BusinessRow = {
+  id: number
+  name: string | null
+  verification_status: string | null
 }
 
 type PaymentAuditRow = {
@@ -36,7 +41,7 @@ export async function GET() {
     const [statusQuery, auditQuery] = await Promise.all([
       supabaseAdmin
         .from('business_subscription_status')
-        .select('business_id, plan_id, status, current_period_end, last_event_received, updated_at, stripe_customer_id, stripe_subscription_id, businesses(name, verification_status)')
+        .select('business_id, plan_id, status, current_period_end, last_event_received, updated_at, stripe_customer_id, stripe_subscription_id')
         .order('updated_at', { ascending: false })
         .limit(200),
       supabaseAdmin
@@ -52,6 +57,23 @@ export async function GET() {
 
     const statuses = (statusQuery.data ?? []) as SubscriptionStatusRow[]
     const events = (auditQuery.data ?? []) as PaymentAuditRow[]
+    const businessIds = [...new Set(statuses.map((row) => row.business_id).filter((businessId) => Number.isFinite(businessId)))]
+    let businessesById = new Map<number, BusinessRow>()
+
+    if (businessIds.length > 0) {
+      const businessQuery = await supabaseAdmin
+        .from('businesses')
+        .select('id, name, verification_status')
+        .in('id', businessIds)
+
+      if (businessQuery.error) {
+        console.warn('Monetization overview business lookup error', businessQuery.error)
+      } else {
+        businessesById = new Map(
+          ((businessQuery.data ?? []) as BusinessRow[]).map((row) => [row.id, row])
+        )
+      }
+    }
 
     const statusCounts = {
       active: 0,
@@ -100,8 +122,7 @@ export async function GET() {
         health
       },
       statuses: statuses.map((row) => {
-        const business =
-          Array.isArray(row.businesses) ? row.businesses[0] ?? null : row.businesses ?? null
+        const business = businessesById.get(row.business_id) ?? null
         return {
           business_id: row.business_id,
           plan_id: row.plan_id,

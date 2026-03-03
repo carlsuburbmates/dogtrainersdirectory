@@ -1,9 +1,36 @@
 import { NextResponse } from 'next/server'
-import { createCheckoutSessionForBusiness, logMonetizationLatency } from '@/lib/monetization'
+import {
+  CheckoutAvailabilityError,
+  createCheckoutSessionForBusiness,
+  getCheckoutAvailability,
+  logMonetizationLatency
+} from '@/lib/monetization'
 import { parseCheckoutPayload } from '@/lib/services/checkoutPayload'
 import { recordCommercialFunnelMetric } from '@/lib/telemetryLatency'
 
 export const runtime = 'nodejs'
+
+export async function GET() {
+  const started = Date.now()
+
+  try {
+    const availability = getCheckoutAvailability()
+    await logMonetizationLatency('stripe_checkout_availability', Date.now() - started, true, 200)
+    return NextResponse.json(availability)
+  } catch (error) {
+    console.error('Failed to inspect checkout availability', error)
+    await logMonetizationLatency('stripe_checkout_availability', Date.now() - started, false, 500)
+    return NextResponse.json(
+      {
+        available: false,
+        mode: 'live',
+        reason: 'unknown',
+        message: 'We could not confirm checkout availability just now. Please try again shortly.'
+      },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: Request) {
   const started = Date.now()
@@ -49,6 +76,24 @@ export async function POST(request: Request) {
     })
     return NextResponse.json(result)
   } catch (error: any) {
+    if (error instanceof CheckoutAvailabilityError) {
+      await logMonetizationLatency('stripe_create_checkout_session', Date.now() - started, false, error.statusCode)
+      await recordCommercialFunnelMetric({
+        stage: 'promote_checkout_session',
+        durationMs: Date.now() - started,
+        success: false,
+        statusCode: error.statusCode,
+        metadata: { reason: error.reason }
+      })
+      return NextResponse.json(
+        {
+          error: error.userMessage,
+          reason: error.reason
+        },
+        { status: error.statusCode }
+      )
+    }
+
     console.error('Failed to create checkout session', error)
     await logMonetizationLatency('stripe_create_checkout_session', Date.now() - started, false, 500)
     await recordCommercialFunnelMetric({

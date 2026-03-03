@@ -15,6 +15,91 @@ export function getStripeClient() {
 
 export const isMonetizationEnabled = () => process.env.FEATURE_MONETIZATION_ENABLED === '1'
 
+export type CheckoutAvailabilityReason =
+  | 'ready'
+  | 'monetization_disabled'
+  | 'missing_price'
+  | 'missing_secret'
+  | 'unknown'
+
+export interface CheckoutAvailability {
+  available: boolean
+  mode: 'test' | 'live'
+  reason: CheckoutAvailabilityReason
+  message: string | null
+}
+
+export class CheckoutAvailabilityError extends Error {
+  readonly reason: CheckoutAvailabilityReason
+  readonly statusCode: number
+  readonly userMessage: string
+
+  constructor(availability: CheckoutAvailability) {
+    super(availability.message ?? 'Checkout is unavailable')
+    this.name = 'CheckoutAvailabilityError'
+    this.reason = availability.reason
+    this.statusCode = availability.reason === 'monetization_disabled' ? 404 : 503
+    this.userMessage = availability.message ?? 'Checkout is unavailable'
+  }
+}
+
+export function getCheckoutAvailability(): CheckoutAvailability {
+  if (isE2ETestMode()) {
+    return {
+      available: true,
+      mode: 'test',
+      reason: 'ready',
+      message: null
+    }
+  }
+
+  if (!isMonetizationEnabled()) {
+    return {
+      available: false,
+      mode: 'live',
+      reason: 'monetization_disabled',
+      message: 'Featured placement is not available in this environment.'
+    }
+  }
+
+  if (!process.env.STRIPE_PRICE_FEATURED) {
+    return {
+      available: false,
+      mode: 'live',
+      reason: 'missing_price',
+      message:
+        'Featured placement is temporarily unavailable while secure checkout is being finalised. We are finishing the payment setup and this upgrade will return once it is ready.'
+    }
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return {
+      available: false,
+      mode: 'live',
+      reason: 'missing_secret',
+      message:
+        'Featured placement is temporarily unavailable while secure checkout is being finalised. We are finishing the payment setup and this upgrade will return once it is ready.'
+    }
+  }
+
+  return {
+    available: true,
+    mode: 'live',
+    reason: 'ready',
+    message: null
+  }
+}
+
+function assertCheckoutAvailable() {
+  const availability = getCheckoutAvailability()
+
+  if (!availability.available) {
+    throw new CheckoutAvailabilityError(availability)
+  }
+
+  return availability
+}
+
 export interface CheckoutRequestContext {
   businessId: number
   origin: string
@@ -70,18 +155,10 @@ async function ensureBusinessEligible(businessId: number) {
 }
 
 export async function createCheckoutSessionForBusiness({ businessId, origin }: CheckoutRequestContext): Promise<CheckoutResult> {
-  if (!isMonetizationEnabled()) {
-    throw new Error('Monetization is not enabled')
-  }
+  const availability = assertCheckoutAvailable()
+  const planId = process.env.STRIPE_PRICE_FEATURED || 'price_test_e2e'
 
-  const planId = process.env.STRIPE_PRICE_FEATURED
-  if (!planId) {
-    throw new Error('STRIPE_PRICE_FEATURED is not configured')
-  }
-
-  const business = await ensureBusinessEligible(businessId)
-
-  if (isE2ETestMode()) {
+  if (availability.mode === 'test') {
     await logPaymentAudit({
       businessId,
       planId,
@@ -96,6 +173,7 @@ export async function createCheckoutSessionForBusiness({ businessId, origin }: C
     }
   }
 
+  const business = await ensureBusinessEligible(businessId)
   const stripe = getStripeClient()
 
   const session = await stripe.checkout.sessions.create({

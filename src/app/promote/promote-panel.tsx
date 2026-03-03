@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type PromoteBusiness = {
   id: number
@@ -17,14 +17,93 @@ type PromotePanelProps = {
   statusParam?: 'success' | 'cancelled' | null
 }
 
+type CheckoutAvailability = {
+  available: boolean
+  mode: 'test' | 'live'
+  reason: string
+  message: string | null
+}
+
 export function PromotePanel({ business, businessId, statusParam }: PromotePanelProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [checkoutPreview, setCheckoutPreview] = useState<string | null>(null)
+  const [checkoutAvailability, setCheckoutAvailability] = useState<CheckoutAvailability | null>(null)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const isE2E = process.env.NEXT_PUBLIC_E2E_TEST_MODE === '1'
   const hasActiveFeaturedPlacement = Boolean(
     business?.featuredUntil && new Date(business.featuredUntil) > new Date()
   )
+  const requestedBusinessId = business?.id ?? businessId
+  const checkoutReady = checkoutAvailability?.available === true
+  const checkoutUnavailable =
+    Boolean(requestedBusinessId) &&
+    !availabilityLoading &&
+    checkoutAvailability?.available === false &&
+    (business ? business.abnVerified : true)
+  const checkoutUnavailableMessage =
+    checkoutAvailability?.message ||
+    'We could not confirm checkout availability just now. Please refresh the page and try again.'
+
+  useEffect(() => {
+    let ignore = false
+
+    if (!requestedBusinessId) {
+      setCheckoutAvailability(null)
+      setAvailabilityLoading(false)
+      return
+    }
+
+    const loadCheckoutAvailability = async () => {
+      setAvailabilityLoading(true)
+      setCheckoutAvailability(null)
+
+      try {
+        const response = await fetch('/api/stripe/create-checkout-session', {
+          method: 'GET',
+          cache: 'no-store'
+        })
+        const payload = (await response.json()) as Partial<CheckoutAvailability>
+
+        if (ignore) return
+
+        if (typeof payload.available === 'boolean') {
+          setCheckoutAvailability({
+            available: payload.available,
+            mode: payload.mode === 'test' ? 'test' : 'live',
+            reason: payload.reason || 'unknown',
+            message: payload.message ?? null
+          })
+        } else {
+          setCheckoutAvailability({
+            available: false,
+            mode: isE2E ? 'test' : 'live',
+            reason: 'unknown',
+            message: 'We could not confirm checkout availability just now. Please refresh the page and try again.'
+          })
+        }
+      } catch {
+        if (ignore) return
+
+        setCheckoutAvailability({
+          available: false,
+          mode: isE2E ? 'test' : 'live',
+          reason: 'unknown',
+          message: 'We could not confirm checkout availability just now. Please refresh the page and try again.'
+        })
+      } finally {
+        if (!ignore) {
+          setAvailabilityLoading(false)
+        }
+      }
+    }
+
+    void loadCheckoutAvailability()
+
+    return () => {
+      ignore = true
+    }
+  }, [isE2E, requestedBusinessId])
 
   const handleUpgrade = async () => {
     if (!business?.id) return
@@ -77,6 +156,12 @@ export function PromotePanel({ business, businessId, statusParam }: PromotePanel
         {statusParam === 'cancelled' && (
           <div className="mt-6 rounded-lg border border-yellow-100 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
             Checkout cancelled. You can resume the upgrade whenever you’re ready.
+          </div>
+        )}
+        {checkoutUnavailable && !business && (
+          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-semibold">Featured placement is temporarily unavailable</p>
+            <p className="mt-1">{checkoutUnavailableMessage}</p>
           </div>
         )}
         {!business && (
@@ -148,14 +233,25 @@ export function PromotePanel({ business, businessId, statusParam }: PromotePanel
               <p className="mt-2 text-sm text-gray-600">
                 This keeps the purchase simple: one checkout, one featured placement window, no subscription change.
               </p>
+              {availabilityLoading && requestedBusinessId && (
+                <p className="mt-3 text-sm text-gray-500">Checking secure checkout availability…</p>
+              )}
+              {checkoutUnavailable && (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-semibold">Featured placement is temporarily unavailable</p>
+                  <p className="mt-1">{checkoutUnavailableMessage}</p>
+                </div>
+              )}
             </div>
-            <button
-              onClick={handleUpgrade}
-              disabled={loading}
-              className="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-3 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
-            >
-              {loading ? 'Preparing checkout…' : 'Upgrade now'}
-            </button>
+            {checkoutReady && (
+              <button
+                onClick={handleUpgrade}
+                disabled={loading}
+                className="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-3 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60"
+              >
+                {loading ? 'Preparing checkout…' : 'Upgrade now'}
+              </button>
+            )}
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
             {checkoutPreview && (
               <p className="mt-3 text-xs text-indigo-700">
@@ -167,8 +263,12 @@ export function PromotePanel({ business, businessId, statusParam }: PromotePanel
       </div>
       {businessId && (
         <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-xs text-gray-500">
-          Checkout API will use business ID <span className="font-mono text-gray-800">{businessId}</span>. E2E mode
-          automatically stubs Stripe responses.
+          Checkout API will use business ID <span className="font-mono text-gray-800">{businessId}</span>.{' '}
+          {isE2E
+            ? 'E2E mode uses a deterministic stub instead of live Stripe checkout.'
+            : checkoutReady
+            ? 'Live checkout opens Stripe when secure payment is available.'
+            : 'Live checkout stays unavailable until secure payment is ready.'}
         </div>
       )}
     </div>

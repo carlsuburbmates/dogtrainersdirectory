@@ -27,9 +27,10 @@ Anything not listed here is **not worked on** (to prevent drift).
 - External competitor scan is complete and the next completion + optimization backlog is now defined from sourced market evidence.
 - The public UI/UX foundation is complete, the first search-landing SEO slice is in place on the canonical `/search` route, and the live directory now has a controlled comparison baseline beyond the single verification fixture.
 - The first business-side monetisation packaging pass is complete on `/promote`, and the admin monetisation E2E path is restored and green.
-- `AUD-001` confirmed that the product is only partially complete: the core public experience is mostly usable, but monetisation is not functionally complete end-to-end, urgent triage escalation logic is inconsistent, and several operator/failure states still expose dead ends.
+- `AUD-001` confirmed that the product is only partially complete: the core public experience is mostly usable, but urgent triage escalation logic is inconsistent and several operator/failure states still expose dead ends.
 - Product Completion Recovery is now reopened from the audit findings; no new optimisation work should start until the recovery slice is closed.
-- Current top priority: `PC-401`.
+- `PC-401` is now complete and the featured-placement flow is safely gated, schema-aligned, and operationally recoverable.
+- Current top priority: `PC-402`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -194,7 +195,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ### Phase 5 - Product Completion Recovery (opened by `AUD-001`)
 
-**PC-401: Repair featured-placement monetisation to true end-to-end completeness**
+**PC-401: Repair featured-placement monetisation to true end-to-end completeness (completed 2026-03-04)**
 - Purpose: close the highest-severity product-completion gap by making the business-side revenue path actually work in real, non-stubbed conditions.
 - Definition of done:
   - `/promote` does not expose a live upgrade CTA unless checkout can actually start with the required Stripe configuration.
@@ -264,3 +265,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-03: `MO-308` completed by repackaging `/promote` around the real current featured-placement value: one-time payment, visible featured differentiation where it already exists (`/directory` and `/trainers/[id]`), and explicit non-goals around analytics, guaranteed ranking, and subscription changes. `06_MONETISATION.md` now records those support boundaries. The remaining blocker is a pre-existing admin-side timeout in `tests/e2e/monetization.spec.ts`, which is now tracked as `PH-206`.
 - 2026-03-03: `PH-206` completed by adding an E2E-only admin auth bypass in `src/lib/auth.ts` so Playwright can render `/admin` without a real login session, keeping production auth unchanged. The stale `/api/admin/queues` mock in `tests/e2e/monetization.spec.ts` was aligned to the current admin page contract, the monetisation snapshot was refreshed, and `tests/e2e/monetization.spec.ts` now passes fully.
 - 2026-03-04: `AUD-001` completed as a full-scope Product Experience & Functional Completion Audit across IA, interface, workflow, experience, conversion, and failure layers. The audit reopens product completion work with six recovery tasks: broken featured-placement monetisation, inconsistent triage emergency escalation, dead operator affordances, hard-stop failure states, mixed admin/public shell structure, and credibility/consistency debt. `PC-401` is now the active priority.
+- 2026-03-04: `PC-401` completed by introducing a shared checkout-availability contract, gating `/promote` when live checkout is unavailable, preserving deterministic E2E checkout stubs, rewriting the admin monetisation overview to merge business data without a broken implicit relation, and replacing the admin monetisation loading loop with a terminal error state plus retry action. The real-mode `/promote` page now also loads listing details against the actual `businesses` + `suburbs` schema. `PC-402` is now the active priority.

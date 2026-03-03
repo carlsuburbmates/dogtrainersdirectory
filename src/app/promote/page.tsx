@@ -21,7 +21,7 @@ async function loadBusiness(businessId?: number) {
   if (!businessId) return null
   const { data, error } = await supabaseAdmin
     .from('businesses')
-    .select('id, name, abn_verified, verification_status, suburb_name, featured_until')
+    .select('id, name, abn_verified, verification_status, suburb_id, featured_until')
     .eq('id', businessId)
     .maybeSingle()
 
@@ -30,7 +30,30 @@ async function loadBusiness(businessId?: number) {
     return null
   }
 
-  return data
+  if (!data) {
+    return null
+  }
+
+  let suburbName: string | null = null
+
+  if (data.suburb_id) {
+    const suburbQuery = await supabaseAdmin
+      .from('suburbs')
+      .select('name')
+      .eq('id', data.suburb_id)
+      .maybeSingle()
+
+    if (suburbQuery.error) {
+      console.warn('Unable to load suburb for promote page', suburbQuery.error)
+    } else {
+      suburbName = suburbQuery.data?.name ?? null
+    }
+  }
+
+  return {
+    ...data,
+    suburb_name: suburbName
+  }
 }
 
 export default async function PromotePage({ searchParams }: PromotePageProps) {

@@ -90,6 +90,7 @@ type MonetizationOverview = {
 }
 
 const isMonetizationFeatureEnabled = process.env.NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED === '1'
+const monetizationFallbackError = 'Unable to load monetisation snapshot. Please try again.'
 
 export function EnhancedAdminDashboard() {
   const [overview, setOverview] = useState<AdminOverview | null>(null)
@@ -99,6 +100,7 @@ export function EnhancedAdminDashboard() {
   const [latencySnapshot, setLatencySnapshot] = useState<LatencyMetricResponse>(null)
   const [monetizationOverview, setMonetizationOverview] = useState<MonetizationOverview | null>(null)
   const [monetizationError, setMonetizationError] = useState<string | null>(null)
+  const [monetizationLoading, setMonetizationLoading] = useState(isMonetizationFeatureEnabled)
   const [resyncingId, setResyncingId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -108,6 +110,12 @@ export function EnhancedAdminDashboard() {
   const fetchOverview = async () => {
     try {
       setLoading(true)
+      setError(null)
+      if (isMonetizationFeatureEnabled) {
+        setMonetizationLoading(true)
+        setMonetizationError(null)
+      }
+
       const requests: Array<Promise<Response>> = [
         fetch('/api/admin/overview'),
         fetch('/api/admin/telemetry/latency')
@@ -133,17 +141,29 @@ export function EnhancedAdminDashboard() {
           setMonetizationOverview(await monetizationRes.json())
           setMonetizationError(null)
         } else {
+          let nextError = monetizationFallbackError
+          try {
+            const payload = await monetizationRes.json()
+            if (typeof payload?.error === 'string' && payload.error.trim()) {
+              nextError = payload.error
+            }
+          } catch {
+            nextError = monetizationFallbackError
+          }
           setMonetizationOverview(null)
-          setMonetizationError('Unable to load monetization snapshot')
+          setMonetizationError(nextError)
         }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
       if (isMonetizationFeatureEnabled) {
         setMonetizationOverview(null)
-        setMonetizationError('Unable to load monetization snapshot')
+        setMonetizationError(monetizationFallbackError)
       }
     } finally {
+      if (isMonetizationFeatureEnabled) {
+        setMonetizationLoading(false)
+      }
       setLoading(false)
     }
   }
@@ -415,15 +435,29 @@ export function EnhancedAdminDashboard() {
 
       {activeTab === 'monetization' && isMonetizationFeatureEnabled && (
         <div className="space-y-6">
-          {monetizationError && (
-            <div className="rounded border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
-              {monetizationError}
+          {monetizationLoading && !monetizationOverview ? (
+            <div className="text-gray-500">Loading monetisation overview…</div>
+          ) : !monetizationOverview ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-900 space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold">Monetisation overview unavailable</h2>
+                <p>{monetizationError || monetizationFallbackError}</p>
+                <p className="text-red-700">The current snapshot did not load, so no monetisation data is being shown.</p>
+              </div>
+              <button
+                onClick={() => void fetchOverview()}
+                className="inline-flex rounded-lg bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800"
+              >
+                Try again
+              </button>
             </div>
-          )}
-          {!monetizationOverview ? (
-            <div className="text-gray-500">Loading monetization overview…</div>
           ) : (
             <>
+              {monetizationError && (
+                <div className="rounded border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+                  Monetisation note: {monetizationError}
+                </div>
+              )}
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="bg-white border rounded-lg p-4">
                   <div className="text-xs uppercase text-gray-500 font-semibold">Active subscriptions</div>

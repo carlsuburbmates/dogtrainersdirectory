@@ -1,7 +1,7 @@
 # Monetisation — Stripe, Entitlements, Featured Placement
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1
+**Version:** v1.2
 
 ## 1. Checkout mode (canonical)
 Stripe Checkout uses **`mode: payment`** (one-time charge) for Featured Placement.
@@ -43,6 +43,12 @@ Required server env vars (see `ENV_VARS_INVENTORY.md`):
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_FEATURED`
 - Monetisation feature flags: `FEATURE_MONETIZATION_ENABLED` + `NEXT_PUBLIC_FEATURE_MONETIZATION_ENABLED`
+
+## 5.1 Availability gating (canonical)
+- `/promote` must not expose a live upgrade CTA unless checkout is actually available in the current runtime.
+- When secure checkout is unavailable (for example missing Stripe configuration), the page must show a terminal unavailable state instead of a broken purchase path.
+- E2E/test mode may expose a deterministic stubbed checkout path for verification, even when live Stripe configuration is incomplete.
+- The admin monetisation surface must render a terminal failure state when monetisation data fails to load; it must not remain in a false loading state after a failed request.
 
 ## 6. Non-goals
 Do not switch to subscription mode without explicitly updating Tier-0 and reworking entitlement logic.
