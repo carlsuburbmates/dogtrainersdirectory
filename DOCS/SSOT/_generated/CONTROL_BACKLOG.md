@@ -46,14 +46,14 @@
 | NX-103 | Public Experience And State Refinement | Hide developer-facing location controls from public search | completed | frontend | `WORKPLAN` `NX-103` | public `/search` no longer exposes lat/lng debug inputs |
 | NX-104 | Public Experience And State Refinement | Improve public empty states on search and directory | completed | frontend | `WORKPLAN` `NX-104` | empty states provide actionable recovery paths instead of placeholder copy |
 | NX-105 | Public Experience And State Refinement | Reduce instruction density while preserving product differentiation | completed | frontend | `WORKPLAN` `NX-105` | home and search copy become concise without losing DTD's differentiators |
-| NX-106 | Public Experience And State Refinement | Make search treat `suburbId` as authoritative over location snapshots | in_progress | backend | `WORKPLAN` `NX-106` | search no longer depends on mutable snapshot fields for correctness when `suburbId` exists |
+| NX-106 | Public Experience And State Refinement | Make search treat `suburbId` as authoritative over location snapshots | completed | backend | `WORKPLAN` `NX-106` | search no longer depends on mutable snapshot fields for correctness when `suburbId` exists |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
 - Product Completion Recovery is complete.
 - The next active slice is Public Experience And State Refinement.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
-- Current active priority: `NX-106`.
+- Current active priority: none. The current Public Experience And State Refinement slice is complete.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

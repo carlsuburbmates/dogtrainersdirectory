@@ -51,6 +51,7 @@
 | 2026-03-05 | D-141 | `NX-103` accepted as complete | the public `/search` UI no longer exposes visible latitude/longitude controls, while existing URL-driven search behaviour remains intact for saved links and current requests | `NX-104` is now the active priority |
 | 2026-03-05 | D-142 | `NX-104` accepted as complete | `/search` and `/directory` now use actionable empty states with short recovery guidance and clear next-step CTAs, without changing route logic or backend contracts | `NX-105` is now the active priority |
 | 2026-03-05 | D-143 | `NX-105` accepted as complete | the public home and search surfaces now rely on shorter orientation copy and a clearer primary path, while still preserving DTD’s triage, locality, and emergency differentiation without changing the underlying product behaviour | `NX-106` is now the active priority |
+| 2026-03-05 | D-144 | `NX-106` accepted as complete | `/api/public/search` now treats canonical `suburbId` as the location authority, ignores conflicting snapshot coordinates when a real suburb record is present, and degrades to a non-location search if that `suburbId` cannot be resolved | the current Public Experience And State Refinement slice is complete and there is no active product priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |

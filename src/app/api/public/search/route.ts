@@ -8,6 +8,7 @@ import {
   buildPublicSearchMetadata,
   parsePublicSearchParams
 } from '@/lib/services/publicSearchContract'
+import { resolvePublicSearchLocation } from '@/lib/services/publicSearchLocation'
 
 /**
  * Public trainer search API endpoint
@@ -120,6 +121,7 @@ export async function GET(request: Request) {
       query,
       lat,
       lng,
+      suburbId,
       distance,
       ageSpecialties,
       behaviorIssues,
@@ -131,13 +133,46 @@ export async function GET(request: Request) {
       offset
     } = params
 
+    let canonicalSuburb: { latitude: number | null; longitude: number | null } | null = null
+
+    if (suburbId !== null) {
+      const { data: suburb, error: suburbError } = await supabaseAdmin
+        .from('suburbs')
+        .select('latitude, longitude')
+        .eq('id', suburbId)
+        .maybeSingle()
+
+      if (suburbError) {
+        console.error('Suburb lookup error:', suburbError)
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Search failed',
+            message: suburbError.message,
+            results: [],
+            metadata: buildPublicSearchMetadata(0, { ...params, lat: null, lng: null }),
+          },
+          { status: 500 }
+        )
+      }
+
+      canonicalSuburb = suburb
+    }
+
+    const effectiveLocation = resolvePublicSearchLocation({
+      suburbId,
+      lat,
+      lng,
+      canonicalSuburb,
+    })
+
     // Get decryption key for sensitive fields
     const decryptKey = process.env.SUPABASE_PGCRYPTO_KEY || null
 
     // Call search_trainers RPC
     const { data, error } = await supabaseAdmin.rpc('search_trainers', {
-      user_lat: lat,
-      user_lng: lng,
+      user_lat: effectiveLocation.lat,
+      user_lng: effectiveLocation.lng,
       age_filters: ageSpecialties,
       issue_filters: behaviorIssues,
       service_type_filter: serviceType,
@@ -180,7 +215,11 @@ export async function GET(request: Request) {
           error: 'Search failed', 
           message: error.message,
           results: [],
-          metadata: buildPublicSearchMetadata(0, params)
+          metadata: buildPublicSearchMetadata(0, {
+            ...params,
+            lat: effectiveLocation.lat,
+            lng: effectiveLocation.lng
+          })
         },
         { status: 500 }
       )
@@ -213,7 +252,11 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       results,
-      metadata: buildPublicSearchMetadata(results.length, params)
+      metadata: buildPublicSearchMetadata(results.length, {
+        ...params,
+        lat: effectiveLocation.lat,
+        lng: effectiveLocation.lng
+      })
     })
 
   } catch (error: any) {

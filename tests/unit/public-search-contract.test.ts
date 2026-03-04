@@ -19,6 +19,7 @@ describe('public search contract helpers', () => {
 
     expect(params).toMatchObject({
       query: 'calm',
+      suburbId: null,
       serviceType: 'private_training',
       limit: 20,
       offset: 40,
@@ -40,6 +41,20 @@ describe('public search contract helpers', () => {
 
     expect(params.query).toBe('verified')
     expect(params.offset).toBe(15)
+  })
+
+  it('parses suburbId as the canonical locality identity when provided', () => {
+    const params = parsePublicSearchParams(
+      new URLSearchParams({
+        suburbId: '42',
+        lat: '-37.9',
+        lng: '145.0'
+      })
+    )
+
+    expect(params.suburbId).toBe(42)
+    expect(params.lat).toBe(-37.9)
+    expect(params.lng).toBe(145)
   })
 
   it('returns dual metadata flags for compatibility', () => {

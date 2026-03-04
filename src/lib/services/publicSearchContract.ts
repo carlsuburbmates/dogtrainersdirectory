@@ -1,6 +1,7 @@
 export type ParsedPublicSearchParams = {
   query: string | null
   flowSource: string | null
+  suburbId: number | null
   lat: number | null
   lng: number | null
   distance: string
@@ -18,6 +19,13 @@ const parseIntSafe = (value: string | null, fallback: number) => {
   if (!value) return fallback
   const parsed = parseInt(value, 10)
   return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const parseOptionalPositiveInt = (value: string | null) => {
+  if (!value) return null
+  const parsed = parseInt(value, 10)
+  if (!Number.isFinite(parsed) || parsed < 1) return null
+  return parsed
 }
 
 const parseFloatSafe = (value: string | null) => {
@@ -42,6 +50,7 @@ export const parsePublicSearchParams = (
   return {
     query: searchParams.get('query') || searchParams.get('q') || null,
     flowSource: searchParams.get('flow_source') || null,
+    suburbId: parseOptionalPositiveInt(searchParams.get('suburbId')),
     lat: parseFloatSafe(searchParams.get('lat')),
     lng: parseFloatSafe(searchParams.get('lng')),
     distance: searchParams.get('distance') || 'any',

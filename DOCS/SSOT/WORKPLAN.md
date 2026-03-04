@@ -39,7 +39,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Product Completion Recovery is now complete for the current application-layer audited scope.
 - The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
-- Current top priority: `NX-106`.
+- Current top priority: none. The current Public Experience And State Refinement slice is complete.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -304,7 +304,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Guidance is short, purposeful, and secondary to the main action path.
   - Home restores one dominant public entry path, with secondary paths demoted in line with the design-system layout rules.
 
-**NX-106: Make search treat `suburbId` as authoritative over location snapshots (pending)**
+**NX-106: Make search treat `suburbId` as authoritative over location snapshots (completed 2026-03-05)**
 - Purpose: prevent location drift between URL snapshots and the actual selected suburb record.
 - Definition of done:
   - Search correctness does not depend on `suburbName`, `postcode`, `lat`, or `lng` URL fields when `suburbId` is present.
@@ -312,6 +312,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any remaining location snapshot fields are treated as cache/display only, not source of truth.
 
 ## Execution Log
+- 2026-03-05: `NX-106` completed by making `/api/public/search` parse canonical `suburbId`, resolve effective search coordinates from the suburb record when possible, and ignore conflicting snapshot coordinates when a canonical suburb identity is present. If `suburbId` is unresolvable, the route now falls back to a non-location search rather than trusting tamperable snapshot coordinates.
 - 2026-03-05: `NX-105` completed by tightening the instructional weight on `/` and `/search` without changing routes, search contracts, or core flow logic. The home hero now has one clearer dominant path with secondary routes demoted to a compact “Other ways in” list, while the search page replaces tutorial-style blocks with shorter orientation and support panels that preserve triage, locality, and emergency differentiation without reading like a manual.
 - 2026-03-05: `NX-104` completed by replacing the thin placeholder empty states on `/search` and `/directory` with actionable recovery states. Search zero-results now suggests concrete next actions and exposes in-place recovery CTAs (`Search all distances`, `Clear extra filters`, `Start guided search`), while the directory empty state now gives both demand-side and supply-side next steps (`Try search instead`, `Add your business`) without changing route logic or backend contracts.
 - 2026-03-05: `NX-103` completed by removing the public latitude/longitude inputs from `/search` while preserving the existing internal `lat` / `lng` URL and state support for saved links and current search requests.

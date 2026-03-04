@@ -1,7 +1,7 @@
 # API Contracts - Boundaries and Invariants
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.3
+**Version:** v1.4
 **Last Updated:** 2026-03-05
 
 ## 1. Inventory source
@@ -23,6 +23,8 @@ This file defines policy-level API contracts and security boundaries only.
 - `/api/webhooks/stripe`: webhook processing must be idempotent and signature-verified.
 - `/api/public/search`: server-side decryption must use `SUPABASE_PGCRYPTO_KEY`; decryption keys must never be client-exposed.
 - Canonical locality identity is `suburbId`; mutable location snapshot fields (`suburbName`, `postcode`, `lat`, `lng`, `councilId`) are display/cache hints only and must not become the source of truth when `suburbId` is present.
+- `/api/public/search`: when `suburbId` is present and resolves successfully, canonical suburb coordinates must be used for search correctness and conflicting snapshot coordinates must be ignored.
+- `/api/public/search`: when `suburbId` is present but unresolvable, the route must not silently trust conflicting snapshot coordinates as if they were canonical.
 
 ## 4. Endpoint contract source
 - Full method lists are in `DOCS/SSOT/_generated/api.md`.

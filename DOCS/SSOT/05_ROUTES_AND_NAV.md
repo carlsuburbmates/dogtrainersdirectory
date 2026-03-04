@@ -1,7 +1,7 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.9
+**Version:** v1.10
 **Last Updated:** 2026-03-05
 
 ## 1. Inventory source
@@ -17,6 +17,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - In `/triage`, `suburbId` is the canonical location identity for URL state. If a saved or linked `suburbId` is present, the page must rehydrate the selected suburb from that id instead of relying on mutable location snapshot fields.
 - `/search` is the shortlist refinement surface: filters and results must coexist in a way that keeps the next move to a trainer profile obvious and low-friction.
 - `/search` is also the canonical first-slice landing surface for locality and service intent. When canonical query params are present (`suburbName`, `service_type`, `age_specialties`, `behavior_issues`, `q/query`), page heading, metadata, structured data, and internal discovery links should reflect that context without requiring a second route family.
+- In `/search`, `suburbId` is the canonical location identity when present. Mutable location snapshot fields may remain as display/cache hints, but they must not override canonical suburb resolution for search correctness.
 - `/directory` and `/trainers/[id]` are discovery and profile surfaces.
 - `/trainers/[id]` is the trust and contact decision surface: it must make fit, proof, and direct contact options visible before the user leaves the directory, and it should prioritise the fastest available direct contact path while retaining the enquiry form as a written fallback.
 - If `/trainers/[id]` cannot resolve to a live profile, the failure state must provide clear recovery actions back to search, directory, or home instead of ending in a hard stop.
