@@ -75,7 +75,30 @@ export default async function DirectoryPage() {
         </header>
 
         {regions.length === 0 ? (
-          <div className="card text-center text-gray-600">No trainers available yet. Please check back soon.</div>
+          <div className="card text-center">
+            <h2 className="text-2xl font-semibold text-gray-900">No directory listings yet</h2>
+            <p className="mt-3 text-gray-600">
+              There are no trainer profiles available to browse right now.
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              Try a suburb search to check nearby options, or add your business to create the next
+              listing.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/search"
+                className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+              >
+                Try search instead
+              </Link>
+              <Link
+                href="/onboarding"
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50"
+              >
+                Add your business
+              </Link>
+            </div>
+          </div>
         ) : (
           regions.map((region) => (
             <details key={region.name} open className="card space-y-4">

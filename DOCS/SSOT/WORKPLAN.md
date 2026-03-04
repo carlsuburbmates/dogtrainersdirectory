@@ -39,7 +39,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Product Completion Recovery is now complete for the current application-layer audited scope.
 - The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
-- Current top priority: `NX-104`.
+- Current top priority: `NX-105`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -288,7 +288,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any retained debug controls use an already-defined non-public development or test path; this task must not introduce a new undocumented public env toggle.
   - The visible search control set follows the design-system goal of compact, calm, mobile-first filtering.
 
-**NX-104: Improve public empty states on search and directory (pending)**
+**NX-104: Improve public empty states on search and directory (completed 2026-03-05)**
 - Purpose: replace placeholder-like empty states with useful recovery and supply-side actions.
 - Definition of done:
   - `/directory` empty state provides a useful explanation and at least one actionable next step.
@@ -312,6 +312,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any remaining location snapshot fields are treated as cache/display only, not source of truth.
 
 ## Execution Log
+- 2026-03-05: `NX-104` completed by replacing the thin placeholder empty states on `/search` and `/directory` with actionable recovery states. Search zero-results now suggests concrete next actions and exposes in-place recovery CTAs (`Search all distances`, `Clear extra filters`, `Start guided search`), while the directory empty state now gives both demand-side and supply-side next steps (`Try search instead`, `Add your business`) without changing route logic or backend contracts.
 - 2026-03-05: `NX-103` completed by removing the public latitude/longitude inputs from `/search` while preserving the existing internal `lat` / `lng` URL and state support for saved links and current search requests.
 - 2026-03-05: `NX-102` completed as a copy-only public UI pass. Internal/builder labels were removed from the home, search, directory, and onboarding surfaces without changing layout structure, filter density, or empty-state behaviour.
 - 2026-03-05: `NX-101` completed by adding a suburb-by-id lookup path to the existing `suburbs` Edge Function plus `apiService`, then rehydrating `/triage` location state from canonical `suburbId` instead of relying on split or mutable snapshot state. Unit coverage now locks deep-link, unresolved-id, and repeat rehydration behaviour.

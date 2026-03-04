@@ -344,6 +344,31 @@ export default function SearchPage() {
     handleSearch(page + 1)
   }
 
+  const handleBroadenSearch = () => {
+    const broadenedFilters: SearchFilters = {
+      ...filters,
+      distance: 'any'
+    }
+
+    setFilters(broadenedFilters)
+    runSearch(1, broadenedFilters, selectedSuburb, flowSource)
+  }
+
+  const handleClearRefinements = () => {
+    const clearedFilters: SearchFilters = {
+      ...filters,
+      distance: 'any',
+      age_specialties: [],
+      behavior_issues: [],
+      service_type: '',
+      verified_only: false,
+      rescue_only: false
+    }
+
+    setFilters(clearedFilters)
+    runSearch(1, clearedFilters, selectedSuburb, flowSource)
+  }
+
   const toggleArrayFilter = (filterName: 'age_specialties' | 'behavior_issues', value: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -677,11 +702,32 @@ export default function SearchPage() {
 
                 {results.length === 0 && !loading && (
                   <Panel className="p-8 text-center">
-                    <h3 className="text-xl font-bold text-slate-900">No trainers matched yet</h3>
+                    <h3 className="text-xl font-bold text-slate-900">No trainers matched this search</h3>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
-                      Widen the search radius, remove a few filters, or broaden the issue list to
-                      surface more options.
+                      Try a wider distance, remove one filter, or choose another suburb to see more
+                      options.
                     </p>
+                    <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-3 py-1">Broaden distance</span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1">Remove one filter</span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1">Try another suburb</span>
+                    </div>
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                      {filters.distance !== 'any' && (
+                        <ActionButton onClick={handleBroadenSearch} variant="secondary">
+                          Search all distances
+                        </ActionButton>
+                      )}
+                      <ActionButton onClick={handleClearRefinements} variant="secondary">
+                        Clear extra filters
+                      </ActionButton>
+                      <Link
+                        href="/triage"
+                        className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                      >
+                        Start guided search
+                      </Link>
+                    </div>
                   </Panel>
                 )}
 
