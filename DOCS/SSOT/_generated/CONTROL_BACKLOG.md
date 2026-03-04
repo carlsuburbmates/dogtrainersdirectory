@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-04
+**Last Updated:** 2026-03-05
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -41,10 +41,18 @@
 | PC-405 | Product Completion Recovery | Separate admin IA and chrome from the public shell | completed | main-control | `WORKPLAN` `PC-405` | admin routes render inside an operator-specific shell |
 | PC-406 | Product Completion Recovery | Clean credibility and consistency debt | completed | main-control | `WORKPLAN` `PC-406` | legal dates, admin origin logic, and compatibility redirect context are aligned |
 | PC-407 | Product Completion Recovery | Stabilise admin latency summaries for zero-volume windows | completed | backend | `WORKPLAN` `PC-407` | zero-volume latency windows return a stable no-data summary instead of `500` |
+| NX-101 | Public Experience And State Refinement | Make triage suburb state URL-canonical and rehydratable | in_progress | frontend | `WORKPLAN` `NX-101` | triage deep links and refresh restore suburb selection from canonical `suburbId` state |
+| NX-102 | Public Experience And State Refinement | Remove internal builder language from public UI | pending | frontend | `WORKPLAN` `NX-102` | public copy stops exposing phase labels and implementation wording |
+| NX-103 | Public Experience And State Refinement | Hide developer-facing location controls from public search | pending | frontend | `WORKPLAN` `NX-103` | public `/search` no longer exposes lat/lng debug inputs |
+| NX-104 | Public Experience And State Refinement | Improve public empty states on search and directory | pending | frontend | `WORKPLAN` `NX-104` | empty states provide actionable recovery paths instead of placeholder copy |
+| NX-105 | Public Experience And State Refinement | Reduce instruction density while preserving product differentiation | pending | frontend | `WORKPLAN` `NX-105` | home and search copy become concise without losing DTD's differentiators |
+| NX-106 | Public Experience And State Refinement | Make search treat `suburbId` as authoritative over location snapshots | pending | backend | `WORKPLAN` `NX-106` | search no longer depends on mutable snapshot fields for correctness when `suburbId` exists |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
-- The current Product Completion Recovery slice is complete; no active product priority is open.
+- Product Completion Recovery is complete.
+- The next active slice is Public Experience And State Refinement.
+- Current active priority: `NX-101`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

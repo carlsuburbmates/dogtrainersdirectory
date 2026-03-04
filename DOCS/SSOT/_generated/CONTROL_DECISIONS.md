@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-04
+**Last Updated:** 2026-03-05
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -43,6 +43,7 @@
 | 2026-03-04 | D-133 | `PC-406` accepted as complete | legal revision dates are now explicit, admin overview uses request-derived same-origin fetches instead of the hidden fallback host, and the `/trainer/[id]` compatibility redirect now preserves meaningful query context | the current Product Completion Recovery slice is closed pending the next prioritisation cycle |
 | 2026-03-04 | D-134 | `PC-407` opened from `PC-406` validation | runtime verification showed `/api/admin/latency` can still return `500` on zero-volume windows because its summary query divides by zero | `PC-407` is now the active priority |
 | 2026-03-04 | D-135 | `PC-407` accepted as complete | `/api/admin/latency` now returns a stable zero-data success payload for the known zero-volume RPC failure path instead of surfacing a route `500` | the current Product Completion Recovery slice is closed pending the next prioritisation cycle |
+| 2026-03-05 | D-136 | Open Public Experience And State Refinement as the next delivery slice | post-recovery review plus accepted external critique identified the next highest-value work as triage suburb-state hardening and public-facing copy/UX cleanup, without reopening broader growth scope | `NX-101` is now the active priority and `NX-102` to `NX-106` are queued |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |

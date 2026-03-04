@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-04)
+## Current State (as of 2026-03-05)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -37,13 +37,15 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-406` is now complete and the remaining credibility/consistency debt from `AUD-001` is closed.
 - `PC-407` is now complete and `/api/admin/latency` returns a stable no-data summary for zero-volume windows instead of `500`.
 - Product Completion Recovery is now complete for the current application-layer audited scope.
-- Current top priority: none (await next prioritisation cycle).
+- The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
+- Current top priority: `NX-101`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
   3. Website Completion
   4. Market Optimization
   5. Product Completion Recovery
+  6. Public Experience And State Refinement
 
 ## Completed Foundation Milestones
 
@@ -251,6 +253,52 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/api/admin/latency` returns a stable empty-state summary when the selected window has zero rows.
   - Zero-volume windows do not trigger SQL `division by zero` errors.
   - Admin overview and any admin latency surfaces can render a no-data state without logging a route failure.
+
+### Phase 6 - Public Experience And State Refinement
+
+**NX-101: Make triage suburb state URL-canonical and rehydratable (in progress)**
+- Purpose: remove the split source of truth between triage URL params and in-memory suburb selection.
+- Definition of done:
+  - `suburbId` is the canonical location identity in the triage URL.
+  - `/triage` rehydrates `selectedSuburb` from `suburbId` on load or URL change.
+  - `/triage?step=location&suburbId=<id>&radius=<n>` restores the selected suburb without forcing re-selection.
+  - `/triage?step=location&radius=<n>` still correctly presents the location step as incomplete.
+  - Add regression coverage for deep link, refresh, and back/forward behaviour.
+
+**NX-102: Remove internal builder language from public UI (pending)**
+- Purpose: stop public pages from reading like product notes or implementation labels.
+- Definition of done:
+  - Public-facing pages no longer expose labels such as phase markers, internal routing terminology, or manual-process notes.
+  - Headings and supporting copy use user-facing benefit language rather than system-description language.
+  - Changes cover the current high-signal public surfaces: `/`, `/search`, `/directory`, and `/onboarding`.
+
+**NX-103: Hide developer-facing location controls from public search (pending)**
+- Purpose: remove technical controls that make the search experience feel like a debug tool.
+- Definition of done:
+  - Normal public users do not see latitude/longitude inputs on `/search`.
+  - Search still functions through suburb selection and the existing distance filters.
+  - Any retained debug controls are gated away from normal production users.
+
+**NX-104: Improve public empty states on search and directory (pending)**
+- Purpose: replace placeholder-like empty states with useful recovery and supply-side actions.
+- Definition of done:
+  - `/directory` empty state provides a useful explanation and at least one actionable next step.
+  - Zero-result states on `/search` suggest specific recovery actions (for example: broaden distance, remove a filter, change suburb).
+  - Empty states feel intentional and not like temporary placeholders.
+
+**NX-105: Reduce instruction density while preserving product differentiation (pending)**
+- Purpose: keep DTD's triage/locality differentiation without making public pages read like manuals.
+- Definition of done:
+  - Home and search surfaces reduce long instructional blocks in favour of concise benefit-first copy.
+  - The UI still clearly communicates DTD's triage, locality, and emergency-aware differentiation.
+  - Guidance is short, purposeful, and secondary to the main action path.
+
+**NX-106: Make search treat `suburbId` as authoritative over location snapshots (pending)**
+- Purpose: prevent location drift between URL snapshots and the actual selected suburb record.
+- Definition of done:
+  - Search correctness does not depend on `suburbName`, `postcode`, `lat`, or `lng` URL fields when `suburbId` is present.
+  - When both `suburbId` and location snapshot fields are present, `suburbId` wins.
+  - Any remaining location snapshot fields are treated as cache/display only, not source of truth.
 
 ## Execution Log
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
