@@ -39,7 +39,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Product Completion Recovery is now complete for the current application-layer audited scope.
 - The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
-- Current top priority: `NX-103`.
+- Current top priority: `NX-104`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -280,7 +280,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Headings and supporting copy use user-facing benefit language rather than system-description language.
   - Changes cover the current high-signal public surfaces: `/`, `/search`, `/directory`, and `/onboarding`.
 
-**NX-103: Hide developer-facing location controls from public search (pending)**
+**NX-103: Hide developer-facing location controls from public search (completed 2026-03-05)**
 - Purpose: remove technical controls that make the search experience feel like a debug tool.
 - Definition of done:
   - Normal public users do not see latitude/longitude inputs on `/search`.
@@ -312,6 +312,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any remaining location snapshot fields are treated as cache/display only, not source of truth.
 
 ## Execution Log
+- 2026-03-05: `NX-103` completed by removing the public latitude/longitude inputs from `/search` while preserving the existing internal `lat` / `lng` URL and state support for saved links and current search requests.
 - 2026-03-05: `NX-102` completed as a copy-only public UI pass. Internal/builder labels were removed from the home, search, directory, and onboarding surfaces without changing layout structure, filter density, or empty-state behaviour.
 - 2026-03-05: `NX-101` completed by adding a suburb-by-id lookup path to the existing `suburbs` Edge Function plus `apiService`, then rehydrating `/triage` location state from canonical `suburbId` instead of relying on split or mutable snapshot state. Unit coverage now locks deep-link, unresolved-id, and repeat rehydration behaviour.
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.

@@ -43,7 +43,7 @@
 | PC-407 | Product Completion Recovery | Stabilise admin latency summaries for zero-volume windows | completed | backend | `WORKPLAN` `PC-407` | zero-volume latency windows return a stable no-data summary instead of `500` |
 | NX-101 | Public Experience And State Refinement | Make triage suburb state URL-canonical and rehydratable | completed | frontend + backend | `WORKPLAN` `NX-101` | triage deep links and refresh restore suburb selection from canonical `suburbId` state without relying on snapshot fields as source of truth |
 | NX-102 | Public Experience And State Refinement | Remove internal builder language from public UI | completed | frontend | `WORKPLAN` `NX-102` | public copy stops exposing phase labels and implementation wording |
-| NX-103 | Public Experience And State Refinement | Hide developer-facing location controls from public search | pending | frontend | `WORKPLAN` `NX-103` | public `/search` no longer exposes lat/lng debug inputs |
+| NX-103 | Public Experience And State Refinement | Hide developer-facing location controls from public search | completed | frontend | `WORKPLAN` `NX-103` | public `/search` no longer exposes lat/lng debug inputs |
 | NX-104 | Public Experience And State Refinement | Improve public empty states on search and directory | pending | frontend | `WORKPLAN` `NX-104` | empty states provide actionable recovery paths instead of placeholder copy |
 | NX-105 | Public Experience And State Refinement | Reduce instruction density while preserving product differentiation | pending | frontend | `WORKPLAN` `NX-105` | home and search copy become concise without losing DTD's differentiators |
 | NX-106 | Public Experience And State Refinement | Make search treat `suburbId` as authoritative over location snapshots | pending | backend | `WORKPLAN` `NX-106` | search no longer depends on mutable snapshot fields for correctness when `suburbId` exists |
@@ -53,7 +53,7 @@
 - Product Completion Recovery is complete.
 - The next active slice is Public Experience And State Refinement.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
-- Current active priority: `NX-103`.
+- Current active priority: `NX-104`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

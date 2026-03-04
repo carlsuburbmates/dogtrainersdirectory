@@ -499,40 +499,12 @@ export default function SearchPage() {
                     />
                   </div>
                   <p className="mt-2 text-xs leading-5 text-slate-500">
-                    We use suburb coordinates for distance sorting. Choose a suburb for the
-                    clearest match, or adjust the location details below.
+                    {selectedSuburb
+                      ? 'We use your selected suburb for distance sorting.'
+                      : filters.lat && filters.lng
+                        ? 'This search is using the saved location from your link. Choose a suburb to replace it.'
+                        : 'Choose a suburb to keep distance sorting tied to a known location.'}
                   </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-800">Latitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={filters.lat}
-                      onChange={(event) => {
-                        setFilters((prev) => ({ ...prev, lat: event.target.value }))
-                        setSelectedSuburb(null)
-                      }}
-                      placeholder="-37.8136"
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-800">Longitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={filters.lng}
-                      onChange={(event) => {
-                        setFilters((prev) => ({ ...prev, lng: event.target.value }))
-                        setSelectedSuburb(null)
-                      }}
-                      placeholder="144.9631"
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                    />
-                  </div>
                 </div>
 
                 <div>
