@@ -37,7 +37,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-406` is now complete and the remaining credibility/consistency debt from `AUD-001` is closed.
 - `PC-407` is now complete and `/api/admin/latency` returns a stable no-data summary for zero-volume windows instead of `500`.
 - Product Completion Recovery is now complete for the current application-layer audited scope.
-- The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
+- The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, triage suburb-state hardening, and explicit design-system enforcement.
 - Current top priority: `NX-101`.
 - The current delivery sequence is:
   1. Build Completion
@@ -265,6 +265,13 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/triage?step=location&radius=<n>` still correctly presents the location step as incomplete.
   - Add regression coverage for deep link, refresh, and back/forward behaviour.
 
+**DS-201: Apply the canonical design system to the public refinement slice (pending)**
+- Purpose: make the next public UX changes conform to one explicit design-system reference instead of ad-hoc page-by-page decisions.
+- Definition of done:
+  - Public refinement tasks (`NX-102` to `NX-105`) are implemented against `DOCS/SSOT/12_DESIGN_SYSTEM.md`.
+  - Public pages stop exposing internal builder language, scattered one-off explanation panels, and debug-feeling controls that violate the design-system guardrails.
+  - Home, search, directory, and onboarding align to the documented goals of calm UI, deterministic structure, and product-first clarity.
+
 **NX-102: Remove internal builder language from public UI (pending)**
 - Purpose: stop public pages from reading like product notes or implementation labels.
 - Definition of done:
@@ -278,13 +285,14 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Normal public users do not see latitude/longitude inputs on `/search`.
   - Search still functions through suburb selection and the existing distance filters.
   - Any retained debug controls are gated away from normal production users.
+  - The visible search control set follows the design-system goal of compact, calm, mobile-first filtering.
 
 **NX-104: Improve public empty states on search and directory (pending)**
 - Purpose: replace placeholder-like empty states with useful recovery and supply-side actions.
 - Definition of done:
   - `/directory` empty state provides a useful explanation and at least one actionable next step.
   - Zero-result states on `/search` suggest specific recovery actions (for example: broaden distance, remove a filter, change suburb).
-  - Empty states feel intentional and not like temporary placeholders.
+  - Empty states use the canonical empty-state pattern defined in `DOCS/SSOT/12_DESIGN_SYSTEM.md`.
 
 **NX-105: Reduce instruction density while preserving product differentiation (pending)**
 - Purpose: keep DTD's triage/locality differentiation without making public pages read like manuals.
@@ -292,6 +300,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Home and search surfaces reduce long instructional blocks in favour of concise benefit-first copy.
   - The UI still clearly communicates DTD's triage, locality, and emergency-aware differentiation.
   - Guidance is short, purposeful, and secondary to the main action path.
+  - Home restores one dominant public entry path, with secondary paths demoted in line with the design-system layout rules.
 
 **NX-106: Make search treat `suburbId` as authoritative over location snapshots (pending)**
 - Purpose: prevent location drift between URL snapshots and the actual selected suburb record.

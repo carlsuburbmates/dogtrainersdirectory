@@ -63,5 +63,7 @@ The input bundle indicated references in code to tables/RPCs not present in the 
 - `08_OPS_RUNBOOK.md`
 - `09_DEPLOYMENT.md`
 - `10_SECURITY_AND_PRIVACY.md`
+- `11_PRODUCT_CONTEXT.md`
+- `12_DESIGN_SYSTEM.md`
 - `FILE_MANIFEST.md`
 - `CHANGE_PROTOCOL.md`

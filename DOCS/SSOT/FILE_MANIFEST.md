@@ -23,6 +23,7 @@
 - `09_DEPLOYMENT.md`
 - `10_SECURITY_AND_PRIVACY.md` — ✅ Updated (Phase 1 Batch 3)
 - `11_PRODUCT_CONTEXT.md`
+- `12_DESIGN_SYSTEM.md`
 - `CHANGE_PROTOCOL.md`
 
 ## 3. Exclusions (explicit)
