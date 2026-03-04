@@ -91,6 +91,26 @@ async function logApiTelemetry(
 
 // API service for connecting to Supabase Edge Functions
 export const apiService = {
+  async getSuburbById(id: number): Promise<SuburbResult | null> {
+    const suburbId = Number(id)
+
+    if (!Number.isInteger(suburbId) || suburbId < 1) {
+      return null
+    }
+
+    const { data, error } = await supabase.functions.invoke('suburbs', {
+      body: { id: suburbId }
+    })
+
+    if (error) {
+      console.error('Error retrieving suburb by id:', error)
+      throw new Error('Failed to retrieve suburb')
+    }
+
+    const suburbs = data?.suburbs || []
+    return suburbs[0] || null
+  },
+
   // Search suburbs by name
   async searchSuburbs(query: string): Promise<SuburbResult[]> {
     const startTime = Date.now()

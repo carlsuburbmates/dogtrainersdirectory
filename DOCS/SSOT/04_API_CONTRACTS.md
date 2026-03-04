@@ -1,8 +1,8 @@
 # API Contracts - Boundaries and Invariants
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.2
-**Last Updated:** 2026-02-13
+**Version:** v1.3
+**Last Updated:** 2026-03-05
 
 ## 1. Inventory source
 Implementation-discovered API inventory is generated and versioned at:
@@ -22,6 +22,7 @@ This file defines policy-level API contracts and security boundaries only.
 - `/api/stripe/create-checkout-session`: checkout mode is `payment` for featured placement flow (`tier: featured_placement_30d` metadata).
 - `/api/webhooks/stripe`: webhook processing must be idempotent and signature-verified.
 - `/api/public/search`: server-side decryption must use `SUPABASE_PGCRYPTO_KEY`; decryption keys must never be client-exposed.
+- Canonical locality identity is `suburbId`; mutable location snapshot fields (`suburbName`, `postcode`, `lat`, `lng`, `councilId`) are display/cache hints only and must not become the source of truth when `suburbId` is present.
 
 ## 4. Endpoint contract source
 - Full method lists are in `DOCS/SSOT/_generated/api.md`.

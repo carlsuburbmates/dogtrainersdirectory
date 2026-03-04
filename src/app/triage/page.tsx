@@ -10,8 +10,12 @@ import type { BehaviorIssue, AgeSpecialty } from '@/types/database'
 import { TriageRequestSchema } from '@/lib/contracts'
 import { EmergencyGate } from '@/components/triage/EmergencyGate'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
-import type { SuburbResult } from '@/lib/api'
+import { apiService, type SuburbResult } from '@/lib/api'
 import { hasEmergencyEscalation } from '@/lib/triageEmergency'
+import {
+  parseCanonicalSuburbId,
+  rehydrateTriageLocation
+} from '@/lib/triageLocation'
 
 // URL keys for step state
 const STEP_PARAM = 'step'
@@ -56,6 +60,7 @@ function TriageContent() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showEmergencyGate, setShowEmergencyGate] = useState(false)
+  const urlSuburbId = params.get(SUBURB_ID_PARAM)
 
   // Initialize from URL on mount/param change
   useEffect(() => {
@@ -69,12 +74,55 @@ function TriageContent() {
       setIssues(valid)
     }
 
-    const urlSuburbId = params.get(SUBURB_ID_PARAM)
-    if (urlSuburbId) setSuburbId(Number(urlSuburbId))
-
     const urlRadius = params.get(RADIUS_PARAM)
     if (urlRadius) setRadius(Math.min(50, Math.max(5, Number(urlRadius))))
   }, [params])
+
+  useEffect(() => {
+    let isCurrent = true
+
+    const syncSelectedSuburb = async () => {
+      const canonicalSuburbId = parseCanonicalSuburbId(urlSuburbId)
+
+      if (canonicalSuburbId === null) {
+        if (isCurrent) {
+          setSuburbId(null)
+          setSelectedSuburb(null)
+        }
+        return
+      }
+
+      if (isCurrent) {
+        setSuburbId(canonicalSuburbId)
+        setSelectedSuburb((current) =>
+          current?.id === canonicalSuburbId ? current : null
+        )
+      }
+
+      try {
+        const locationState = await rehydrateTriageLocation(
+          urlSuburbId,
+          apiService.getSuburbById
+        )
+
+        if (isCurrent) {
+          setSuburbId(locationState.suburbId)
+          setSelectedSuburb(locationState.selectedSuburb)
+        }
+      } catch {
+        if (isCurrent) {
+          setSuburbId(canonicalSuburbId)
+          setSelectedSuburb(null)
+        }
+      }
+    }
+
+    syncSelectedSuburb()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [urlSuburbId])
 
   // Helpers
   const updateParam = (key: string, value: string | number | null) => {
@@ -103,7 +151,7 @@ function TriageContent() {
 
   const canContinueFromAge = !!age
   const canContinueFromIssues = true // optional
-  const canContinueFromLocation = suburbId !== null && radius >= 5
+  const canContinueFromLocation = selectedSuburb !== null && radius >= 5
 
   const submit = async () => {
     setError(null)

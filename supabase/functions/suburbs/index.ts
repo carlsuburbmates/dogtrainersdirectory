@@ -25,18 +25,74 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url)
+    let body: Record<string, unknown> | null = null
+
+    try {
+      body = await req.json()
+    } catch (_) {
+      body = null
+    }
+
+    const rawId = url.searchParams.get('id') ?? body?.id
+
+    if (rawId !== undefined && rawId !== null && rawId !== '') {
+      const suburbId = typeof rawId === 'number' ? rawId : Number(rawId)
+
+      if (!Number.isInteger(suburbId) || suburbId < 1) {
+        const errorMessage = 'Id parameter must be a positive integer'
+        logValidationError('suburbs', 'id', rawId, errorMessage)
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid id parameter',
+            message: errorMessage
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      const { data: suburb, error } = await supabase
+        .from('suburbs')
+        .select('id, name, postcode, latitude, longitude, council_id')
+        .eq('id', suburbId)
+        .maybeSingle() as { data: SuburbResult | null; error: any }
+
+      if (error) {
+        console.error('Suburbs API database error:', error)
+        return new Response(
+          JSON.stringify({
+            error: 'Database lookup failed',
+            details: error.message
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          suburbs: suburb ? [suburb] : [],
+          count: suburb ? 1 : 0
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     let query = url.searchParams.get('q') || url.searchParams.get('query')
 
     if (!query) {
-      try {
-        const body = await req.json()
-        if (body && typeof body.query === 'string') {
-          query = body.query
-        } else if (body && typeof body.q === 'string') {
-          query = body.q
-        }
-      } catch (_) {
-        // Ignore body parse errors; fall back to query param validation below.
+      if (body && typeof body.query === 'string') {
+        query = body.query
+      } else if (body && typeof body.q === 'string') {
+        query = body.q
       }
     }
 
