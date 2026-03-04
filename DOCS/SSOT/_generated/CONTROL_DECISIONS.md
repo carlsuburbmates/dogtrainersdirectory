@@ -47,6 +47,7 @@
 | 2026-03-05 | D-137 | Promote the design system to canonical Tier-1 guidance and bind it to the refinement slice | the next public UX work needs an explicit visual/interaction standard so copy cleanup does not become ad-hoc page polish | `12_DESIGN_SYSTEM.md` is now canonical and governs `NX-102` to `NX-105`; it is not tracked as a separate implementation item |
 | 2026-03-05 | D-138 | Tighten Phase 6 task shape before starting implementation | roadmap review showed `NX-101` was under-scoped as frontend-only and `DS-201` was acting like a rule disguised as a task | `NX-101` is now explicitly cross-lane and the design system is enforced as a phase rule instead of a pending backlog item |
 | 2026-03-05 | D-139 | `NX-101` accepted as complete | triage suburb state now uses canonical `suburbId`, the supporting suburb-by-id lookup exists, and `/triage` rehydrates a real selected suburb instead of trusting split or mutable snapshot state | `NX-102` is now the active priority |
+| 2026-03-05 | D-140 | `NX-102` accepted as complete | the public UI no longer exposes the highest-signal internal builder labels on home, search, directory, and onboarding, and the change stayed within the intended copy-only boundary | `NX-103` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |

@@ -146,7 +146,7 @@ export default function OnboardingPage() {
     <main className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <section className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h1 className="text-3xl font-semibold mb-4">Trainer Onboarding (Manual only)</h1>
+          <h1 className="text-3xl font-semibold mb-4">Trainer onboarding</h1>
           <p className="text-gray-600 mb-6">
             Create your account, register your business, and verify your ABN.
           </p>

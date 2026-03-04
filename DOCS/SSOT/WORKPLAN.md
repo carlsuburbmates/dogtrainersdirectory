@@ -39,7 +39,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Product Completion Recovery is now complete for the current application-layer audited scope.
 - The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
-- Current top priority: `NX-102`.
+- Current top priority: `NX-103`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -272,7 +272,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Location snapshot fields may be used as display/cache hints only; they must not become the authoritative source of truth.
   - Add regression coverage for deep link, refresh, and back/forward behaviour.
 
-**NX-102: Remove internal builder language from public UI (pending)**
+**NX-102: Remove internal builder language from public UI (completed 2026-03-05)**
 - Purpose: stop public pages from reading like product notes or implementation labels.
 - Definition of done:
   - Public-facing pages no longer expose labels such as phase markers, internal routing terminology, or manual-process notes.
@@ -312,6 +312,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any remaining location snapshot fields are treated as cache/display only, not source of truth.
 
 ## Execution Log
+- 2026-03-05: `NX-102` completed as a copy-only public UI pass. Internal/builder labels were removed from the home, search, directory, and onboarding surfaces without changing layout structure, filter density, or empty-state behaviour.
 - 2026-03-05: `NX-101` completed by adding a suburb-by-id lookup path to the existing `suburbs` Edge Function plus `apiService`, then rehydrating `/triage` location state from canonical `suburbId` instead of relying on split or mutable snapshot state. Unit coverage now locks deep-link, unresolved-id, and repeat rehydration behaviour.
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
 - 2026-02-13: `P1-011` completed by refactoring `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, and `09_DEPLOYMENT.md` to reference `DOCS/SSOT/_generated/*` and remove duplicated endpoint/route inventories.

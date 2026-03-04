@@ -101,13 +101,13 @@ export default function HomePage() {
               <div className="relative">
                 <div className="mb-6 flex flex-wrap gap-2">
                   <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-sky-100">
-                    Melbourne-first
+                    Local Melbourne support
                   </span>
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200">
-                    Triage + directory
+                    Guided trainer matching
                   </span>
                   <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-100">
-                    Emergency-aware routing
+                    Urgent help when needed
                   </span>
                 </div>
 

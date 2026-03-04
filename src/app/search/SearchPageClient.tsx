@@ -368,7 +368,7 @@ export default function SearchPage() {
     : null
   const resultHeading = hasSearched
     ? `${results.length} ${results.length === 1 ? 'trainer' : 'trainers'} found`
-    : 'Search ready'
+    : 'Ready to compare'
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.14),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.06),_transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f7fafc_50%,#ffffff_100%)]">
@@ -421,12 +421,12 @@ export default function SearchPage() {
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5">
               <p className="text-sm font-semibold text-slate-900">
-                {landingContent.hasLandingIntent ? 'Landing focus' : 'What this page is for'}
+                {landingContent.hasLandingIntent ? 'Current focus' : 'How to use this page'}
               </p>
               <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
                 <p>
                   {landingContent.hasLandingIntent
-                    ? `Use this page as a focused landing search.${landingContent.contextLabel ? ` Current focus: ${landingContent.contextLabel}.` : ''}`
+                    ? `Use this page to compare a narrower shortlist.${landingContent.contextLabel ? ` Current focus: ${landingContent.contextLabel}.` : ''}`
                     : 'Keep the search broad enough to compare, then move to a profile once you find a credible fit.'}
                 </p>
                 <p>
@@ -499,8 +499,8 @@ export default function SearchPage() {
                     />
                   </div>
                   <p className="mt-2 text-xs leading-5 text-slate-500">
-                    We use suburb coordinates for distance sorting. Manual coordinates are still
-                    available below.
+                    We use suburb coordinates for distance sorting. Choose a suburb for the
+                    clearest match, or adjust the location details below.
                   </p>
                 </div>
 
@@ -653,7 +653,7 @@ export default function SearchPage() {
 
             <Panel className="p-5">
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                How to compare well
+                Compare with confidence
               </h3>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
                 <li>Start with fit: stage, location, and key behaviour issues.</li>

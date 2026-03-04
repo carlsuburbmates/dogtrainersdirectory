@@ -64,7 +64,7 @@ export default async function DirectoryPage() {
     <main className="container mx-auto px-4 py-10">
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="space-y-4 text-center">
-          <p className="text-sm uppercase tracking-wider text-blue-600 font-semibold">Phase 3 · Directory</p>
+          <p className="text-sm uppercase tracking-wider text-blue-600 font-semibold">Browse by area</p>
           <h1 className="text-4xl font-bold text-gray-900">Melbourne Dog Trainers Directory</h1>
           <p className="text-lg text-gray-600">
             Browse verified trainers by region, explore featured placements, or jump straight to a profile using the search box below.
