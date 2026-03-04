@@ -25,27 +25,15 @@ const issueOptions = BEHAVIOR_ISSUES.map((value) => ({
 }))
 
 const reassurancePoints = [
-  'Triage-first matching that narrows the right type of trainer before you browse.',
-  'Distance-aware suburb search built for Melbourne owner journeys, not a generic directory.',
-  'Verified and emergency-aware paths so urgent cases move faster.'
+  'Guided triage when you are not sure what help fits.',
+  'Suburb-based matching for practical Melbourne comparisons.',
+  'Fast access to urgent support when the situation cannot wait.'
 ]
 
 const quickRoutes = [
-  {
-    href: '/triage',
-    title: 'Start with triage',
-    body: 'Use the guided intake when you are unsure what type of help you need yet.'
-  },
-  {
-    href: '/directory',
-    title: 'Browse the directory',
-    body: 'Go straight to profiles if you already know you want to compare trainers.'
-  },
-  {
-    href: '/emergency',
-    title: 'Emergency support',
-    body: 'Jump to urgent resources first if your dog needs immediate help.'
-  }
+  { href: '/triage', label: 'Need guidance? Start triage' },
+  { href: '/directory', label: 'Prefer browsing? Open the directory' },
+  { href: '/emergency', label: 'Need urgent help? Emergency support' }
 ]
 
 const mapRadiusToDistance = (radius: number) => {
@@ -115,8 +103,8 @@ export default function HomePage() {
                   Find the right Melbourne dog trainer without guessing first.
                 </h1>
                 <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 sm:text-lg">
-                  Start with your dog&apos;s stage, location, and behaviour needs. We push you toward
-                  the right kind of trainer, not just the longest list.
+                  Start with your dog&apos;s stage, suburb, and key behaviour needs to build a
+                  sharper shortlist from the start.
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -130,22 +118,22 @@ export default function HomePage() {
                   ))}
                 </div>
 
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  {quickRoutes.map((route) => (
-                    <Link
-                      key={route.href}
-                      href={route.href}
-                      className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-colors hover:bg-white/10"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <h2 className="text-sm font-semibold text-white">{route.title}</h2>
-                        <span className="text-sky-200 transition-transform group-hover:translate-x-1">
-                          →
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{route.body}</p>
-                    </Link>
-                  ))}
+                <div className="mt-8">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Other ways in
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2 text-sm text-slate-300">
+                    {quickRoutes.map((route) => (
+                      <Link
+                        key={route.href}
+                        href={route.href}
+                        className="inline-flex items-center gap-2 transition-colors hover:text-white"
+                      >
+                        <span>{route.label}</span>
+                        <span aria-hidden="true">→</span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -272,8 +260,7 @@ export default function HomePage() {
                     Find trainers
                   </Button>
                   <p className="text-center text-xs leading-5 text-slate-500">
-                    You&apos;ll land on a searchable shortlist with your suburb, stage, and key needs
-                    already applied.
+                    Your shortlist opens with your suburb, distance, and key needs already applied.
                   </p>
                 </div>
               </form>

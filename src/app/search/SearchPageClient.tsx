@@ -446,19 +446,13 @@ export default function SearchPage() {
 
             <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5">
               <p className="text-sm font-semibold text-slate-900">
-                {landingContent.hasLandingIntent ? 'Current focus' : 'How to use this page'}
+                {landingContent.hasLandingIntent ? 'Current focus' : 'Need a clearer starting point?'}
               </p>
-              <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                <p>
-                  {landingContent.hasLandingIntent
-                    ? `Use this page to compare a narrower shortlist.${landingContent.contextLabel ? ` Current focus: ${landingContent.contextLabel}.` : ''}`
-                    : 'Keep the search broad enough to compare, then move to a profile once you find a credible fit.'}
-                </p>
-                <p>
-                  Verified badges and ratings are intended to help you narrow faster, not replace
-                  the final conversation with the trainer.
-                </p>
-              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">
+                {landingContent.hasLandingIntent
+                  ? `You are already viewing a narrower shortlist.${landingContent.contextLabel ? ` Current focus: ${landingContent.contextLabel}.` : ''}`
+                  : 'Use search when you know what to compare. Use triage if you need help narrowing the right type of support first.'}
+              </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {discoveryLinks.map((link) => (
                   <Link
@@ -650,13 +644,28 @@ export default function SearchPage() {
 
             <Panel className="p-5">
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Compare with confidence
+                Need support?
               </h3>
-              <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                <li>Start with fit: stage, location, and key behaviour issues.</li>
-                <li>Use ratings and verification to narrow, then read the full profile.</li>
-                <li>When a profile looks credible, contact directly instead of endlessly filtering.</li>
-              </ul>
+              <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+                <p>
+                  Search stays suburb-aware for local comparisons. If you are unsure what kind of
+                  help fits, use triage first.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href="/triage"
+                    className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  >
+                    Start guided triage
+                  </Link>
+                  <Link
+                    href="/emergency"
+                    className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 transition-colors hover:border-amber-300 hover:text-amber-800"
+                  >
+                    Emergency support
+                  </Link>
+                </div>
+              </div>
             </Panel>
           </div>
 
@@ -676,8 +685,8 @@ export default function SearchPage() {
                   Run a search to build your shortlist
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Start with suburb, service needs, or a trainer name. This page is designed to
-                  move you from a broad shortlist into one credible profile fast.
+                  Start with a suburb, service need, or trainer name, then move straight into a
+                  tighter shortlist.
                 </p>
               </Panel>
             )}
