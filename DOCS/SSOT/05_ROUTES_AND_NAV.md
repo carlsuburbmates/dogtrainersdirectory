@@ -20,6 +20,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - `/trainers/[id]` is the trust and contact decision surface: it must make fit, proof, and direct contact options visible before the user leaves the directory, and it should prioritise the fastest available direct contact path while retaining the enquiry form as a written fallback.
 - If `/trainers/[id]` cannot resolve to a live profile, the failure state must provide clear recovery actions back to search, directory, or home instead of ending in a hard stop.
 - `/trainer/[id]` exists for backward compatibility and must redirect to `/trainers/[id]`.
+- `/trainer/[id]` compatibility redirects must preserve meaningful query-string context when forwarding to `/trainers/[id]`.
 - Legal and policy pages (`/privacy`, `/terms`, `/disclaimer`) must remain publicly accessible.
 
 ## 3. Admin separation

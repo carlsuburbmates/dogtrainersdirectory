@@ -2,6 +2,19 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getOrCreateDailyDigest } from '@/lib/digest'
 
+const buildForwardedHeaders = (request: Request) => {
+  const cookie = request.headers.get('cookie')
+
+  if (!cookie) {
+    return undefined
+  }
+
+  return { cookie }
+}
+
+const buildInternalAdminUrl = (request: Request, path: string) =>
+  new URL(path, request.url).toString()
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
@@ -35,7 +48,10 @@ export async function GET(request: Request) {
     // Get latency statistics
     let latencyStats = null
     try {
-      const latencyResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'}/api/admin/latency?hours=24`)
+      const latencyResponse = await fetch(buildInternalAdminUrl(request, '/api/admin/latency?hours=24'), {
+        headers: buildForwardedHeaders(request),
+        cache: 'no-store'
+      })
       if (latencyResponse.ok) {
         latencyStats = await latencyResponse.json()
       }
@@ -46,7 +62,10 @@ export async function GET(request: Request) {
     // Get system health status
     let healthStatus = null
     try {
-      const healthResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'}/api/admin/health`)
+      const healthResponse = await fetch(buildInternalAdminUrl(request, '/api/admin/health'), {
+        headers: buildForwardedHeaders(request),
+        cache: 'no-store'
+      })
       if (healthResponse.ok) {
         healthStatus = await healthResponse.json()
       }

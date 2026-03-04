@@ -1,10 +1,12 @@
+import { LEGAL_LAST_UPDATED } from '@/lib/legalDocuments'
+
 export default function DisclaimerPage() {
   return (
     <main className="container mx-auto px-4 py-12">
       <div className="max-w-3xl mx-auto space-y-6">
         <header>
           <h1 className="text-3xl font-bold">Disclaimer</h1>
-          <p className="text-gray-600">Last updated: {new Date().toLocaleDateString('en-AU')}</p>
+          <p className="text-gray-600">Last updated: {LEGAL_LAST_UPDATED}</p>
         </header>
 
         <section className="space-y-3 text-gray-700">

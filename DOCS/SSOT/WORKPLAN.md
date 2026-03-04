@@ -34,7 +34,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-403` is now complete and the authenticated admin UI no longer exposes raw API or test-endpoint links as operator actions.
 - `PC-404` is now complete and missing trainer profiles now provide explicit recovery paths instead of hard-stop dead ends.
 - `PC-405` is now complete and `/admin/**` routes render inside a dedicated operator shell instead of the public marketing chrome.
-- Current top priority: `PC-406`.
+- `PC-406` is now complete and the remaining credibility/consistency debt from `AUD-001` is closed.
+- Product Completion Recovery is now complete for the current audited scope.
+- Current top priority: none (await next prioritisation cycle).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -235,7 +237,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Public acquisition CTAs and public footer chrome are not shown on admin routes.
   - Admin navigation reflects operator tasks rather than public-site discovery goals.
 
-**PC-406: Clean credibility and consistency debt**
+**PC-406: Clean credibility and consistency debt (completed 2026-03-04)**
 - Purpose: close the lower-severity but credibility-damaging gaps surfaced by the audit.
 - Definition of done:
   - Legal pages use explicit revision dates rather than render-time dates.
@@ -274,3 +276,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-04: `PC-403` completed by removing the remaining operator-facing links to raw API and test endpoints from `/admin/triage` and `/admin/errors`, while preserving valid internal operator navigation. The authenticated admin UI no longer exposes those dead affordances. `PC-404` is now the active priority.
 - 2026-03-04: `PC-404` completed by adding explicit recovery actions to the missing trainer profile fallback, including links back to search, directory, and home while preserving any available query-string search context. The profile dead-end is now recoverable, and targeted Playwright coverage locks the fallback behaviour. `PC-405` is now the active priority.
 - 2026-03-04: `PC-405` completed by splitting `/admin/**` into a dedicated operator shell with task-focused navigation while hiding the public site header and footer chrome on admin routes. Runtime browser verification confirmed the operator shell is visible and the public acquisition controls are no longer shown on `/admin`. `PC-406` is now the active priority.
+- 2026-03-04: `PC-406` completed by replacing the rolling legal-page render dates with one explicit shared revision date, switching `/api/admin/overview` to request-derived same-origin fetches with forwarded auth cookies instead of the hidden `localhost:3005` fallback, and preserving query-string context on the `/trainer/[id]` compatibility redirect. The current Product Completion Recovery slice is now closed for the audited scope.
