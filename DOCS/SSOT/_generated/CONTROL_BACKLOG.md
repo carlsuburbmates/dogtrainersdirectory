@@ -41,8 +41,7 @@
 | PC-405 | Product Completion Recovery | Separate admin IA and chrome from the public shell | completed | main-control | `WORKPLAN` `PC-405` | admin routes render inside an operator-specific shell |
 | PC-406 | Product Completion Recovery | Clean credibility and consistency debt | completed | main-control | `WORKPLAN` `PC-406` | legal dates, admin origin logic, and compatibility redirect context are aligned |
 | PC-407 | Product Completion Recovery | Stabilise admin latency summaries for zero-volume windows | completed | backend | `WORKPLAN` `PC-407` | zero-volume latency windows return a stable no-data summary instead of `500` |
-| NX-101 | Public Experience And State Refinement | Make triage suburb state URL-canonical and rehydratable | in_progress | frontend | `WORKPLAN` `NX-101` | triage deep links and refresh restore suburb selection from canonical `suburbId` state |
-| DS-201 | Public Experience And State Refinement | Apply the canonical design system to the public refinement slice | pending | main-control | `WORKPLAN` `DS-201` | public UX cleanup tasks are executed against the canonical design-system rules |
+| NX-101 | Public Experience And State Refinement | Make triage suburb state URL-canonical and rehydratable | in_progress | frontend + backend | `WORKPLAN` `NX-101` | triage deep links and refresh restore suburb selection from canonical `suburbId` state without relying on snapshot fields as source of truth |
 | NX-102 | Public Experience And State Refinement | Remove internal builder language from public UI | pending | frontend | `WORKPLAN` `NX-102` | public copy stops exposing phase labels and implementation wording |
 | NX-103 | Public Experience And State Refinement | Hide developer-facing location controls from public search | pending | frontend | `WORKPLAN` `NX-103` | public `/search` no longer exposes lat/lng debug inputs |
 | NX-104 | Public Experience And State Refinement | Improve public empty states on search and directory | pending | frontend | `WORKPLAN` `NX-104` | empty states provide actionable recovery paths instead of placeholder copy |
@@ -53,6 +52,7 @@
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
 - Product Completion Recovery is complete.
 - The next active slice is Public Experience And State Refinement.
+- `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - Current active priority: `NX-101`.
 
 ## Recently completed sync cycle (archived)

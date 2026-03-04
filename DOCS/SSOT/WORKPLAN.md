@@ -37,7 +37,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-406` is now complete and the remaining credibility/consistency debt from `AUD-001` is closed.
 - `PC-407` is now complete and `/api/admin/latency` returns a stable no-data summary for zero-volume windows instead of `500`.
 - Product Completion Recovery is now complete for the current application-layer audited scope.
-- The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, triage suburb-state hardening, and explicit design-system enforcement.
+- The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
+- `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Current top priority: `NX-101`.
 - The current delivery sequence is:
   1. Build Completion
@@ -256,26 +257,26 @@ Anything not listed here is **not worked on** (to prevent drift).
 
 ### Phase 6 - Public Experience And State Refinement
 
+**Phase rule**
+- `NX-102` to `NX-105` must comply with `DOCS/SSOT/12_DESIGN_SYSTEM.md`.
+- Public refinement work in this phase should not introduce new visual patterns or debug-oriented controls outside the canonical design-system rules.
+
 **NX-101: Make triage suburb state URL-canonical and rehydratable (in progress)**
 - Purpose: remove the split source of truth between triage URL params and in-memory suburb selection.
 - Definition of done:
   - `suburbId` is the canonical location identity in the triage URL.
+  - If the current frontend cannot rehydrate from `suburbId` alone, the required supporting lookup path is added in the same task (for example: frontend service helper and, if needed, a backend suburb-by-id lookup path).
   - `/triage` rehydrates `selectedSuburb` from `suburbId` on load or URL change.
   - `/triage?step=location&suburbId=<id>&radius=<n>` restores the selected suburb without forcing re-selection.
   - `/triage?step=location&radius=<n>` still correctly presents the location step as incomplete.
+  - Location snapshot fields may be used as display/cache hints only; they must not become the authoritative source of truth.
   - Add regression coverage for deep link, refresh, and back/forward behaviour.
-
-**DS-201: Apply the canonical design system to the public refinement slice (pending)**
-- Purpose: make the next public UX changes conform to one explicit design-system reference instead of ad-hoc page-by-page decisions.
-- Definition of done:
-  - Public refinement tasks (`NX-102` to `NX-105`) are implemented against `DOCS/SSOT/12_DESIGN_SYSTEM.md`.
-  - Public pages stop exposing internal builder language, scattered one-off explanation panels, and debug-feeling controls that violate the design-system guardrails.
-  - Home, search, directory, and onboarding align to the documented goals of calm UI, deterministic structure, and product-first clarity.
 
 **NX-102: Remove internal builder language from public UI (pending)**
 - Purpose: stop public pages from reading like product notes or implementation labels.
 - Definition of done:
   - Public-facing pages no longer expose labels such as phase markers, internal routing terminology, or manual-process notes.
+  - This task is limited to label and copy replacement/removal, not broader layout restructuring.
   - Headings and supporting copy use user-facing benefit language rather than system-description language.
   - Changes cover the current high-signal public surfaces: `/`, `/search`, `/directory`, and `/onboarding`.
 
@@ -284,7 +285,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Definition of done:
   - Normal public users do not see latitude/longitude inputs on `/search`.
   - Search still functions through suburb selection and the existing distance filters.
-  - Any retained debug controls are gated away from normal production users.
+  - Any retained debug controls use an already-defined non-public development or test path; this task must not introduce a new undocumented public env toggle.
   - The visible search control set follows the design-system goal of compact, calm, mobile-first filtering.
 
 **NX-104: Improve public empty states on search and directory (pending)**
@@ -297,6 +298,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 **NX-105: Reduce instruction density while preserving product differentiation (pending)**
 - Purpose: keep DTD's triage/locality differentiation without making public pages read like manuals.
 - Definition of done:
+  - This task follows `NX-102` and focuses on restructuring or removing long instructional sections, not on relabelling already-correct copy.
   - Home and search surfaces reduce long instructional blocks in favour of concise benefit-first copy.
   - The UI still clearly communicates DTD's triage, locality, and emergency-aware differentiation.
   - Guidance is short, purposeful, and secondary to the main action path.
