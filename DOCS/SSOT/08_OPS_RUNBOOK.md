@@ -18,7 +18,7 @@ There is **no support inbox** concept in code.
 - `/admin/triage` — triage monitoring
 
 ## 3. Key admin API capabilities (examples)
-- Moderation run loop: `/api/admin/moderation/run` (cron every 10 minutes)
+- Moderation run loop: `/api/admin/moderation/run` (cron daily at 01:00 AEST/AEDT on the current Vercel Hobby-compatible schedule)
 - Ops digest: `/api/admin/ops-digest` (daily)
 - Monetisation resync/overview: `/api/admin/monetization/*`
 - DLQ replay: `/api/admin/dlq/replay`

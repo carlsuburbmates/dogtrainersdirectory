@@ -1,8 +1,8 @@
 # Deployment - Vercel, Cron, Environments
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.1
-**Last Updated:** 2026-02-13
+**Version:** v1.2
+**Last Updated:** 2026-03-05
 
 ## 1. Hosting
 - Deploy on Vercel using Next.js build.
@@ -13,7 +13,7 @@ From `vercel.json`:
 - `/api/emergency/verify` - `0 0 * * *`
 - `/api/emergency/triage/weekly` - `0 0 * * 1`
 - `/api/admin/ops-digest` - `0 23 * * *`
-- `/api/admin/moderation/run` - `*/10 * * * *`
+- `/api/admin/moderation/run` - `0 1 * * *`
 - `/api/admin/featured/expire` - `0 2 * * *`
 
 ## 3. Build and verification commands
