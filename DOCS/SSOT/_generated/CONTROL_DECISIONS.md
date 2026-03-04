@@ -41,6 +41,7 @@
 | 2026-03-04 | D-131 | `PC-404` accepted as complete | the missing trainer profile fallback now provides explicit recovery paths back to search, directory, and home while preserving available search context | `PC-405` is now the active priority |
 | 2026-03-04 | D-132 | `PC-405` accepted as complete | `/admin/**` now renders inside an operator-specific shell with task-focused navigation, and the public acquisition/footer chrome is no longer shown on admin routes in runtime browser verification | `PC-406` is now the active priority |
 | 2026-03-04 | D-133 | `PC-406` accepted as complete | legal revision dates are now explicit, admin overview uses request-derived same-origin fetches instead of the hidden fallback host, and the `/trainer/[id]` compatibility redirect now preserves meaningful query context | the current Product Completion Recovery slice is closed pending the next prioritisation cycle |
+| 2026-03-04 | D-134 | `PC-407` opened from `PC-406` validation | runtime verification showed `/api/admin/latency` can still return `500` on zero-volume windows because its summary query divides by zero | `PC-407` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |

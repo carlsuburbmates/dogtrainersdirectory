@@ -35,8 +35,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-404` is now complete and missing trainer profiles now provide explicit recovery paths instead of hard-stop dead ends.
 - `PC-405` is now complete and `/admin/**` routes render inside a dedicated operator shell instead of the public marketing chrome.
 - `PC-406` is now complete and the remaining credibility/consistency debt from `AUD-001` is closed.
-- Product Completion Recovery is now complete for the current audited scope.
-- Current top priority: none (await next prioritisation cycle).
+- `PC-407` is now opened from `PC-406` validation because `/api/admin/latency` can still fail on zero-volume windows.
+- Current top priority: `PC-407`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -244,6 +244,13 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Internal admin overview fetches use same-origin logic (or a request-derived origin) instead of hidden fallback hosts.
   - Compatibility redirects preserve query-string context where that context is still meaningful.
 
+**PC-407: Stabilise admin latency summaries for zero-volume windows**
+- Purpose: stop the operator telemetry surface from throwing avoidable server errors when there is no data in the selected window.
+- Definition of done:
+  - `/api/admin/latency` returns a stable empty-state summary when the selected window has zero rows.
+  - Zero-volume windows do not trigger SQL `division by zero` errors.
+  - Admin overview and any admin latency surfaces can render a no-data state without logging a route failure.
+
 ## Execution Log
 - 2026-02-13: `P1-010` completed. Generated snapshots added under `DOCS/SSOT/_generated/*`, `npm run ssot:refresh` added, and CI drift enforcement enabled via refresh + dirty-tree check.
 - 2026-02-13: `P1-011` completed by refactoring `04_API_CONTRACTS.md`, `05_ROUTES_AND_NAV.md`, and `09_DEPLOYMENT.md` to reference `DOCS/SSOT/_generated/*` and remove duplicated endpoint/route inventories.
@@ -276,4 +283,5 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-04: `PC-403` completed by removing the remaining operator-facing links to raw API and test endpoints from `/admin/triage` and `/admin/errors`, while preserving valid internal operator navigation. The authenticated admin UI no longer exposes those dead affordances. `PC-404` is now the active priority.
 - 2026-03-04: `PC-404` completed by adding explicit recovery actions to the missing trainer profile fallback, including links back to search, directory, and home while preserving any available query-string search context. The profile dead-end is now recoverable, and targeted Playwright coverage locks the fallback behaviour. `PC-405` is now the active priority.
 - 2026-03-04: `PC-405` completed by splitting `/admin/**` into a dedicated operator shell with task-focused navigation while hiding the public site header and footer chrome on admin routes. Runtime browser verification confirmed the operator shell is visible and the public acquisition controls are no longer shown on `/admin`. `PC-406` is now the active priority.
-- 2026-03-04: `PC-406` completed by replacing the rolling legal-page render dates with one explicit shared revision date, switching `/api/admin/overview` to request-derived same-origin fetches with forwarded auth cookies instead of the hidden `localhost:3005` fallback, and preserving query-string context on the `/trainer/[id]` compatibility redirect. The current Product Completion Recovery slice is now closed for the audited scope.
+- 2026-03-04: `PC-406` completed by replacing the rolling legal-page render dates with one explicit shared revision date, switching `/api/admin/overview` to request-derived same-origin fetches with forwarded auth cookies instead of the hidden `localhost:3005` fallback, and preserving query-string context on the `/trainer/[id]` compatibility redirect.
+- 2026-03-04: Validation for `PC-406` exposed one additional operator-facing defect outside the original audit set: `/api/admin/latency` can still return `500` on zero-volume windows because its summary query can divide by zero. That follow-up is now tracked as `PC-407`, which becomes the new active priority.
