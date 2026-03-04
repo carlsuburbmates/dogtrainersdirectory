@@ -33,7 +33,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-402` is now complete and triage emergency escalation now uses one canonical issue-to-flow mapping.
 - `PC-403` is now complete and the authenticated admin UI no longer exposes raw API or test-endpoint links as operator actions.
 - `PC-404` is now complete and missing trainer profiles now provide explicit recovery paths instead of hard-stop dead ends.
-- Current top priority: `PC-405`.
+- `PC-405` is now complete and `/admin/**` routes render inside a dedicated operator shell instead of the public marketing chrome.
+- Current top priority: `PC-406`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -227,7 +228,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - High-risk empty/error states in the core public journey provide at least one meaningful next step.
   - Recovery actions preserve useful context where practical.
 
-**PC-405: Separate admin IA and chrome from the public shell**
+**PC-405: Separate admin IA and chrome from the public shell (completed 2026-03-04)**
 - Purpose: make the authenticated operator experience structurally distinct from the public marketing shell.
 - Definition of done:
   - `/admin/**` routes render inside an operator-specific shell.
@@ -272,3 +273,4 @@ Anything not listed here is **not worked on** (to prevent drift).
 - 2026-03-04: `PC-402` completed by extracting the triage emergency issue-to-flow mapping into a shared helper used by both `/triage` and `EmergencyGate`, removing the previous hardcoded gate subset that let `destructive_behaviour`, `rescue_dog_support`, and `resource_guarding` bypass escalation. Unit coverage now locks the full mapping and branch-priority behaviour. `PC-403` is now the active priority.
 - 2026-03-04: `PC-403` completed by removing the remaining operator-facing links to raw API and test endpoints from `/admin/triage` and `/admin/errors`, while preserving valid internal operator navigation. The authenticated admin UI no longer exposes those dead affordances. `PC-404` is now the active priority.
 - 2026-03-04: `PC-404` completed by adding explicit recovery actions to the missing trainer profile fallback, including links back to search, directory, and home while preserving any available query-string search context. The profile dead-end is now recoverable, and targeted Playwright coverage locks the fallback behaviour. `PC-405` is now the active priority.
+- 2026-03-04: `PC-405` completed by splitting `/admin/**` into a dedicated operator shell with task-focused navigation while hiding the public site header and footer chrome on admin routes. Runtime browser verification confirmed the operator shell is visible and the public acquisition controls are no longer shown on `/admin`. `PC-406` is now the active priority.

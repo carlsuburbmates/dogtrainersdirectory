@@ -38,12 +38,12 @@
 | PC-402 | Product Completion Recovery | Unify triage emergency escalation logic | completed | frontend | `WORKPLAN` `PC-402` | triage and `EmergencyGate` share one canonical emergency mapping |
 | PC-403 | Product Completion Recovery | Remove dead operator actions and broken internal affordances | completed | main-control | `WORKPLAN` `PC-403` | operator UI no longer exposes dead links to raw APIs |
 | PC-404 | Product Completion Recovery | Add recovery paths for failure states | completed | frontend | `WORKPLAN` `PC-404` | core hard-stop dead ends now provide useful next-step recovery |
-| PC-405 | Product Completion Recovery | Separate admin IA and chrome from the public shell | in_progress | main-control | `WORKPLAN` `PC-405` | admin routes render inside an operator-specific shell |
-| PC-406 | Product Completion Recovery | Clean credibility and consistency debt | pending | main-control | `WORKPLAN` `PC-406` | legal dates, admin origin logic, and compatibility redirect context are aligned |
+| PC-405 | Product Completion Recovery | Separate admin IA and chrome from the public shell | completed | main-control | `WORKPLAN` `PC-405` | admin routes render inside an operator-specific shell |
+| PC-406 | Product Completion Recovery | Clean credibility and consistency debt | in_progress | main-control | `WORKPLAN` `PC-406` | legal dates, admin origin logic, and compatibility redirect context are aligned |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
-- `PC-405` is the single active product priority.
+- `PC-406` is the single active product priority.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

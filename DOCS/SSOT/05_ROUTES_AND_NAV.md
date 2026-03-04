@@ -1,7 +1,7 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.7
+**Version:** v1.8
 **Last Updated:** 2026-03-04
 
 ## 1. Inventory source
@@ -26,6 +26,8 @@ This file defines navigation intent, canonical route decisions, and separation r
 - Admin surfaces are under `/admin/**` only.
 - `/emergency` is a public surface and must not be repurposed as an admin console.
 - Admin pages must be protected by middleware and role checks (see `DOCS/SSOT/10_SECURITY_AND_PRIVACY.md`).
+- Admin pages must render inside an operator-specific shell and navigation model, not the public marketing shell.
+- Public acquisition CTAs and the public footer chrome must not be shown on `/admin/**` routes.
 
 ## 4. Canonical routing decisions
 - Canonical trainer listing route is `/directory`.
