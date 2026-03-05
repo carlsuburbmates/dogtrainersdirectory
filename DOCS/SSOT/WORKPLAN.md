@@ -41,7 +41,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
-- Current top priority: `SH-402` (Phase 8 - Experience Stability Hardening).
+- Current top priority: `SH-403` (Phase 8 - Experience Stability Hardening).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -397,7 +397,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Fetch failures show a terminal error state with explicit retry + recovery CTA(s).
   - Legitimate empty inventory keeps the existing supply/demand CTAs.
 
-**SH-402: Harden admin queue loading against partial endpoint failure**
+**SH-402: Harden admin queue loading against partial endpoint failure (completed 2026-03-06)**
 - Purpose: stop one failing queue endpoint from collapsing `/admin` queue visibility.
 - Definition of done:
   - `/api/admin/scaffolded` and related queue endpoints return stable JSON error envelopes.
@@ -433,6 +433,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No onboarding API contract changes.
 
 ## Execution Log
+- 2026-03-06: `SH-402` completed by replacing fail-fast queue loading on `/admin` with per-endpoint resilient loading and recoverable degraded states, and by standardising `/api/admin/scaffolded` handled-failure envelopes to always return predictable JSON (`success`, `error`, optional `message`, and stable `scaffolded` list shape). Queue surfaces now degrade independently instead of collapsing when one endpoint fails. `SH-403` is now the active priority.
 - 2026-03-06: `SH-401` completed by refactoring `/directory` data loading to return an explicit success/failure result shape instead of coercing fetch failures to empty inventory, and by adding a terminal failure `StateCard` with direct recovery actions (`Reload directory`, `Search trainers`). True empty-success inventory behaviour and existing featured/verified/rating ordering remained unchanged. `SH-402` is now the active priority.
 - 2026-03-05: `DS-399` (`AUD-002` lite) completed with a `Partial` verdict. The post-phase checkpoint confirmed strong improvements from `DS-301` to `DS-305`, then opened a targeted closure slice for six residual gaps (directory error-vs-empty, admin queue resilience, triage DS alignment, search error recovery actions, touch-target baseline, and onboarding implementation-language cleanup). `SH-401` is now the active priority.
 - 2026-03-05: `DS-305` completed by restructuring `/emergency` into an urgent-first hierarchy with immediate action CTAs, demoted-but-visible safety guidance, explicit Step 1 (resource lookup) and Step 2 (triage guidance) progression, and consistent DS primitive-based empty/error/retry states. Endpoint contracts and triage logic remained unchanged, and independent verification passed (`type-check`, `lint`, `test`, and Playwright emergency coverage). `DS-399` is now the active priority.

@@ -60,28 +60,120 @@ type FallbackStats = {
   events: Array<{ business_id: number | null; reason: string; created_at: string }>
 }
 
+type ScaffoldedResponse = {
+  success?: boolean
+  scaffolded?: ScaffoldedItem[]
+  error?: string
+  message?: string
+}
+
+const EMPTY_QUEUE_PAYLOAD: QueuePayload = {
+  emergency_verifications: [],
+  reviews: [],
+  abn_verifications: [],
+  flagged_businesses: [],
+}
+
+const READABLE_ERRORS = {
+  queues:
+    'Queue data is temporarily unavailable. Please refresh shortly.',
+  scaffolded:
+    'Scaffolded listings are temporarily unavailable. Please refresh shortly.',
+  fallback:
+    'ABN fallback telemetry is temporarily unavailable. Please refresh shortly.',
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url)
+  let payload: any = null
+
+  try {
+    payload = await response.json()
+  } catch (_error) {
+    payload = null
+  }
+
+  if (!response.ok) {
+    const message =
+      payload?.error ||
+      payload?.message ||
+      `Request failed with status ${response.status}`
+    throw new Error(message)
+  }
+
+  return payload as T
+}
+
 export default function AdminQueuesPage() {
-  const [queues, setQueues] = useState<QueuePayload | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [queues, setQueues] = useState<QueuePayload>(EMPTY_QUEUE_PAYLOAD)
+  const [queuesError, setQueuesError] = useState<string | null>(null)
   const [scaffolded, setScaffolded] = useState<ScaffoldedItem[]>([])
+  const [scaffoldedError, setScaffoldedError] = useState<string | null>(null)
   const [fallbackStats, setFallbackStats] = useState<FallbackStats | null>(null)
+  const [fallbackStatsError, setFallbackStatsError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/queues').then((res) => res.json()),
-      fetch('/api/admin/scaffolded').then((res) => res.json()),
-      fetch('/api/admin/abn/fallback-stats').then((res) => res.json())
-    ])
-      .then(([queuePayload, scaffoldPayload, fallbackPayload]: [QueuePayload, { scaffolded: ScaffoldedItem[] }, FallbackStats]) => {
-        setQueues(queuePayload)
-        setScaffolded(scaffoldPayload.scaffolded || [])
-        setFallbackStats(fallbackPayload || null)
-      })
-      .catch((err) => {
-        console.error(err)
-        setError('Unable to load admin queues right now.')
-      })
+    let isCancelled = false
+
+    const load = async () => {
+      setIsLoading(true)
+
+      const [queueResult, scaffoldedResult, fallbackResult] =
+        await Promise.allSettled([
+          fetchJson<QueuePayload>('/api/admin/queues'),
+          fetchJson<ScaffoldedResponse>('/api/admin/scaffolded'),
+          fetchJson<FallbackStats>('/api/admin/abn/fallback-stats'),
+        ])
+
+      if (isCancelled) return
+
+      if (queueResult.status === 'fulfilled') {
+        setQueues(queueResult.value)
+        setQueuesError(null)
+      } else {
+        console.error(queueResult.reason)
+        setQueues(EMPTY_QUEUE_PAYLOAD)
+        setQueuesError(READABLE_ERRORS.queues)
+      }
+
+      if (scaffoldedResult.status === 'fulfilled') {
+        const payload = scaffoldedResult.value
+        if (payload.success === false) {
+          setScaffolded([])
+          setScaffoldedError(READABLE_ERRORS.scaffolded)
+        } else {
+          setScaffolded(payload.scaffolded || [])
+          setScaffoldedError(null)
+        }
+      } else {
+        console.error(scaffoldedResult.reason)
+        setScaffolded([])
+        setScaffoldedError(READABLE_ERRORS.scaffolded)
+      }
+
+      if (fallbackResult.status === 'fulfilled') {
+        setFallbackStats(fallbackResult.value || null)
+        setFallbackStatsError(null)
+      } else {
+        console.error(fallbackResult.reason)
+        setFallbackStats(null)
+        setFallbackStatsError(READABLE_ERRORS.fallback)
+      }
+
+      setIsLoading(false)
+    }
+
+    load()
+
+    return () => {
+      isCancelled = true
+    }
   }, [])
+
+  const hasLoadError = Boolean(
+    queuesError || scaffoldedError || fallbackStatsError
+  )
 
   return (
     <>
@@ -93,11 +185,15 @@ export default function AdminQueuesPage() {
       {/* Traditional Queue Interface */}
       <main className="container mx-auto px-4 py-8">
         <section className="space-y-6">
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        {!queues && !error && (
+        {hasLoadError && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Some queue sections could not be loaded. You can still action the available sections, then refresh to retry.
+          </div>
+        )}
+        {isLoading && (
           <p className="text-gray-500">Loading queues…</p>
         )}
-        {queues && (
+        {!isLoading && (
           <div className="space-y-8">
             <div className="rounded-lg border border-gray-200 bg-white px-5 py-4">
               <div className="text-sm font-semibold text-gray-700">Operator task summary</div>
@@ -127,6 +223,16 @@ export default function AdminQueuesPage() {
                 ))}
               </div>
             </div>
+            {queuesError && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {queuesError}
+              </div>
+            )}
+            {fallbackStatsError && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {fallbackStatsError}
+              </div>
+            )}
             {fallbackStats && (
               <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
                 <p className="text-sm font-semibold text-blue-900">ABN fallback rate (last {fallbackStats.windowHours}h)</p>
@@ -210,6 +316,11 @@ export default function AdminQueuesPage() {
               meta: `Status ${item.verification_status}`,
               body: `Active: ${item.is_active} • Featured until: ${item.featured_until || 'N/A'}`
             }))} />
+            {scaffoldedError && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {scaffoldedError}
+              </div>
+            )}
             <QueueCard title="Scaffolded Listings" items={scaffolded.map((item) => ({
               id: item.id,
               title: item.name,
