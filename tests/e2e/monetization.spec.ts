@@ -1,6 +1,8 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
 
 const screenshotOptions = { fullPage: true, maxDiffPixelRatio: 0.02 }
+const fixedNow = new Date('2026-03-05T00:00:00.000Z')
+const fixedNowIso = fixedNow.toISOString()
 const healthPayload = {
   status: 'healthy',
   metrics: {
@@ -10,7 +12,7 @@ const healthPayload = {
     totalCalls: 15
   },
   message: 'LLM health check succeeded',
-  lastCheck: new Date().toISOString()
+  lastCheck: fixedNowIso
 }
 
 const telemetryState = {
@@ -48,8 +50,8 @@ function buildMonetizationPayload() {
         plan_id: 'price_test',
         status: monetizationState.status,
         current_period_end: null,
-        last_event_received: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        last_event_received: fixedNowIso,
+        updated_at: fixedNowIso,
         business: { name: 'Calm Companion', verification_status: 'verified' }
       }
     ],
@@ -84,8 +86,8 @@ async function wireAdminBasics(page: Page) {
         schedule: ['*/5 * * * * — Emergency verify'],
         telemetry: {
           overrides: telemetryState.override ? [telemetryState.override] : [],
-          abnRecheck: { lastSuccess: new Date().toISOString(), lastFailure: null },
-          emergencyCron: { lastSuccess: new Date().toISOString(), lastFailure: null }
+          abnRecheck: { lastSuccess: fixedNowIso, lastFailure: null },
+          emergencyCron: { lastSuccess: fixedNowIso, lastFailure: null }
         }
       }
     })
@@ -103,7 +105,7 @@ async function wireAdminBasics(page: Page) {
         service: body.service,
         status: body.status,
         reason: body.reason ?? null,
-        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+        expires_at: new Date(fixedNow.getTime() + 60 * 60 * 1000).toISOString()
       }
       await route.fulfill({ json: { override: telemetryState.override } })
       return
@@ -122,7 +124,7 @@ async function wireAdminBasics(page: Page) {
 
   await page.route('**/api/admin/telemetry/latency', async (route: Route) => {
     await route.fulfill({
-      json: { generatedAt: new Date().toISOString(), metrics: {} }
+      json: { generatedAt: fixedNowIso, metrics: {} }
     })
   })
 

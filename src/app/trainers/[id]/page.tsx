@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase'
 import ContactForm from './ContactForm'
+import { Badge, Card, Chip, Divider, StateCard } from '@/components/ui/primitives'
 import {
   recordCommercialFunnelMetric,
   recordLatencyMetric
@@ -237,16 +238,12 @@ export default async function TrainerPage({
             >
               Back to search
             </Link>
-            {isFeatured && (
-              <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100">
-                Featured listing
-              </span>
-            )}
-            {trainer.abn_verified && (
-              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100">
-                Verified business
-              </span>
-            )}
+            {isFeatured ? (
+              <Badge className="border-amber-300/20 bg-amber-300/10 text-amber-100">Featured listing</Badge>
+            ) : null}
+            {trainer.abn_verified ? (
+              <Badge className="border-emerald-300/20 bg-emerald-300/10 text-emerald-100">Verified business</Badge>
+            ) : null}
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
@@ -272,7 +269,7 @@ export default async function TrainerPage({
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4">
+                <Card tone="muted" padding="sm" className="border-white/10 bg-white/5 text-white shadow-none">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
                     Rating
                   </p>
@@ -286,9 +283,9 @@ export default async function TrainerPage({
                         }`
                       : 'No approved reviews published yet'}
                   </p>
-                </div>
+                </Card>
 
-                <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4">
+                <Card tone="muted" padding="sm" className="border-white/10 bg-white/5 text-white shadow-none">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
                     Profile evidence
                   </p>
@@ -304,12 +301,12 @@ export default async function TrainerPage({
                         } visible${trainer.pricing ? ' and pricing shown' : ''}.`
                       : `Use the enquiry form${trainer.pricing ? ' while pricing stays visible' : ''}.`}
                   </p>
-                </div>
+                </Card>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <Card tone="muted" className="rounded-[2rem] border-white/10 bg-white/5 text-white backdrop-blur shadow-none">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
                   Ready to contact?
                 </p>
@@ -344,26 +341,28 @@ export default async function TrainerPage({
                     the details below for the available contact path.
                   </p>
                 )}
-              </div>
+              </Card>
 
-              <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur">
+              <Card tone="muted" className="rounded-[2rem] border-white/10 bg-white/5 text-white backdrop-blur shadow-none">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
                   Why this listing is credible
                 </p>
                 <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
                   {credibilitySignals.map((signal) => (
-                    <div
+                    <Card
                       key={signal.label}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                      tone="muted"
+                      padding="sm"
+                      className="border-white/10 bg-white/5 text-slate-200 shadow-none"
                     >
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
                         {signal.label}
                       </p>
                       <p className="mt-1">{signal.detail}</p>
-                    </div>
+                    </Card>
                   ))}
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </div>
@@ -373,18 +372,18 @@ export default async function TrainerPage({
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">
             {trainer.bio && (
-              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+              <Card as="section" className="rounded-[2rem]">
                 <h2 className="text-2xl font-bold text-slate-950">About this trainer</h2>
                 <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700 sm:text-base">
                   {trainer.bio}
                 </p>
-              </section>
+              </Card>
             )}
 
             {(trainer.services?.length > 0 ||
               trainer.behavior_issues?.length > 0 ||
               trainer.age_specialties?.length > 0) && (
-              <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+              <Card as="section" className="rounded-[2rem]">
                 <h2 className="text-2xl font-bold text-slate-950">Fit snapshot</h2>
                 <div className="mt-5 space-y-5">
                   {trainer.services && trainer.services.length > 0 && (
@@ -394,12 +393,14 @@ export default async function TrainerPage({
                       </h3>
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         {trainer.services.map((service: string, index: number) => (
-                          <div
+                          <Card
                             key={`${service}-${index}`}
-                            className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-slate-800"
+                            tone="info"
+                            padding="sm"
+                            className="text-sm font-medium text-slate-800 shadow-none"
                           >
                             {formatServiceType(service)}
-                          </div>
+                          </Card>
                         ))}
                       </div>
                     </div>
@@ -412,12 +413,9 @@ export default async function TrainerPage({
                       </h3>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {trainer.behavior_issues.map((issue: string, index: number) => (
-                          <span
-                            key={`${issue}-${index}`}
-                            className="rounded-full bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700"
-                          >
+                          <Chip key={`${issue}-${index}`} asSpan tone="info" className="text-sm">
                             {formatServiceType(issue)}
-                          </span>
+                          </Chip>
                         ))}
                       </div>
                     </div>
@@ -430,21 +428,18 @@ export default async function TrainerPage({
                       </h3>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {trainer.age_specialties.map((specialty: string, index: number) => (
-                          <span
-                            key={`${specialty}-${index}`}
-                            className="rounded-full bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700"
-                          >
+                          <Chip key={`${specialty}-${index}`} asSpan tone="success" className="text-sm">
                             {formatServiceType(specialty)}
-                          </span>
+                          </Chip>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
-              </section>
+              </Card>
             )}
 
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+            <Card as="section" className="rounded-[2rem]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-950">
@@ -459,9 +454,10 @@ export default async function TrainerPage({
               {reviews && reviews.length > 0 ? (
                 <div className="mt-6 space-y-6">
                   {reviews.map((review: Review) => (
-                    <div
+                    <Card
                       key={review.id}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5"
+                      tone="muted"
+                      className="rounded-2xl"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
@@ -483,20 +479,21 @@ export default async function TrainerPage({
                       {review.content && (
                         <p className="mt-2 text-sm leading-7 text-slate-700">{review.content}</p>
                       )}
-                    </div>
+                    </Card>
                   ))}
                 </div>
               ) : (
-                <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-6 text-center text-sm text-slate-500">
-                  No reviews yet. Use the service fit, verification, and direct conversation to
-                  make the next decision.
-                </div>
+                <StateCard
+                  title="No reviews yet"
+                  description="Use the service fit, verification, and direct conversation to make the next decision."
+                  className="mt-6 rounded-2xl"
+                />
               )}
-            </section>
+            </Card>
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]">
+            <Card as="section" className="rounded-[2rem]">
               <h3 className="text-xl font-bold text-slate-950">Contact Information</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Reach out once the fit looks right. The fastest path is usually phone or email.
@@ -504,7 +501,7 @@ export default async function TrainerPage({
 
               <div className="mt-5 space-y-4">
                 {primaryContactAction && (
-                  <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4">
+                  <Card tone="info" padding="sm" className="rounded-2xl shadow-none">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
                       Best next step
                     </p>
@@ -519,11 +516,11 @@ export default async function TrainerPage({
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                       {primaryContactAction.helper}
                     </p>
-                  </div>
+                  </Card>
                 )}
 
                 {trainer.phone && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                       Phone
                     </p>
@@ -539,11 +536,11 @@ export default async function TrainerPage({
                     >
                       Call this trainer
                     </a>
-                  </div>
+                  </Card>
                 )}
 
                 {trainer.email && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                       Email
                     </p>
@@ -559,11 +556,11 @@ export default async function TrainerPage({
                     >
                       Email this trainer
                     </a>
-                  </div>
+                  </Card>
                 )}
 
                 {trainer.website && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                       Website
                     </p>
@@ -583,47 +580,49 @@ export default async function TrainerPage({
                     >
                       Open the trainer website
                     </a>
-                  </div>
+                  </Card>
                 )}
 
                 {trainer.address && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                       Address
                     </p>
                     <p className="mt-2 text-sm leading-6 text-slate-700">{trainer.address}</p>
-                  </div>
+                  </Card>
                 )}
               </div>
 
               {trainer.pricing && (
-                <div className="mt-6 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4">
+                <Card tone="warning" padding="sm" className="mt-6 rounded-2xl shadow-none">
                   <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
                     Pricing
                   </h4>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
                     {trainer.pricing}
                   </p>
-                </div>
+                </Card>
               )}
-            </section>
+            </Card>
 
-            <section
+            <Card
+              as="section"
               id={enquiryAnchorId}
-              className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]"
+              className="rounded-[2rem]"
             >
               <h3 className="text-xl font-bold text-slate-950">Prefer a written first message?</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Use the enquiry form if you want a documented first contact through the directory.
               </p>
-              <div className="mt-5 border-t border-slate-200 pt-5">
+              <Divider className="mt-5" />
+              <div className="pt-5">
                 <ContactForm
                   trainerId={id}
                   trainerName={trainer.business_name}
                   trainerEmail={trainer.email}
                 />
               </div>
-            </section>
+            </Card>
           </div>
         </div>
       </div>

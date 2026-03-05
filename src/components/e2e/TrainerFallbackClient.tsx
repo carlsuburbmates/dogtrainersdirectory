@@ -4,6 +4,7 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { Card, StateCard } from '@/components/ui/primitives'
 
 interface TrainerFallbackClientProps {
   id: number
@@ -33,58 +34,55 @@ export default function TrainerFallbackClient({ id }: TrainerFallbackClientProps
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-        </div>
+      <div className="shell-container py-6">
+        <Card tone="muted" className="animate-pulse">
+          <div className="h-8 w-1/2 rounded bg-gray-200 mb-4"></div>
+          <div className="h-4 w-3/4 rounded bg-gray-200 mb-2"></div>
+        </Card>
       </div>
     )
   }
 
   if (!trainer) {
     return (
-      <div className="container mx-auto max-w-3xl p-6">
-        <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-          <h1 className="mb-4 text-2xl font-bold text-gray-900">Trainer Not Found</h1>
-          <p className="text-gray-600">
-            This trainer profile is no longer available, or the link may be out of date.
-          </p>
-          <p className="mt-3 text-sm text-gray-500">
-            Choose one of the options below to keep exploring the directory.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href={searchHref}
-              className="inline-flex items-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-            >
-              Back to search
-            </Link>
-            <Link
-              href="/directory"
-              className="inline-flex items-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50"
-            >
-              Browse directory
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50"
-            >
-              Go home
-            </Link>
-          </div>
-        </div>
+      <div className="shell-container max-w-3xl py-6">
+        <StateCard
+          title="Trainer Not Found"
+          description="This trainer profile is no longer available, or the link may be out of date."
+          actions={
+            <>
+              <Link
+                href={searchHref}
+                className="inline-flex min-h-[44px] items-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              >
+                Back to search
+              </Link>
+              <Link
+                href="/directory"
+                className="inline-flex min-h-[44px] items-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50"
+              >
+                Browse directory
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex min-h-[44px] items-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50"
+              >
+                Go home
+              </Link>
+            </>
+          }
+        />
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="shell-container py-6">
       <h1 className="text-2xl font-bold mb-6">{trainer.business_name || 'Trainer Profile'}</h1>
-      <div className="bg-white rounded-lg shadow p-6">
+      <Card>
         {trainer.description && <p className="text-gray-700 mb-4">{trainer.description}</p>}
         {trainer.suburb && <p className="text-gray-600">Location: {trainer.suburb}</p>}
-      </div>
+      </Card>
     </div>
   )
 }

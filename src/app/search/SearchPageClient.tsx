@@ -3,6 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
+import {
+  Badge,
+  Capsule,
+  Card,
+  Chip,
+  Field,
+  Sheet,
+  StateCard
+} from '@/components/ui/primitives'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
 import type { SuburbResult } from '@/lib/api'
 import {
@@ -17,58 +27,6 @@ import {
   getSearchDiscoveryLinks,
   getSearchLandingContent
 } from './landing'
-
-function Panel({
-  children,
-  className
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div
-      className={`rounded-3xl border border-slate-200/80 bg-white/95 shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] ${
-        className || ''
-      }`}
-    >
-      {children}
-    </div>
-  )
-}
-
-function ActionButton({
-  children,
-  onClick,
-  disabled,
-  variant = 'primary',
-  type = 'button',
-  className
-}: {
-  children: React.ReactNode
-  onClick?: () => void
-  disabled?: boolean
-  variant?: 'primary' | 'secondary'
-  type?: 'button' | 'submit'
-  className?: string
-}) {
-  const baseClasses =
-    'inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition-colors'
-  const variantClasses =
-    variant === 'primary'
-      ? 'bg-slate-950 text-white hover:bg-slate-800 disabled:bg-slate-300'
-      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:bg-slate-100 disabled:text-slate-400'
-
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`${baseClasses} ${variantClasses} ${className || ''}`}
-    >
-      {children}
-    </button>
-  )
-}
 
 interface SearchFilters {
   query: string
@@ -473,39 +431,31 @@ export default function SearchPage() {
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+                <Badge tone="primary" className="normal-case tracking-[0.04em]">
                   {resultHeading}
-                </span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                </Badge>
+                <Badge className="normal-case tracking-[0.04em]">
                   {activeFilterCount} active filters
-                </span>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                </Badge>
+                <Badge tone="success" className="normal-case tracking-[0.04em]">
                   {distanceLabels[filters.distance] || distanceLabels.any}
-                </span>
-                {selectedSuburb && (
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                </Badge>
+                {selectedSuburb ? (
+                  <Badge tone="success" className="normal-case tracking-[0.04em]">
                     {selectedSuburb.name} {selectedSuburb.postcode}
-                  </span>
-                )}
-                {activeServiceLabel && (
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  </Badge>
+                ) : null}
+                {activeServiceLabel ? (
+                  <Badge tone="warning" className="normal-case tracking-[0.04em]">
                     {activeServiceLabel}
-                  </span>
-                )}
-                {activeAgeLabel && (
-                  <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
-                    {activeAgeLabel}
-                  </span>
-                )}
-                {activeBehaviourLabel && (
-                  <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">
-                    {activeBehaviourLabel}
-                  </span>
-                )}
+                  </Badge>
+                ) : null}
+                {activeAgeLabel ? <Chip asSpan tone="info">{activeAgeLabel}</Chip> : null}
+                {activeBehaviourLabel ? <Chip asSpan tone="info">{activeBehaviourLabel}</Chip> : null}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5">
+            <Card tone="muted" className="px-5 py-5">
               <p className="text-sm font-semibold text-slate-900">
                 {landingContent.hasLandingIntent ? 'Current focus' : 'Need a clearer starting point?'}
               </p>
@@ -519,53 +469,46 @@ export default function SearchPage() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                    className="inline-flex min-h-[44px] items-center rounded-full border border-[hsl(var(--ds-border-subtle))] bg-[hsl(var(--ds-background-surface))] px-3 py-2 text-xs font-semibold text-[hsl(var(--ds-text-secondary))] transition-colors hover:border-[hsl(var(--ds-accent-primary)/0.4)] hover:text-[hsl(var(--ds-accent-primary))]"
                   >
                     {link.label}
                   </Link>
                 ))}
               </div>
-            </div>
+            </Card>
           </div>
         </section>
 
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
           <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <Panel className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Intent capsule
-                  </p>
-                  <h2 className="mt-1 text-lg font-bold text-slate-950">Current shortlist focus</h2>
-                </div>
-                <button
+            <Capsule
+              title="Current shortlist focus"
+              kicker="Intent capsule"
+              actions={
+                <Button
                   type="button"
                   ref={filterSheetTriggerRef}
                   onClick={handleOpenFilterSheet}
-                  className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px]"
                   aria-haspopup="dialog"
                   aria-expanded={isFilterSheetOpen}
                   aria-controls="search-filter-sheet"
                 >
                   More filters ({activeFilterCount})
-                </button>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
+                </Button>
+              }
+            >
+              <div className="flex flex-wrap gap-2">
                 {capsuleTags.slice(0, 6).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700"
-                  >
+                  <Chip key={tag} asSpan>
                     {tag}
-                  </span>
+                  </Chip>
                 ))}
               </div>
-
               <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Search</label>
+                <Field label="Search">
                   <input
                     type="text"
                     value={filters.query}
@@ -575,10 +518,9 @@ export default function SearchPage() {
                     placeholder="Search by name, location, or speciality..."
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Suburb</label>
+                <Field label="Suburb">
                   <div className="mt-2">
                     <SuburbAutocomplete
                       value={selectedSuburb}
@@ -600,10 +542,9 @@ export default function SearchPage() {
                       }}
                     />
                   </div>
-                </div>
+                </Field>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Distance</label>
+                <Field label="Distance">
                   <select
                     value={filters.distance}
                     onChange={(event) =>
@@ -617,66 +558,63 @@ export default function SearchPage() {
                       </option>
                     ))}
                   </select>
-                </div>
+                </Field>
 
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                  <ActionButton type="submit" disabled={loading} className="w-full">
+                  <Button type="submit" size="lg" loading={loading} className="w-full min-h-[44px]">
                     {loading ? 'Searching...' : 'Update results'}
-                  </ActionButton>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={handleOpenFilterSheet}
-                    className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                    variant="outline"
+                    size="lg"
+                    className="w-full min-h-[44px]"
                   >
                     Edit advanced filters
-                  </button>
+                  </Button>
                 </div>
               </form>
-            </Panel>
+            </Capsule>
 
-            <Panel className="p-4">
+            <Card className="p-4">
               <div className="flex flex-wrap gap-2 text-xs">
                 <Link
                   href="/triage"
-                  className="inline-flex min-h-[44px] items-center rounded-full border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-[hsl(var(--ds-border-subtle))] bg-[hsl(var(--ds-background-surface))] px-3 py-2 font-semibold text-[hsl(var(--ds-text-secondary))] transition-colors hover:border-[hsl(var(--ds-accent-primary)/0.4)] hover:text-[hsl(var(--ds-accent-primary))]"
                 >
                   Start guided triage
                 </Link>
                 <Link
                   href="/emergency"
-                  className="inline-flex min-h-[44px] items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 font-semibold text-amber-700 transition-colors hover:border-amber-300 hover:text-amber-800"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-[hsl(var(--ds-accent-warning)/0.35)] bg-[hsl(var(--ds-accent-warning)/0.12)] px-3 py-2 font-semibold text-[hsl(var(--ds-text-primary))] transition-colors hover:border-[hsl(var(--ds-accent-warning)/0.55)]"
                 >
                   Emergency support
                 </Link>
               </div>
-            </Panel>
+            </Card>
           </div>
 
           <div className="space-y-5">
             {error && (
-              <Panel className="border-red-200 bg-red-50 p-5">
-                <p className="text-sm font-medium text-red-700">{error}</p>
-              </Panel>
+              <StateCard
+                title="Search unavailable right now"
+                description={error}
+                tone="error"
+                align="left"
+              />
             )}
 
             {!hasSearched && !error && (
-              <Panel className="p-8 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
-                  Ready to search
-                </p>
-                <h2 className="mt-3 text-2xl font-bold text-slate-950">
-                  Run a search to build your shortlist
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Start with a suburb, service need, or trainer name, then move straight into a
-                  tighter shortlist.
-                </p>
-              </Panel>
+              <StateCard
+                title="Run a search to build your shortlist"
+                description="Start with a suburb, service need, or trainer name, then move straight into a tighter shortlist."
+              />
             )}
 
             {hasSearched && (
               <>
-                <Panel className="p-5">
+                <Card className="p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="text-2xl font-bold text-slate-950">{resultHeading}</h2>
@@ -685,42 +623,39 @@ export default function SearchPage() {
                       </p>
                     </div>
                     {hasMore && !loading && (
-                      <ActionButton onClick={handleLoadMore} variant="secondary">
+                      <Button onClick={handleLoadMore} variant="outline" className="min-h-[44px]">
                         Load More Results
-                      </ActionButton>
+                      </Button>
                     )}
                   </div>
-                </Panel>
+                </Card>
 
                 {results.length === 0 && !loading && (
-                  <Panel className="p-8 text-center">
-                    <h3 className="text-xl font-bold text-slate-900">No trainers matched this search</h3>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">
-                      Try a wider distance, remove one filter, or choose another suburb to see more
-                      options.
-                    </p>
-                    <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm text-slate-600">
-                      <span className="rounded-full bg-slate-100 px-3 py-1">Broaden distance</span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1">Remove one filter</span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1">Try another suburb</span>
-                    </div>
-                    <div className="mt-6 flex flex-wrap justify-center gap-3">
-                      {filters.distance !== 'any' && (
-                        <ActionButton onClick={handleBroadenSearch} variant="secondary">
-                          Search all distances
-                        </ActionButton>
-                      )}
-                      <ActionButton onClick={handleClearRefinements} variant="secondary">
-                        Clear extra filters
-                      </ActionButton>
-                      <Link
-                        href="/triage"
-                        className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                      >
-                        Start guided search
-                      </Link>
-                    </div>
-                  </Panel>
+                  <StateCard
+                    title="No trainers matched this search"
+                    description="Try a wider distance, remove one filter, or choose another suburb to see more options."
+                    actions={
+                      <>
+                        <Chip asSpan>Broaden distance</Chip>
+                        <Chip asSpan>Remove one filter</Chip>
+                        <Chip asSpan>Try another suburb</Chip>
+                        {filters.distance !== 'any' ? (
+                          <Button onClick={handleBroadenSearch} variant="outline" className="min-h-[44px]">
+                            Search all distances
+                          </Button>
+                        ) : null}
+                        <Button onClick={handleClearRefinements} variant="outline" className="min-h-[44px]">
+                          Clear extra filters
+                        </Button>
+                        <Link
+                          href="/triage"
+                          className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                        >
+                          Start guided search
+                        </Link>
+                      </>
+                    }
+                  />
                 )}
 
                 {results.length > 0 && (
@@ -742,7 +677,7 @@ export default function SearchPage() {
                         : `/trainers/${trainer.business_id}`
 
                       return (
-                        <Panel key={trainer.business_id} className="p-6">
+                        <Card key={trainer.business_id} className="p-6">
                           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                             <div className="flex-1">
                               <div className="flex flex-wrap items-center gap-2">
@@ -750,14 +685,14 @@ export default function SearchPage() {
                                   {trainer.business_name}
                                 </h3>
                                 {trainer.abn_verified && (
-                                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-700">
+                                  <Badge tone="success">
                                     Verified
-                                  </span>
+                                  </Badge>
                                 )}
                                 {trainer.verification_status === 'approved' && (
-                                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+                                  <Badge tone="primary">
                                     Approved profile
-                                  </span>
+                                  </Badge>
                                 )}
                               </div>
 
@@ -779,7 +714,7 @@ export default function SearchPage() {
                               </div>
 
                               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                                     Verification
                                   </p>
@@ -789,9 +724,9 @@ export default function SearchPage() {
                                   <p className="mt-1 text-sm text-slate-600">
                                     {formatVerificationStatus(trainer.verification_status)}
                                   </p>
-                                </div>
+                                </Card>
 
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                                     Public reviews
                                   </p>
@@ -803,9 +738,9 @@ export default function SearchPage() {
                                       ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'} visible`
                                       : 'No approved reviews listed'}
                                   </p>
-                                </div>
+                                </Card>
 
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
                                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                                     Match details
                                   </p>
@@ -818,7 +753,7 @@ export default function SearchPage() {
                                     {trainer.services.length} services, {trainer.age_specialties.length}{' '}
                                     age, {trainer.behavior_issues.length} behaviour
                                   </p>
-                                </div>
+                                </Card>
                               </div>
 
                               {trainer.age_specialties && trainer.age_specialties.length > 0 && (
@@ -828,12 +763,9 @@ export default function SearchPage() {
                                   </p>
                                   <div className="mt-2 flex flex-wrap gap-2">
                                     {trainer.age_specialties.slice(0, 4).map((value) => (
-                                      <span
-                                        key={value}
-                                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-                                      >
+                                      <Chip key={value} asSpan>
                                         {formatLabel(value)}
-                                      </span>
+                                      </Chip>
                                     ))}
                                   </div>
                                 </div>
@@ -862,7 +794,7 @@ export default function SearchPage() {
                               )}
                             </div>
 
-                            <div className="w-full rounded-3xl border border-slate-200 bg-slate-50 p-5 xl:w-[260px]">
+                            <Card tone="muted" className="w-full xl:w-[260px]">
                               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                 Best next step
                               </p>
@@ -870,7 +802,7 @@ export default function SearchPage() {
                                 Open the full profile to confirm the fastest contact option,
                                 pricing, and the full credibility breakdown before you reach out.
                               </p>
-                              <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+                              <Card tone="info" padding="sm" className="mt-4 rounded-2xl shadow-none">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
                                   What happens next
                                 </p>
@@ -881,28 +813,29 @@ export default function SearchPage() {
                                       } already listed on the profile.`
                                     : 'The profile shows the clearest available contact path for this listing.'}
                                 </p>
-                              </div>
+                              </Card>
                               <Link
                                 href={trainerHref}
-                                className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                                className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                               >
                                 View Profile
                               </Link>
                               <p className="mt-3 text-xs leading-5 text-slate-500">
                                 Most buyers review the profile, then contact the trainer directly.
                               </p>
-                            </div>
+                            </Card>
                           </div>
-                        </Panel>
+                        </Card>
                       )
                     })}
                   </div>
                 )}
 
                 {loading && page > 1 && (
-                  <Panel className="p-5 text-center">
-                    <p className="text-sm text-slate-500">Loading more results...</p>
-                  </Panel>
+                  <StateCard
+                    title="Loading more results"
+                    description="Fetching additional trainers for this shortlist."
+                  />
                 )}
               </>
             )}
@@ -919,16 +852,12 @@ export default function SearchPage() {
             className="absolute inset-0 bg-slate-950/45"
             onClick={handleCloseFilterSheet}
           />
-          <section
+          <Sheet
             id="search-filter-sheet"
             role="dialog"
             aria-modal="true"
             aria-label="Advanced search filters"
-            className={`absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-[0_-20px_50px_-30px_rgba(15,23,42,0.45)] transition-transform duration-250 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-none md:w-[440px] md:rounded-none md:rounded-l-3xl md:border-l ${
-              isFilterSheetOpen
-                ? 'translate-y-0 md:translate-x-0'
-                : 'translate-y-full md:translate-y-0 md:translate-x-full'
-            }`}
+            open={isFilterSheetOpen}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -952,54 +881,43 @@ export default function SearchPage() {
             </p>
 
             <div className="mt-5 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-slate-800">Age specialities</label>
+              <Field label="Age specialities">
                 <div className="mt-3 flex flex-wrap gap-2">
                   {ageSpecialtyOptions.map((option) => {
                     const selected = filters.age_specialties.includes(option.value)
                     return (
-                      <button
+                      <Chip
                         key={option.value}
-                        type="button"
                         onClick={() => toggleArrayFilter('age_specialties', option.value)}
-                        className={`min-h-[44px] rounded-full px-3 py-2 text-xs font-semibold transition ${
-                          selected
-                            ? 'bg-slate-950 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
+                        tone="neutral"
+                        selected={selected}
                       >
                         {option.label}
-                      </button>
+                      </Chip>
                     )
                   })}
                 </div>
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-800">Behaviour issues</label>
+              <Field label="Behaviour issues">
                 <div className="mt-3 flex flex-wrap gap-2">
                   {behaviorIssueOptions.map((option) => {
                     const selected = filters.behavior_issues.includes(option.value)
                     return (
-                      <button
+                      <Chip
                         key={option.value}
-                        type="button"
                         onClick={() => toggleArrayFilter('behavior_issues', option.value)}
-                        className={`min-h-[44px] rounded-full px-3 py-2 text-xs font-semibold transition ${
-                          selected
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                        }`}
+                        tone="info"
+                        selected={selected}
                       >
                         {option.label}
-                      </button>
+                      </Chip>
                     )
                   })}
                 </div>
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-800">Service type</label>
+              <Field label="Service type">
                 <select
                   value={filters.service_type}
                   onChange={(event) =>
@@ -1014,7 +932,7 @@ export default function SearchPage() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               <div className="space-y-2">
                 <label className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
@@ -1044,15 +962,19 @@ export default function SearchPage() {
 
             <div className="sticky bottom-0 mt-6 border-t border-slate-200 bg-white py-4">
               <div className="flex flex-wrap gap-3">
-                <ActionButton onClick={handleApplyFilterSheet} className="flex-1 min-w-[180px]">
+                <Button onClick={handleApplyFilterSheet} className="min-h-[44px] flex-1 min-w-[180px]">
                   Apply filters
-                </ActionButton>
-                <ActionButton onClick={handleClearRefinements} variant="secondary" className="flex-1 min-w-[180px]">
+                </Button>
+                <Button
+                  onClick={handleClearRefinements}
+                  variant="outline"
+                  className="min-h-[44px] flex-1 min-w-[180px]"
+                >
                   Clear extra filters
-                </ActionButton>
+                </Button>
               </div>
             </div>
-          </section>
+          </Sheet>
         </div>
       </div>
     </div>

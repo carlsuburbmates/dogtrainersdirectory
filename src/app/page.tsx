@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
+import { Badge, Card, Chip, Field } from '@/components/ui/primitives'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
 import type { SuburbResult } from '@/lib/api'
 import {
@@ -88,15 +89,15 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.35),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.22),_transparent_34%)]" />
               <div className="relative">
                 <div className="mb-6 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-sky-100">
+                  <Badge className="border-white/20 bg-white/10 text-sky-100">
                     Local Melbourne support
-                  </span>
-                  <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200">
+                  </Badge>
+                  <Badge className="border-white/15 bg-white/5 text-slate-200">
                     Guided trainer matching
-                  </span>
-                  <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-medium text-amber-100">
+                  </Badge>
+                  <Badge className="border-amber-300/20 bg-amber-300/10 text-amber-100">
                     Urgent help when needed
-                  </span>
+                  </Badge>
                 </div>
 
                 <h1 className="max-w-xl text-4xl font-black leading-tight sm:text-5xl">
@@ -109,12 +110,14 @@ export default function HomePage() {
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
                   {reassurancePoints.map((point) => (
-                    <div
+                    <Card
                       key={point}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-100"
+                      tone="muted"
+                      padding="sm"
+                      className="border-white/10 bg-white/5 text-sm leading-6 text-slate-100 shadow-none"
                     >
                       {point}
-                    </div>
+                    </Card>
                   ))}
                 </div>
 
@@ -159,10 +162,7 @@ export default function HomePage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="text-sm font-semibold text-slate-800" htmlFor="age">
-                    Dog&apos;s age or stage
-                  </label>
+                <Field label="Dog's age or stage" htmlFor="age">
                   <select
                     id="age"
                     value={age}
@@ -175,62 +175,52 @@ export default function HomePage() {
                       </option>
                     ))}
                   </select>
-                </div>
+                </Field>
 
-                <div>
+                <Field
+                  label="Behaviour issues (optional)"
+                  hint="Pick the most important concerns"
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <label className="text-sm font-semibold text-slate-800">
-                      Behaviour issues (optional)
-                    </label>
-                    <span className="text-xs text-slate-500">
-                      Pick the most important concerns
-                    </span>
+                    <span className="sr-only">Choose behaviour issues</span>
                   </div>
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {issueOptions.map((option) => {
                       const selected = issues.includes(option.value)
                       return (
-                        <button
-                          type="button"
+                        <Chip
                           key={option.value}
                           onClick={() => handleIssueToggle(option.value)}
-                          className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
-                            selected
-                              ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
-                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
-                          }`}
+                          selected={selected}
+                          tone="neutral"
+                          className="w-full justify-start rounded-2xl px-4 py-3 text-left text-sm font-medium"
                         >
                           {option.label}
-                        </button>
+                        </Chip>
                       )
                     })}
                   </div>
-                </div>
+                </Field>
 
-                <div>
-                  <label className="text-sm font-semibold text-slate-800" htmlFor="suburb">
-                    Suburb
-                  </label>
+                <Field
+                  label="Suburb"
+                  htmlFor="suburb"
+                  hint="Select a real suburb so distance filtering stays accurate."
+                >
                   <div className="mt-2">
                     <SuburbAutocomplete value={selectedSuburb} onChange={setSelectedSuburb} />
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-                    <span className="text-slate-500">
-                      Select a real suburb so distance filtering stays accurate.
-                    </span>
                     {selectedSuburb && (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
+                      <Badge tone="success" className="normal-case tracking-[0.04em]">
                         {selectedSuburb.name} selected
-                      </span>
+                      </Badge>
                     )}
                   </div>
-                </div>
+                </Field>
 
-                <div>
+                <Field label="Search radius" htmlFor="radius">
                   <div className="flex items-center justify-between gap-3">
-                    <label className="text-sm font-semibold text-slate-800" htmlFor="radius">
-                      Search radius
-                    </label>
                     <span className="text-sm font-semibold text-slate-700">{radius} km</span>
                   </div>
                   <input
@@ -247,10 +237,10 @@ export default function HomePage() {
                     <span>Local</span>
                     <span>Broader Melbourne</span>
                   </div>
-                </div>
+                </Field>
 
                 {error && (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <div className="rounded-2xl border border-[hsl(var(--ds-accent-warning)/0.35)] bg-[hsl(var(--ds-accent-warning)/0.12)] px-4 py-3 text-sm text-[hsl(var(--ds-text-primary))]">
                     {error}
                   </div>
                 )}

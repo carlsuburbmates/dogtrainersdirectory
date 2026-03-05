@@ -40,3 +40,6 @@ dist/
 
 # Generated PDF documentation files
 *.pdf
+
+# Local QA capture scratch (canonical artefacts live under qa_artifacts/)
+tmp/qa/

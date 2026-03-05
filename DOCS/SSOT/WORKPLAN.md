@@ -40,7 +40,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - The post-recovery public refinement slice (public language cleanup, search UX decluttering, triage suburb-state hardening) is complete.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
-- Current top priority: `DS-304` (Phase 7 - Design System Enforcement).
+- Current top priority: `DS-305` (Phase 7 - Design System Enforcement).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -358,7 +358,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Existing API contract compatibility is preserved (including current alias-normalisation expectations).
   - The page no longer presents a single overwhelming long-form wall as the primary UX.
 
-**DS-304: Enforce primitive discipline across public surfaces**
+**DS-304: Enforce primitive discipline across public surfaces (completed 2026-03-05)**
 - Purpose: remove one-off content blocks and visual drift by standardising on canonical UI primitives.
 - Definition of done:
   - Public pages use canonical primitives for cards, chips, badges, dividers, sheets, and state blocks (empty/loading/error).
@@ -382,6 +382,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No new optimisation phase starts until this checkpoint is complete.
 
 ## Execution Log
+- 2026-03-05: `DS-304` completed by introducing canonical token-driven UI primitives (`Card`, `Field`, `Chip`, `Badge`, `Divider`, `Sheet`, `Capsule`, `StateCard`) and refactoring the core public surfaces (`/`, `/search`, `/directory`, `/emergency`, `/trainers/[id]`, and missing-trainer fallback) to use consistent primitive composition and bounded empty/error state patterns. Verification remained green (`type-check`, `lint`, `test`, and Playwright coverage), and the monetisation E2E visual snapshot was refreshed with deterministic stub timestamps to prevent repeated baseline drift. `DS-305` is now the active priority.
 - 2026-03-05: `DS-303` completed by converting `/onboarding` from a single long-form wall into a staged flow (`Account`, `Business`, `Service profile`, `Review`) with visible progress, backward navigation, and per-step validation gates. Submit contract compatibility was preserved (`POST /api/onboarding` payload keys unchanged), focused unit coverage was added for step validation, and one additional guard was applied in control review to enforce `businessName` at the Business step before progression. `DS-304` is now the active priority.
 - 2026-03-05: `DS-302` completed by refactoring `/search` into the canonical intent-capsule and filter-sheet interaction model while preserving existing request/URL contracts (`q`, `page`, `suburbId`, filter params, and deep-link auto-search behaviour). Keyboard/touch accessibility for sheet interactions was added (open/close controls, `Escape` close, focus return, and 44px touch targets), and required visual QA evidence was captured for desktop and mobile across default, filters-open, results, and empty-results states. `DS-303` is now the active priority.
 - 2026-03-05: `DS-301` completed by introducing a design-system token bridge in `theme.css`, applying a shared public shell baseline (`public-shell-*` and `shell-*` classes) across `/`, `/search`, `/onboarding`, and `/emergency`, adding a global Living Field environment in root layout, and enforcing reduced-motion/focus/touch-target baseline behaviour. Independent verification passed (`type-check`, `lint`, `test`) and before/after visual evidence was captured for desktop and mobile on all four required routes. `DS-302` is now the active priority.
