@@ -602,6 +602,23 @@ export default function SearchPage() {
                 description={error}
                 tone="error"
                 align="left"
+                actions={
+                  <>
+                    <Button
+                      type="button"
+                      onClick={() => handleSearch(1)}
+                      className="min-h-[44px]"
+                    >
+                      Retry current search
+                    </Button>
+                    <Link
+                      href="/triage"
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-[hsl(var(--ds-border-subtle))] bg-[hsl(var(--ds-background-surface))] px-5 py-3 text-sm font-semibold text-[hsl(var(--ds-text-primary))] transition-colors hover:border-[hsl(var(--ds-accent-primary)/0.4)] hover:text-[hsl(var(--ds-accent-primary))]"
+                    >
+                      Start guided triage
+                    </Link>
+                  </>
+                }
               />
             )}
 

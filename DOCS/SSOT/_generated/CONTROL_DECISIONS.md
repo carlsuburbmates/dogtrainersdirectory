@@ -63,6 +63,7 @@
 | 2026-03-06 | D-153 | `SH-401` accepted as complete | `/directory` now distinguishes backend fetch failure from true empty inventory by returning an explicit success/failure data shape and rendering a terminal failure state with recovery actions instead of reusing the empty-listing message | `SH-402` is now the active priority |
 | 2026-03-06 | D-154 | `SH-402` accepted as complete | `/admin` queue loading now degrades per endpoint via resilient loading instead of fail-fast collapse, and `/api/admin/scaffolded` returns stable handled-failure JSON envelopes for GET/POST paths | `SH-403` is now the active priority |
 | 2026-03-06 | D-155 | `SH-403` accepted as complete | `/triage` now uses the canonical shell and DS primitives while preserving existing triage step/state contracts, emergency gate behaviour, and `/search` handoff semantics | `SH-404` is now the active priority |
+| 2026-03-06 | D-156 | `SH-404` accepted as complete | `/search` error state now includes explicit in-card recovery actions (retry current search and guided triage fallback) with no API/URL contract changes | `SH-405` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -103,6 +104,7 @@
 | 2026-03-06 | frontend | SH-401 | `src/app/directory/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (directory now has explicit failure state and no longer conflates backend errors with true empty inventory) | execute `SH-402` |
 | 2026-03-06 | frontend + backend | SH-402 | `src/app/admin/page.tsx`, `src/app/api/admin/scaffolded/route.ts`, `tests/unit/admin-scaffolded-route.test.ts` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npm run test -- tests/unit/admin-scaffolded-route.test.ts` | pass (admin queue surfaces now degrade independently and scaffolded API failures return stable envelopes) | execute `SH-403` |
 | 2026-03-06 | frontend | SH-403 | `src/app/triage/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (triage now follows canonical DS shell/primitives baseline without workflow/contract drift) | execute `SH-404` |
+| 2026-03-06 | frontend | SH-404 | `src/app/search/SearchPageClient.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (search error state now provides explicit retry and alternate recovery actions) | execute `SH-405` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

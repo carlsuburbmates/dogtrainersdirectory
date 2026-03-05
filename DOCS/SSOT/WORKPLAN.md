@@ -41,7 +41,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
-- Current top priority: `SH-404` (Phase 8 - Experience Stability Hardening).
+- Current top priority: `SH-405` (Phase 8 - Experience Stability Hardening).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -411,7 +411,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Triage sections use canonical primitives for state/content blocks.
   - Existing triage logic and URL-state contracts are preserved.
 
-**SH-404: Add explicit recovery actions to `/search` error state**
+**SH-404: Add explicit recovery actions to `/search` error state (completed 2026-03-06)**
 - Purpose: make failure recovery immediate and consistent with DS state-card rules.
 - Definition of done:
   - `/search` error `StateCard` includes explicit retry and one alternate next-step CTA.
@@ -433,6 +433,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No onboarding API contract changes.
 
 ## Execution Log
+- 2026-03-06: `SH-404` completed by adding explicit recovery actions to the `/search` error `StateCard` while preserving existing error title/description and request contracts: users can now retry the current search directly or switch to guided triage. Both actions are touch-friendly (44px minimum). `SH-405` is now the active priority.
 - 2026-03-06: `SH-403` completed by refactoring `/triage` onto the canonical public shell and DS primitive baseline (`Capsule`, `Card`, `Field`, `Chip`, `Badge`, `Divider`, `StateCard`) while preserving step flow, URL-state contract (`step`, `age`, `issues`, `suburbId`, `radius`), emergency escalation behaviour, and submit handoff to `/search`. Primary action targets remain at least 44px. `SH-404` is now the active priority.
 - 2026-03-06: `SH-402` completed by replacing fail-fast queue loading on `/admin` with per-endpoint resilient loading and recoverable degraded states, and by standardising `/api/admin/scaffolded` handled-failure envelopes to always return predictable JSON (`success`, `error`, optional `message`, and stable `scaffolded` list shape). Queue surfaces now degrade independently instead of collapsing when one endpoint fails. `SH-403` is now the active priority.
 - 2026-03-06: `SH-401` completed by refactoring `/directory` data loading to return an explicit success/failure result shape instead of coercing fetch failures to empty inventory, and by adding a terminal failure `StateCard` with direct recovery actions (`Reload directory`, `Search trainers`). True empty-success inventory behaviour and existing featured/verified/rating ordering remained unchanged. `SH-402` is now the active priority.
