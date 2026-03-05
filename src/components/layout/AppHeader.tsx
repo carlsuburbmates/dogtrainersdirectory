@@ -9,11 +9,11 @@ const navLinks = [
 
 export const AppHeader = () => {
   return (
-    <header id="public-site-header" className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <header id="public-site-header" className="shell-header">
+      <div className="shell-container">
+        <div className="shell-header__bar">
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-900">
+            <Link href="/" className="shell-brand">
               Dog Trainers Directory
             </Link>
           </div>
@@ -23,10 +23,10 @@ export const AppHeader = () => {
               <Link
                 key={link.label}
                 href={link.href}
-                className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
+                className={`shell-nav-link ${
                   link.variant === 'primary'
-                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                    : 'bg-transparent text-gray-800 border-transparent hover:text-blue-700'
+                    ? 'shell-nav-link--primary'
+                    : 'shell-nav-link--ghost'
                 }`}
               >
                 {link.label}
@@ -35,7 +35,7 @@ export const AppHeader = () => {
           </nav>
 
           <details className="md:hidden relative">
-            <summary className="list-none flex items-center justify-center rounded-md border border-gray-200 p-2">
+            <summary className="list-none flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-[hsl(var(--ds-border-subtle))] bg-white/70 p-2 text-[hsl(var(--ds-text-primary))]">
               <span className="sr-only">Toggle navigation</span>
               <svg
                 className="w-6 h-6"
@@ -49,16 +49,16 @@ export const AppHeader = () => {
                 <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </summary>
-            <div className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-4 shadow-xl">
+            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-[hsl(var(--ds-border-subtle))] bg-white/95 p-4 shadow-[0_16px_30px_-24px_hsl(var(--ds-shadow-pop)/0.55)]">
               <nav className="flex flex-col space-y-2">
                 {navLinks.map((link) => (
                   <Link
                     key={`${link.label}-mobile`}
                     href={link.href}
-                    className={`rounded-md border px-4 py-2 text-sm font-medium ${
+                    className={`shell-nav-link ${
                       link.variant === 'primary'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-gray-50 text-gray-800 border-transparent'
+                        ? 'shell-nav-link--primary'
+                        : 'shell-nav-link--ghost'
                     }`}
                   >
                     {link.label}

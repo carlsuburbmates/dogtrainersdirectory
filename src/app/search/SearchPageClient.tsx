@@ -396,9 +396,9 @@ export default function SearchPage() {
     : 'Ready to compare'
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.14),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.06),_transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f7fafc_50%,#ffffff_100%)]">
+    <div className="public-page-shell">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <section className="mb-6 overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_22px_60px_-36px_rgba(15,23,42,0.35)]">
+        <section className="shell-surface mb-6 overflow-hidden">
           <div className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:px-10">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">

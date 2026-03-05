@@ -152,7 +152,8 @@ function EmergencyPageContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <main className="public-page-shell">
+      <div className="container mx-auto max-w-6xl px-4 py-8">
       {/* Emergency Banner */}
       <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8">
         <div className="flex items-start">
@@ -446,12 +447,13 @@ function EmergencyPageContent() {
         </div>
       </div>
 
-      {process.env.NEXT_PUBLIC_E2E_TEST_MODE === '1' && (
-        <div className="mt-6">
-          <EmergencyE2EControls />
-        </div>
-      )}
-    </div>
+        {process.env.NEXT_PUBLIC_E2E_TEST_MODE === '1' && (
+          <div className="mt-6">
+            <EmergencyE2EControls />
+          </div>
+        )}
+      </div>
+    </main>
   )
 }
 
@@ -459,7 +461,7 @@ export default function EmergencyPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8 text-sm text-gray-500">
+        <div className="public-page-shell container mx-auto px-4 py-8 text-sm text-gray-500">
           Loading emergency resources...
         </div>
       }

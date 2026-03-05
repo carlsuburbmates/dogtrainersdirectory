@@ -17,13 +17,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+      <body className={`${inter.className} antialiased`}>
+        <div className="public-shell-root">
+          <div className="living-field-layer" aria-hidden>
+            <div className="living-field living-field--mesh" />
+            <div className="living-field living-field--contour" />
+            <div className="living-field living-field--grain" />
+          </div>
+          <div className="public-shell-chrome">
           <AppHeader />
-          <main className="flex-grow">
+          <main className="public-shell-main">
             {children}
           </main>
           <AppFooter />
+          </div>
         </div>
       </body>
     </html>

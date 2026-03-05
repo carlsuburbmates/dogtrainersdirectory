@@ -40,7 +40,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - The post-recovery public refinement slice (public language cleanup, search UX decluttering, triage suburb-state hardening) is complete.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
-- Current top priority: `DS-301` (Phase 7 - Design System Enforcement).
+- Current top priority: `DS-302` (Phase 7 - Design System Enforcement).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -330,7 +330,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Every `DS-*` implementation task must run: `npm run type-check`, `npm run lint`, `npm run test`.
 - Every `DS-*` task touching public UI must include visual QA evidence on `/`, `/search`, `/onboarding`, and `/emergency` (desktop + mobile where the task affects layout/interaction).
 
-**DS-301: Establish token-driven public shell foundation**
+**DS-301: Establish token-driven public shell foundation (completed 2026-03-05)**
 - Purpose: make the public experience visually consistent and deterministic across all core routes before further page-level polish.
 - Definition of done:
   - Core public routes share one token-driven shell baseline for colour, type scale, spacing, radii, and elevation.
@@ -382,6 +382,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No new optimisation phase starts until this checkpoint is complete.
 
 ## Execution Log
+- 2026-03-05: `DS-301` completed by introducing a design-system token bridge in `theme.css`, applying a shared public shell baseline (`public-shell-*` and `shell-*` classes) across `/`, `/search`, `/onboarding`, and `/emergency`, adding a global Living Field environment in root layout, and enforcing reduced-motion/focus/touch-target baseline behaviour. Independent verification passed (`type-check`, `lint`, `test`) and before/after visual evidence was captured for desktop and mobile on all four required routes. `DS-302` is now the active priority.
 - 2026-03-05: Tightened `Phase 7 - Design System Enforcement` governance by adding an explicit `DS-301` enforcement gate, phase non-goals, mandatory verification standards, and a required `DS-399` post-phase checkpoint before any new optimisation slice.
 - 2026-03-05: Opened `Phase 7 - Design System Enforcement` as the next delivery slice after the completion of `NX-101` to `NX-106`. `DS-301` is now the active priority, with `DS-302` to `DS-305` queued in strict order.
 - 2026-03-05: `NX-106` completed by making `/api/public/search` parse canonical `suburbId`, resolve effective search coordinates from the suburb record when possible, and ignore conflicting snapshot coordinates when a canonical suburb identity is present. If `suburbId` is unresolvable, the route now falls back to a non-location search rather than trusting tamperable snapshot coordinates.

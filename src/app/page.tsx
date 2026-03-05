@@ -80,9 +80,9 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.18),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(249,115,22,0.12),_transparent_28%),linear-gradient(180deg,#f7fafc_0%,#eef4ff_42%,#f8fafc_100%)]">
+    <main className="public-page-shell">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <section className="overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/90 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)] backdrop-blur">
+        <section className="shell-surface overflow-hidden">
           <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="relative overflow-hidden bg-slate-950 px-6 py-8 text-white sm:px-8 lg:px-10 lg:py-10">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.35),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.22),_transparent_34%)]" />

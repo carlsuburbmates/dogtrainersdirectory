@@ -5,49 +5,49 @@ import { cn } from '@/lib/utils/cn'
 const buttonVariants = {
   variant: {
     primary: [
-      'bg-blue-600',
-      'text-white',
-      'border-blue-600',
-      'hover:bg-blue-700',
-      'active:bg-blue-800',
-      'focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-      'disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300'
+      'bg-[hsl(var(--ds-accent-primary))]',
+      'text-[hsl(var(--primary-foreground))]',
+      'border-[hsl(var(--ds-accent-primary))]',
+      'hover:bg-[hsl(var(--ds-accent-primary)/0.9)]',
+      'active:bg-[hsl(var(--ds-accent-primary)/0.82)]',
+      'focus:ring-2 focus:ring-[hsl(var(--ds-accent-primary)/0.4)] focus:ring-offset-2',
+      'disabled:bg-[hsl(var(--ds-border-subtle))] disabled:text-[hsl(var(--ds-text-muted))] disabled:border-[hsl(var(--ds-border-subtle))]'
     ],
     secondary: [
-      'bg-white',
-      'text-blue-600',
-      'border-blue-600',
-      'hover:bg-blue-50',
-      'active:bg-blue-100',
-      'focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-      'disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-300'
+      'bg-[hsl(var(--ds-background-surface))]',
+      'text-[hsl(var(--ds-accent-primary))]',
+      'border-[hsl(var(--ds-accent-primary)/0.65)]',
+      'hover:bg-[hsl(var(--ds-accent-primary)/0.08)]',
+      'active:bg-[hsl(var(--ds-accent-primary)/0.14)]',
+      'focus:ring-2 focus:ring-[hsl(var(--ds-accent-primary)/0.35)] focus:ring-offset-2',
+      'disabled:bg-[hsl(var(--ds-background-surface))] disabled:text-[hsl(var(--ds-text-muted))] disabled:border-[hsl(var(--ds-border-subtle))]'
     ],
     outline: [
       'bg-transparent',
-      'text-gray-700',
-      'border-gray-300',
-      'hover:bg-gray-50',
-      'active:bg-gray-100',
-      'focus:ring-2 focus:ring-gray-500 focus:ring-offset-2',
-      'disabled:text-gray-400 disabled:border-gray-200'
+      'text-[hsl(var(--ds-text-secondary))]',
+      'border-[hsl(var(--ds-border-subtle))]',
+      'hover:bg-[hsl(var(--ds-background-surface)/0.6)]',
+      'active:bg-[hsl(var(--ds-background-surface)/0.86)]',
+      'focus:ring-2 focus:ring-[hsl(var(--ds-border-strong)/0.5)] focus:ring-offset-2',
+      'disabled:text-[hsl(var(--ds-text-muted))] disabled:border-[hsl(var(--ds-border-subtle))]'
     ],
     ghost: [
       'bg-transparent',
-      'text-gray-700',
+      'text-[hsl(var(--ds-text-secondary))]',
       'border-transparent',
-      'hover:bg-gray-100',
-      'active:bg-gray-200',
-      'focus:ring-2 focus:ring-gray-500 focus:ring-offset-0',
-      'disabled:text-gray-400'
+      'hover:bg-[hsl(var(--ds-background-surface)/0.6)]',
+      'active:bg-[hsl(var(--ds-background-surface)/0.8)]',
+      'focus:ring-2 focus:ring-[hsl(var(--ds-border-strong)/0.45)] focus:ring-offset-0',
+      'disabled:text-[hsl(var(--ds-text-muted))]'
     ],
     danger: [
-      'bg-red-600',
-      'text-white',
-      'border-red-600',
-      'hover:bg-red-700',
-      'active:bg-red-800',
-      'focus:ring-2 focus:ring-red-500 focus:ring-offset-2',
-      'disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300'
+      'bg-[hsl(var(--ds-accent-warning))]',
+      'text-[hsl(var(--primary-foreground))]',
+      'border-[hsl(var(--ds-accent-warning))]',
+      'hover:bg-[hsl(var(--ds-accent-warning)/0.9)]',
+      'active:bg-[hsl(var(--ds-accent-warning)/0.82)]',
+      'focus:ring-2 focus:ring-[hsl(var(--ds-accent-warning)/0.35)] focus:ring-offset-2',
+      'disabled:bg-[hsl(var(--ds-border-subtle))] disabled:text-[hsl(var(--ds-text-muted))] disabled:border-[hsl(var(--ds-border-subtle))]'
     ]
   },
   size: {

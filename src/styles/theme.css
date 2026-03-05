@@ -1,24 +1,48 @@
-:root{
-  --border: 210 16% 92%;
+:root {
+  /* DS-301 token mapping: design-system intent -> implementation variables */
+  --ds-background-deep: 222 45% 11%;
+  --ds-background-mid: 214 30% 95%;
+  --ds-background-surface: 0 0% 100%;
+  --ds-background-overlay: 0 0% 100%;
+
+  --ds-accent-primary: 214 86% 52%;
+  --ds-accent-secondary: 193 92% 44%;
+  --ds-accent-warning: 33 93% 52%;
+  --ds-accent-success: 156 63% 37%;
+
+  --ds-text-primary: 222 33% 12%;
+  --ds-text-secondary: 220 17% 30%;
+  --ds-text-muted: 219 11% 44%;
+
+  --ds-border-subtle: 216 19% 88%;
+  --ds-border-strong: 216 19% 72%;
+
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 12px;
+  --ds-radius-lg: 16px;
+  --ds-radius-xl: 24px;
+
+  --ds-shadow-card: 220 30% 15%;
+  --ds-shadow-pop: 220 32% 12%;
+  --ds-shadow-overlay: 220 45% 8%;
+
+  /* Backward-compatible aliases used across existing UI */
+  --border: var(--ds-border-subtle);
   --input: 210 16% 98%;
-  --ring: 210 16% 60%;
-  --background: 210 18% 99%;
-  --foreground: 210 10% 10%;
-  --primary: 210 56% 12%;
+  --ring: var(--ds-accent-primary);
+  --background: var(--ds-background-mid);
+  --foreground: var(--ds-text-primary);
+  --primary: var(--ds-accent-primary);
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 14% 96%;
-  --secondary-foreground: 210 10% 20%;
-  --muted: 210 12% 97%;
-  --muted-foreground: 210 9% 40%;
-  --card: 0 0% 100%;
-  --card-foreground: 210 10% 10%;
-  --radius: 8px;
+  --secondary: 212 21% 93%;
+  --secondary-foreground: var(--ds-text-secondary);
+  --muted: 210 24% 96%;
+  --muted-foreground: var(--ds-text-muted);
+  --card: var(--ds-background-surface);
+  --card-foreground: var(--ds-text-primary);
+  --radius: var(--ds-radius-sm);
 }
-[data-theme="emergency"]{
-  --background: 220 10% 6%;
-  --foreground: 210 10% 92%;
-  --primary: 200 30% 70%;
-  --primary-foreground: 210 10% 10%;
-  --card: 220 12% 8%;
-  --card-foreground: 210 10% 92%;
+
+[data-theme="emergency"] {
+  --ds-accent-warning: 2 83% 56%;
 }
