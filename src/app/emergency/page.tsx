@@ -3,14 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
-import {
-  Badge,
-  Card,
-  Chip,
-  Divider,
-  Field,
-  StateCard
-} from '@/components/ui/primitives'
+import { Badge, Card, Chip, Divider, Field, StateCard } from '@/components/ui/primitives'
 import EmergencyE2EControls from '@/components/e2e/EmergencyE2EControls'
 
 interface EmergencyResource {
@@ -80,8 +73,7 @@ function EmergencyPageContent() {
     }
   }, [searchParams])
 
-  const handleResourceSearch = async (event: React.FormEvent) => {
-    event.preventDefault()
+  const runResourceSearch = async () => {
     setResourcesLoading(true)
     setResourcesError('')
     setResources([])
@@ -90,27 +82,28 @@ function EmergencyPageContent() {
       const response = await fetch('/api/emergency/resources')
       const data = await response.json()
 
-      if (response.ok) {
-        let filtered = data.resources || []
-        if (location) {
-          filtered = filtered.filter(
-            (resource: EmergencyResource) =>
-              resource.address?.toLowerCase().includes(location.toLowerCase()) ||
-              resource.name?.toLowerCase().includes(location.toLowerCase())
-          )
-        }
-
-        if (resourceType) {
-          filtered = filtered.filter(
-            (resource: EmergencyResource) =>
-              resource.resource_type?.toLowerCase() === resourceType.toLowerCase()
-          )
-        }
-
-        setResources(filtered)
-      } else {
+      if (!response.ok) {
         setResourcesError(data.error || 'Failed to fetch resources')
+        return
       }
+
+      let filtered = data.resources || []
+      if (location) {
+        filtered = filtered.filter(
+          (resource: EmergencyResource) =>
+            resource.address?.toLowerCase().includes(location.toLowerCase()) ||
+            resource.name?.toLowerCase().includes(location.toLowerCase())
+        )
+      }
+
+      if (resourceType) {
+        filtered = filtered.filter(
+          (resource: EmergencyResource) =>
+            resource.resource_type?.toLowerCase() === resourceType.toLowerCase()
+        )
+      }
+
+      setResources(filtered)
     } catch (error: any) {
       setResourcesError(error.message || 'Failed to fetch resources')
     } finally {
@@ -118,8 +111,7 @@ function EmergencyPageContent() {
     }
   }
 
-  const handleTriageSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
+  const runTriageRequest = async () => {
     setTriageLoading(true)
     setTriageError('')
     setTriageResponse(null)
@@ -132,22 +124,40 @@ function EmergencyPageContent() {
           situation,
           location: triageLocation,
           contact,
-          dog_age: dogAge ? parseInt(dogAge) : null
+          dog_age: dogAge ? parseInt(dogAge, 10) : null
         })
       })
 
       const data = await response.json()
 
-      if (response.ok) {
-        setTriageResponse(data)
-      } else {
+      if (!response.ok) {
         setTriageError(data.error || 'Failed to get triage response')
+        return
       }
+
+      setTriageResponse(data)
     } catch (error: any) {
       setTriageError(error.message || 'Failed to submit triage request')
     } finally {
       setTriageLoading(false)
     }
+  }
+
+  const handleResourceSearch = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runResourceSearch()
+  }
+
+  const handleTriageSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runTriageRequest()
+  }
+
+  const clearResourceFilters = () => {
+    setLocation('')
+    setResourceType('')
+    setResources([])
+    setResourcesError('')
   }
 
   const getPriorityTone = (priority: string) => {
@@ -165,38 +175,69 @@ function EmergencyPageContent() {
 
   return (
     <main className="public-page-shell">
-      <div className="shell-container max-w-6xl py-8">
-        <Card tone="danger" className="mb-8 border-l-4 border-l-[hsl(var(--ds-accent-warning))]">
-          <h3 className="text-lg font-bold text-[hsl(var(--ds-text-primary))]">Important disclaimer</h3>
-          <p className="mt-2 text-sm text-[hsl(var(--ds-text-secondary))]">
-            This is not a substitute for professional veterinary care or emergency services.
+      <div className="shell-container max-w-6xl py-8 space-y-6">
+        <Card as="section" tone="warning" className="shell-surface">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="warning" className="normal-case tracking-[0.06em]">
+              Urgent-first support
+            </Badge>
+            <Chip asSpan tone="warning">Act now, then refine</Chip>
+          </div>
+
+          <h1 className="mt-4 text-3xl font-bold text-[hsl(var(--ds-text-primary))] sm:text-4xl">
+            Emergency dog assistance
+          </h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[hsl(var(--ds-text-secondary))] sm:text-base">
+            If your dog is in immediate danger, call a vet first. Use this page to find local emergency resources and then request triage guidance.
           </p>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[hsl(var(--ds-text-secondary))]">
-            <li>
-              If your dog is in immediate danger or experiencing a life-threatening emergency, call
-              your veterinarian or emergency vet clinic immediately.
-            </li>
-            <li>
-              For aggressive or dangerous situations, contact local animal control authorities.
-            </li>
-            <li>
-              The AI triage tool provides general guidance only and should not replace professional
-              judgement.
-            </li>
-            <li>Always prioritise the safety of yourself, your dog, and others around you.</li>
-          </ul>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <a
+              href="tel:0398053900"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[hsl(var(--ds-accent-warning))] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[hsl(var(--ds-accent-warning)/0.92)]"
+            >
+              Call emergency vet now
+            </a>
+            <a
+              href="tel:1300477722"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[hsl(var(--ds-accent-warning)/0.45)] bg-white px-4 py-3 text-sm font-semibold text-[hsl(var(--ds-text-primary))] transition-colors hover:bg-[hsl(var(--ds-accent-warning)/0.12)]"
+            >
+              Call RSPCA Victoria
+            </a>
+            <a
+              href="#resource-search"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[hsl(var(--ds-border-subtle))] bg-[hsl(var(--ds-background-surface))] px-4 py-3 text-sm font-semibold text-[hsl(var(--ds-text-primary))] transition-colors hover:border-[hsl(var(--ds-accent-primary)/0.45)]"
+            >
+              Find local resources
+            </a>
+          </div>
         </Card>
 
-        <h1 className="text-3xl font-bold text-[hsl(var(--ds-text-primary))]">Emergency dog assistance</h1>
-        <p className="mt-2 text-[hsl(var(--ds-text-secondary))]">
-          Find emergency resources and get immediate guidance for urgent dog-related situations.
-        </p>
+        <Card as="section" tone="muted" padding="sm">
+          <p className="text-sm font-medium text-[hsl(var(--ds-text-primary))]">
+            Safety notice: this guidance supports, but does not replace, urgent veterinary judgement.
+          </p>
+          <details className="mt-3">
+            <summary className="cursor-pointer text-sm font-semibold text-[hsl(var(--ds-accent-primary))] underline-offset-2 hover:underline">
+              Read full safety guidance
+            </summary>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[hsl(var(--ds-text-secondary))]">
+              <li>If your dog is in immediate danger, call your veterinarian or emergency clinic immediately.</li>
+              <li>For aggressive or dangerous situations, contact local animal control authorities.</li>
+              <li>The triage tool gives general guidance and should not replace professional judgement.</li>
+              <li>Prioritise the safety of yourself, your dog, and others around you.</li>
+            </ul>
+          </details>
+        </Card>
 
-        <div className="mt-8 grid gap-8 md:grid-cols-2">
-          <Card as="section">
-            <h2 className="text-2xl font-bold text-[hsl(var(--ds-text-primary))]">Find emergency resources</h2>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card as="section" id="resource-search">
+            <div className="flex items-center gap-2">
+              <Badge tone="primary" className="normal-case tracking-[0.06em]">Step 1</Badge>
+              <h2 className="text-2xl font-bold text-[hsl(var(--ds-text-primary))]">Find emergency resources</h2>
+            </div>
             <p className="mt-2 text-sm text-[hsl(var(--ds-text-secondary))]">
-              Search for veterinary clinics, shelters, and emergency services in your area.
+              Start with nearby clinics and support services so you have immediate contact options.
             </p>
 
             <form onSubmit={handleResourceSearch} className="mt-5 space-y-4">
@@ -239,6 +280,19 @@ function EmergencyPageContent() {
                 tone="error"
                 align="left"
                 className="mt-4"
+                actions={
+                  <>
+                    <Button type="button" onClick={() => void runResourceSearch()} className="min-h-[44px]">
+                      Retry search
+                    </Button>
+                    <a
+                      href="#triage-assist"
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-[hsl(var(--ds-border-subtle))] px-4 py-2 text-sm font-semibold text-[hsl(var(--ds-text-primary))]"
+                    >
+                      Go to triage guidance
+                    </a>
+                  </>
+                }
               />
             ) : null}
 
@@ -247,7 +301,7 @@ function EmergencyPageContent() {
                 <h3 className="font-semibold text-[hsl(var(--ds-text-primary))]">
                   Found {resources.length} resource(s)
                 </h3>
-                <div className="max-h-96 space-y-3 overflow-y-auto">
+                <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
                   {resources.map((resource) => (
                     <Card key={resource.id} tone="muted" padding="sm">
                       <div className="flex items-start justify-between gap-3">
@@ -276,7 +330,12 @@ function EmergencyPageContent() {
                         {resource.website ? (
                           <p>
                             <span className="font-semibold">Website:</span>{' '}
-                            <a href={resource.website} target="_blank" rel="noopener noreferrer" className="text-[hsl(var(--ds-accent-primary))] hover:underline">
+                            <a
+                              href={resource.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[hsl(var(--ds-accent-primary))] hover:underline"
+                            >
                               Visit website
                             </a>
                           </p>
@@ -291,11 +350,6 @@ function EmergencyPageContent() {
                             <span className="font-semibold">Hours:</span> {resource.hours}
                           </p>
                         ) : null}
-                        {resource.services ? (
-                          <p>
-                            <span className="font-semibold">Services:</span> {resource.services}
-                          </p>
-                        ) : null}
                       </div>
                     </Card>
                   ))}
@@ -306,17 +360,33 @@ function EmergencyPageContent() {
             {resources.length === 0 && !resourcesLoading && !resourcesError && location ? (
               <StateCard
                 title="No matching resources"
-                description="Try another location or remove one filter to broaden the results."
+                description="Try another suburb, broaden the resource type, or call the emergency vet line now."
                 tone="warning"
                 className="mt-4"
+                actions={
+                  <>
+                    <Button type="button" variant="outline" onClick={clearResourceFilters} className="min-h-[44px]">
+                      Clear filters
+                    </Button>
+                    <a
+                      href="tel:0398053900"
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-[hsl(var(--ds-accent-warning))] px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Call emergency vet now
+                    </a>
+                  </>
+                }
               />
             ) : null}
           </Card>
 
-          <Card as="section">
-            <h2 className="text-2xl font-bold text-[hsl(var(--ds-text-primary))]">AI emergency triage</h2>
+          <Card as="section" id="triage-assist">
+            <div className="flex items-center gap-2">
+              <Badge tone="primary" className="normal-case tracking-[0.06em]">Step 2</Badge>
+              <h2 className="text-2xl font-bold text-[hsl(var(--ds-text-primary))]">Get triage guidance</h2>
+            </div>
             <p className="mt-2 text-sm text-[hsl(var(--ds-text-secondary))]">
-              Describe your situation and get immediate guidance on the next step.
+              After contacting urgent support, share your situation for structured next actions.
             </p>
 
             <form onSubmit={handleTriageSubmit} className="mt-5 space-y-4">
@@ -385,13 +455,26 @@ function EmergencyPageContent() {
                 tone="error"
                 align="left"
                 className="mt-4"
+                actions={
+                  <>
+                    <Button type="button" onClick={() => void runTriageRequest()} className="min-h-[44px]">
+                      Retry triage
+                    </Button>
+                    <a
+                      href="tel:0398053900"
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-[hsl(var(--ds-accent-warning)/0.45)] px-4 py-2 text-sm font-semibold text-[hsl(var(--ds-text-primary))]"
+                    >
+                      Call emergency vet now
+                    </a>
+                  </>
+                }
               />
             ) : null}
 
-            {triageResponse && triageResponse.success ? (
+            {triageResponse?.success ? (
               <div className="mt-6 space-y-4">
-                <Card tone={getPriorityTone(triageResponse.triage?.priority || '')} className="p-4">
-                  <div className="flex items-center justify-between gap-3">
+                <Card tone={getPriorityTone(triageResponse.triage?.priority || '')} padding="sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <h3 className="text-lg font-bold text-[hsl(var(--ds-text-primary))]">
                       Priority level: {triageResponse.triage?.priority?.toUpperCase()}
                     </h3>
@@ -401,7 +484,7 @@ function EmergencyPageContent() {
                   </div>
 
                   {triageResponse.medical?.isMedical ? (
-                    <Card tone="muted" padding="sm" className="mt-3">
+                    <Card tone="warning" padding="sm" className="mt-3 shadow-none">
                       <p className="text-sm font-semibold text-[hsl(var(--ds-text-primary))]">Medical emergency detected</p>
                       <p className="mt-1 text-sm text-[hsl(var(--ds-text-secondary))]">
                         Confidence: {(triageResponse.medical.confidence * 100).toFixed(0)}%
@@ -420,7 +503,10 @@ function EmergencyPageContent() {
                     <h4 className="font-semibold text-[hsl(var(--ds-text-primary))]">Recommended actions</h4>
                     <ul className="mt-3 space-y-2">
                       {triageResponse.triage.followUpActions.map((action, index) => (
-                        <li key={`${action}-${index}`} className="flex items-start gap-2 text-sm text-[hsl(var(--ds-text-secondary))]">
+                        <li
+                          key={`${action}-${index}`}
+                          className="flex items-start gap-2 text-sm text-[hsl(var(--ds-text-secondary))]"
+                        >
                           <span aria-hidden className="pt-0.5">•</span>
                           <span>{action}</span>
                         </li>
@@ -443,8 +529,11 @@ function EmergencyPageContent() {
           </Card>
         </div>
 
-        <Card as="section" tone="info" className="mt-8">
+        <Card as="section" tone="info" padding="md">
           <h2 className="text-xl font-bold text-[hsl(var(--ds-text-primary))]">Emergency contacts</h2>
+          <p className="mt-2 text-sm text-[hsl(var(--ds-text-secondary))]">
+            Keep these numbers handy in case your nearest option is busy.
+          </p>
           <Divider className="my-4" />
           <div className="grid gap-4 md:grid-cols-3">
             <div>
@@ -462,11 +551,6 @@ function EmergencyPageContent() {
               <p className="text-sm text-[hsl(var(--ds-text-secondary))]">Lost & found pets</p>
               <a href="tel:0396267344" className="text-[hsl(var(--ds-accent-primary))] hover:underline font-medium">(03) 9626 7344</a>
             </div>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Chip asSpan tone="warning">Urgent situations</Chip>
-            <Chip asSpan tone="info">Resource lookup</Chip>
-            <Chip asSpan tone="success">Triage guidance</Chip>
           </div>
         </Card>
 
