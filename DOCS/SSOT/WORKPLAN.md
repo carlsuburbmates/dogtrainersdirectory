@@ -40,7 +40,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - The post-recovery public refinement slice (public language cleanup, search UX decluttering, triage suburb-state hardening) is complete.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
-- Current top priority: `DS-302` (Phase 7 - Design System Enforcement).
+- Current top priority: `DS-303` (Phase 7 - Design System Enforcement).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -342,7 +342,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Baseline visual snapshots for `/`, `/search`, `/onboarding`, and `/emergency` are captured to prevent style drift in `DS-302` to `DS-305`.
   - The resulting shell baseline is stable enough for `DS-302` to `DS-305` to build on without reworking fundamentals.
 
-**DS-302: Standardise search interaction model (intent capsule + filter sheet)**
+**DS-302: Standardise search interaction model (intent capsule + filter sheet) (completed 2026-03-05)**
 - Purpose: align `/search` to the canonical mobile-first interaction model with lower cognitive load.
 - Definition of done:
   - `/search` exposes a compact intent summary (`Intent Capsule`) as the primary filter context.
@@ -382,6 +382,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No new optimisation phase starts until this checkpoint is complete.
 
 ## Execution Log
+- 2026-03-05: `DS-302` completed by refactoring `/search` into the canonical intent-capsule and filter-sheet interaction model while preserving existing request/URL contracts (`q`, `page`, `suburbId`, filter params, and deep-link auto-search behaviour). Keyboard/touch accessibility for sheet interactions was added (open/close controls, `Escape` close, focus return, and 44px touch targets), and required visual QA evidence was captured for desktop and mobile across default, filters-open, results, and empty-results states. `DS-303` is now the active priority.
 - 2026-03-05: `DS-301` completed by introducing a design-system token bridge in `theme.css`, applying a shared public shell baseline (`public-shell-*` and `shell-*` classes) across `/`, `/search`, `/onboarding`, and `/emergency`, adding a global Living Field environment in root layout, and enforcing reduced-motion/focus/touch-target baseline behaviour. Independent verification passed (`type-check`, `lint`, `test`) and before/after visual evidence was captured for desktop and mobile on all four required routes. `DS-302` is now the active priority.
 - 2026-03-05: Tightened `Phase 7 - Design System Enforcement` governance by adding an explicit `DS-301` enforcement gate, phase non-goals, mandatory verification standards, and a required `DS-399` post-phase checkpoint before any new optimisation slice.
 - 2026-03-05: Opened `Phase 7 - Design System Enforcement` as the next delivery slice after the completion of `NX-101` to `NX-106`. `DS-301` is now the active priority, with `DS-302` to `DS-305` queued in strict order.

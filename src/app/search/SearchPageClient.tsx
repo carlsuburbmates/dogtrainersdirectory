@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
@@ -192,6 +192,10 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
+  const filterSheetTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const filterSheetCloseRef = useRef<HTMLButtonElement | null>(null)
+  const wasFilterSheetOpenRef = useRef(false)
   const limit = 20
 
   const runSearch = useCallback(
@@ -344,6 +348,19 @@ export default function SearchPage() {
     handleSearch(page + 1)
   }
 
+  const handleOpenFilterSheet = () => {
+    setIsFilterSheetOpen(true)
+  }
+
+  const handleCloseFilterSheet = () => {
+    setIsFilterSheetOpen(false)
+  }
+
+  const handleApplyFilterSheet = () => {
+    handleSearch(1)
+    setIsFilterSheetOpen(false)
+  }
+
   const handleBroadenSearch = () => {
     const broadenedFilters: SearchFilters = {
       ...filters,
@@ -367,6 +384,7 @@ export default function SearchPage() {
 
     setFilters(clearedFilters)
     runSearch(1, clearedFilters, selectedSuburb, flowSource)
+    setIsFilterSheetOpen(false)
   }
 
   const toggleArrayFilter = (filterName: 'age_specialties' | 'behavior_issues', value: string) => {
@@ -394,6 +412,49 @@ export default function SearchPage() {
   const resultHeading = hasSearched
     ? `${results.length} ${results.length === 1 ? 'trainer' : 'trainers'} found`
     : 'Ready to compare'
+  const locationSummary = selectedSuburb
+    ? `${selectedSuburb.name} ${selectedSuburb.postcode}`
+    : filters.lat && filters.lng
+      ? 'Saved location'
+      : 'Any suburb'
+  const capsuleTags = [
+    filters.query ? `"${filters.query}"` : null,
+    locationSummary,
+    distanceLabels[filters.distance] || distanceLabels.any,
+    activeServiceLabel,
+    activeAgeLabel,
+    activeBehaviourLabel
+  ].filter((tag): tag is string => Boolean(tag))
+
+  useEffect(() => {
+    if (!isFilterSheetOpen) {
+      if (wasFilterSheetOpenRef.current) {
+        filterSheetTriggerRef.current?.focus()
+        wasFilterSheetOpenRef.current = false
+      }
+      document.body.style.overflow = ''
+      return
+    }
+
+    wasFilterSheetOpenRef.current = true
+    document.body.style.overflow = 'hidden'
+
+    const keyHandler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFilterSheetOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', keyHandler)
+    window.setTimeout(() => {
+      filterSheetCloseRef.current?.focus()
+    }, 0)
+
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', keyHandler)
+    }
+  }, [isFilterSheetOpen])
 
   return (
     <div className="public-page-shell">
@@ -468,19 +529,41 @@ export default function SearchPage() {
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
-            <Panel className="p-6">
-              <div className="mb-5 flex items-center justify-between gap-4">
+        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+            <Panel className="p-5">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-950">Refine your shortlist</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Adjust fit, distance, and service focus before comparing profiles.
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Intent capsule
                   </p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-950">Current shortlist focus</h2>
                 </div>
+                <button
+                  type="button"
+                  ref={filterSheetTriggerRef}
+                  onClick={handleOpenFilterSheet}
+                  className="inline-flex min-h-[44px] items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  aria-haspopup="dialog"
+                  aria-expanded={isFilterSheetOpen}
+                  aria-controls="search-filter-sheet"
+                >
+                  More filters ({activeFilterCount})
+                </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="mt-4 flex flex-wrap gap-2">
+                {capsuleTags.slice(0, 6).map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmit} className="mt-5 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-800">Search</label>
                   <input
@@ -517,13 +600,6 @@ export default function SearchPage() {
                       }}
                     />
                   </div>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    {selectedSuburb
-                      ? 'We use your selected suburb for distance sorting.'
-                      : filters.lat && filters.lng
-                        ? 'This search is using the saved location from your link. Choose a suburb to replace it.'
-                        : 'Choose a suburb to keep distance sorting tied to a known location.'}
-                  </p>
                 </div>
 
                 <div>
@@ -533,7 +609,7 @@ export default function SearchPage() {
                     onChange={(event) =>
                       setFilters((prev) => ({ ...prev, distance: event.target.value }))
                     }
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    className="mt-2 min-h-[44px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
                   >
                     {distanceOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -543,128 +619,35 @@ export default function SearchPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">
-                    Age specialities
-                  </label>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {ageSpecialtyOptions.map((option) => {
-                      const selected = filters.age_specialties.includes(option.value)
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => toggleArrayFilter('age_specialties', option.value)}
-                          className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
-                            selected
-                              ? 'bg-slate-950 text-white'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">
-                    Behaviour issues
-                  </label>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {behaviorIssueOptions.map((option) => {
-                      const selected = filters.behavior_issues.includes(option.value)
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => toggleArrayFilter('behavior_issues', option.value)}
-                          className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
-                            selected
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800">Service type</label>
-                  <select
-                    value={filters.service_type}
-                    onChange={(event) =>
-                      setFilters((prev) => ({ ...prev, service_type: event.target.value }))
-                    }
-                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                  >
-                    <option value="">All services</option>
-                    {serviceTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    <span>Verified only</span>
-                    <input
-                      type="checkbox"
-                      checked={filters.verified_only}
-                      onChange={(event) =>
-                        setFilters((prev) => ({ ...prev, verified_only: event.target.checked }))
-                      }
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </label>
-                  <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    <span>Rescue dog specialists</span>
-                    <input
-                      type="checkbox"
-                      checked={filters.rescue_only}
-                      onChange={(event) =>
-                        setFilters((prev) => ({ ...prev, rescue_only: event.target.checked }))
-                      }
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </label>
+                  <ActionButton type="submit" disabled={loading} className="w-full">
+                    {loading ? 'Searching...' : 'Update results'}
+                  </ActionButton>
+                  <button
+                    type="button"
+                    onClick={handleOpenFilterSheet}
+                    className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                  >
+                    Edit advanced filters
+                  </button>
                 </div>
-
-                <ActionButton type="submit" disabled={loading} className="w-full">
-                  {loading ? 'Searching...' : 'Update results'}
-                </ActionButton>
               </form>
             </Panel>
 
-            <Panel className="p-5">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Need support?
-              </h3>
-              <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                <p>
-                  Search stays suburb-aware for local comparisons. If you are unsure what kind of
-                  help fits, use triage first.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/triage"
-                    className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
-                  >
-                    Start guided triage
-                  </Link>
-                  <Link
-                    href="/emergency"
-                    className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 transition-colors hover:border-amber-300 hover:text-amber-800"
-                  >
-                    Emergency support
-                  </Link>
-                </div>
+            <Panel className="p-4">
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Link
+                  href="/triage"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-700"
+                >
+                  Start guided triage
+                </Link>
+                <Link
+                  href="/emergency"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 font-semibold text-amber-700 transition-colors hover:border-amber-300 hover:text-amber-800"
+                >
+                  Emergency support
+                </Link>
               </div>
             </Panel>
           </div>
@@ -924,6 +907,152 @@ export default function SearchPage() {
               </>
             )}
           </div>
+        </div>
+
+        <div
+          className={`fixed inset-0 z-50 transition-opacity duration-200 ${
+            isFilterSheetOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+          aria-hidden={!isFilterSheetOpen}
+        >
+          <div
+            className="absolute inset-0 bg-slate-950/45"
+            onClick={handleCloseFilterSheet}
+          />
+          <section
+            id="search-filter-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Advanced search filters"
+            className={`absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-[0_-20px_50px_-30px_rgba(15,23,42,0.45)] transition-transform duration-250 md:inset-y-0 md:right-0 md:left-auto md:h-full md:max-h-none md:w-[440px] md:rounded-none md:rounded-l-3xl md:border-l ${
+              isFilterSheetOpen
+                ? 'translate-y-0 md:translate-x-0'
+                : 'translate-y-full md:translate-y-0 md:translate-x-full'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Filter sheet
+                </p>
+                <h3 className="mt-1 text-xl font-bold text-slate-950">Advanced shortlist filters</h3>
+              </div>
+              <button
+                ref={filterSheetCloseRef}
+                type="button"
+                onClick={handleCloseFilterSheet}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-900"
+              >
+                Close
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-slate-600">
+              Use these filters to narrow fit after setting your main suburb, query, and distance.
+            </p>
+
+            <div className="mt-5 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-slate-800">Age specialities</label>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {ageSpecialtyOptions.map((option) => {
+                    const selected = filters.age_specialties.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => toggleArrayFilter('age_specialties', option.value)}
+                        className={`min-h-[44px] rounded-full px-3 py-2 text-xs font-semibold transition ${
+                          selected
+                            ? 'bg-slate-950 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-800">Behaviour issues</label>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {behaviorIssueOptions.map((option) => {
+                    const selected = filters.behavior_issues.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => toggleArrayFilter('behavior_issues', option.value)}
+                        className={`min-h-[44px] rounded-full px-3 py-2 text-xs font-semibold transition ${
+                          selected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-800">Service type</label>
+                <select
+                  value={filters.service_type}
+                  onChange={(event) =>
+                    setFilters((prev) => ({ ...prev, service_type: event.target.value }))
+                  }
+                  className="mt-2 min-h-[44px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                >
+                  <option value="">All services</option>
+                  {serviceTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <span>Verified only</span>
+                  <input
+                    type="checkbox"
+                    checked={filters.verified_only}
+                    onChange={(event) =>
+                      setFilters((prev) => ({ ...prev, verified_only: event.target.checked }))
+                    }
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </label>
+                <label className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <span>Rescue dog specialists</span>
+                  <input
+                    type="checkbox"
+                    checked={filters.rescue_only}
+                    onChange={(event) =>
+                      setFilters((prev) => ({ ...prev, rescue_only: event.target.checked }))
+                    }
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 mt-6 border-t border-slate-200 bg-white py-4">
+              <div className="flex flex-wrap gap-3">
+                <ActionButton onClick={handleApplyFilterSheet} className="flex-1 min-w-[180px]">
+                  Apply filters
+                </ActionButton>
+                <ActionButton onClick={handleClearRefinements} variant="secondary" className="flex-1 min-w-[180px]">
+                  Clear extra filters
+                </ActionButton>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
