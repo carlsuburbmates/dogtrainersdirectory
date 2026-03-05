@@ -319,7 +319,7 @@ export default async function TrainerPage({
                       href={primaryContactAction.href}
                       target={primaryContactAction.openInNewTab ? '_blank' : undefined}
                       rel={primaryContactAction.openInNewTab ? 'noopener noreferrer' : undefined}
-                      className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-100"
+                      className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-slate-100"
                     >
                       {primaryContactAction.label}
                     </a>
@@ -329,7 +329,7 @@ export default async function TrainerPage({
                     {trainer.email && (
                       <a
                         href={`#${enquiryAnchorId}`}
-                        className="mt-3 inline-flex text-sm font-semibold text-blue-200 transition-colors hover:text-white"
+                        className="mt-3 inline-flex min-h-[44px] items-center text-sm font-semibold text-blue-200 transition-colors hover:text-white"
                       >
                         Prefer a written first message? Send an enquiry.
                       </a>
@@ -509,7 +509,7 @@ export default async function TrainerPage({
                       href={primaryContactAction.href}
                       target={primaryContactAction.openInNewTab ? '_blank' : undefined}
                       rel={primaryContactAction.openInNewTab ? 'noopener noreferrer' : undefined}
-                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                      className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                     >
                       {primaryContactAction.label}
                     </a>
@@ -532,7 +532,7 @@ export default async function TrainerPage({
                     </a>
                     <a
                       href={`tel:${trainer.phone}`}
-                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                      className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
                     >
                       Call this trainer
                     </a>
@@ -552,7 +552,7 @@ export default async function TrainerPage({
                     </a>
                     <a
                       href={`mailto:${trainer.email}`}
-                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                      className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
                     >
                       Email this trainer
                     </a>
@@ -568,7 +568,7 @@ export default async function TrainerPage({
                       href={trainer.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center text-base font-semibold text-blue-700 hover:underline"
+                      className="mt-2 inline-flex min-h-[44px] items-center text-base font-semibold text-blue-700 hover:underline"
                     >
                       Visit website
                     </a>
@@ -576,7 +576,7 @@ export default async function TrainerPage({
                       href={trainer.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
+                      className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-100"
                     >
                       Open the trainer website
                     </a>

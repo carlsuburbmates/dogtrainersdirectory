@@ -130,7 +130,7 @@ export default function HomePage() {
                       <Link
                         key={route.href}
                         href={route.href}
-                        className="inline-flex items-center gap-2 transition-colors hover:text-white"
+                        className="inline-flex min-h-[44px] items-center gap-2 transition-colors hover:text-white"
                       >
                         <span>{route.label}</span>
                         <span aria-hidden="true">→</span>
