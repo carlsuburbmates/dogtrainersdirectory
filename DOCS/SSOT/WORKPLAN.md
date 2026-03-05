@@ -318,6 +318,17 @@ Anything not listed here is **not worked on** (to prevent drift).
 **Phase rule**
 - All public UI changes in this phase must comply with `DOCS/SSOT/12_DESIGN_SYSTEM.md`.
 - No ad-hoc visual patterns may be added to public surfaces; compose from canonical primitives and tokens.
+- `DS-301` is an enforcement gate. `DS-302` to `DS-305` must not start until `DS-301` is explicitly accepted.
+
+**Phase 7 non-goals**
+- No new public routes or IA expansion.
+- No API contract, schema, or migration changes.
+- No monetisation packaging or pricing-model changes.
+- No SEO scope expansion beyond already-approved route behaviour.
+
+**Phase verification standard**
+- Every `DS-*` implementation task must run: `npm run type-check`, `npm run lint`, `npm run test`.
+- Every `DS-*` task touching public UI must include visual QA evidence on `/`, `/search`, `/onboarding`, and `/emergency` (desktop + mobile where the task affects layout/interaction).
 
 **DS-301: Establish token-driven public shell foundation**
 - Purpose: make the public experience visually consistent and deterministic across all core routes before further page-level polish.
@@ -325,6 +336,10 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Core public routes share one token-driven shell baseline for colour, type scale, spacing, radii, and elevation.
   - The global "Living Field" environment is applied consistently without reducing readability of interactive content.
   - Motion rules respect `prefers-reduced-motion` across shell-level transitions and ambient effects.
+  - A canonical token mapping is defined and applied (design token names to concrete CSS variables/classes used by the implementation).
+  - A canonical primitive inventory is enforced for public UI (allowed primitives and bounded exceptions are explicit).
+  - An anti-generic checklist is passed with objective criteria (avoid template hero/grid patterns, avoid default SaaS styling, preserve DTD-specific visual identity).
+  - Baseline visual snapshots for `/`, `/search`, `/onboarding`, and `/emergency` are captured to prevent style drift in `DS-302` to `DS-305`.
   - The resulting shell baseline is stable enough for `DS-302` to `DS-305` to build on without reworking fundamentals.
 
 **DS-302: Standardise search interaction model (intent capsule + filter sheet)**
@@ -359,7 +374,15 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The emergency resource and triage inputs are simplified into a clearer progression.
   - The resulting UX remains compliant with the design-system tone (`calm`, `credible`, `authoritative`) and accessibility guardrails.
 
+**DS-399: Run post-Phase 7 product experience checkpoint**
+- Purpose: verify that Design System Enforcement improved quality without drifting from product and workflow goals.
+- Definition of done:
+  - A focused `AUD-002` lite checkpoint is run against public experience layers (architecture alignment, interface consistency, workflow clarity, conversion friction, and failure-state recovery).
+  - Findings are severity-ranked and mapped to either follow-up backlog items or explicit acceptance.
+  - No new optimisation phase starts until this checkpoint is complete.
+
 ## Execution Log
+- 2026-03-05: Tightened `Phase 7 - Design System Enforcement` governance by adding an explicit `DS-301` enforcement gate, phase non-goals, mandatory verification standards, and a required `DS-399` post-phase checkpoint before any new optimisation slice.
 - 2026-03-05: Opened `Phase 7 - Design System Enforcement` as the next delivery slice after the completion of `NX-101` to `NX-106`. `DS-301` is now the active priority, with `DS-302` to `DS-305` queued in strict order.
 - 2026-03-05: `NX-106` completed by making `/api/public/search` parse canonical `suburbId`, resolve effective search coordinates from the suburb record when possible, and ignore conflicting snapshot coordinates when a canonical suburb identity is present. If `suburbId` is unresolvable, the route now falls back to a non-location search rather than trusting tamperable snapshot coordinates.
 - 2026-03-05: `NX-105` completed by tightening the instructional weight on `/` and `/search` without changing routes, search contracts, or core flow logic. The home hero now has one clearer dominant path with secondary routes demoted to a compact “Other ways in” list, while the search page replaces tutorial-style blocks with shorter orientation and support panels that preserve triage, locality, and emergency differentiation without reading like a manual.

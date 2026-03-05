@@ -53,6 +53,7 @@
 | 2026-03-05 | D-143 | `NX-105` accepted as complete | the public home and search surfaces now rely on shorter orientation copy and a clearer primary path, while still preserving DTD’s triage, locality, and emergency differentiation without changing the underlying product behaviour | `NX-106` is now the active priority |
 | 2026-03-05 | D-144 | `NX-106` accepted as complete | `/api/public/search` now treats canonical `suburbId` as the location authority, ignores conflicting snapshot coordinates when a real suburb record is present, and degrades to a non-location search if that `suburbId` cannot be resolved | the current Public Experience And State Refinement slice is complete and there is no active product priority |
 | 2026-03-05 | D-145 | Open `Phase 7 - Design System Enforcement` and set next active priority | the next delivery slice is now sequenced around token-driven shell alignment and canonical primitive discipline (`DS-301` to `DS-305`) after Phase 6 completion | `DS-301` is now the active priority and `DS-302` to `DS-305` are queued in strict order |
+| 2026-03-05 | D-146 | Tighten Phase 7 governance before implementation | added a formal `DS-301` enforcement gate, explicit Phase 7 non-goals, mandatory DS verification standards, and a required `DS-399` post-phase checkpoint to prevent stylistic drift and premature optimisation | `DS-301` remains the active priority; `DS-399` is queued as the phase exit gate |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
