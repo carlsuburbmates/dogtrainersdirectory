@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { AGE_SPECIALTIES, AGE_SPECIALTY_LABELS, BEHAVIOR_ISSUES, BEHAVIOR_ISSUE_LABELS } from '@/lib/constants/taxonomies'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/Loading'
-import { Alert } from '@/components/ui/Callout'
 import type { BehaviorIssue, AgeSpecialty } from '@/types/database'
 import { TriageRequestSchema } from '@/lib/contracts'
 import { EmergencyGate } from '@/components/triage/EmergencyGate'
@@ -16,6 +15,15 @@ import {
   parseCanonicalSuburbId,
   rehydrateTriageLocation
 } from '@/lib/triageLocation'
+import {
+  Badge,
+  Capsule,
+  Card,
+  Chip,
+  Divider,
+  Field,
+  StateCard
+} from '@/components/ui/primitives'
 
 // URL keys for step state
 const STEP_PARAM = 'step'
@@ -26,6 +34,13 @@ const RADIUS_PARAM = 'radius'
 
 // Steps per SSOT: age -> issues -> location -> review
 const steps = ['age', 'issues', 'location', 'review'] as const
+
+const stepLabels: Record<(typeof steps)[number], string> = {
+  age: 'Age',
+  issues: 'Issues',
+  location: 'Location',
+  review: 'Review'
+}
 
 const mapRadiusToDistance = (radius: number) => {
   if (radius <= 5) return '0-5'
@@ -70,7 +85,7 @@ function TriageContent() {
     const urlIssues = params.get(ISSUES_PARAM)
     if (urlIssues) {
       const parsed = urlIssues.split(',').filter(Boolean) as BehaviorIssue[]
-      const valid = parsed.filter(v => BEHAVIOR_ISSUES.includes(v))
+      const valid = parsed.filter((value) => BEHAVIOR_ISSUES.includes(value))
       setIssues(valid)
     }
 
@@ -136,7 +151,7 @@ function TriageContent() {
 
   const toggleIssue = (issue: BehaviorIssue) => {
     const has = issues.includes(issue)
-    const next = has ? issues.filter(i => i !== issue) : [...issues, issue]
+    const next = has ? issues.filter((item) => item !== issue) : [...issues, issue]
     setIssues(next)
     updateParam(ISSUES_PARAM, next.join(','))
   }
@@ -216,142 +231,217 @@ function TriageContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        {submitting && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-lg">
-              <div className="flex items-center space-x-4">
-                <LoadingSpinner size="md" />
-                <div>
-                  <p className="font-medium text-gray-900">Finding trainers...</p>
-                  <p className="text-sm text-gray-500">Please wait a moment</p>
+    <main className="public-page-shell">
+      <div className="shell-container py-8 sm:py-10">
+        <div className="mx-auto max-w-4xl space-y-6">
+          {submitting ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+              <Card className="w-[min(92vw,28rem)]">
+                <div className="flex items-center space-x-4">
+                  <LoadingSpinner size="md" />
+                  <div>
+                    <p className="font-medium text-gray-900">Finding trainers...</p>
+                    <p className="text-sm text-gray-500">Please wait a moment</p>
+                  </div>
                 </div>
-              </div>
+              </Card>
             </div>
-          </div>
-        )}
-        <nav className="mb-6 text-sm text-gray-600">
-          <ol className="flex items-center space-x-2">
-            {steps.map((s, idx) => (
-              <li key={s} className="flex items-center">
-                <button className={`underline-offset-2 ${currentStep === s ? 'font-semibold text-gray-900 underline' : 'text-blue-700 hover:underline'}`} onClick={() => goToStep(s)}>
-                  {s === 'age' ? 'Age' : s === 'issues' ? 'Issues' : s === 'location' ? 'Location' : 'Review'}
-                </button>
-                {idx < steps.length - 1 && <span className="mx-2 text-gray-400">/</span>}
-              </li>
-            ))}
-          </ol>
-        </nav>
+          ) : null}
 
-        {error && (
-          <div className="mb-4">
-            <Alert title="There was a problem">
-              {error}
-            </Alert>
-          </div>
-        )}
+          <Capsule
+            kicker="Guided triage"
+            title="Tell us what your dog needs"
+            actions={<Badge className="normal-case tracking-[0.04em]">Step {steps.indexOf(currentStep) + 1} of {steps.length}</Badge>}
+          >
+            <nav className="mt-2" aria-label="Triage steps">
+              <ol className="flex flex-wrap items-center gap-2">
+                {steps.map((step, idx) => (
+                  <React.Fragment key={step}>
+                    <li>
+                      <Button
+                        variant={currentStep === step ? 'primary' : 'ghost'}
+                        size="sm"
+                        className="min-h-[44px]"
+                        onClick={() => goToStep(step)}
+                      >
+                        {stepLabels[step]}
+                      </Button>
+                    </li>
+                    {idx < steps.length - 1 ? (
+                      <li aria-hidden="true" className="text-[hsl(var(--ds-text-muted))]">/</li>
+                    ) : null}
+                  </React.Fragment>
+                ))}
+              </ol>
+            </nav>
+          </Capsule>
 
-        {currentStep === 'age' && (
-          <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h1 className="text-2xl font-bold mb-4">Your dog’s age/stage</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {AGE_SPECIALTIES.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => { setAge(a); updateParam(AGE_PARAM, a) }}
-                  className={`rounded-md border px-3 py-3 text-left ${age === a ? 'bg-blue-600 text-white border-transparent' : 'bg-gray-50 text-gray-800 border-gray-200'}`}
+          {error ? (
+            <StateCard
+              title="There was a problem"
+              description={error}
+              tone="error"
+              align="left"
+            />
+          ) : null}
+
+          {currentStep === 'age' ? (
+            <Card as="section">
+              <h1 className="text-2xl font-bold mb-4">Your dog’s age or stage</h1>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {AGE_SPECIALTIES.map((option) => (
+                  <Chip
+                    key={option}
+                    onClick={() => {
+                      setAge(option)
+                      updateParam(AGE_PARAM, option)
+                    }}
+                    selected={age === option}
+                    tone="neutral"
+                    className="w-full justify-start rounded-xl px-4 py-3 text-left text-sm"
+                  >
+                    {AGE_SPECIALTY_LABELS[option]}
+                  </Chip>
+                ))}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <Button
+                  variant="primary"
+                  disabled={!canContinueFromAge}
+                  onClick={() => goToStep('issues')}
+                  className="min-h-[44px]"
                 >
-                  <div className="font-medium">{AGE_SPECIALTY_LABELS[a]}</div>
-                </button>
-              ))}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <Button variant="primary" disabled={!canContinueFromAge} onClick={() => goToStep('issues')}>Continue</Button>
-            </div>
-          </section>
-        )}
+                  Continue
+                </Button>
+              </div>
+            </Card>
+          ) : null}
 
-        {currentStep === 'issues' && (
-          <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-2xl font-bold mb-4">Behaviour issues (optional)</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {BEHAVIOR_ISSUES.map((issue) => (
-                <button key={issue} type="button" onClick={() => toggleIssue(issue)}
-                  className={`rounded-md border px-3 py-2 text-left ${issues.includes(issue) ? 'bg-blue-600 text-white border-transparent' : 'bg-gray-50 text-gray-800 border-gray-200'}`}
+          {currentStep === 'issues' ? (
+            <Card as="section">
+              <h2 className="text-2xl font-bold mb-2">Behaviour issues (optional)</h2>
+              <p className="text-sm text-[hsl(var(--ds-text-secondary))] mb-4">
+                Choose any behaviour concerns you want to prioritise.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {BEHAVIOR_ISSUES.map((issue) => (
+                  <Chip
+                    key={issue}
+                    onClick={() => toggleIssue(issue)}
+                    selected={issues.includes(issue)}
+                    tone="info"
+                    className="w-full justify-start rounded-xl px-4 py-3 text-left text-sm"
+                  >
+                    {BEHAVIOR_ISSUE_LABELS[issue]}
+                  </Chip>
+                ))}
+              </div>
+              <div className="mt-6 flex justify-between">
+                <Button variant="outline" onClick={() => goToStep('age')} className="min-h-[44px]">
+                  Back
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={!canContinueFromIssues}
+                  onClick={handleContinueFromIssues}
+                  className="min-h-[44px]"
                 >
-                  {BEHAVIOR_ISSUE_LABELS[issue]}
-                </button>
-              ))}
-            </div>
-            <div className="mt-6 flex justify-between">
-              <Button variant="outline" onClick={() => goToStep('age')}>Back</Button>
-              <Button variant="primary" disabled={!canContinueFromIssues} onClick={handleContinueFromIssues}>Continue</Button>
-            </div>
-          </section>
-        )}
-
-        {currentStep === 'location' && (
-          <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-2xl font-bold mb-4">Your location</h2>
-            <p className="text-gray-600 mb-3">Select your suburb and radius to find nearby trainers.</p>
-            <div className="grid gap-4">
-              <div>
-                <label className="text-sm font-medium">Your suburb</label>
-                <SuburbAutocomplete
-                  value={selectedSuburb}
-                  onChange={(suburb) => {
-                    setSelectedSuburb(suburb)
-                    const id = suburb ? suburb.id : null
-                    setSuburbId(id)
-                    updateParam(SUBURB_ID_PARAM, id ?? '')
-                  }}
-                  autoFocus={currentStep === 'location'}
-                />
+                  Continue
+                </Button>
               </div>
-              <div>
-                <label className="text-sm font-medium">Radius (km)</label>
-                <input type="number" min={5} max={50} className="mt-1 w-full border rounded-md px-3 py-2" value={radius} onChange={(e) => { const v = Math.min(50, Math.max(5, Number(e.target.value))); setRadius(v); updateParam(RADIUS_PARAM, v) }} />
+            </Card>
+          ) : null}
+
+          {currentStep === 'location' ? (
+            <Card as="section">
+              <h2 className="text-2xl font-bold mb-2">Your location</h2>
+              <p className="text-[hsl(var(--ds-text-secondary))] mb-4">
+                Select your suburb and radius to find nearby trainers.
+              </p>
+              <div className="grid gap-4">
+                <Field label="Your suburb">
+                  <SuburbAutocomplete
+                    value={selectedSuburb}
+                    onChange={(suburb) => {
+                      setSelectedSuburb(suburb)
+                      const id = suburb ? suburb.id : null
+                      setSuburbId(id)
+                      updateParam(SUBURB_ID_PARAM, id ?? '')
+                    }}
+                    autoFocus={currentStep === 'location'}
+                  />
+                </Field>
+                <Field label="Radius (km)">
+                  <input
+                    type="number"
+                    min={5}
+                    max={50}
+                    className="mt-1 w-full border rounded-md px-3 py-2"
+                    value={radius}
+                    onChange={(e) => {
+                      const value = Math.min(50, Math.max(5, Number(e.target.value)))
+                      setRadius(value)
+                      updateParam(RADIUS_PARAM, value)
+                    }}
+                  />
+                </Field>
               </div>
-            </div>
-            <div className="mt-6 flex justify-between">
-              <Button variant="outline" onClick={() => goToStep('issues')}>Back</Button>
-              <Button variant="primary" disabled={!canContinueFromLocation} onClick={() => goToStep('review')}>Continue</Button>
-            </div>
-          </section>
-        )}
+              <div className="mt-6 flex justify-between">
+                <Button variant="outline" onClick={() => goToStep('issues')} className="min-h-[44px]">
+                  Back
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={!canContinueFromLocation}
+                  onClick={() => goToStep('review')}
+                  className="min-h-[44px]"
+                >
+                  Continue
+                </Button>
+              </div>
+            </Card>
+          ) : null}
 
-        {currentStep === 'review' && (
-          <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-2xl font-bold mb-4">Review your selections</h2>
-            <ul className="text-sm text-gray-800 space-y-2">
-              <li><span className="font-medium">Age:</span> {age ? AGE_SPECIALTY_LABELS[age] : 'Not set'}</li>
-              <li><span className="font-medium">Issues:</span> {issues.length > 0 ? issues.map(i => BEHAVIOR_ISSUE_LABELS[i]).join(', ') : 'None'}</li>
-              <li><span className="font-medium">Suburb:</span> {selectedSuburb ? `${selectedSuburb.name} (${selectedSuburb.postcode})` : 'Not set'}</li>
-              <li><span className="font-medium">Radius:</span> {radius} km</li>
-            </ul>
-            <div className="mt-6 flex justify-between">
-              <Button variant="outline" onClick={() => goToStep('location')}>Back</Button>
-              <Button variant="primary" onClick={submit} loading={submitting}>See matching trainers</Button>
-            </div>
-          </section>
-        )}
+          {currentStep === 'review' ? (
+            <Card as="section">
+              <h2 className="text-2xl font-bold mb-4">Review your selections</h2>
+              <Card tone="muted" padding="sm">
+                <ul className="text-sm text-gray-800 space-y-2">
+                  <li><span className="font-medium">Age:</span> {age ? AGE_SPECIALTY_LABELS[age] : 'Not set'}</li>
+                  <li><span className="font-medium">Issues:</span> {issues.length > 0 ? issues.map((issue) => BEHAVIOR_ISSUE_LABELS[issue]).join(', ') : 'None'}</li>
+                  <li><span className="font-medium">Suburb:</span> {selectedSuburb ? `${selectedSuburb.name} (${selectedSuburb.postcode})` : 'Not set'}</li>
+                  <li><span className="font-medium">Radius:</span> {radius} km</li>
+                </ul>
+              </Card>
+              <Divider className="my-5" />
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => goToStep('location')} className="min-h-[44px]">
+                  Back
+                </Button>
+                <Button variant="primary" onClick={submit} loading={submitting} className="min-h-[44px]">
+                  See matching trainers
+                </Button>
+              </div>
+            </Card>
+          ) : null}
 
-        {/* Emergency gate overlay */}
-        {showEmergencyGate && (
-          <EmergencyGate
-            selectedIssues={issues}
-            onContinueNormal={() => { setShowEmergencyGate(false); goToStep('location') }}
-            onEmergencyFlow={(type) => {
-              setShowEmergencyGate(false)
-              router.push(`/emergency?flow=${encodeURIComponent(type)}`)
-            }}
-            onClose={() => setShowEmergencyGate(false)}
-          />
-        )}
+          {showEmergencyGate ? (
+            <EmergencyGate
+              selectedIssues={issues}
+              onContinueNormal={() => {
+                setShowEmergencyGate(false)
+                goToStep('location')
+              }}
+              onEmergencyFlow={(type) => {
+                setShowEmergencyGate(false)
+                router.push(`/emergency?flow=${encodeURIComponent(type)}`)
+              }}
+              onClose={() => setShowEmergencyGate(false)}
+            />
+          ) : null}
+        </div>
       </div>
-    </div>
+    </main>
   )
 }
 
@@ -359,7 +449,7 @@ export default function TriagePage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8 text-sm text-gray-500">
+        <div className="public-page-shell shell-container py-8 text-sm text-gray-500">
           Loading triage experience...
         </div>
       }

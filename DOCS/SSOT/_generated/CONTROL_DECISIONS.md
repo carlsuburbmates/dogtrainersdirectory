@@ -62,6 +62,7 @@
 | 2026-03-05 | D-152 | `DS-399` (`AUD-002` lite) accepted with `Partial` verdict and follow-on closure phase opened | post-phase audit confirmed strong Phase 7 gains but identified six targeted residual quality gaps across directory failure states, admin queue resilience, triage DS alignment, search error recovery actions, touch targets, and onboarding copy | Design System Enforcement is closed and `SH-401` is now the active priority in Phase 8 |
 | 2026-03-06 | D-153 | `SH-401` accepted as complete | `/directory` now distinguishes backend fetch failure from true empty inventory by returning an explicit success/failure data shape and rendering a terminal failure state with recovery actions instead of reusing the empty-listing message | `SH-402` is now the active priority |
 | 2026-03-06 | D-154 | `SH-402` accepted as complete | `/admin` queue loading now degrades per endpoint via resilient loading instead of fail-fast collapse, and `/api/admin/scaffolded` returns stable handled-failure JSON envelopes for GET/POST paths | `SH-403` is now the active priority |
+| 2026-03-06 | D-155 | `SH-403` accepted as complete | `/triage` now uses the canonical shell and DS primitives while preserving existing triage step/state contracts, emergency gate behaviour, and `/search` handoff semantics | `SH-404` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -101,6 +102,7 @@
 | 2026-03-05 | audit lane | DS-399 | no repo file changes (audit-only) | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts`; `npx playwright test tests/e2e/emergency.spec.ts`; `npx playwright test tests/e2e/monetization.spec.ts`; route/state matrix audit across required public/admin surfaces | pass (`Partial` verdict; six prioritised residual gaps logged) | execute `SH-401` |
 | 2026-03-06 | frontend | SH-401 | `src/app/directory/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (directory now has explicit failure state and no longer conflates backend errors with true empty inventory) | execute `SH-402` |
 | 2026-03-06 | frontend + backend | SH-402 | `src/app/admin/page.tsx`, `src/app/api/admin/scaffolded/route.ts`, `tests/unit/admin-scaffolded-route.test.ts` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npm run test -- tests/unit/admin-scaffolded-route.test.ts` | pass (admin queue surfaces now degrade independently and scaffolded API failures return stable envelopes) | execute `SH-403` |
+| 2026-03-06 | frontend | SH-403 | `src/app/triage/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (triage now follows canonical DS shell/primitives baseline without workflow/contract drift) | execute `SH-404` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`

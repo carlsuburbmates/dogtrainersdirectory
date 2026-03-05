@@ -55,8 +55,8 @@
 | DS-399 | Design System Enforcement | Run post-Phase 7 product experience checkpoint (`AUD-002` lite) | completed | main-control | `WORKPLAN` `DS-399` | focused post-phase audit confirms DS work improved UX quality without drifting from product/workflow goals |
 | SH-401 | Experience Stability Hardening | Split directory error vs empty states | completed | frontend | `WORKPLAN` `SH-401` | `/directory` distinguishes fetch failures from true zero-inventory and exposes explicit recovery actions |
 | SH-402 | Experience Stability Hardening | Harden admin queue loading against partial endpoint failure | completed | frontend + backend | `WORKPLAN` `SH-402` | `/admin` queue widgets degrade independently with stable endpoint error envelopes |
-| SH-403 | Experience Stability Hardening | Align `/triage` to design-system shell and primitives | in_progress | frontend | `WORKPLAN` `SH-403` | `/triage` matches canonical token/primitives baseline without logic/contract drift |
-| SH-404 | Experience Stability Hardening | Add explicit recovery actions to `/search` error state | pending | frontend | `WORKPLAN` `SH-404` | search error state includes direct retry and alternate recovery action |
+| SH-403 | Experience Stability Hardening | Align `/triage` to design-system shell and primitives | completed | frontend | `WORKPLAN` `SH-403` | `/triage` matches canonical token/primitives baseline without logic/contract drift |
+| SH-404 | Experience Stability Hardening | Add explicit recovery actions to `/search` error state | in_progress | frontend | `WORKPLAN` `SH-404` | search error state includes direct retry and alternate recovery action |
 | SH-405 | Experience Stability Hardening | Enforce 44px touch-target baseline on primary journey actions | pending | frontend | `WORKPLAN` `SH-405` | primary journey actions satisfy minimum touch-target baseline |
 | SH-406 | Experience Stability Hardening | Remove implementation-language leakage in onboarding review copy | pending | frontend | `WORKPLAN` `SH-406` | onboarding review copy is outcome-based and non-technical |
 
@@ -69,7 +69,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `SH-403`.
+- Current active priority: `SH-404`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
