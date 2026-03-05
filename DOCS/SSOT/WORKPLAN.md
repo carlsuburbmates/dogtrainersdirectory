@@ -40,7 +40,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - The post-recovery public refinement slice (public language cleanup, search UX decluttering, triage suburb-state hardening) is complete.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
-- Current top priority: `DS-399` (Phase 7 - Design System Enforcement).
+- Design System Enforcement is complete.
+- Current top priority: `SH-401` (Phase 8 - Experience Stability Hardening).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -49,6 +50,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   5. Product Completion Recovery
   6. Public Experience And State Refinement
   7. Design System Enforcement
+  8. Experience Stability Hardening
 
 ## Completed Foundation Milestones
 
@@ -381,7 +383,57 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Findings are severity-ranked and mapped to either follow-up backlog items or explicit acceptance.
   - No new optimisation phase starts until this checkpoint is complete.
 
+### Phase 8 - Experience Stability Hardening
+
+**Phase rule**
+- This phase is a targeted closure pass for residual quality gaps found in `DS-399` (`AUD-002` lite).
+- Keep one active implementation item at a time in this exact order (`SH-401` -> `SH-406`).
+- No schema/migration or route-family expansion is allowed in this phase.
+
+**SH-401: Split directory error vs empty states**
+- Purpose: prevent backend failures from appearing as zero inventory.
+- Definition of done:
+  - `/directory` distinguishes fetch failure from legitimate no-listing states.
+  - Fetch failures show a terminal error state with explicit retry + recovery CTA(s).
+  - Legitimate empty inventory keeps the existing supply/demand CTAs.
+
+**SH-402: Harden admin queue loading against partial endpoint failure**
+- Purpose: stop one failing queue endpoint from collapsing `/admin` queue visibility.
+- Definition of done:
+  - `/api/admin/scaffolded` and related queue endpoints return stable JSON error envelopes.
+  - `/admin` isolates per-endpoint failure and keeps other queue widgets visible.
+  - Operator-facing error states are explicit and recoverable.
+
+**SH-403: Align `/triage` to design-system shell and primitives**
+- Purpose: remove primary-journey visual drift left after Phase 7.
+- Definition of done:
+  - `/triage` uses the same token-driven shell baseline as other public core routes.
+  - Triage sections use canonical primitives for state/content blocks.
+  - Existing triage logic and URL-state contracts are preserved.
+
+**SH-404: Add explicit recovery actions to `/search` error state**
+- Purpose: make failure recovery immediate and consistent with DS state-card rules.
+- Definition of done:
+  - `/search` error `StateCard` includes explicit retry and one alternate next-step CTA.
+  - Existing surrounding controls remain unchanged.
+  - No search contract changes.
+
+**SH-405: Enforce 44px touch-target baseline on primary journey actions**
+- Purpose: close remaining mobile ergonomics/accessibility drift.
+- Definition of done:
+  - Primary journey actions meet a minimum 44px touch target.
+  - `Button` sizing or call-site classes are aligned without visual regressions.
+  - Accessibility checks remain green.
+
+**SH-406: Remove implementation-language leakage in onboarding review copy**
+- Purpose: keep public/business-facing copy outcome-based and non-technical.
+- Definition of done:
+  - Onboarding review copy no longer references payload mechanics or internal flow details.
+  - Messaging explains user outcome and next step in plain language.
+  - No onboarding API contract changes.
+
 ## Execution Log
+- 2026-03-05: `DS-399` (`AUD-002` lite) completed with a `Partial` verdict. The post-phase checkpoint confirmed strong improvements from `DS-301` to `DS-305`, then opened a targeted closure slice for six residual gaps (directory error-vs-empty, admin queue resilience, triage DS alignment, search error recovery actions, touch-target baseline, and onboarding implementation-language cleanup). `SH-401` is now the active priority.
 - 2026-03-05: `DS-305` completed by restructuring `/emergency` into an urgent-first hierarchy with immediate action CTAs, demoted-but-visible safety guidance, explicit Step 1 (resource lookup) and Step 2 (triage guidance) progression, and consistent DS primitive-based empty/error/retry states. Endpoint contracts and triage logic remained unchanged, and independent verification passed (`type-check`, `lint`, `test`, and Playwright emergency coverage). `DS-399` is now the active priority.
 - 2026-03-05: `DS-304` completed by introducing canonical token-driven UI primitives (`Card`, `Field`, `Chip`, `Badge`, `Divider`, `Sheet`, `Capsule`, `StateCard`) and refactoring the core public surfaces (`/`, `/search`, `/directory`, `/emergency`, `/trainers/[id]`, and missing-trainer fallback) to use consistent primitive composition and bounded empty/error state patterns. Verification remained green (`type-check`, `lint`, `test`, and Playwright coverage), and the monetisation E2E visual snapshot was refreshed with deterministic stub timestamps to prevent repeated baseline drift. `DS-305` is now the active priority.
 - 2026-03-05: `DS-303` completed by converting `/onboarding` from a single long-form wall into a staged flow (`Account`, `Business`, `Service profile`, `Review`) with visible progress, backward navigation, and per-step validation gates. Submit contract compatibility was preserved (`POST /api/onboarding` payload keys unchanged), focused unit coverage was added for step validation, and one additional guard was applied in control review to enforce `businessName` at the Business step before progression. `DS-304` is now the active priority.
