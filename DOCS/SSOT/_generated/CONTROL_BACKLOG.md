@@ -58,18 +58,19 @@
 | SH-403 | Experience Stability Hardening | Align `/triage` to design-system shell and primitives | completed | frontend | `WORKPLAN` `SH-403` | `/triage` matches canonical token/primitives baseline without logic/contract drift |
 | SH-404 | Experience Stability Hardening | Add explicit recovery actions to `/search` error state | completed | frontend | `WORKPLAN` `SH-404` | search error state includes direct retry and alternate recovery action |
 | SH-405 | Experience Stability Hardening | Enforce 44px touch-target baseline on primary journey actions | completed | frontend | `WORKPLAN` `SH-405` | primary journey actions satisfy minimum touch-target baseline |
-| SH-406 | Experience Stability Hardening | Remove implementation-language leakage in onboarding review copy | in_progress | frontend | `WORKPLAN` `SH-406` | onboarding review copy is outcome-based and non-technical |
+| SH-406 | Experience Stability Hardening | Remove implementation-language leakage in onboarding review copy | completed | frontend | `WORKPLAN` `SH-406` | onboarding review copy is outcome-based and non-technical |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
 - Product Completion Recovery is complete.
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
-- The next active slice is Experience Stability Hardening.
+- Experience Stability Hardening is complete.
+- The board is awaiting the next prioritisation cycle.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `SH-406`.
+- Current active priority: none (awaiting next prioritisation cycle).
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

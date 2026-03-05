@@ -487,7 +487,7 @@ export default function OnboardingPage() {
                   </dl>
                 </div>
                 <p className="text-sm text-slate-600">
-                  Submitting sends the same onboarding payload and verification flow as before.
+                  Submit to create your account and send your listing for verification before it goes live.
                 </p>
               </div>
             )}

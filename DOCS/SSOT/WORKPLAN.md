@@ -41,7 +41,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
-- Current top priority: `SH-406` (Phase 8 - Experience Stability Hardening).
+- Experience Stability Hardening is complete.
+- Current top priority: none (awaiting next prioritisation cycle).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -425,7 +426,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `Button` sizing or call-site classes are aligned without visual regressions.
   - Accessibility checks remain green.
 
-**SH-406: Remove implementation-language leakage in onboarding review copy**
+**SH-406: Remove implementation-language leakage in onboarding review copy (completed 2026-03-06)**
 - Purpose: keep public/business-facing copy outcome-based and non-technical.
 - Definition of done:
   - Onboarding review copy no longer references payload mechanics or internal flow details.
@@ -433,6 +434,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No onboarding API contract changes.
 
 ## Execution Log
+- 2026-03-06: `SH-406` completed by replacing onboarding review-step implementation-language copy with user-outcome wording while preserving form logic, validation, submit contract, and route behaviour. Phase 8 (`SH-401` to `SH-406`) is now complete and the roadmap is awaiting the next prioritisation cycle.
 - 2026-03-06: `SH-405` completed by enforcing a 44px touch-target baseline through systemic button sizing (`sm`/`md`/`lg`/`icon`) and patching remaining primary journey anchor/Link CTAs that were below minimum target size. Behaviour and contracts remained unchanged. `SH-406` is now the active priority.
 - 2026-03-06: `SH-404` completed by adding explicit recovery actions to the `/search` error `StateCard` while preserving existing error title/description and request contracts: users can now retry the current search directly or switch to guided triage. Both actions are touch-friendly (44px minimum). `SH-405` is now the active priority.
 - 2026-03-06: `SH-403` completed by refactoring `/triage` onto the canonical public shell and DS primitive baseline (`Capsule`, `Card`, `Field`, `Chip`, `Badge`, `Divider`, `StateCard`) while preserving step flow, URL-state contract (`step`, `age`, `issues`, `suburbId`, `radius`), emergency escalation behaviour, and submit handoff to `/search`. Primary action targets remain at least 44px. `SH-404` is now the active priority.

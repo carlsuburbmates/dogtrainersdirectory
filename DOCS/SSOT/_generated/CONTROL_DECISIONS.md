@@ -65,6 +65,7 @@
 | 2026-03-06 | D-155 | `SH-403` accepted as complete | `/triage` now uses the canonical shell and DS primitives while preserving existing triage step/state contracts, emergency gate behaviour, and `/search` handoff semantics | `SH-404` is now the active priority |
 | 2026-03-06 | D-156 | `SH-404` accepted as complete | `/search` error state now includes explicit in-card recovery actions (retry current search and guided triage fallback) with no API/URL contract changes | `SH-405` is now the active priority |
 | 2026-03-06 | D-157 | `SH-405` accepted as complete | touch-target baseline is now enforced for primary journey actions via global button sizing and targeted anchor/Link CTA patches where buttons are not used | `SH-406` is now the active priority |
+| 2026-03-06 | D-158 | `SH-406` accepted as complete and Phase 8 closed | onboarding review-step copy now uses user-outcome language and no longer exposes implementation mechanics; no behaviour or contract changes were introduced | Experience Stability Hardening (`SH-401` to `SH-406`) is complete and the roadmap is awaiting next prioritisation |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -107,6 +108,7 @@
 | 2026-03-06 | frontend | SH-403 | `src/app/triage/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (triage now follows canonical DS shell/primitives baseline without workflow/contract drift) | execute `SH-404` |
 | 2026-03-06 | frontend | SH-404 | `src/app/search/SearchPageClient.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (search error state now provides explicit retry and alternate recovery actions) | execute `SH-405` |
 | 2026-03-06 | frontend | SH-405 | `src/components/ui/Button.tsx`, `src/app/page.tsx`, `src/app/trainers/[id]/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts`; `npx playwright test tests/e2e/emergency.spec.ts` | pass (44px touch-target baseline enforced on primary journey controls) | execute `SH-406` |
+| 2026-03-06 | frontend | SH-406 | `src/app/onboarding/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (onboarding review copy is now outcome-based and non-technical) | await next prioritisation cycle |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`
