@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-05
+**Last Updated:** 2026-03-06
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -53,8 +53,8 @@
 | DS-304 | Design System Enforcement | Enforce primitive discipline across public surfaces | completed | frontend | `WORKPLAN` `DS-304` | public pages use canonical primitives for reusable state and content blocks |
 | DS-305 | Design System Enforcement | Calibrate emergency page to calm, urgent-first hierarchy | completed | frontend | `WORKPLAN` `DS-305` | emergency experience prioritises urgent actions while keeping safety guidance clear and non-overwhelming |
 | DS-399 | Design System Enforcement | Run post-Phase 7 product experience checkpoint (`AUD-002` lite) | completed | main-control | `WORKPLAN` `DS-399` | focused post-phase audit confirms DS work improved UX quality without drifting from product/workflow goals |
-| SH-401 | Experience Stability Hardening | Split directory error vs empty states | in_progress | frontend | `WORKPLAN` `SH-401` | `/directory` distinguishes fetch failures from true zero-inventory and exposes explicit recovery actions |
-| SH-402 | Experience Stability Hardening | Harden admin queue loading against partial endpoint failure | pending | frontend + backend | `WORKPLAN` `SH-402` | `/admin` queue widgets degrade independently with stable endpoint error envelopes |
+| SH-401 | Experience Stability Hardening | Split directory error vs empty states | completed | frontend | `WORKPLAN` `SH-401` | `/directory` distinguishes fetch failures from true zero-inventory and exposes explicit recovery actions |
+| SH-402 | Experience Stability Hardening | Harden admin queue loading against partial endpoint failure | in_progress | frontend + backend | `WORKPLAN` `SH-402` | `/admin` queue widgets degrade independently with stable endpoint error envelopes |
 | SH-403 | Experience Stability Hardening | Align `/triage` to design-system shell and primitives | pending | frontend | `WORKPLAN` `SH-403` | `/triage` matches canonical token/primitives baseline without logic/contract drift |
 | SH-404 | Experience Stability Hardening | Add explicit recovery actions to `/search` error state | pending | frontend | `WORKPLAN` `SH-404` | search error state includes direct retry and alternate recovery action |
 | SH-405 | Experience Stability Hardening | Enforce 44px touch-target baseline on primary journey actions | pending | frontend | `WORKPLAN` `SH-405` | primary journey actions satisfy minimum touch-target baseline |
@@ -69,7 +69,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `SH-401`.
+- Current active priority: `SH-402`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

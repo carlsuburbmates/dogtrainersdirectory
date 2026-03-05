@@ -11,7 +11,17 @@ type DirectoryRegion = {
   trainers: SearchResult[]
 }
 
-export async function fetchDirectoryRegions(): Promise<DirectoryRegion[]> {
+type DirectoryFetchResult =
+  | {
+      status: 'success'
+      regions: DirectoryRegion[]
+    }
+  | {
+      status: 'failure'
+      error: string
+    }
+
+async function fetchDirectoryRegions(): Promise<DirectoryFetchResult> {
   const { data, error } = await supabaseAdmin.rpc('search_trainers', {
     user_lat: null,
     user_lng: null,
@@ -23,7 +33,10 @@ export async function fetchDirectoryRegions(): Promise<DirectoryRegion[]> {
 
   if (error) {
     console.error('Directory query failed', error)
-    return []
+    return {
+      status: 'failure',
+      error: 'We could not load directory listings right now.'
+    }
   }
 
   const grouped = new Map<string, SearchResult[]>()
@@ -49,7 +62,10 @@ export async function fetchDirectoryRegions(): Promise<DirectoryRegion[]> {
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
 
-  return sections
+  return {
+    status: 'success',
+    regions: sections
+  }
 }
 
 const formatTag = (value: string) =>
@@ -59,7 +75,7 @@ const formatTag = (value: string) =>
     .join(' ')
 
 export default async function DirectoryPage() {
-  const regions = await fetchDirectoryRegions()
+  const directoryResult = await fetchDirectoryRegions()
 
   return (
     <main className="public-page-shell">
@@ -80,7 +96,29 @@ export default async function DirectoryPage() {
             </div>
           </Card>
 
-          {regions.length === 0 ? (
+          {directoryResult.status === 'failure' ? (
+            <StateCard
+              title="Directory temporarily unavailable"
+              description={directoryResult.error}
+              tone="error"
+              actions={
+                <>
+                  <Link
+                    href="/directory"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                  >
+                    Reload directory
+                  </Link>
+                  <Link
+                    href="/search"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-[hsl(var(--ds-border-subtle))] bg-white px-4 py-2 text-sm font-semibold text-[hsl(var(--ds-text-secondary))] transition-colors hover:border-[hsl(var(--ds-border-strong))]"
+                  >
+                    Search trainers
+                  </Link>
+                </>
+              }
+            />
+          ) : directoryResult.regions.length === 0 ? (
             <StateCard
               title="No directory listings yet"
               description="Try a suburb search to check nearby options, or add your business to create the next listing."
@@ -102,7 +140,7 @@ export default async function DirectoryPage() {
               }
             />
           ) : (
-            regions.map((region) => (
+            directoryResult.regions.map((region) => (
               <details
                 key={region.name}
                 open

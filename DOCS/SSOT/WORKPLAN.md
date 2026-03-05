@@ -41,7 +41,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
-- Current top priority: `SH-401` (Phase 8 - Experience Stability Hardening).
+- Current top priority: `SH-402` (Phase 8 - Experience Stability Hardening).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -390,7 +390,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Keep one active implementation item at a time in this exact order (`SH-401` -> `SH-406`).
 - No schema/migration or route-family expansion is allowed in this phase.
 
-**SH-401: Split directory error vs empty states**
+**SH-401: Split directory error vs empty states (completed 2026-03-06)**
 - Purpose: prevent backend failures from appearing as zero inventory.
 - Definition of done:
   - `/directory` distinguishes fetch failure from legitimate no-listing states.
@@ -433,6 +433,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No onboarding API contract changes.
 
 ## Execution Log
+- 2026-03-06: `SH-401` completed by refactoring `/directory` data loading to return an explicit success/failure result shape instead of coercing fetch failures to empty inventory, and by adding a terminal failure `StateCard` with direct recovery actions (`Reload directory`, `Search trainers`). True empty-success inventory behaviour and existing featured/verified/rating ordering remained unchanged. `SH-402` is now the active priority.
 - 2026-03-05: `DS-399` (`AUD-002` lite) completed with a `Partial` verdict. The post-phase checkpoint confirmed strong improvements from `DS-301` to `DS-305`, then opened a targeted closure slice for six residual gaps (directory error-vs-empty, admin queue resilience, triage DS alignment, search error recovery actions, touch-target baseline, and onboarding implementation-language cleanup). `SH-401` is now the active priority.
 - 2026-03-05: `DS-305` completed by restructuring `/emergency` into an urgent-first hierarchy with immediate action CTAs, demoted-but-visible safety guidance, explicit Step 1 (resource lookup) and Step 2 (triage guidance) progression, and consistent DS primitive-based empty/error/retry states. Endpoint contracts and triage logic remained unchanged, and independent verification passed (`type-check`, `lint`, `test`, and Playwright emergency coverage). `DS-399` is now the active priority.
 - 2026-03-05: `DS-304` completed by introducing canonical token-driven UI primitives (`Card`, `Field`, `Chip`, `Badge`, `Divider`, `Sheet`, `Capsule`, `StateCard`) and refactoring the core public surfaces (`/`, `/search`, `/directory`, `/emergency`, `/trainers/[id]`, and missing-trainer fallback) to use consistent primitive composition and bounded empty/error state patterns. Verification remained green (`type-check`, `lint`, `test`, and Playwright coverage), and the monetisation E2E visual snapshot was refreshed with deterministic stub timestamps to prevent repeated baseline drift. `DS-305` is now the active priority.

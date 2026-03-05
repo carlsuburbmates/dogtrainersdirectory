@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-05
+**Last Updated:** 2026-03-06
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -60,6 +60,7 @@
 | 2026-03-05 | D-150 | `DS-304` accepted as complete | core public surfaces now compose consistently from token-driven primitives (cards/fields/chips/badges/dividers/sheets/capsules/state cards), removing one-off panel drift and aligning empty/error patterns; Playwright monetisation snapshot was refreshed using deterministic stub timestamps to prevent recurring visual baseline drift | `DS-305` is now the active priority |
 | 2026-03-05 | D-151 | `DS-305` accepted as complete | `/emergency` now follows a calm urgent-first hierarchy with immediate action CTAs, demoted-but-visible safety guidance, explicit two-step progression (resource lookup then triage guidance), and consistent primitive-based error/empty/retry states without contract drift | `DS-399` is now the active priority |
 | 2026-03-05 | D-152 | `DS-399` (`AUD-002` lite) accepted with `Partial` verdict and follow-on closure phase opened | post-phase audit confirmed strong Phase 7 gains but identified six targeted residual quality gaps across directory failure states, admin queue resilience, triage DS alignment, search error recovery actions, touch targets, and onboarding copy | Design System Enforcement is closed and `SH-401` is now the active priority in Phase 8 |
+| 2026-03-06 | D-153 | `SH-401` accepted as complete | `/directory` now distinguishes backend fetch failure from true empty inventory by returning an explicit success/failure data shape and rendering a terminal failure state with recovery actions instead of reusing the empty-listing message | `SH-402` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -97,6 +98,7 @@
 | 2026-03-04 | backend | PC-407 | `src/app/api/admin/latency/route.ts`, `tests/unit/admin-latency-route.test.ts`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`; `npm run lint`; `npm run test`; `npm run docs:guard` | pass (zero-volume latency windows now return the normal no-data success shape instead of `500`) | await next prioritisation cycle |
 | 2026-03-05 | frontend | DS-305 | `src/app/emergency/page.tsx`, `tests/e2e/emergency.spec.ts-snapshots/emergency-controls-chromium-darwin.png` | `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/emergency.spec.ts` | pass (emergency page now uses urgent-first hierarchy with preserved contracts and updated snapshot baseline) | execute `DS-399` checkpoint |
 | 2026-03-05 | audit lane | DS-399 | no repo file changes (audit-only) | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test`; `npx playwright test tests/e2e/search-and-trainer.spec.ts`; `npx playwright test tests/e2e/emergency.spec.ts`; `npx playwright test tests/e2e/monetization.spec.ts`; route/state matrix audit across required public/admin surfaces | pass (`Partial` verdict; six prioritised residual gaps logged) | execute `SH-401` |
+| 2026-03-06 | frontend | SH-401 | `src/app/directory/page.tsx` | `git pull --ff-only origin main`; `npm run type-check`; `npm run lint`; `npm run test` | pass (directory now has explicit failure state and no longer conflates backend errors with true empty inventory) | execute `SH-402` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`
