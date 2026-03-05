@@ -40,7 +40,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - The post-recovery public refinement slice (public language cleanup, search UX decluttering, triage suburb-state hardening) is complete.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
 - Public Experience And State Refinement is complete.
-- Current top priority: `DS-303` (Phase 7 - Design System Enforcement).
+- Current top priority: `DS-304` (Phase 7 - Design System Enforcement).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -350,7 +350,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The search UI continues to honour the canonical backend contract and existing URL-compatible behaviour.
   - Filter interactions remain keyboard accessible and touch-friendly.
 
-**DS-303: Convert onboarding to progressive disclosure flow**
+**DS-303: Convert onboarding to progressive disclosure flow (completed 2026-03-05)**
 - Purpose: reduce onboarding intimidation while preserving data quality and contract correctness.
 - Definition of done:
   - `/onboarding` is organised into a staged flow (step-based or equivalent progressive disclosure) with clear progress.
@@ -382,6 +382,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No new optimisation phase starts until this checkpoint is complete.
 
 ## Execution Log
+- 2026-03-05: `DS-303` completed by converting `/onboarding` from a single long-form wall into a staged flow (`Account`, `Business`, `Service profile`, `Review`) with visible progress, backward navigation, and per-step validation gates. Submit contract compatibility was preserved (`POST /api/onboarding` payload keys unchanged), focused unit coverage was added for step validation, and one additional guard was applied in control review to enforce `businessName` at the Business step before progression. `DS-304` is now the active priority.
 - 2026-03-05: `DS-302` completed by refactoring `/search` into the canonical intent-capsule and filter-sheet interaction model while preserving existing request/URL contracts (`q`, `page`, `suburbId`, filter params, and deep-link auto-search behaviour). Keyboard/touch accessibility for sheet interactions was added (open/close controls, `Escape` close, focus return, and 44px touch targets), and required visual QA evidence was captured for desktop and mobile across default, filters-open, results, and empty-results states. `DS-303` is now the active priority.
 - 2026-03-05: `DS-301` completed by introducing a design-system token bridge in `theme.css`, applying a shared public shell baseline (`public-shell-*` and `shell-*` classes) across `/`, `/search`, `/onboarding`, and `/emergency`, adding a global Living Field environment in root layout, and enforcing reduced-motion/focus/touch-target baseline behaviour. Independent verification passed (`type-check`, `lint`, `test`) and before/after visual evidence was captured for desktop and mobile on all four required routes. `DS-302` is now the active priority.
 - 2026-03-05: Tightened `Phase 7 - Design System Enforcement` governance by adding an explicit `DS-301` enforcement gate, phase non-goals, mandatory verification standards, and a required `DS-399` post-phase checkpoint before any new optimisation slice.

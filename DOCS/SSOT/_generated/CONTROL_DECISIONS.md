@@ -56,6 +56,7 @@
 | 2026-03-05 | D-146 | Tighten Phase 7 governance before implementation | added a formal `DS-301` enforcement gate, explicit Phase 7 non-goals, mandatory DS verification standards, and a required `DS-399` post-phase checkpoint to prevent stylistic drift and premature optimisation | `DS-301` remains the active priority; `DS-399` is queued as the phase exit gate |
 | 2026-03-05 | D-147 | `DS-301` accepted as complete | the public shell now uses a token-driven foundation with global Living Field environment, reduced-motion and focus/touch accessibility baseline, and shared shell scaffolding across `/`, `/search`, `/onboarding`, and `/emergency`, with required visual QA evidence captured | `DS-302` is now the active priority |
 | 2026-03-05 | D-148 | `DS-302` accepted as complete | `/search` now uses the canonical intent-capsule plus filter-sheet interaction model with preserved URL/request contract behaviour, keyboard/touch sheet accessibility, and required desktop/mobile visual QA evidence across default, filters-open, results, and empty-results states | `DS-303` is now the active priority |
+| 2026-03-05 | D-149 | `DS-303` accepted as complete with control-lane validation patch | `/onboarding` now uses staged progressive disclosure with step gating and preserved submit contract; control review added one required guard (`businessName`) to keep step validation aligned with existing onboarding required-field constraints | `DS-304` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |

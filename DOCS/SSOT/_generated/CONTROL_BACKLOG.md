@@ -49,8 +49,8 @@
 | NX-106 | Public Experience And State Refinement | Make search treat `suburbId` as authoritative over location snapshots | completed | backend | `WORKPLAN` `NX-106` | search no longer depends on mutable snapshot fields for correctness when `suburbId` exists |
 | DS-301 | Design System Enforcement | Establish token-driven public shell foundation | completed | frontend | `WORKPLAN` `DS-301` | core public routes share one token-driven shell baseline and readable Living Field foundation |
 | DS-302 | Design System Enforcement | Standardise search interaction model (intent capsule + filter sheet) | completed | frontend | `WORKPLAN` `DS-302` | `/search` uses compact intent context and sheet-based secondary filters without contract drift |
-| DS-303 | Design System Enforcement | Convert onboarding to progressive disclosure flow | in_progress | frontend | `WORKPLAN` `DS-303` | onboarding is staged with clear progress and preserved validation/API compatibility |
-| DS-304 | Design System Enforcement | Enforce primitive discipline across public surfaces | pending | frontend | `WORKPLAN` `DS-304` | public pages use canonical primitives for reusable state and content blocks |
+| DS-303 | Design System Enforcement | Convert onboarding to progressive disclosure flow | completed | frontend | `WORKPLAN` `DS-303` | onboarding is staged with clear progress and preserved validation/API compatibility |
+| DS-304 | Design System Enforcement | Enforce primitive discipline across public surfaces | in_progress | frontend | `WORKPLAN` `DS-304` | public pages use canonical primitives for reusable state and content blocks |
 | DS-305 | Design System Enforcement | Calibrate emergency page to calm, urgent-first hierarchy | pending | frontend | `WORKPLAN` `DS-305` | emergency experience prioritises urgent actions while keeping safety guidance clear and non-overwhelming |
 | DS-399 | Design System Enforcement | Run post-Phase 7 product experience checkpoint (`AUD-002` lite) | pending | main-control | `WORKPLAN` `DS-399` | focused post-phase audit confirms DS work improved UX quality without drifting from product/workflow goals |
 
@@ -62,7 +62,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `DS-303`.
+- Current active priority: `DS-304`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
