@@ -47,13 +47,19 @@
 | NX-104 | Public Experience And State Refinement | Improve public empty states on search and directory | completed | frontend | `WORKPLAN` `NX-104` | empty states provide actionable recovery paths instead of placeholder copy |
 | NX-105 | Public Experience And State Refinement | Reduce instruction density while preserving product differentiation | completed | frontend | `WORKPLAN` `NX-105` | home and search copy become concise without losing DTD's differentiators |
 | NX-106 | Public Experience And State Refinement | Make search treat `suburbId` as authoritative over location snapshots | completed | backend | `WORKPLAN` `NX-106` | search no longer depends on mutable snapshot fields for correctness when `suburbId` exists |
+| DS-301 | Design System Enforcement | Establish token-driven public shell foundation | in_progress | frontend | `WORKPLAN` `DS-301` | core public routes share one token-driven shell baseline and readable Living Field foundation |
+| DS-302 | Design System Enforcement | Standardise search interaction model (intent capsule + filter sheet) | pending | frontend | `WORKPLAN` `DS-302` | `/search` uses compact intent context and sheet-based secondary filters without contract drift |
+| DS-303 | Design System Enforcement | Convert onboarding to progressive disclosure flow | pending | frontend | `WORKPLAN` `DS-303` | onboarding is staged with clear progress and preserved validation/API compatibility |
+| DS-304 | Design System Enforcement | Enforce primitive discipline across public surfaces | pending | frontend | `WORKPLAN` `DS-304` | public pages use canonical primitives for reusable state and content blocks |
+| DS-305 | Design System Enforcement | Calibrate emergency page to calm, urgent-first hierarchy | pending | frontend | `WORKPLAN` `DS-305` | emergency experience prioritises urgent actions while keeping safety guidance clear and non-overwhelming |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
 - Product Completion Recovery is complete.
-- The next active slice is Public Experience And State Refinement.
+- Public Experience And State Refinement is complete.
+- The next active slice is Design System Enforcement.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
-- Current active priority: none. The current Public Experience And State Refinement slice is complete.
+- Current active priority: `DS-301`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

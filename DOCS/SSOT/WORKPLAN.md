@@ -37,9 +37,10 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `PC-406` is now complete and the remaining credibility/consistency debt from `AUD-001` is closed.
 - `PC-407` is now complete and `/api/admin/latency` returns a stable no-data summary for zero-volume windows instead of `500`.
 - Product Completion Recovery is now complete for the current application-layer audited scope.
-- The next delivery slice is now defined from post-recovery product review plus accepted external critique: public language cleanup, search UX decluttering, and triage suburb-state hardening.
+- The post-recovery public refinement slice (public language cleanup, search UX decluttering, triage suburb-state hardening) is complete.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` is now the canonical design-system reference and acts as a governing constraint for the public refinement tasks in this slice.
-- Current top priority: none. The current Public Experience And State Refinement slice is complete.
+- Public Experience And State Refinement is complete.
+- Current top priority: `DS-301` (Phase 7 - Design System Enforcement).
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -47,6 +48,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   4. Market Optimization
   5. Product Completion Recovery
   6. Public Experience And State Refinement
+  7. Design System Enforcement
 
 ## Completed Foundation Milestones
 
@@ -311,7 +313,54 @@ Anything not listed here is **not worked on** (to prevent drift).
   - When both `suburbId` and location snapshot fields are present, `suburbId` wins.
   - Any remaining location snapshot fields are treated as cache/display only, not source of truth.
 
+### Phase 7 - Design System Enforcement
+
+**Phase rule**
+- All public UI changes in this phase must comply with `DOCS/SSOT/12_DESIGN_SYSTEM.md`.
+- No ad-hoc visual patterns may be added to public surfaces; compose from canonical primitives and tokens.
+
+**DS-301: Establish token-driven public shell foundation**
+- Purpose: make the public experience visually consistent and deterministic across all core routes before further page-level polish.
+- Definition of done:
+  - Core public routes share one token-driven shell baseline for colour, type scale, spacing, radii, and elevation.
+  - The global "Living Field" environment is applied consistently without reducing readability of interactive content.
+  - Motion rules respect `prefers-reduced-motion` across shell-level transitions and ambient effects.
+  - The resulting shell baseline is stable enough for `DS-302` to `DS-305` to build on without reworking fundamentals.
+
+**DS-302: Standardise search interaction model (intent capsule + filter sheet)**
+- Purpose: align `/search` to the canonical mobile-first interaction model with lower cognitive load.
+- Definition of done:
+  - `/search` exposes a compact intent summary (`Intent Capsule`) as the primary filter context.
+  - Non-primary filters are moved into a filter sheet interaction instead of always-open dense control blocks.
+  - The search UI continues to honour the canonical backend contract and existing URL-compatible behaviour.
+  - Filter interactions remain keyboard accessible and touch-friendly.
+
+**DS-303: Convert onboarding to progressive disclosure flow**
+- Purpose: reduce onboarding intimidation while preserving data quality and contract correctness.
+- Definition of done:
+  - `/onboarding` is organised into a staged flow (step-based or equivalent progressive disclosure) with clear progress.
+  - Required fields remain explicit and validated at the correct stage boundaries.
+  - Existing API contract compatibility is preserved (including current alias-normalisation expectations).
+  - The page no longer presents a single overwhelming long-form wall as the primary UX.
+
+**DS-304: Enforce primitive discipline across public surfaces**
+- Purpose: remove one-off content blocks and visual drift by standardising on canonical UI primitives.
+- Definition of done:
+  - Public pages use canonical primitives for cards, chips, badges, dividers, sheets, and state blocks (empty/loading/error).
+  - One-off explanatory or decorative blocks that do not map to primitives are removed or refactored.
+  - Empty/loading/error states on core public routes present consistent tone, structure, and action hierarchy.
+  - Public UI remains coherent without introducing new undocumented components.
+
+**DS-305: Calibrate emergency page to calm, urgent-first hierarchy**
+- Purpose: keep emergency guidance clear and urgent without overwhelming distressed users.
+- Definition of done:
+  - `/emergency` presents a clear urgent-first hierarchy with fast access to primary emergency actions.
+  - Legal safety guidance remains present but does not dominate primary actions or form controls.
+  - The emergency resource and triage inputs are simplified into a clearer progression.
+  - The resulting UX remains compliant with the design-system tone (`calm`, `credible`, `authoritative`) and accessibility guardrails.
+
 ## Execution Log
+- 2026-03-05: Opened `Phase 7 - Design System Enforcement` as the next delivery slice after the completion of `NX-101` to `NX-106`. `DS-301` is now the active priority, with `DS-302` to `DS-305` queued in strict order.
 - 2026-03-05: `NX-106` completed by making `/api/public/search` parse canonical `suburbId`, resolve effective search coordinates from the suburb record when possible, and ignore conflicting snapshot coordinates when a canonical suburb identity is present. If `suburbId` is unresolvable, the route now falls back to a non-location search rather than trusting tamperable snapshot coordinates.
 - 2026-03-05: `NX-105` completed by tightening the instructional weight on `/` and `/search` without changing routes, search contracts, or core flow logic. The home hero now has one clearer dominant path with secondary routes demoted to a compact “Other ways in” list, while the search page replaces tutorial-style blocks with shorter orientation and support panels that preserve triage, locality, and emergency differentiation without reading like a manual.
 - 2026-03-05: `NX-104` completed by replacing the thin placeholder empty states on `/search` and `/directory` with actionable recovery states. Search zero-results now suggests concrete next actions and exposes in-place recovery CTAs (`Search all distances`, `Clear extra filters`, `Start guided search`), while the directory empty state now gives both demand-side and supply-side next steps (`Try search instead`, `Add your business`) without changing route logic or backend contracts.
