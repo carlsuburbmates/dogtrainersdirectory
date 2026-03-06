@@ -59,6 +59,8 @@
 | SH-404 | Experience Stability Hardening | Add explicit recovery actions to `/search` error state | completed | frontend | `WORKPLAN` `SH-404` | search error state includes direct retry and alternate recovery action |
 | SH-405 | Experience Stability Hardening | Enforce 44px touch-target baseline on primary journey actions | completed | frontend | `WORKPLAN` `SH-405` | primary journey actions satisfy minimum touch-target baseline |
 | SH-406 | Experience Stability Hardening | Remove implementation-language leakage in onboarding review copy | completed | frontend | `WORKPLAN` `SH-406` | onboarding review copy is outcome-based and non-technical |
+| IX-501 | Integrity And SSOT Realignment | Lock down unsafe test and analytics surfaces | completed | backend | `WORKPLAN` `IX-501` | unsafe `/api/test/**` routes are operator-only outside E2E mode and `/api/trainer/dashboard` no longer fabricates analytics |
+| IX-502 | Integrity And SSOT Realignment | Restore triage browser coverage and SSOT tooling sync | completed | backend + main-control | `WORKPLAN` `IX-502` | `/triage` browser coverage is present, SSOT refresh parses quoted schema correctly, and SSOT docs/generated inventories are resynchronised |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -66,6 +68,7 @@
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
 - Experience Stability Hardening is complete.
+- Integrity And SSOT Realignment is complete.
 - The board is awaiting the next prioritisation cycle.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.

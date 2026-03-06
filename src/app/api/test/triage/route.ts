@@ -1,9 +1,30 @@
 // Test endpoint for triage logging functionality
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/auth'
+import { isE2ETestMode } from '@/lib/e2eTestUtils'
+
+async function enforceTestAccess() {
+  if (isE2ETestMode()) return null
+
+  const { authorized } = await requireAdmin()
+  if (authorized) return null
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Forbidden',
+      message: 'This endpoint is restricted to operators.',
+    },
+    { status: 403 }
+  )
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const gate = await enforceTestAccess()
+    if (gate) return gate
+
     const { searchParams } = new URL(request.url)
     const message = searchParams.get('message') || "My dog is bleeding after being hit by a car"
     const suburbId = searchParams.get('suburbId') ? Number(searchParams.get('suburbId')) : undefined
@@ -30,6 +51,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { 
+        success: false,
         error: 'Test failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -37,3 +59,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'

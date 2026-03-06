@@ -1,14 +1,15 @@
 # Security & Privacy — Auth, Data Protection, Secrets
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1  
-**Last Updated:** Phase 1 Batch 3 - Documentation Updates
+**Version:** v1.2  
+**Last Updated:** 2026-03-06
 
 ## 1. Secret handling
 - Never commit real secrets. Use `.env.example` as the only env template.
 - Client-exposed env vars must be `NEXT_PUBLIC_*` only.
 - **Required secrets:**
-  - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (public)
+  - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public client)
+  - `SUPABASE_URL` (server-side alias used by tooling and Edge Functions)
   - `SUPABASE_SERVICE_ROLE_KEY` (server-only, admin operations)
   - `SUPABASE_PGCRYPTO_KEY` (server-only, field decryption)
   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (server-only)
@@ -18,7 +19,8 @@
 - Use anon key on client.
 - Service role keys are server-only.
 - Admin APIs use `SUPABASE_SERVICE_ROLE_KEY` for elevated database access.
-- Public APIs use standard Supabase client with RLS (Row Level Security).
+- Public browser clients use the anon key with RLS.
+- Server-side public endpoints may use service-role-backed RPCs or controlled reads when needed for canonical search behaviour, decryption, or integrity checks, but secrets and decryption keys must remain server-only.
 
 ## 3. Admin boundary — ✅ RESOLVED (Phase 1 Batch 1)
 
@@ -26,11 +28,11 @@
 - All admin pages under `/admin/**`.
 - All admin APIs under `/api/admin/**`.
 
-### 3.2 Middleware Protection (IMPLEMENTED)
+### 3.2 Proxy Protection (IMPLEMENTED)
 **Status:** ✅ **Inconsistent admin auth RESOLVED**
 
 **Implementation files:**
-- `src/middleware.ts` — Next.js middleware for route protection
+- `src/proxy.ts` — Next.js proxy enforcement for route protection
 - `src/lib/auth.ts` — Authentication helper functions
 
 **Protected routes:**
@@ -38,7 +40,7 @@
 - All `/api/admin/**` API routes
 
 **Authentication flow:**
-1. Middleware intercepts requests to protected routes
+1. Proxy intercepts requests to protected routes
 2. Calls `checkAdminAuthFromRequest()` from `src/lib/auth.ts`
 3. Extracts user from Supabase session
 4. Verifies user has admin role in `profiles` table
@@ -51,10 +53,15 @@
 - `checkAdminAuthFromRequest()` — Middleware-compatible auth check
 
 **Enforcement:**
-- ✅ All `/admin/**` pages protected by middleware
-- ✅ All `/api/admin/**` endpoints protected by middleware
+- ✅ All `/admin/**` pages protected by proxy enforcement
+- ✅ All `/api/admin/**` endpoints protected by proxy enforcement
 - ✅ Consistent authentication across all admin surfaces
 - ✅ No admin functionality exposed without proper authorization
+
+## 3.3 Test and operator-only endpoints
+- `/api/test/**` endpoints are not public production surfaces.
+- Outside explicit `E2E_TEST_MODE`, test endpoints that can write data or trigger side effects must be operator-only.
+- `E2E_TEST_MODE` bypass exists only for deterministic automated verification and must not be relied on as production access control.
 
 ## 4. Sensitive fields
 Bundle indicates encrypted columns exist for contact fields and are decrypted via `decrypt_sensitive` using `SUPABASE_PGCRYPTO_KEY`.
@@ -81,10 +88,10 @@ Bundle indicates encrypted columns exist for contact fields and are decrypted vi
 ## 6. Security hardening checklist
 
 ### Completed (Phase 1)
-- ✅ Admin authentication middleware implementation
+- ✅ Admin authentication proxy implementation
 - ✅ Consistent admin auth enforcement across all `/admin/**` and `/api/admin/**` routes
 - ✅ Server-side decryption of sensitive fields with proper key management
-- ✅ Route protection via Next.js middleware
+- ✅ Route protection via Next.js proxy enforcement
 
 ### Future enhancements
 - [ ] Rate limiting on public APIs (especially search and emergency triage)

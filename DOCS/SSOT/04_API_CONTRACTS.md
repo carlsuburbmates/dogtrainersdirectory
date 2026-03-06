@@ -1,8 +1,8 @@
 # API Contracts - Boundaries and Invariants
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.4
-**Last Updated:** 2026-03-05
+**Version:** v1.5
+**Last Updated:** 2026-03-06
 
 ## 1. Inventory source
 Implementation-discovered API inventory is generated and versioned at:
@@ -25,6 +25,9 @@ This file defines policy-level API contracts and security boundaries only.
 - Canonical locality identity is `suburbId`; mutable location snapshot fields (`suburbName`, `postcode`, `lat`, `lng`, `councilId`) are display/cache hints only and must not become the source of truth when `suburbId` is present.
 - `/api/public/search`: when `suburbId` is present and resolves successfully, canonical suburb coordinates must be used for search correctness and conflicting snapshot coordinates must be ignored.
 - `/api/public/search`: when `suburbId` is present but unresolvable, the route must not silently trust conflicting snapshot coordinates as if they were canonical.
+- `/api/test/**`: test endpoints are not public truth surfaces. Outside explicit E2E mode they must be operator-only, and they must not expose unauthorised write or side-effect behaviour.
+- `/api/test/seed-review`: any allowed seeded review write must remain schema-compatible with `public.reviews` and must create a pending review only.
+- `/api/trainer/dashboard`: must not present fabricated analytics as real business performance. If analytics are unavailable, the route must return an explicit unavailable/unsupported response or clearly null unsupported fields instead of random values.
 
 ## 4. Endpoint contract source
 - Full method lists are in `DOCS/SSOT/_generated/api.md`.

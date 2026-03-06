@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-05)
+## Current State (as of 2026-03-06)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -42,6 +42,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Public Experience And State Refinement is complete.
 - Design System Enforcement is complete.
 - Experience Stability Hardening is complete.
+- Integrity And SSOT Realignment is complete.
 - Current top priority: none (awaiting next prioritisation cycle).
 - The current delivery sequence is:
   1. Build Completion
@@ -52,6 +53,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   6. Public Experience And State Refinement
   7. Design System Enforcement
   8. Experience Stability Hardening
+  9. Integrity And SSOT Realignment
 
 ## Completed Foundation Milestones
 
@@ -433,7 +435,31 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Messaging explains user outcome and next step in plain language.
   - No onboarding API contract changes.
 
+### Phase 9 - Integrity And SSOT Realignment
+
+**Phase rule**
+- This phase closes cross-layer integrity drift that remained after the main product and UX completion slices.
+- Keep one active implementation item at a time in this exact order (`IX-501` -> `IX-502`).
+- Behaviour, coverage, and SSOT must be resynchronised in one delivery cycle before the roadmap can return to awaiting prioritisation.
+
+**IX-501: Lock down unsafe test and analytics surfaces (completed 2026-03-06)**
+- Purpose: remove public write/side-effect risk and stop fake analytics from presenting as truth.
+- Definition of done:
+  - Unsafe `/api/test/**` routes are operator-only outside explicit `E2E_TEST_MODE`.
+  - `/api/test/seed-review` writes a schema-compatible pending review only.
+  - `/api/trainer/dashboard` no longer returns fabricated business analytics.
+
+**IX-502: Restore triage browser coverage and SSOT tooling sync (completed 2026-03-06)**
+- Purpose: bring browser verification, SSOT generation, and contract/security docs back into sync with current code.
+- Definition of done:
+  - Playwright covers the canonical `/triage` journey, including normal handoff and one emergency branch.
+  - `scripts/ssot_refresh.py` correctly parses the current quoted `supabase/schema.sql`.
+  - `npm run ssot:refresh` produces accurate generated inventories again.
+  - SSOT contract/security/route docs reflect the current implementation.
+
 ## Execution Log
+- 2026-03-06: `IX-502` completed by adding browser-level Playwright coverage for the canonical `/triage` journey, fixing `scripts/ssot_refresh.py` to parse quoted `supabase/schema.sql`, rerunning `npm run ssot:refresh`, and synchronising the affected SSOT contract, route, and security documents to the current implementation. Phase 9 (`IX-501` to `IX-502`) is now complete and the roadmap is awaiting the next prioritisation cycle.
+- 2026-03-06: `IX-501` completed by locking down unsafe `/api/test/**` surfaces to operators or explicit `E2E_TEST_MODE`, making `/api/test/seed-review` write a schema-compatible pending review only, and replacing fabricated `/api/trainer/dashboard` analytics with an honest unavailable/partial-metrics contract. `IX-502` is now the active priority.
 - 2026-03-06: `SH-406` completed by replacing onboarding review-step implementation-language copy with user-outcome wording while preserving form logic, validation, submit contract, and route behaviour. Phase 8 (`SH-401` to `SH-406`) is now complete and the roadmap is awaiting the next prioritisation cycle.
 - 2026-03-06: `SH-405` completed by enforcing a 44px touch-target baseline through systemic button sizing (`sm`/`md`/`lg`/`icon`) and patching remaining primary journey anchor/Link CTAs that were below minimum target size. Behaviour and contracts remained unchanged. `SH-406` is now the active priority.
 - 2026-03-06: `SH-404` completed by adding explicit recovery actions to the `/search` error `StateCard` while preserving existing error title/description and request contracts: users can now retry the current search directly or switch to guided triage. Both actions are touch-friendly (44px minimum). `SH-405` is now the active priority.

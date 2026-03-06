@@ -1,13 +1,34 @@
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/auth'
+import { isE2ETestMode } from '@/lib/e2eTestUtils'
+
+async function enforceTestAccess() {
+  if (isE2ETestMode()) return null
+
+  const { authorized } = await requireAdmin()
+  if (authorized) return null
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Forbidden',
+      message: 'This endpoint is restricted to operators.',
+    },
+    { status: 403 }
+  )
+}
 
 export async function POST(request: Request) {
   try {
+    const gate = await enforceTestAccess()
+    if (gate) return gate
+
     const body = await request.json()
     const { eventType, recipient, data } = body
     
     if (!eventType || !recipient) {
       return NextResponse.json(
-        { error: 'Missing eventType or recipient' },
+        { success: false, error: 'Missing eventType or recipient' },
         { status: 400 }
       )
     }
@@ -22,7 +43,7 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     return NextResponse.json(
-      { error: 'Email event test failed', message: error.message },
+      { success: false, error: 'Email event test failed', message: error.message },
       { status: 500 }
     )
   }

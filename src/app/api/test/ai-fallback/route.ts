@@ -1,15 +1,35 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
+import { requireAdmin } from '@/lib/auth'
+import { isE2ETestMode } from '@/lib/e2eTestUtils'
+
+async function enforceTestAccess() {
+  if (isE2ETestMode()) return null
+
+  const { authorized } = await requireAdmin()
+  if (authorized) return null
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Forbidden',
+      message: 'This endpoint is restricted to operators.',
+    },
+    { status: 403 }
+  )
+}
 
 export async function POST(request: Request) {
   try {
+    const gate = await enforceTestAccess()
+    if (gate) return gate
+
     const body = await request.json()
     const { prompt, useFallback = false } = body
     
     if (!prompt) {
       return NextResponse.json(
-        { error: 'Missing prompt' },
+        { success: false, error: 'Missing prompt' },
         { status: 400 }
       )
     }
@@ -37,7 +57,7 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     return NextResponse.json(
-      { error: 'AI test failed', message: error.message },
+      { success: false, error: 'AI test failed', message: error.message },
       { status: 500 }
     )
   }

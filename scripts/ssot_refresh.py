@@ -160,10 +160,18 @@ def generate_edge_functions_md() -> str:
     return "\n".join(lines)
 
 
-_CREATE_TABLE_RE = re.compile(r"^CREATE\s+TABLE\s+public\.([a-zA-Z0-9_]+)\s*\(")
-_CREATE_VIEW_RE = re.compile(r"^CREATE\s+VIEW\s+public\.([a-zA-Z0-9_]+)\s+AS\b")
-_CREATE_TYPE_RE = re.compile(r"^CREATE\s+TYPE\s+public\.([a-zA-Z0-9_]+)\s+AS\s+ENUM\s*\(")
-_CREATE_FUNCTION_RE = re.compile(r"^CREATE\s+FUNCTION\s+public\.([a-zA-Z0-9_]+)\s*\(")
+_CREATE_TABLE_RE = re.compile(
+    r'^CREATE\s+TABLE\s+"?public"?\."?([a-zA-Z0-9_]+)"?\s*\('
+)
+_CREATE_VIEW_RE = re.compile(
+    r'^CREATE\s+VIEW\s+"?public"?\."?([a-zA-Z0-9_]+)"?\s+AS\b'
+)
+_CREATE_TYPE_RE = re.compile(
+    r'^CREATE\s+TYPE\s+"?public"?\."?([a-zA-Z0-9_]+)"?\s+AS\s+ENUM\s*\('
+)
+_CREATE_FUNCTION_RE = re.compile(
+    r'^CREATE\s+FUNCTION\s+"?public"?\."?([a-zA-Z0-9_]+)"?\s*\('
+)
 
 
 def generate_schema_md() -> str:

@@ -1,8 +1,8 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.10
-**Last Updated:** 2026-03-05
+**Version:** v1.11
+**Last Updated:** 2026-03-06
 
 ## 1. Inventory source
 Implementation-discovered route inventory is generated and versioned at:
@@ -14,6 +14,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - Entry points for public visitors are `/`, `/triage`, `/search`, `/directory`, and `/emergency`.
 - `/` is the guided public launch point: it should support fast shortlist setup (stage, suburb, key issues) while also clearly routing to triage, directory browse, and emergency help.
 - `/triage` is the needs-first flow that routes users to either emergency help or focused search, and it must use one canonical emergency issue-to-flow mapping so the gate trigger and branch selection cannot diverge.
+- `/triage` is a four-step journey in this order: age, issues, location, review. The normal completion path must hand canonical locality state into `/search`, and emergency-gated issues must branch to `/emergency`.
 - In `/triage`, `suburbId` is the canonical location identity for URL state. If a saved or linked `suburbId` is present, the page must rehydrate the selected suburb from that id instead of relying on mutable location snapshot fields.
 - `/search` is the shortlist refinement surface: filters and results must coexist in a way that keeps the next move to a trainer profile obvious and low-friction.
 - `/search` is also the canonical first-slice landing surface for locality and service intent. When canonical query params are present (`suburbName`, `service_type`, `age_specialties`, `behavior_issues`, `q/query`), page heading, metadata, structured data, and internal discovery links should reflect that context without requiring a second route family.
