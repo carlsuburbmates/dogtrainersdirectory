@@ -479,7 +479,15 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/directory` reaches its bounded failure `StateCard` when the live query cannot even start.
   - The successful live-data path remains unchanged.
 
+**RT-602: Harden remaining public SSR pages against uncaught Supabase admin-client failures (completed 2026-03-07)**
+- Purpose: extend the bounded-failure rule from `/directory` to the other public server-rendered pages that directly depend on `supabaseAdmin`.
+- Definition of done:
+  - `/promote` does not crash into a global app error when server-side Supabase admin-client initialisation fails.
+  - `/trainers/[id]` renders a bounded unavailable state instead of a global app error when the profile or reviews load fails at the server layer.
+  - Existing successful live-data paths remain unchanged.
+
 ## Execution Log
+- 2026-03-07: `RT-602` completed by auditing the remaining public server-rendered pages that directly use `supabaseAdmin` and hardening the unsafe ones. `/promote` now catches admin-client/query initialisation failures in `loadBusiness()` and degrades to its existing bounded UI, while `/trainers/[id]` now separates success, missing, and failure states so runtime failures render an explicit unavailable state instead of a global app error. Focused unit coverage was added for both pages and runtime browser verification confirmed the bounded unavailable state on `/trainers/[id]` under missing-env conditions.
 - 2026-03-06: `RT-601` completed by wrapping the `/directory` Supabase RPC call in a bounded failure path so missing server-side Supabase env now renders the intended unavailable `StateCard` instead of a global application error. Focused unit coverage was added, and browser smoke verification confirmed `/directory` now returns `200` with the bounded failure state under missing-env local runtime conditions.
 - 2026-03-06: `IX-503` completed by making `/search` rehydrate and display locality from canonical `suburbId` rather than stale URL snapshot fields, while preserving current search contracts. Browser-level regression coverage now locks canonical suburb rehydration and request construction on the search page.
 - 2026-03-06: `IX-502` completed by adding browser-level Playwright coverage for the canonical `/triage` journey, fixing `scripts/ssot_refresh.py` to parse quoted `supabase/schema.sql`, rerunning `npm run ssot:refresh`, and synchronising the affected SSOT contract, route, and security documents to the current implementation. Phase 9 (`IX-501` to `IX-502`) is now complete and the roadmap is awaiting the next prioritisation cycle.

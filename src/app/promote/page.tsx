@@ -17,42 +17,48 @@ type PromotePageProps = {
 
 export const dynamic = 'force-dynamic'
 
-async function loadBusiness(businessId?: number) {
+export async function loadBusiness(businessId?: number) {
   if (!businessId) return null
-  const { data, error } = await supabaseAdmin
-    .from('businesses')
-    .select('id, name, abn_verified, verification_status, suburb_id, featured_until')
-    .eq('id', businessId)
-    .maybeSingle()
 
-  if (error) {
-    console.warn('Unable to load business for promote page', error)
-    return null
-  }
-
-  if (!data) {
-    return null
-  }
-
-  let suburbName: string | null = null
-
-  if (data.suburb_id) {
-    const suburbQuery = await supabaseAdmin
-      .from('suburbs')
-      .select('name')
-      .eq('id', data.suburb_id)
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('businesses')
+      .select('id, name, abn_verified, verification_status, suburb_id, featured_until')
+      .eq('id', businessId)
       .maybeSingle()
 
-    if (suburbQuery.error) {
-      console.warn('Unable to load suburb for promote page', suburbQuery.error)
-    } else {
-      suburbName = suburbQuery.data?.name ?? null
+    if (error) {
+      console.warn('Unable to load business for promote page', error)
+      return null
     }
-  }
 
-  return {
-    ...data,
-    suburb_name: suburbName
+    if (!data) {
+      return null
+    }
+
+    let suburbName: string | null = null
+
+    if (data.suburb_id) {
+      const suburbQuery = await supabaseAdmin
+        .from('suburbs')
+        .select('name')
+        .eq('id', data.suburb_id)
+        .maybeSingle()
+
+      if (suburbQuery.error) {
+        console.warn('Unable to load suburb for promote page', suburbQuery.error)
+      } else {
+        suburbName = suburbQuery.data?.name ?? null
+      }
+    }
+
+    return {
+      ...data,
+      suburb_name: suburbName
+    }
+  } catch (error) {
+    console.warn('Unable to load business for promote page', error)
+    return null
   }
 }
 

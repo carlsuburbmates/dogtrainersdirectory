@@ -63,6 +63,7 @@
 | IX-502 | Integrity And SSOT Realignment | Restore triage browser coverage and SSOT tooling sync | completed | backend + main-control | `WORKPLAN` `IX-502` | `/triage` browser coverage is present, SSOT refresh parses quoted schema correctly, and SSOT docs/generated inventories are resynchronised |
 | IX-503 | Integrity And SSOT Realignment | Align `/search` display locality to canonical suburb state | completed | frontend | `WORKPLAN` `IX-503` | `/search` shows and resubmits canonical locality from `suburbId` rather than stale snapshot fields when canonical suburb state is available |
 | RT-601 | Runtime Resilience | Prevent `/directory` from crashing on missing server-side Supabase env | completed | backend | `WORKPLAN` `RT-601` | `/directory` renders its bounded unavailable state instead of a server-render `500` when the Supabase admin client cannot initialise |
+| RT-602 | Runtime Resilience | Harden remaining public SSR pages against uncaught Supabase admin-client failures | completed | backend | `WORKPLAN` `RT-602` | `/promote` and `/trainers/[id]` degrade to bounded UI states instead of global app errors when their first Supabase admin-client access fails |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.

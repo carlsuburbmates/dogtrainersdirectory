@@ -17,6 +17,76 @@ interface Review {
   created_at: string
 }
 
+type TrainerPageLoadResult =
+  | {
+      status: 'success'
+      trainer: any
+      reviews: Review[]
+    }
+  | {
+      status: 'missing'
+      trainer: null
+      reviews: []
+    }
+  | {
+      status: 'failure'
+      error: string
+      trainer: null
+      reviews: []
+    }
+
+export async function loadTrainerPageData(id: number): Promise<TrainerPageLoadResult> {
+  try {
+    const decryptKey = process.env.SUPABASE_PGCRYPTO_KEY || null
+    const { data, error } = await supabaseAdmin.rpc('get_trainer_profile', {
+      p_business_id: id,
+      p_key: decryptKey
+    })
+
+    const trainer = data?.[0] ?? null
+
+    if (!trainer || error) {
+      return {
+        status: 'missing',
+        trainer: null,
+        reviews: []
+      }
+    }
+
+    const { data: reviews, error: reviewsError } = await supabaseAdmin
+      .from('reviews')
+      .select('id, reviewer_name, rating, title, content, created_at')
+      .eq('business_id', id)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (reviewsError) {
+      console.error('Trainer reviews query failed', reviewsError)
+      return {
+        status: 'failure',
+        error: 'We could not load this trainer profile right now.',
+        trainer: null,
+        reviews: []
+      }
+    }
+
+    return {
+      status: 'success',
+      trainer,
+      reviews: (reviews ?? []) as Review[]
+    }
+  } catch (error) {
+    console.error('Trainer profile query failed before data could load', error)
+    return {
+      status: 'failure',
+      error: 'We could not load this trainer profile right now.',
+      trainer: null,
+      reviews: []
+    }
+  }
+}
+
 export default async function TrainerPage({
   params,
   searchParams
@@ -50,15 +120,55 @@ export default async function TrainerPage({
     return notFound()
   }
 
-  const decryptKey = process.env.SUPABASE_PGCRYPTO_KEY || null
-  const { data, error } = await supabaseAdmin.rpc('get_trainer_profile', {
-    p_business_id: id,
-    p_key: decryptKey
-  })
+  const loadResult = await loadTrainerPageData(id)
 
-  const trainer = data?.[0]
+  if (loadResult.status === 'failure') {
+    await recordLatencyMetric({
+      area: 'trainer_profile_page',
+      route: '/trainers/[id]',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 503,
+      metadata: { businessId: id, flowSource, reason: 'profile_unavailable' }
+    })
+    await recordCommercialFunnelMetric({
+      stage: 'trainer_profile_view',
+      durationMs: Date.now() - started,
+      success: false,
+      statusCode: 503,
+      metadata: { businessId: id, flowSource, reason: 'profile_unavailable' }
+    })
 
-  if (!trainer || error) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.18),_transparent_30%),linear-gradient(180deg,#eff6ff_0%,#f8fafc_38%,#ffffff_100%)]">
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+          <StateCard
+            title="Trainer profile temporarily unavailable"
+            description={loadResult.error}
+            tone="error"
+            actions={
+              <>
+                <Link
+                  href={flowSource ? `/search?flow_source=${encodeURIComponent(flowSource)}` : '/search'}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                >
+                  Back to search
+                </Link>
+                <Link
+                  href="/directory"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-[hsl(var(--ds-border-subtle))] bg-white px-4 py-2 text-sm font-semibold text-[hsl(var(--ds-text-secondary))] transition-colors hover:border-[hsl(var(--ds-border-strong))]"
+                >
+                  Browse directory
+                </Link>
+              </>
+            }
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (loadResult.status === 'missing') {
     if (resolvedSearchParams?.e2eName) {
       await recordLatencyMetric({
         area: 'trainer_profile_page',
@@ -102,13 +212,8 @@ export default async function TrainerPage({
     return <TrainerFallback id={id} />
   }
 
-  const { data: reviews } = await supabaseAdmin
-    .from('reviews')
-    .select('id, reviewer_name, rating, title, content, created_at')
-    .eq('business_id', id)
-    .eq('is_approved', true)
-    .order('created_at', { ascending: false })
-    .limit(10)
+  const trainer = loadResult.trainer
+  const reviews = loadResult.reviews
 
   const getRatingStars = (rating: number) => {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating)
