@@ -486,7 +486,15 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/trainers/[id]` renders a bounded unavailable state instead of a global app error when the profile or reviews load fails at the server layer.
   - Existing successful live-data paths remain unchanged.
 
+**RT-603: Audit indirect public helper paths and stabilise lint output handling (completed 2026-03-07)**
+- Purpose: confirm there are no remaining indirect public SSR helper chains that bypass bounded failure UI, and remove the tooling dependency on Playwright creating `test-results/` before lint can pass.
+- Definition of done:
+  - Indirect public server-side helper paths used by public pages are audited and any unsafe runtime crash paths are fixed.
+  - If no additional unsafe helper chains are found, the audit result is explicitly recorded without unnecessary runtime-code changes.
+  - `npm run lint` passes regardless of whether `test-results/` exists yet.
+
 ## Execution Log
+- 2026-03-07: `RT-603` completed by auditing the indirect server-side helper chains used by public pages and confirming the in-scope public SSR helper paths were already bounded after `RT-601` and `RT-602`. No additional runtime code changes were required. The remaining tooling annoyance was fixed by explicitly ignoring `test-results/**` in ESLint config so `npm run lint` no longer depends on Playwright having already created that directory.
 - 2026-03-07: `RT-602` completed by auditing the remaining public server-rendered pages that directly use `supabaseAdmin` and hardening the unsafe ones. `/promote` now catches admin-client/query initialisation failures in `loadBusiness()` and degrades to its existing bounded UI, while `/trainers/[id]` now separates success, missing, and failure states so runtime failures render an explicit unavailable state instead of a global app error. Focused unit coverage was added for both pages and runtime browser verification confirmed the bounded unavailable state on `/trainers/[id]` under missing-env conditions.
 - 2026-03-06: `RT-601` completed by wrapping the `/directory` Supabase RPC call in a bounded failure path so missing server-side Supabase env now renders the intended unavailable `StateCard` instead of a global application error. Focused unit coverage was added, and browser smoke verification confirmed `/directory` now returns `200` with the bounded failure state under missing-env local runtime conditions.
 - 2026-03-06: `IX-503` completed by making `/search` rehydrate and display locality from canonical `suburbId` rather than stale URL snapshot fields, while preserving current search contracts. Browser-level regression coverage now locks canonical suburb rehydration and request construction on the search page.
