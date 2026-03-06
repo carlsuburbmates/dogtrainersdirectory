@@ -1,4 +1,9 @@
 import { supabaseAdmin } from './supabase'
+import {
+  mergeAiAutomationAuditMetadata,
+  resolveAiAutomationMode
+} from './ai-automation'
+import type { DecisionMode, DecisionSource } from './ai-types'
 
 export type ReviewRecord = {
   id: number
@@ -54,13 +59,25 @@ const evaluateReview = (review: ReviewRecord) => {
   }
 }
 
-export async function moderatePendingReviews(limit = 30) {
+type ModeratePendingReviewsOptions = {
+  mode?: DecisionMode
+}
+
+const MODERATION_PROMPT_VERSION = 'moderation-rules-v1'
+
+export async function moderatePendingReviews(
+  limit = 30,
+  options: ModeratePendingReviewsOptions = {}
+) {
   // If the server service role key is not present, don't attempt admin operations
   // (this can happen in developer machines pointing to remote Supabase without a service-role).
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('moderatePendingReviews: SUPABASE_SERVICE_ROLE_KEY not set — skipping moderation operations')
     return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
   }
+
+  const modeResolution = resolveAiAutomationMode('moderation')
+  const effectiveMode = options.mode ?? modeResolution.effectiveMode
 
   const { data: reviews, error } = await supabaseAdmin
     .from('reviews')
@@ -88,24 +105,32 @@ export async function moderatePendingReviews(limit = 30) {
   let autoApproved = 0
   let autoRejected = 0
   let manualFlagged = 0
+  let processed = 0
 
   for (const review of reviewsTyped) {
     if (alreadyDecided.has(review.id)) continue
     const decision = evaluateReview(review)
+    const decisionSource: DecisionSource = 'deterministic'
+    const approvalState =
+      decision.action === 'manual'
+        ? 'pending'
+        : effectiveMode === 'shadow'
+          ? 'pending'
+          : 'not_required'
 
-    if (decision.action === 'auto_approve') {
+    if (effectiveMode !== 'shadow' && decision.action === 'auto_approve') {
       await supabaseAdmin
         .from('reviews')
         .update({ is_approved: true, rejection_reason: null, is_rejected: false })
         .eq('id', review.id)
       autoApproved += 1
-    } else if (decision.action === 'auto_reject') {
+    } else if (effectiveMode !== 'shadow' && decision.action === 'auto_reject') {
       await supabaseAdmin
         .from('reviews')
         .update({ is_rejected: true, rejection_reason: decision.reason })
         .eq('id', review.id)
       autoRejected += 1
-    } else {
+    } else if (decision.action === 'manual') {
       manualFlagged += 1
     }
 
@@ -115,12 +140,45 @@ export async function moderatePendingReviews(limit = 30) {
         review_id: review.id,
         ai_decision: decision.action,
         confidence: decision.confidence,
-        reason: decision.reason
+        reason: decision.reason,
+        decision_source: decisionSource,
+        ai_mode: effectiveMode,
+        ai_provider: 'deterministic',
+        ai_model: null,
+        ai_prompt_version: MODERATION_PROMPT_VERSION,
+        metadata: mergeAiAutomationAuditMetadata(
+          undefined,
+          {
+            workflowFamily: 'moderation',
+            actorClass: modeResolution.actorClass,
+            effectiveMode,
+            approvalState,
+            resultState: 'result',
+            decisionSource,
+            routeOrJob: '/api/admin/moderation/run',
+            summary:
+              effectiveMode === 'shadow'
+                ? 'Shadow moderation trace recorded without changing review publication state.'
+                : 'Moderation decision recorded.',
+            resultingRecordReferences: [
+              { table: 'reviews', id: review.id, field: 'review_id' }
+            ]
+          },
+          {
+            review: {
+              businessId: review.business_id,
+              rating: review.rating
+            },
+            shadowTrace: effectiveMode === 'shadow'
+          }
+        )
       }, { onConflict: 'review_id' })
+
+    processed += 1
   }
 
   return {
-    processed: autoApproved + autoRejected + manualFlagged,
+    processed,
     autoApproved,
     autoRejected,
     manualFlagged

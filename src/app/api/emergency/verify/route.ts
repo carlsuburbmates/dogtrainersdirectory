@@ -1,7 +1,49 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { resolveLlmMode } from '@/lib/llm'
 import { generateLLMResponse } from '@/lib/llm'
+import {
+  mergeAiAutomationAuditMetadata,
+  resolveAiAutomationMode
+} from '@/lib/ai-automation'
+import type { DecisionSource } from '@/lib/ai-types'
+
+const VERIFICATION_PROMPT_VERSION = 'resource-verification-v1'
+
+type VerificationOutcome = {
+  isValid: boolean
+  reason: string
+  confidence: number
+}
+
+function buildDeterministicVerificationOutcome(
+  phone: string | null | undefined,
+  website: string | null | undefined
+): VerificationOutcome {
+  const phoneCheck = phone ? /^\+?[0-9\s\-()]+$/.test(phone) : false
+  const websiteCheck = website ? /^https?:\/\/.+\..+/.test(website) : false
+
+  if (phoneCheck && websiteCheck) {
+    return {
+      isValid: true,
+      reason: 'Phone and website appear to have valid format',
+      confidence: 0.8
+    }
+  }
+
+  if (phoneCheck || websiteCheck) {
+    return {
+      isValid: true,
+      reason: 'Contact information appears to have valid format',
+      confidence: 0.6
+    }
+  }
+
+  return {
+    isValid: false,
+    reason: 'Contact information appears invalid or incomplete',
+    confidence: 0.7
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -15,14 +57,20 @@ export async function POST(request: Request) {
       )
     }
 
-    // Use AI or deterministic fallback for verification
-    let mode = 'deterministic'
-    try { mode = resolveLlmMode('verification') } catch (e) { mode = 'deterministic' }
-    let isValid = false
-    let reason = ''
-    let confidence = 0.5
-    
-    if (mode === 'live') {
+    const modeResolution = resolveAiAutomationMode('verification')
+    const deterministicOutcome = buildDeterministicVerificationOutcome(phone, website)
+    let visibleOutcome = deterministicOutcome
+    let auditDecisionSource: DecisionSource = 'deterministic'
+    let aiProvider: string | null = null
+    let aiModel: string | null = null
+    let auditResultState: 'result' | 'no_result' | 'error' = 'no_result'
+    let auditErrorMessage: string | null = null
+    let shadowCandidate: VerificationOutcome | null = null
+
+    if (
+      modeResolution.effectiveMode === 'live' ||
+      modeResolution.effectiveMode === 'shadow'
+    ) {
       // AI-based verification
       const prompt = `Verify if this emergency resource contact information is likely valid:
       
@@ -36,35 +84,40 @@ export async function POST(request: Request) {
           systemPrompt: 'You are verifying emergency resource contact information. Be conservative.',
           userPrompt: prompt
         })
-        
-        const aiResult = JSON.parse(llmResponse.text)
-        isValid = aiResult.isValid
-        reason = aiResult.reason
-        confidence = aiResult.confidence
-      } catch (parseError) {
+
+        aiProvider = llmResponse.provider ?? null
+        aiModel = llmResponse.model ?? null
+
+        if (llmResponse.provider === 'deterministic') {
+          auditErrorMessage = llmResponse.text
+        } else {
+          const aiResult = JSON.parse(llmResponse.text)
+          const aiOutcome = {
+            isValid: Boolean(aiResult.isValid),
+            reason: String(aiResult.reason ?? ''),
+            confidence:
+              typeof aiResult.confidence === 'number' ? aiResult.confidence : 0.5
+          }
+          auditDecisionSource = 'llm'
+          auditResultState = 'result'
+
+          if (modeResolution.effectiveMode === 'live') {
+            visibleOutcome = aiOutcome
+          } else {
+            shadowCandidate = aiOutcome
+          }
+        }
+      } catch {
+        auditResultState = 'error'
+        auditErrorMessage = 'Invalid JSON response from verification model'
         // Fallback to deterministic - use control flow instead of reassignment
       }
     }
-    
-    if (mode !== 'live') {
-      // Deterministic checks
-      const phoneCheck = phone ? /^\+?[0-9\s\-()]+$/.test(phone) : false
-      const websiteCheck = website ? /^https?:\/\/.+\..+/.test(website) : false
-      
-      if (phoneCheck && websiteCheck) {
-        isValid = true
-        reason = 'Phone and website appear to have valid format'
-        confidence = 0.8
-      } else if (phoneCheck || websiteCheck) {
-        isValid = true
-        reason = 'Contact information appears to have valid format'
-        confidence = 0.6
-      } else {
-        isValid = false
-        reason = 'Contact information appears invalid or incomplete'
-        confidence = 0.7
-      }
-    }
+
+    const visibleDecisionSource: DecisionSource =
+      modeResolution.effectiveMode === 'live' && auditDecisionSource === 'llm'
+        ? 'llm'
+        : 'deterministic'
 
     // Store verification result (best-effort for tests/mocks)
     let data: any = null
@@ -73,13 +126,46 @@ export async function POST(request: Request) {
       const res = await supabaseAdmin
         .from('emergency_resource_verification_events')
         .insert({
-          resource_id: resourceId,
-          phone: phone || null,
-          website: website || null,
-          is_valid: isValid,
-          reason,
-          confidence,
-          verification_method: mode === 'live' ? 'ai' : 'deterministic',
+          business_id: resourceId,
+          check_type: 'contact_validation',
+          result: visibleOutcome.isValid ? 'valid' : 'invalid',
+          details: mergeAiAutomationAuditMetadata(
+            {
+              phone: phone || null,
+              website: website || null,
+              isValid: visibleOutcome.isValid,
+              reason: visibleOutcome.reason,
+              confidence: visibleOutcome.confidence,
+              verificationMethod: visibleDecisionSource === 'llm' ? 'ai' : 'deterministic'
+            },
+            {
+              workflowFamily: 'verification',
+              actorClass: modeResolution.actorClass,
+              effectiveMode: modeResolution.effectiveMode,
+              approvalState: 'pending',
+              resultState: auditResultState,
+              decisionSource: auditDecisionSource,
+              routeOrJob: '/api/emergency/verify',
+              summary:
+                modeResolution.effectiveMode === 'shadow'
+                  ? 'Shadow verification trace recorded while deterministic verification remained the visible outcome.'
+                  : 'Emergency resource verification event recorded.',
+              errorMessage: auditErrorMessage,
+              resultingRecordReferences: [
+                { table: 'emergency_resource_verification_events', field: 'business_id', id: resourceId }
+              ]
+            },
+            shadowCandidate
+              ? {
+                  shadowCandidate: {
+                    isValid: shadowCandidate.isValid,
+                    reason: shadowCandidate.reason,
+                    confidence: shadowCandidate.confidence
+                  }
+                }
+              : undefined
+          ),
+          ai_prompt_version: VERIFICATION_PROMPT_VERSION,
           created_at: new Date().toISOString()
         })
         .select()
@@ -101,10 +187,13 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       verification: {
-        isValid,
-        reason,
-        confidence,
-        verificationMethod: mode === 'live' ? 'ai' : 'deterministic',
+        isValid: visibleOutcome.isValid,
+        reason: visibleOutcome.reason,
+        confidence: visibleOutcome.confidence,
+        verificationMethod: visibleDecisionSource === 'llm' ? 'ai' : 'deterministic',
+        effectiveMode: modeResolution.effectiveMode,
+        aiProvider,
+        aiModel,
         verificationId: data.id,
         resourceId
       }

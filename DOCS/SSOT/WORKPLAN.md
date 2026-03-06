@@ -46,7 +46,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Runtime Resilience is complete.
 - `AA-701` is now complete and `DOCS/SSOT/07_AI_AUTOMATION.md` defines the canonical cross-actor AI Automation programme for DTD.
 - AI Automation Definition And Rollout is now open as the next governed delivery slice.
-- Current top priority: `AA-702`.
+- `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
+- Current top priority: `AA-703`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -512,7 +513,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `WORKPLAN.md` opens a bounded rollout phase with ordered follow-up work.
   - Control docs reflect one active next priority after the definition slice closes.
 
-**AA-702: Establish the automation control and audit substrate**
+**AA-702: Establish the automation control and audit substrate (completed 2026-03-07)**
 - Purpose: implement the shared mode-resolution, kill-switch, and audit envelope required before new actor-facing automation can be trusted.
 - Definition of done:
   - Global and per-workflow AI mode resolution is centralised and reusable across the in-scope workflow families.
@@ -545,6 +546,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Audit traces capture the suggested guidance and no-write final outcome.
 
 ## Execution Log
+- 2026-03-07: `AA-702` completed by centralising AI mode resolution into one shared substrate, wiring structured audit envelopes into the existing triage, moderation, digest, and verification workflow storage paths, and updating `/admin/ai-health` to show effective mode, kill-switch state, and degraded visibility for the connected workflow families. Shadow-mode traces now record without changing final public or moderation outcomes. `AA-703` is now the active priority.
 - 2026-03-07: `AA-701` completed by rewriting `DOCS/SSOT/07_AI_AUTOMATION.md` from a narrow modes-and-pipelines note into the canonical DTD AI Automation programme definition. The new canon now covers owner-facing, business-facing, and operator-facing workflow scope; advisory/assistive/write-capable classes; `disabled`/`shadow`/`live` mode semantics; approval boundaries; kill switches; audit requirements; and explicit non-goals. Phase 11 is now open with `AA-702` as the next active priority.
 - 2026-03-07: `RT-603` completed by auditing the indirect server-side helper chains used by public pages and confirming the in-scope public SSR helper paths were already bounded after `RT-601` and `RT-602`. No additional runtime code changes were required. The remaining tooling annoyance was fixed by explicitly ignoring `test-results/**` in ESLint config so `npm run lint` no longer depends on Playwright having already created that directory.
 - 2026-03-07: `RT-602` completed by auditing the remaining public server-rendered pages that directly use `supabaseAdmin` and hardening the unsafe ones. `/promote` now catches admin-client/query initialisation failures in `loadBusiness()` and degrades to its existing bounded UI, while `/trainers/[id]` now separates success, missing, and failure states so runtime failures render an explicit unavailable state instead of a global app error. Focused unit coverage was added for both pages and runtime browser verification confirmed the bounded unavailable state on `/trainers/[id]` under missing-env conditions.

@@ -1,3 +1,5 @@
+import type { DecisionMode, DecisionSource } from '@/lib/ai-types'
+
 const EMERGENCY_CLASSIFICATIONS = new Set([
   'medical',
   'stray',
@@ -17,7 +19,12 @@ type BuildEmergencyTriageLogInsertInput = {
   classification: string
   priority: string
   followUpActions: string[]
-  decisionSource: 'llm' | 'deterministic' | 'manual_override'
+  decisionSource: DecisionSource
+  aiMode: DecisionMode
+  aiProvider?: string | null
+  aiModel?: string | null
+  aiPromptVersion?: string | null
+  metadata?: Record<string, unknown>
 }
 
 function normaliseEmergencyClassification(value: string): EmergencyClassification {
@@ -46,6 +53,11 @@ export function buildEmergencyTriageLogInsert(input: BuildEmergencyTriageLogInse
     priority: input.priority,
     follow_up_actions: input.followUpActions,
     decision_source: input.decisionSource,
+    ai_mode: input.aiMode,
+    ai_provider: input.aiProvider ?? null,
+    ai_model: input.aiModel ?? null,
+    ai_prompt_version: input.aiPromptVersion ?? null,
+    metadata: input.metadata ?? {},
     created_at: new Date().toISOString()
   }
 }

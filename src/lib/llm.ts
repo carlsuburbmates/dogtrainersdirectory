@@ -1,3 +1,5 @@
+import { resolveAiAutomationMode } from './ai-automation'
+
 export interface LlmResponse {
   text: string
   model?: string | null
@@ -101,16 +103,11 @@ export async function generateLLMResponseWithRetry(
 }
 
 export function resolveLlmMode(pipeline: string): string {
-  const globalMode = process.env.AI_GLOBAL_MODE || 'live'
-  const pipelineVars = {
-    triage: process.env.TRIAGE_AI_MODE,
-    moderation: process.env.MODERATION_AI_MODE,
-    verification: process.env.VERIFICATION_AI_MODE,
-    digest: process.env.DIGEST_AI_MODE,
-    ops_digest: process.env.DIGEST_AI_MODE
+  if (pipeline === 'digest') {
+    return resolveAiAutomationMode('ops_digest').effectiveMode
   }
-  const pipelineOverride = pipelineVars[pipeline as keyof typeof pipelineVars]
-  return pipelineOverride || globalMode
+
+  return resolveAiAutomationMode(pipeline as LlmPipeline).effectiveMode
 }
 
 export type LlmPipeline = 'triage' | 'moderation' | 'verification' | 'ops_digest'

@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
-import { resolveLlmMode } from '@/lib/llm'
+import {
+  mergeAiAutomationAuditMetadata,
+  resolveAiAutomationMode
+} from '@/lib/ai-automation'
+import type { DecisionMode, DecisionSource } from '@/lib/ai-types'
 import { detectMedicalEmergency } from '@/lib/medicalDetector'
 import {
   buildEmergencyTriageLogInsert,
@@ -11,6 +15,117 @@ import {
   recordCommercialFunnelMetric,
   recordLatencyMetric
 } from '@/lib/telemetryLatency'
+
+const TRIAGE_PROMPT_VERSION = 'emergency-triage-v1'
+
+type TriageOutcome = {
+  classification: string
+  priority: string
+  followUpActions: string[]
+}
+
+function buildDeterministicTriageOutcome(situation: string): TriageOutcome {
+  const text = situation.toLowerCase()
+
+  if (
+    text.includes('bleed') ||
+    text.includes('blood') ||
+    text.includes('injur') ||
+    text.includes('hurt')
+  ) {
+    return {
+      classification: 'medical',
+      priority: 'high',
+      followUpActions: ['Call emergency vet immediately', 'Apply pressure to bleeding']
+    }
+  }
+
+  if (text.includes('stray') || text.includes('lost') || text.includes('alone')) {
+    return {
+      classification: 'stray',
+      priority: 'medium',
+      followUpActions: ['Check for ID tags', 'Scan for microchip', 'Contact local shelters']
+    }
+  }
+
+  if (text.includes('attack') || text.includes('fight') || text.includes('dangerous')) {
+    return {
+      classification: 'crisis',
+      priority: 'high',
+      followUpActions: ['Keep distance from dog', 'Call animal control', 'Ensure safety of bystanders']
+    }
+  }
+
+  return {
+    classification: 'normal',
+    priority: 'low',
+    followUpActions: ['Contact local vet if concerned', 'Monitor situation']
+  }
+}
+
+async function runAiTriageEvaluation(input: {
+  situation: string
+  location: string | null
+  contact: string | null
+}): Promise<{
+  outcome: TriageOutcome | null
+  decisionSource: DecisionSource
+  provider: string | null
+  model: string | null
+  resultState: 'result' | 'no_result' | 'error'
+  errorMessage: string | null
+}> {
+  const prompt = `Classify this dog emergency situation into one of these categories: "medical", "stray", "crisis", or "normal".
+
+Situation: ${input.situation}
+Location: ${input.location || 'Not provided'}
+Contact: ${input.contact || 'Not provided'}
+
+Return JSON: {"classification":"medical|stray|crisis|normal","priority":"high|medium|low","followUpActions":["action1","action2"]}`
+
+  const llmResponse = await generateLLMResponse({
+    systemPrompt: 'You are classifying dog emergency situations. Respond with JSON only.',
+    userPrompt: prompt
+  })
+
+  if (llmResponse.provider === 'deterministic') {
+    return {
+      outcome: null,
+      decisionSource: 'deterministic',
+      provider: llmResponse.provider ?? null,
+      model: llmResponse.model ?? null,
+      resultState: 'no_result',
+      errorMessage: llmResponse.text
+    }
+  }
+
+  try {
+    const aiResult = JSON.parse(llmResponse.text)
+    return {
+      outcome: {
+        classification: aiResult.classification,
+        priority: aiResult.priority,
+        followUpActions: Array.isArray(aiResult.followUpActions)
+          ? aiResult.followUpActions
+          : []
+      },
+      decisionSource: 'llm',
+      provider: llmResponse.provider ?? null,
+      model: llmResponse.model ?? null,
+      resultState: 'result',
+      errorMessage: null
+    }
+  } catch {
+    return {
+      outcome: null,
+      decisionSource: 'llm',
+      provider: llmResponse.provider ?? null,
+      model: llmResponse.model ?? null,
+      resultState: 'error',
+      errorMessage: 'Invalid JSON response from emergency triage model'
+    }
+  }
+}
 
 export async function POST(request: Request) {
   const started = Date.now()
@@ -42,62 +157,51 @@ export async function POST(request: Request) {
       )
     }
 
-    // Use AI or deterministic fallback
-    let mode = 'deterministic'
-    try { mode = resolveLlmMode('triage') } catch (e) { mode = 'deterministic' }
+    const modeResolution = resolveAiAutomationMode('triage')
+    const deterministicOutcome = buildDeterministicTriageOutcome(situation)
 
-    let classification, priority, followUpActions
+    let visibleOutcome = deterministicOutcome
+    let auditDecisionSource: DecisionSource = 'deterministic'
+    let auditResultState: 'result' | 'no_result' | 'error' = 'no_result'
+    let auditErrorMessage: string | null = null
+    let aiProvider: string | null = null
+    let aiModel: string | null = null
+    let shadowOutcome: TriageOutcome | null = null
 
-    if (mode === 'live') {
-      // AI-based classification
-      const prompt = `Classify this dog emergency situation into one of these categories: "medical", "stray", "crisis", or "normal".
-      
-      Situation: ${situation}
-      Location: ${location || 'Not provided'}
-      Contact: ${contact || 'Not provided'}
-      
-      Return JSON: {"classification":"medical|stray|crisis|normal","priority":"high|medium|low","followUpActions":["action1","action2"]}`
-      
-      const llmResponse = await generateLLMResponse({
-        systemPrompt: 'You are classifying dog emergency situations. Respond with JSON only.',
-        userPrompt: prompt
+    if (
+      modeResolution.effectiveMode === 'live' ||
+      modeResolution.effectiveMode === 'shadow'
+    ) {
+      const aiEvaluation = await runAiTriageEvaluation({
+        situation,
+        location,
+        contact
       })
-      
-      try {
-        const aiResult = JSON.parse(llmResponse.text)
-        classification = aiResult.classification
-        priority = aiResult.priority
-        followUpActions = aiResult.followUpActions || []
-      } catch (parseError) {
-        // Fallback to deterministic
-        classification = "normal"
-        priority = "medium"
-        followUpActions = ["Contact local vet", "Monitor for changes"]
-      }
-    } else {
-      // Deterministic keyword-based classification
-      const text = situation.toLowerCase()
-      if (text.includes('bleed') || text.includes('blood') || text.includes('injur') || text.includes('hurt')) {
-        classification = "medical"
-        priority = "high"
-        followUpActions = ["Call emergency vet immediately", "Apply pressure to bleeding"]
-      } else if (text.includes('stray') || text.includes('lost') || text.includes('alone')) {
-        classification = "stray"
-        priority = "medium"
-        followUpActions = ["Check for ID tags", "Scan for microchip", "Contact local shelters"]
-      } else if (text.includes('attack') || text.includes('fight') || text.includes('dangerous')) {
-        classification = "crisis"
-        priority = "high"
-        followUpActions = ["Keep distance from dog", "Call animal control", "Ensure safety of bystanders"]
-      } else {
-        classification = "normal"
-        priority = "low"
-        followUpActions = ["Contact local vet if concerned", "Monitor situation"]
+
+      auditDecisionSource = aiEvaluation.decisionSource
+      auditResultState = aiEvaluation.resultState
+      auditErrorMessage = aiEvaluation.errorMessage
+      aiProvider = aiEvaluation.provider
+      aiModel = aiEvaluation.model
+
+      if (aiEvaluation.outcome) {
+        if (modeResolution.effectiveMode === 'live') {
+          visibleOutcome = aiEvaluation.outcome
+        } else {
+          shadowOutcome = aiEvaluation.outcome
+        }
       }
     }
 
-    const persistedClassification = normaliseEmergencyClassificationForPersistence(classification)
-    classification = persistedClassification
+    const visibleDecisionSource: DecisionSource =
+      modeResolution.effectiveMode === 'live' && auditDecisionSource === 'llm'
+        ? 'llm'
+        : 'deterministic'
+
+    const persistedClassification = normaliseEmergencyClassificationForPersistence(
+      visibleOutcome.classification
+    )
+    visibleOutcome.classification = persistedClassification
 
     // Store triage result (best-effort for tests/mocks)
     let data: any = null
@@ -112,10 +216,43 @@ export async function POST(request: Request) {
             contact,
             dogAge,
             issues,
-            classification,
-            priority,
-            followUpActions,
-            decisionSource: mode === 'live' ? 'llm' : 'deterministic'
+            classification: visibleOutcome.classification,
+            priority: visibleOutcome.priority,
+            followUpActions: visibleOutcome.followUpActions,
+            decisionSource: visibleDecisionSource,
+            aiMode: modeResolution.effectiveMode as DecisionMode,
+            aiProvider,
+            aiModel,
+            aiPromptVersion: TRIAGE_PROMPT_VERSION,
+            metadata: mergeAiAutomationAuditMetadata(
+              undefined,
+              {
+                workflowFamily: 'triage',
+                actorClass: modeResolution.actorClass,
+                effectiveMode: modeResolution.effectiveMode,
+                approvalState: 'not_required',
+                resultState: auditResultState,
+                decisionSource: auditDecisionSource,
+                routeOrJob: '/api/emergency/triage',
+                summary:
+                  modeResolution.effectiveMode === 'shadow'
+                    ? 'Shadow AI trace recorded while deterministic triage remained the visible outcome.'
+                    : 'Emergency triage classification recorded.',
+                errorMessage: auditErrorMessage,
+                notes: shadowOutcome
+                  ? [`Shadow candidate classification: ${shadowOutcome.classification}`]
+                  : undefined
+              },
+              shadowOutcome
+                ? {
+                    shadowCandidate: {
+                      classification: shadowOutcome.classification,
+                      priority: shadowOutcome.priority,
+                      followUpActions: shadowOutcome.followUpActions
+                    }
+                  }
+                : undefined
+            )
           })
         )
         .select()
@@ -142,9 +279,10 @@ export async function POST(request: Request) {
         success: false,
         statusCode: 500,
         metadata: {
-          classification,
-          priority,
-          decisionSource: mode === 'live' ? 'llm' : 'deterministic'
+          classification: visibleOutcome.classification,
+          priority: visibleOutcome.priority,
+          decisionSource: visibleDecisionSource,
+          aiMode: modeResolution.effectiveMode
         }
       })
       return NextResponse.json(
@@ -154,13 +292,13 @@ export async function POST(request: Request) {
     }
 
     const classificationPayload = {
-      classification,
-      priority,
-      followUpActions
+      classification: visibleOutcome.classification,
+      priority: visibleOutcome.priority,
+      followUpActions: visibleOutcome.followUpActions
     }
 
     let medical: any = undefined
-    if (classification === 'medical') {
+    if (visibleOutcome.classification === 'medical') {
       try {
         medical = await detectMedicalEmergency(situation)
       } catch (_) {
@@ -175,9 +313,10 @@ export async function POST(request: Request) {
       success: true,
       statusCode: 200,
       metadata: {
-        classification,
-        priority,
-        decisionSource: mode === 'live' ? 'llm' : 'deterministic'
+        classification: visibleOutcome.classification,
+        priority: visibleOutcome.priority,
+        decisionSource: visibleDecisionSource,
+        aiMode: modeResolution.effectiveMode
       }
     })
     await recordCommercialFunnelMetric({
@@ -186,10 +325,11 @@ export async function POST(request: Request) {
       success: true,
       statusCode: 200,
       metadata: {
-        classification,
-        priority,
-        routesToSearch: classification === 'normal',
-        decisionSource: mode === 'live' ? 'llm' : 'deterministic',
+        classification: visibleOutcome.classification,
+        priority: visibleOutcome.priority,
+        routesToSearch: visibleOutcome.classification === 'normal',
+        decisionSource: visibleDecisionSource,
+        aiMode: modeResolution.effectiveMode,
         triageId: data.id
       }
     })
@@ -199,10 +339,11 @@ export async function POST(request: Request) {
       classification: classificationPayload,
       medical,
       triage: {
-        classification,
-        priority,
-        followUpActions,
-        decisionSource: mode === 'live' ? 'llm' : 'deterministic',
+        classification: visibleOutcome.classification,
+        priority: visibleOutcome.priority,
+        followUpActions: visibleOutcome.followUpActions,
+        decisionSource: visibleDecisionSource,
+        effectiveMode: modeResolution.effectiveMode,
         triageId: data.id
       }
     })

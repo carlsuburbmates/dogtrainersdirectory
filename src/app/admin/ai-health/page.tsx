@@ -1,5 +1,17 @@
 import { supabaseAdmin } from '@/lib/supabase'
-import { normalizeDecisionSourceCounts, toAiPercentage } from './model'
+import {
+  describeModeSource,
+  getAiAutomationModeResolutions,
+  getAiAutomationVisibility,
+  type AiAutomationModeResolution,
+  type AiAutomationVisibility,
+  type AiAutomationWorkflow
+} from '@/lib/ai-automation'
+import {
+  normalizeDecisionSourceCounts,
+  summarizeTriageHealth,
+  toAiPercentage
+} from './model'
 
 // Simple components without shadcn/ui for compatibility
 type WithChildren = { children: React.ReactNode }
@@ -52,8 +64,12 @@ function Badge({ children, variant, className }: { children: React.ReactNode; va
 }
 
 interface PipelineHealth {
+  workflow: AiAutomationWorkflow
   pipeline: string
   mode: string
+  overrideMode: string | null
+  controlSource: string
+  visibility: AiAutomationVisibility
   lastSuccess: string | null
   errors24h: number
   aiDecisions: number
@@ -62,20 +78,12 @@ interface PipelineHealth {
   note?: string | null
 }
 
-function resolveLlmMode(pipeline: string): string {
-  const globalMode = process.env.AI_GLOBAL_MODE || 'live'
-  const pipelineVars: Record<string, string | undefined> = {
-    triage: process.env.TRIAGE_AI_MODE,
-    moderation: process.env.MODERATION_AI_MODE,
-    verification: process.env.VERIFICATION_AI_MODE,
-    ops_digest: process.env.DIGEST_AI_MODE
-  }
-  const pipelineOverride = pipelineVars[pipeline]
-  return pipelineOverride || globalMode
-}
-
 async function getPipelineHealth(): Promise<PipelineHealth[]> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const llmConfigured = Boolean(process.env.ZAI_API_KEY)
+  const resolutions = new Map(
+    getAiAutomationModeResolutions().map((resolution) => [resolution.workflow, resolution])
+  )
 
   const countByDecisionSource = async (table: string) => {
     const countFor = async (decisionSource: string) => {
@@ -138,71 +146,134 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
     }
   }
 
-  const pipelines: { name: string; dbPipeline: string }[] = [
-    { name: 'Emergency Triage', dbPipeline: 'triage' },
-    { name: 'Review Moderation', dbPipeline: 'moderation' },
-    { name: 'Resource Verification', dbPipeline: 'verification' },
-    { name: 'Ops Digest', dbPipeline: 'ops_digest' }
-  ]
+  const lastActivityFor = async (table: string) => {
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .select('created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      return { instrumented: false, lastSuccess: null as string | null }
+    }
+
+    return {
+      instrumented: true,
+      lastSuccess: (data?.created_at as string | undefined) ?? null
+    }
+  }
+
+  const toHealthRow = (
+    workflow: AiAutomationWorkflow,
+    pipeline: string,
+    input: {
+      lastSuccess: string | null
+      aiDecisions?: number
+      deterministicDecisions?: number
+      manualOverrides?: number
+      errors24h?: number
+      note: string
+      auditConnected?: boolean
+    }
+  ): PipelineHealth => {
+    const resolution = resolutions.get(workflow) as AiAutomationModeResolution
+    return {
+      workflow,
+      pipeline,
+      mode: resolution.effectiveMode,
+      overrideMode: resolution.overrideMode,
+      controlSource: describeModeSource(resolution),
+      visibility: getAiAutomationVisibility(resolution, {
+        auditConnected: input.auditConnected,
+        llmConfigured
+      }),
+      lastSuccess: input.lastSuccess,
+      errors24h: input.errors24h ?? 0,
+      aiDecisions: input.aiDecisions ?? 0,
+      deterministicDecisions: input.deterministicDecisions ?? 0,
+      manualOverrides: input.manualOverrides ?? 0,
+      note: input.note
+    }
+  }
 
   const healthData: PipelineHealth[] = []
 
-  for (const { name, dbPipeline } of pipelines) {
-    const mode = resolveLlmMode(dbPipeline)
+  const triageRows = await supabaseAdmin
+    .from('emergency_triage_logs')
+    .select('created_at, ai_mode, decision_source, classification, metadata')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
 
-    if (dbPipeline === 'triage') {
-      const decisionData = await countByDecisionSource('emergency_triage_logs')
-      const successData = await lastAiSuccessFor('emergency_triage_logs')
-      const isInstrumented = decisionData.instrumented && successData.instrumented
-
-      healthData.push({
-        pipeline: name,
-        mode,
-        lastSuccess: successData.lastSuccess,
-        // Error counts are not yet tracked per pipeline in a canonical table.
-        errors24h: 0,
-        aiDecisions: decisionData.counts.aiDecisions,
-        deterministicDecisions: decisionData.counts.deterministicDecisions,
-        manualOverrides: decisionData.counts.manualOverrides,
-        note: isInstrumented
-          ? 'Counts from emergency_triage_logs (last 24h).'
-          : 'Not instrumented yet.'
+  if (triageRows.error) {
+    healthData.push(
+      toHealthRow('triage', 'Emergency Triage', {
+        lastSuccess: null,
+        note: 'Triage audit trace counts are not available yet.',
+        auditConnected: true
       })
-      continue
-    }
-
-    if (dbPipeline === 'moderation') {
-      const decisionData = await countByDecisionSource('ai_review_decisions')
-      const successData = await lastAiSuccessFor('ai_review_decisions')
-      const isInstrumented = decisionData.instrumented && successData.instrumented
-
-      healthData.push({
-        pipeline: name,
-        mode,
-        lastSuccess: successData.lastSuccess,
-        // Error counts are not yet tracked per pipeline in a canonical table.
-        errors24h: 0,
-        aiDecisions: decisionData.counts.aiDecisions,
-        deterministicDecisions: decisionData.counts.deterministicDecisions,
-        manualOverrides: decisionData.counts.manualOverrides,
-        note: isInstrumented
-          ? 'Counts from ai_review_decisions (last 24h).'
-          : 'Not instrumented yet.'
+    )
+  } else {
+    const triageSummary = summarizeTriageHealth(triageRows.data ?? [])
+    healthData.push(
+      toHealthRow('triage', 'Emergency Triage', {
+        lastSuccess: triageSummary.lastTrace,
+        aiDecisions: triageSummary.counts.aiDecisions,
+        deterministicDecisions: triageSummary.counts.deterministicDecisions,
+        manualOverrides: triageSummary.counts.manualOverrides,
+        errors24h: triageSummary.shadowErrorCount,
+        note: triageSummary.note,
+        auditConnected: true
       })
-      continue
-    }
-
-    healthData.push({
-      pipeline: name,
-      mode,
-      lastSuccess: null,
-      errors24h: 0,
-      aiDecisions: 0,
-      deterministicDecisions: 0,
-      manualOverrides: 0,
-      note: 'Not instrumented yet.'
-    })
+    )
   }
+
+  const moderationDecisionData = await countByDecisionSource('ai_review_decisions')
+  const moderationSuccessData = await lastAiSuccessFor('ai_review_decisions')
+  healthData.push(
+    toHealthRow('moderation', 'Review Moderation', {
+      lastSuccess: moderationSuccessData.lastSuccess,
+      aiDecisions: moderationDecisionData.counts.aiDecisions,
+      deterministicDecisions: moderationDecisionData.counts.deterministicDecisions,
+      manualOverrides: moderationDecisionData.counts.manualOverrides,
+      note:
+        moderationDecisionData.instrumented && moderationSuccessData.instrumented
+          ? 'Audit traces and decision-source counts come from ai_review_decisions (last 24h).'
+          : 'Audit trace counts are not available yet.',
+      auditConnected: true
+    })
+  )
+
+  const verificationActivity = await lastActivityFor(
+    'emergency_resource_verification_events'
+  )
+  healthData.push(
+    toHealthRow('verification', 'Resource Verification', {
+      lastSuccess: verificationActivity.lastSuccess,
+      note:
+        verificationActivity.instrumented
+          ? 'Audit traces are stored in emergency_resource_verification_events.details. Decision-source counts are not yet broken out on this screen.'
+          : 'Verification audit traces are not available yet.',
+      auditConnected: true
+    })
+  )
+
+  const digestDecisionData = await countByDecisionSource('daily_ops_digests')
+  const digestSuccessData = await lastAiSuccessFor('daily_ops_digests')
+  healthData.push(
+    toHealthRow('ops_digest', 'Ops Digest', {
+      lastSuccess: digestSuccessData.lastSuccess,
+      aiDecisions: digestDecisionData.counts.aiDecisions,
+      deterministicDecisions: digestDecisionData.counts.deterministicDecisions,
+      manualOverrides: digestDecisionData.counts.manualOverrides,
+      note:
+        digestDecisionData.instrumented && digestSuccessData.instrumented
+          ? 'Audit traces and decision-source counts come from daily_ops_digests (last 24h).'
+          : 'Audit trace counts are not available yet.',
+      auditConnected: true
+    })
+  )
 
   return healthData
 }
@@ -223,18 +294,20 @@ function formatTimeAgo(isoString: string | null): string {
 
 export default async function AIHealthPage() {
   const healthData = await getPipelineHealth()
+  const workflowResolutions = getAiAutomationModeResolutions()
+  const llmConfigured = Boolean(process.env.ZAI_API_KEY)
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">AI Health Monitor</h1>
-        <p className="text-gray-600 mt-2">Last 24 hours of AI vs deterministic decisions (where instrumentation exists)</p>
+        <p className="text-gray-600 mt-2">Last 24 hours of workflow traces, effective modes, and deterministic fallback visibility.</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Pipeline Status (Last 24h)</CardTitle>
-          <CardDescription>AI vs deterministic breakdown (some pipelines are not instrumented yet)</CardDescription>
+          <CardDescription>Connected workflows show trace counts where instrumentation exists.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -242,7 +315,8 @@ export default async function AIHealthPage() {
               <TableRow>
                 <TableHead>Pipeline</TableHead>
                 <TableHead>Mode</TableHead>
-                <TableHead>Last AI Success</TableHead>
+                <TableHead>Visibility</TableHead>
+                <TableHead>Last Trace</TableHead>
                 <TableHead>24h Errors</TableHead>
                 <TableHead>AI Decisions</TableHead>
                 <TableHead>Deterministic</TableHead>
@@ -259,6 +333,19 @@ export default async function AIHealthPage() {
                     <TableCell>
                       <Badge variant={row.mode === 'live' ? 'default' : row.mode === 'shadow' ? 'secondary' : 'outline'}>
                         {row.mode}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          row.visibility.state === 'degraded'
+                            ? 'destructive'
+                            : row.visibility.state === 'not_connected'
+                              ? 'outline'
+                              : 'secondary'
+                        }
+                      >
+                        {row.visibility.label}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">{formatTimeAgo(row.lastSuccess)}</TableCell>
@@ -284,11 +371,11 @@ export default async function AIHealthPage() {
           <div className="mt-4 text-xs text-gray-500 space-y-1">
             {healthData.filter((row) => row.note).map((row) => (
               <div key={`${row.pipeline}-note`}>
-                <span className="font-medium">{row.pipeline}:</span> {row.note}
+                <span className="font-medium">{row.pipeline}:</span> {row.note} {row.visibility.note}
               </div>
             ))}
             <div>
-              <span className="font-medium">24h Errors:</span> Not instrumented yet. Shown as 0.
+              <span className="font-medium">24h Errors:</span> Uses connected audit error counts where available. Other workflows remain 0 until instrumented.
             </div>
           </div>
         </CardContent>
@@ -304,10 +391,48 @@ export default async function AIHealthPage() {
               <span className="text-gray-600">Global Mode:</span>
               <Badge>{process.env.AI_GLOBAL_MODE || 'live'}</Badge>
             </div>
-            <div className="flex justify-between"><span className="text-gray-600">Triage Override:</span><span>{process.env.TRIAGE_AI_MODE || '(using global)'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Moderation Override:</span><span>{process.env.MODERATION_AI_MODE || '(using global)'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Verification Override:</span><span>{process.env.VERIFICATION_AI_MODE || '(using global)'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Digest Override:</span><span>{process.env.DIGEST_AI_MODE || '(using global)'}</span></div>
+            {workflowResolutions.map((resolution) => {
+              const visibility = getAiAutomationVisibility(resolution, {
+                auditConnected: true,
+                llmConfigured
+              })
+
+              return (
+                <div
+                  key={resolution.workflow}
+                  className="rounded-md border border-gray-200 px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium">{resolution.label}</span>
+                    <Badge
+                      variant={
+                        resolution.effectiveMode === 'live'
+                          ? 'default'
+                          : resolution.effectiveMode === 'shadow'
+                            ? 'secondary'
+                            : 'outline'
+                      }
+                    >
+                      {resolution.effectiveMode}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 space-y-1 text-xs text-gray-600">
+                    <div className="flex justify-between gap-3">
+                      <span>Override</span>
+                      <span>{resolution.overrideMode ?? '(using global)'}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span>Control source</span>
+                      <span>{describeModeSource(resolution)}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span>Visibility</span>
+                      <span>{visibility.label}</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
 
@@ -316,11 +441,11 @@ export default async function AIHealthPage() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Update env vars in Vercel and redeploy to change AI modes.</p>
+            <p className="text-sm text-gray-600">Update env vars in Vercel and redeploy to change AI modes or trigger the kill switch.</p>
             <div className="pt-2 space-y-1 text-xs">
-              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=disabled</code> - Kill switch</div>
-              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=shadow</code> - Log-only</div>
-              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=live</code> - Full automation</div>
+              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=disabled</code> - Programme-wide kill switch</div>
+              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=shadow</code> - Record traces without changing final public or moderation outcomes</div>
+              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=live</code> - Use the live workflow path where that workflow is already connected</div>
             </div>
           </CardContent>
         </Card>

@@ -8,7 +8,9 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase'
+import { resolveAiAutomationMode } from '@/lib/ai-automation'
 import { moderatePendingReviews } from '@/lib/moderation'
+import type { DecisionMode } from '@/lib/ai-types'
 
 export interface ModerationRunResult {
   success: boolean
@@ -25,14 +27,12 @@ export interface ModerationRunResult {
 
 export interface ModerationOptions {
   batchSize?: number
-  mode?: 'live' | 'shadow' | 'disabled'
+  mode?: DecisionMode
   dryRun?: boolean
 }
 
 // Default configuration constants
 const DEFAULT_BATCH_SIZE = 50
-const DEFAULT_MODE = 'live'
-
 /**
  * Runs a full moderation cycle on pending reviews.
  * 
@@ -44,7 +44,7 @@ export async function runModerationCycle(
 ): Promise<ModerationRunResult> {
   const {
     batchSize = DEFAULT_BATCH_SIZE,
-    mode = (process.env.MODERATION_AI_MODE as 'live' | 'shadow' | 'disabled') || DEFAULT_MODE,
+    mode = resolveAiAutomationMode('moderation').effectiveMode,
     dryRun = false
   } = options
 
@@ -109,7 +109,7 @@ export async function runModerationCycle(
     }
 
     // Run moderation - the function fetches reviews internally with the provided limit
-    const results = await moderatePendingReviews(batchSize)
+      const results = await moderatePendingReviews(batchSize, { mode })
 
     processedCount = results.processed
     autoApproved = results.autoApproved
