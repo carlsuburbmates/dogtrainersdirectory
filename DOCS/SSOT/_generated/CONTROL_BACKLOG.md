@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-06
+**Last Updated:** 2026-03-07
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -65,6 +65,11 @@
 | RT-601 | Runtime Resilience | Prevent `/directory` from crashing on missing server-side Supabase env | completed | backend | `WORKPLAN` `RT-601` | `/directory` renders its bounded unavailable state instead of a server-render `500` when the Supabase admin client cannot initialise |
 | RT-602 | Runtime Resilience | Harden remaining public SSR pages against uncaught Supabase admin-client failures | completed | backend | `WORKPLAN` `RT-602` | `/promote` and `/trainers/[id]` degrade to bounded UI states instead of global app errors when their first Supabase admin-client access fails |
 | RT-603 | Runtime Resilience | Audit indirect public helper paths and stabilise lint output handling | completed | backend + main-control | `WORKPLAN` `RT-603` | indirect public SSR helper paths in scope are confirmed safe and `npm run lint` no longer depends on Playwright having created `test-results/` |
+| AA-701 | AI Automation Definition And Rollout | Define the AI Automation programme canonically in SSOT | completed | main-control | `WORKPLAN` `AA-701` | `07_AI_AUTOMATION.md` defines actor scope, classes, safety model, auditability, non-goals, and rollout backlog |
+| AA-702 | AI Automation Definition And Rollout | Establish the automation control and audit substrate | in_progress | backend + main-control | `WORKPLAN` `AA-702` | workflow mode resolution, audit trail, kill switches, and admin visibility exist before new actor-facing automation goes live |
+| AA-703 | AI Automation Definition And Rollout | Align operator automation families to the canonical control model | pending | backend + main-control | `WORKPLAN` `AA-703` | moderation, verification, and digest workflows use shared modes, approval boundaries, and audit/rollback rules |
+| AA-704 | AI Automation Definition And Rollout | Roll owner triage-to-search advisory automation in shadow mode | pending | frontend + backend | `WORKPLAN` `AA-704` | owner advisory guidance is auditable and shadow-only with no route or record side effects |
+| AA-705 | AI Automation Definition And Rollout | Roll business onboarding assistance in shadow mode | pending | frontend + backend | `WORKPLAN` `AA-705` | business guidance stays draft-only and cannot publish listings or change monetisation state |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -74,11 +79,12 @@
 - Experience Stability Hardening is complete.
 - Integrity And SSOT Realignment is complete.
 - Runtime Resilience is complete.
-- The board is awaiting the next prioritisation cycle.
+- AI Automation Definition And Rollout is open.
+- `AA-701` is complete as the Phase 11 definition slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: none (awaiting next prioritisation cycle).
+- Current active priority: `AA-702`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-06
+**Last Updated:** 2026-03-07
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -74,6 +74,8 @@
 | 2026-03-06 | D-164 | Open and close `Phase 10 - Runtime Resilience` for the verified `/directory` runtime crash fix | browser smoke reproduced a real local/runtime `500` on `/directory` when the server-side Supabase admin client could not initialise; the fix is narrow, verified, and worth tracking explicitly | `RT-601` is accepted as complete and Runtime Resilience is now complete |
 | 2026-03-07 | D-165 | Reopen and reclose `Phase 10 - Runtime Resilience` for the remaining public SSR pages | `RT-601` fixed `/directory`, but the remaining public server-rendered pages that directly used `supabaseAdmin` still needed the same bounded-failure guarantee | `RT-602` is accepted as complete and Runtime Resilience remains complete |
 | 2026-03-07 | D-166 | Reopen and reclose `Phase 10 - Runtime Resilience` for the indirect-helper audit and lint stability fix | after `RT-602`, one final runtime cleanup remained: confirm no indirect public SSR helper chains still bypass bounded UI states, and remove the lint dependency on `test-results/` existing before Playwright runs | `RT-603` is accepted as complete and Runtime Resilience remains complete |
+| 2026-03-07 | D-167 | Open `Phase 11 - AI Automation Definition And Rollout` as a docs-first governance slice | DTD needs one canonical AI Automation programme across owner, business, and operator workflows before any new implementation lane starts | `AA-701` is now the active priority and `AA-702` to `AA-705` are queued behind it |
+| 2026-03-07 | D-168 | `AA-701` accepted as complete and Phase 11 implementation opened | `DOCS/SSOT/07_AI_AUTOMATION.md` now defines the DTD-specific scope, classes, safety model, approval boundaries, auditability, and non-goals for AI Automation without implementation drift | `AA-702` is now the active priority |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
@@ -123,6 +125,7 @@
 | 2026-03-06 | backend | RT-601 | `src/app/directory/page.tsx`, `tests/unit/directory-page.test.ts` | `npm run type-check`; `npm run lint`; `npm run test`; `npm run test -- tests/unit/directory-page.test.ts`; browser smoke via `$composio-webapp-testing` confirmed `/directory` now returns `200` with the bounded unavailable state under missing-env runtime conditions | pass (directory no longer hard-crashes when the Supabase admin client cannot initialise) | await next prioritisation cycle |
 | 2026-03-07 | backend | RT-602 | `src/app/promote/page.tsx`, `src/app/trainers/[id]/page.tsx`, `tests/unit/promote-page.test.ts`, `tests/unit/trainer-page-data.test.ts` | `npm run type-check`; `npm run lint`; `npm run test`; `npm run test -- tests/unit/directory-page.test.ts tests/unit/promote-page.test.ts tests/unit/trainer-page-data.test.ts`; runtime browser check via `$composio-webapp-testing` on `/promote?businessId=1` and `/trainers/1` | pass (remaining public SSR pages no longer escalate admin-client init failures into global app errors) | await next prioritisation cycle |
 | 2026-03-07 | backend + main-control | RT-603 | `eslint.config.mjs`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run type-check`; `npm run lint`; `npm run test`; explicit lint verification with `test-results/` temporarily absent; `npm run docs:guard` | pass (no additional unsafe indirect public SSR helper chains found in scope, and lint is now independent of `test-results/` state) | await next prioritisation cycle |
+| 2026-03-07 | main-control | AA-701 | `DOCS/SSOT/07_AI_AUTOMATION.md`, `DOCS/SSOT/WORKPLAN.md`, `DOCS/SSOT/_generated/CONTROL_BACKLOG.md`, `DOCS/SSOT/_generated/CONTROL_DECISIONS.md` | `npm run docs:guard` | pass (AI Automation is now canonically defined as a DTD programme with ordered rollout follow-up) | execute `AA-702` |
 
 ## Required handoff template (for all sessions)
 1. `Task ID:`
