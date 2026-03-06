@@ -62,6 +62,7 @@
 | IX-501 | Integrity And SSOT Realignment | Lock down unsafe test and analytics surfaces | completed | backend | `WORKPLAN` `IX-501` | unsafe `/api/test/**` routes are operator-only outside E2E mode and `/api/trainer/dashboard` no longer fabricates analytics |
 | IX-502 | Integrity And SSOT Realignment | Restore triage browser coverage and SSOT tooling sync | completed | backend + main-control | `WORKPLAN` `IX-502` | `/triage` browser coverage is present, SSOT refresh parses quoted schema correctly, and SSOT docs/generated inventories are resynchronised |
 | IX-503 | Integrity And SSOT Realignment | Align `/search` display locality to canonical suburb state | completed | frontend | `WORKPLAN` `IX-503` | `/search` shows and resubmits canonical locality from `suburbId` rather than stale snapshot fields when canonical suburb state is available |
+| RT-601 | Runtime Resilience | Prevent `/directory` from crashing on missing server-side Supabase env | completed | backend | `WORKPLAN` `RT-601` | `/directory` renders its bounded unavailable state instead of a server-render `500` when the Supabase admin client cannot initialise |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -70,6 +71,7 @@
 - Design System Enforcement is complete.
 - Experience Stability Hardening is complete.
 - Integrity And SSOT Realignment is complete.
+- Runtime Resilience is complete.
 - The board is awaiting the next prioritisation cycle.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.

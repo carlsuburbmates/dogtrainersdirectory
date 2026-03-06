@@ -21,18 +21,30 @@ type DirectoryFetchResult =
       error: string
     }
 
-async function fetchDirectoryRegions(): Promise<DirectoryFetchResult> {
-  const { data, error } = await supabaseAdmin.rpc('search_trainers', {
-    user_lat: null,
-    user_lng: null,
-    distance_filter: 'any',
-    result_limit: 500,
-    result_offset: 0,
-    p_key: process.env.SUPABASE_PGCRYPTO_KEY ?? null
-  })
+export async function fetchDirectoryRegions(): Promise<DirectoryFetchResult> {
+  let data: SearchResult[] | null = null
 
-  if (error) {
-    console.error('Directory query failed', error)
+  try {
+    const response = await supabaseAdmin.rpc('search_trainers', {
+      user_lat: null,
+      user_lng: null,
+      distance_filter: 'any',
+      result_limit: 500,
+      result_offset: 0,
+      p_key: process.env.SUPABASE_PGCRYPTO_KEY ?? null
+    })
+
+    if (response.error) {
+      console.error('Directory query failed', response.error)
+      return {
+        status: 'failure',
+        error: 'We could not load directory listings right now.'
+      }
+    }
+
+    data = response.data as SearchResult[] | null
+  } catch (error) {
+    console.error('Directory query failed before data could load', error)
     return {
       status: 'failure',
       error: 'We could not load directory listings right now.'

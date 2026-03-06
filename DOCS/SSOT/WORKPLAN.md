@@ -43,6 +43,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Design System Enforcement is complete.
 - Experience Stability Hardening is complete.
 - Integrity And SSOT Realignment is complete.
+- Runtime Resilience is complete.
 - Current top priority: none (awaiting next prioritisation cycle).
 - The current delivery sequence is:
   1. Build Completion
@@ -54,6 +55,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   7. Design System Enforcement
   8. Experience Stability Hardening
   9. Integrity And SSOT Realignment
+  10. Runtime Resilience
 
 ## Completed Foundation Milestones
 
@@ -464,7 +466,21 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Stale snapshot fields in the URL no longer override visible locality labels or outgoing search request locality when canonical suburb state is available.
   - Browser regression coverage exists for canonical suburb rehydration on `/search`.
 
+### Phase 10 - Runtime Resilience
+
+**Phase rule**
+- This phase closes runtime-only failure paths that bypass the intended bounded UI error states.
+- Keep implementation narrow and avoid feature expansion.
+
+**RT-601: Prevent `/directory` from crashing on missing server-side Supabase env (completed 2026-03-06)**
+- Purpose: make the local/runtime failure path render the existing bounded directory unavailable state instead of a global application error.
+- Definition of done:
+  - Missing server-side Supabase env no longer causes `/directory` to crash with a server-render `500`.
+  - `/directory` reaches its bounded failure `StateCard` when the live query cannot even start.
+  - The successful live-data path remains unchanged.
+
 ## Execution Log
+- 2026-03-06: `RT-601` completed by wrapping the `/directory` Supabase RPC call in a bounded failure path so missing server-side Supabase env now renders the intended unavailable `StateCard` instead of a global application error. Focused unit coverage was added, and browser smoke verification confirmed `/directory` now returns `200` with the bounded failure state under missing-env local runtime conditions.
 - 2026-03-06: `IX-503` completed by making `/search` rehydrate and display locality from canonical `suburbId` rather than stale URL snapshot fields, while preserving current search contracts. Browser-level regression coverage now locks canonical suburb rehydration and request construction on the search page.
 - 2026-03-06: `IX-502` completed by adding browser-level Playwright coverage for the canonical `/triage` journey, fixing `scripts/ssot_refresh.py` to parse quoted `supabase/schema.sql`, rerunning `npm run ssot:refresh`, and synchronising the affected SSOT contract, route, and security documents to the current implementation. Phase 9 (`IX-501` to `IX-502`) is now complete and the roadmap is awaiting the next prioritisation cycle.
 - 2026-03-06: `IX-501` completed by locking down unsafe `/api/test/**` surfaces to operators or explicit `E2E_TEST_MODE`, making `/api/test/seed-review` write a schema-compatible pending review only, and replacing fabricated `/api/trainer/dashboard` analytics with an honest unavailable/partial-metrics contract. `IX-502` is now the active priority.
