@@ -457,7 +457,15 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `npm run ssot:refresh` produces accurate generated inventories again.
   - SSOT contract/security/route docs reflect the current implementation.
 
+**IX-503: Align `/search` display locality to canonical suburb state (completed 2026-03-06)**
+- Purpose: remove the remaining mismatch between canonical `suburbId` authority and the search page's displayed locality hints.
+- Definition of done:
+  - When `suburbId` is present, `/search` rehydrates the suburb record and uses it for displayed location state.
+  - Stale snapshot fields in the URL no longer override visible locality labels or outgoing search request locality when canonical suburb state is available.
+  - Browser regression coverage exists for canonical suburb rehydration on `/search`.
+
 ## Execution Log
+- 2026-03-06: `IX-503` completed by making `/search` rehydrate and display locality from canonical `suburbId` rather than stale URL snapshot fields, while preserving current search contracts. Browser-level regression coverage now locks canonical suburb rehydration and request construction on the search page.
 - 2026-03-06: `IX-502` completed by adding browser-level Playwright coverage for the canonical `/triage` journey, fixing `scripts/ssot_refresh.py` to parse quoted `supabase/schema.sql`, rerunning `npm run ssot:refresh`, and synchronising the affected SSOT contract, route, and security documents to the current implementation. Phase 9 (`IX-501` to `IX-502`) is now complete and the roadmap is awaiting the next prioritisation cycle.
 - 2026-03-06: `IX-501` completed by locking down unsafe `/api/test/**` surfaces to operators or explicit `E2E_TEST_MODE`, making `/api/test/seed-review` write a schema-compatible pending review only, and replacing fabricated `/api/trainer/dashboard` analytics with an honest unavailable/partial-metrics contract. `IX-502` is now the active priority.
 - 2026-03-06: `SH-406` completed by replacing onboarding review-step implementation-language copy with user-outcome wording while preserving form logic, validation, submit contract, and route behaviour. Phase 8 (`SH-401` to `SH-406`) is now complete and the roadmap is awaiting the next prioritisation cycle.

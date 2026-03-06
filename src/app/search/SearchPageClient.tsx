@@ -14,7 +14,7 @@ import {
   StateCard
 } from '@/components/ui/primitives'
 import { SuburbAutocomplete } from '@/components/ui/SuburbAutocomplete'
-import type { SuburbResult } from '@/lib/api'
+import { apiService, type SuburbResult } from '@/lib/api'
 import {
   AGE_SPECIALTIES,
   AGE_SPECIALTY_LABELS,
@@ -23,6 +23,7 @@ import {
   SERVICE_TYPES,
   SERVICE_TYPE_LABELS
 } from '@/lib/constants/taxonomies'
+import { parseCanonicalSuburbId } from '@/lib/triageLocation'
 import {
   getSearchDiscoveryLinks,
   getSearchLandingContent
@@ -144,6 +145,7 @@ export default function SearchPage() {
     rescue_only: false
   })
   const [selectedSuburb, setSelectedSuburb] = useState<SuburbResult | null>(null)
+  const [canonicalSuburbId, setCanonicalSuburbId] = useState<number | null>(null)
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -161,7 +163,8 @@ export default function SearchPage() {
       nextPage: number,
       activeFilters: SearchFilters,
       activeSuburb: SuburbResult | null,
-      activeFlowSource = flowSource
+      activeFlowSource: string,
+      activeCanonicalSuburbId: number | null
     ) => {
       setLoading(true)
       setError(null)
@@ -170,14 +173,16 @@ export default function SearchPage() {
         const params = new URLSearchParams()
 
         if (activeFilters.query) params.append('q', activeFilters.query)
+        if (activeCanonicalSuburbId !== null) {
+          params.append('suburbId', String(activeCanonicalSuburbId))
+        }
         if (activeSuburb) {
           params.append('lat', String(activeSuburb.latitude))
           params.append('lng', String(activeSuburb.longitude))
-          params.append('suburbId', String(activeSuburb.id))
           params.append('suburbName', activeSuburb.name)
           params.append('postcode', activeSuburb.postcode)
           params.append('councilId', String(activeSuburb.council_id))
-        } else if (activeFilters.lat && activeFilters.lng) {
+        } else if (activeCanonicalSuburbId === null && activeFilters.lat && activeFilters.lng) {
           params.append('lat', activeFilters.lat)
           params.append('lng', activeFilters.lng)
         }
@@ -222,78 +227,95 @@ export default function SearchPage() {
         setLoading(false)
       }
     },
-    [flowSource, limit]
+    [limit]
   )
 
   const handleSearch = useCallback(
     (nextPage = 1) => {
-      return runSearch(nextPage, filters, selectedSuburb, flowSource)
+      return runSearch(nextPage, filters, selectedSuburb, flowSource, canonicalSuburbId)
     },
-    [filters, flowSource, runSearch, selectedSuburb]
+    [canonicalSuburbId, filters, flowSource, runSearch, selectedSuburb]
   )
 
   useEffect(() => {
-    const queryParam = searchParams.get('q') || searchParams.get('query') || ''
-    const latParam = searchParams.get('lat') || ''
-    const lngParam = searchParams.get('lng') || ''
-    const distanceParam = searchParams.get('distance') || 'any'
-    const ageParam = searchParams.get('age_specialties')
-    const behaviorParam = searchParams.get('behavior_issues')
-    const serviceTypeParam = searchParams.get('service_type') || ''
-    const verifiedOnlyParam = searchParams.get('verified_only') === 'true'
-    const rescueOnlyParam = searchParams.get('rescue_only') === 'true'
-    const flowSourceParam = searchParams.get('flow_source') || ''
+    let isCurrent = true
 
-    const distanceValues = new Set(['any', '0-5', '5-15', 'greater'])
-    const nextFilters: SearchFilters = {
-      query: queryParam,
-      lat: latParam,
-      lng: lngParam,
-      distance: distanceValues.has(distanceParam) ? distanceParam : 'any',
-      age_specialties: parseAllowedList(ageParam, ageSpecialtySet),
-      behavior_issues: parseAllowedList(behaviorParam, behaviorIssueSet),
-      service_type: serviceTypeSet.has(serviceTypeParam) ? serviceTypeParam : '',
-      verified_only: verifiedOnlyParam,
-      rescue_only: rescueOnlyParam
-    }
+    const syncSearchState = async () => {
+      const queryParam = searchParams.get('q') || searchParams.get('query') || ''
+      const latParam = searchParams.get('lat') || ''
+      const lngParam = searchParams.get('lng') || ''
+      const distanceParam = searchParams.get('distance') || 'any'
+      const ageParam = searchParams.get('age_specialties')
+      const behaviorParam = searchParams.get('behavior_issues')
+      const serviceTypeParam = searchParams.get('service_type') || ''
+      const verifiedOnlyParam = searchParams.get('verified_only') === 'true'
+      const rescueOnlyParam = searchParams.get('rescue_only') === 'true'
+      const flowSourceParam = searchParams.get('flow_source') || ''
+      const nextCanonicalSuburbId = parseCanonicalSuburbId(searchParams.get('suburbId'))
 
-    setFilters(nextFilters)
-    setFlowSource(flowSourceParam)
+      const distanceValues = new Set(['any', '0-5', '5-15', 'greater'])
+      let resolvedSuburb: SuburbResult | null = null
 
-    const suburbName = searchParams.get('suburbName')
-    const postcode = searchParams.get('postcode')
-    const suburbId = searchParams.get('suburbId')
-    const councilId = searchParams.get('councilId')
+      if (nextCanonicalSuburbId !== null) {
+        try {
+          resolvedSuburb = await apiService.getSuburbById(nextCanonicalSuburbId)
+        } catch {
+          resolvedSuburb = null
+        }
+      }
 
-    let suburbFromParams: SuburbResult | null = null
-    if (suburbName && postcode && latParam && lngParam) {
-      suburbFromParams = {
-        id: suburbId ? Number(suburbId) : -1,
-        name: suburbName,
-        postcode,
-        latitude: Number(latParam),
-        longitude: Number(lngParam),
-        council_id: councilId ? Number(councilId) : 0
+      if (!isCurrent) {
+        return
+      }
+
+      const nextFilters: SearchFilters = {
+        query: queryParam,
+        lat: resolvedSuburb
+          ? String(resolvedSuburb.latitude)
+          : nextCanonicalSuburbId === null
+            ? latParam
+            : '',
+        lng: resolvedSuburb
+          ? String(resolvedSuburb.longitude)
+          : nextCanonicalSuburbId === null
+            ? lngParam
+            : '',
+        distance: distanceValues.has(distanceParam) ? distanceParam : 'any',
+        age_specialties: parseAllowedList(ageParam, ageSpecialtySet),
+        behavior_issues: parseAllowedList(behaviorParam, behaviorIssueSet),
+        service_type: serviceTypeSet.has(serviceTypeParam) ? serviceTypeParam : '',
+        verified_only: verifiedOnlyParam,
+        rescue_only: rescueOnlyParam
+      }
+
+      setFilters(nextFilters)
+      setFlowSource(flowSourceParam)
+      setCanonicalSuburbId(nextCanonicalSuburbId)
+      setSelectedSuburb(resolvedSuburb)
+
+      const shouldAutoSearch = Boolean(
+        queryParam ||
+          resolvedSuburb ||
+          (nextCanonicalSuburbId === null && latParam && lngParam) ||
+          nextFilters.age_specialties.length > 0 ||
+          nextFilters.behavior_issues.length > 0 ||
+          nextFilters.service_type ||
+          nextFilters.verified_only ||
+          nextFilters.rescue_only ||
+          nextFilters.distance !== 'any'
+      )
+
+      if (shouldAutoSearch) {
+        runSearch(1, nextFilters, resolvedSuburb, flowSourceParam, nextCanonicalSuburbId)
+      } else {
+        setHasSearched(false)
       }
     }
 
-    setSelectedSuburb(suburbFromParams)
+    syncSearchState()
 
-    const shouldAutoSearch = Boolean(
-      queryParam ||
-        (latParam && lngParam) ||
-        nextFilters.age_specialties.length > 0 ||
-        nextFilters.behavior_issues.length > 0 ||
-        nextFilters.service_type ||
-        nextFilters.verified_only ||
-        nextFilters.rescue_only ||
-        nextFilters.distance !== 'any'
-    )
-
-    if (shouldAutoSearch) {
-      runSearch(1, nextFilters, suburbFromParams, flowSourceParam)
-    } else {
-      setHasSearched(false)
+    return () => {
+      isCurrent = false
     }
   }, [searchParams, runSearch])
 
@@ -326,7 +348,7 @@ export default function SearchPage() {
     }
 
     setFilters(broadenedFilters)
-    runSearch(1, broadenedFilters, selectedSuburb, flowSource)
+    runSearch(1, broadenedFilters, selectedSuburb, flowSource, canonicalSuburbId)
   }
 
   const handleClearRefinements = () => {
@@ -341,7 +363,7 @@ export default function SearchPage() {
     }
 
     setFilters(clearedFilters)
-    runSearch(1, clearedFilters, selectedSuburb, flowSource)
+    runSearch(1, clearedFilters, selectedSuburb, flowSource, canonicalSuburbId)
     setIsFilterSheetOpen(false)
   }
 
@@ -356,6 +378,22 @@ export default function SearchPage() {
 
   const activeFilterCount = getActiveFilterCount(filters, selectedSuburb)
   const landingParams = new URLSearchParams(searchParams.toString())
+  if (canonicalSuburbId !== null) {
+    landingParams.set('suburbId', String(canonicalSuburbId))
+    if (selectedSuburb) {
+      landingParams.set('suburbName', selectedSuburb.name)
+      landingParams.set('postcode', selectedSuburb.postcode)
+      landingParams.set('lat', String(selectedSuburb.latitude))
+      landingParams.set('lng', String(selectedSuburb.longitude))
+      landingParams.set('councilId', String(selectedSuburb.council_id))
+    } else {
+      landingParams.delete('suburbName')
+      landingParams.delete('postcode')
+      landingParams.delete('lat')
+      landingParams.delete('lng')
+      landingParams.delete('councilId')
+    }
+  }
   const landingContent = getSearchLandingContent(landingParams)
   const discoveryLinks = getSearchDiscoveryLinks(landingParams)
   const activeServiceLabel = serviceTypeSet.has(filters.service_type)
@@ -372,6 +410,8 @@ export default function SearchPage() {
     : 'Ready to compare'
   const locationSummary = selectedSuburb
     ? `${selectedSuburb.name} ${selectedSuburb.postcode}`
+    : canonicalSuburbId !== null
+      ? 'Saved suburb unavailable'
     : filters.lat && filters.lng
       ? 'Saved location'
       : 'Any suburb'
@@ -526,6 +566,7 @@ export default function SearchPage() {
                       value={selectedSuburb}
                       onChange={(suburb) => {
                         setSelectedSuburb(suburb)
+                        setCanonicalSuburbId(suburb?.id ?? null)
                         if (suburb) {
                           setFilters((prev) => ({
                             ...prev,

@@ -61,6 +61,7 @@
 | SH-406 | Experience Stability Hardening | Remove implementation-language leakage in onboarding review copy | completed | frontend | `WORKPLAN` `SH-406` | onboarding review copy is outcome-based and non-technical |
 | IX-501 | Integrity And SSOT Realignment | Lock down unsafe test and analytics surfaces | completed | backend | `WORKPLAN` `IX-501` | unsafe `/api/test/**` routes are operator-only outside E2E mode and `/api/trainer/dashboard` no longer fabricates analytics |
 | IX-502 | Integrity And SSOT Realignment | Restore triage browser coverage and SSOT tooling sync | completed | backend + main-control | `WORKPLAN` `IX-502` | `/triage` browser coverage is present, SSOT refresh parses quoted schema correctly, and SSOT docs/generated inventories are resynchronised |
+| IX-503 | Integrity And SSOT Realignment | Align `/search` display locality to canonical suburb state | completed | frontend | `WORKPLAN` `IX-503` | `/search` shows and resubmits canonical locality from `suburbId` rather than stale snapshot fields when canonical suburb state is available |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.

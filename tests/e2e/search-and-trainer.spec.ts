@@ -6,6 +6,15 @@ const searchFixtures = {
   params: { suburbId: 999 }
 }
 
+const suburbFixture = {
+  id: 42,
+  name: 'Richmond',
+  postcode: '3121',
+  latitude: -37.823,
+  longitude: 144.998,
+  council_id: 7,
+}
+
 const secondPageResult = {
   ...e2eSearchResults[0],
   business_id: e2eSearchResults[0].business_id + 1,
@@ -148,6 +157,60 @@ test.describe('Search → Trainer profile', () => {
     const secondRequest = await secondRequestPromise
     expect(new URL(secondRequest.url()).searchParams.get('page')).toBe('2')
     await expect(page.getByRole('heading', { name: secondPageResult.business_name }).first()).toBeVisible()
+  })
+
+  test('canonical suburbId rehydrates displayed location and wins over stale snapshot fields', async ({ page }) => {
+    await page.route('**/functions/v1/suburbs', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          suburbs: [suburbFixture],
+          count: 1,
+        }),
+      })
+    })
+
+    await page.route('**/api/public/search**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          results: e2eSearchResults,
+          metadata: {
+            total: e2eSearchResults.length,
+            limit: 20,
+            offset: 0,
+            hasMore: false,
+            has_more: false,
+          },
+        }),
+      })
+    })
+
+    const requestPromise = page.waitForRequest((request) =>
+      request.url().includes('/api/public/search') && request.method() === 'GET'
+    )
+
+    await page.goto(
+      '/search?q=calm&suburbId=42&suburbName=Wrongville&postcode=9999&lat=0&lng=0&councilId=999'
+    )
+
+    const searchRequest = await requestPromise
+    const requestUrl = new URL(searchRequest.url())
+
+    expect(requestUrl.searchParams.get('suburbId')).toBe('42')
+    expect(requestUrl.searchParams.get('suburbName')).toBe('Richmond')
+    expect(requestUrl.searchParams.get('postcode')).toBe('3121')
+    expect(requestUrl.searchParams.get('lat')).toBe(String(suburbFixture.latitude))
+    expect(requestUrl.searchParams.get('lng')).toBe(String(suburbFixture.longitude))
+    expect(requestUrl.searchParams.get('councilId')).toBe(String(suburbFixture.council_id))
+
+    await expect(page.locator('input[value="Richmond (3121)"]')).toBeVisible()
+    await expect(page.getByText('Richmond 3121').first()).toBeVisible()
+    await expect(page.getByText('Wrongville')).toHaveCount(0)
   })
 
   test('missing trainer profile offers recovery actions', async ({ page }) => {
