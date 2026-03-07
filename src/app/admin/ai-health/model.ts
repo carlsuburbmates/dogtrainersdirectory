@@ -28,6 +28,31 @@ export type TriageHealthSummary = {
   note: string
 }
 
+export type VerificationHealthRow = {
+  created_at: string | null
+  details?: unknown
+}
+
+export type ModerationHealthRow = {
+  created_at: string | null
+  decision_source?: string | null
+}
+
+export type DigestHealthRow = {
+  created_at: string | null
+  ai_mode?: string | null
+  decision_source?: string | null
+  ci_summary?: unknown
+}
+
+export type OperatorWorkflowHealthSummary = {
+  counts: NormalizedDecisionCounts
+  shadowTraceCount: number
+  errorCount: number
+  lastTrace: string | null
+  note: string
+}
+
 type TriageAuditRecord = {
   decisionSource?: string
   resultState?: string
@@ -60,8 +85,8 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>
 }
 
-function getTriageAuditRecord(row: TriageHealthRow): TriageAuditRecord | null {
-  const metadata = asRecord(row.metadata)
+function getAiAutomationAudit(value: unknown): TriageAuditRecord | null {
+  const metadata = asRecord(value)
   const audit = asRecord(metadata?.aiAutomationAudit)
 
   if (!audit) {
@@ -72,6 +97,10 @@ function getTriageAuditRecord(row: TriageHealthRow): TriageAuditRecord | null {
     decisionSource: typeof audit.decisionSource === 'string' ? audit.decisionSource : undefined,
     resultState: typeof audit.resultState === 'string' ? audit.resultState : undefined
   }
+}
+
+function getTriageAuditRecord(row: TriageHealthRow): TriageAuditRecord | null {
+  return getAiAutomationAudit(row.metadata)
 }
 
 function getShadowCandidate(row: TriageHealthRow): TriageShadowCandidate | null {
@@ -178,6 +207,181 @@ export function summarizeTriageHealth(rows: TriageHealthRow[]): TriageHealthSumm
       shadowTraceCount,
       shadowErrorCount,
       shadowDisagreementCount
+    })
+  }
+}
+
+function buildOperatorWorkflowNote(input: {
+  familyLabel: string
+  outputLabel: string
+  approvalBoundaryLabel: string
+  shadowTraceCount: number
+  errorCount: number
+  includeVisibleDeterministicNote?: boolean
+}): string {
+  const parts = [
+    `${input.outputLabel}. ${input.approvalBoundaryLabel}`
+  ]
+
+  if (input.shadowTraceCount > 0) {
+    parts.push(
+      `${input.shadowTraceCount} shadow trace${input.shadowTraceCount === 1 ? '' : 's'} recorded from audit metadata.`
+    )
+  }
+
+  if (input.errorCount > 0) {
+    parts.push(
+      `${input.errorCount} ${input.familyLabel.toLowerCase()} trace${input.errorCount === 1 ? '' : 's'} ended in an error.`
+    )
+  }
+
+  if (input.includeVisibleDeterministicNote) {
+    parts.push('Shadow traces did not replace the visible deterministic outcome.')
+  }
+
+  return parts.join(' ')
+}
+
+export function summarizeVerificationHealth(rows: VerificationHealthRow[]): OperatorWorkflowHealthSummary {
+  let aiVisible = 0
+  let deterministicVisible = 0
+  let shadowTraceCount = 0
+  let errorCount = 0
+  let lastTrace: string | null = null
+
+  for (const row of rows) {
+    const details = asRecord(row.details)
+    const audit = getAiAutomationAudit(details)
+    const verificationMethod = details?.verificationMethod
+    const shadowCandidate = asRecord(details?.shadowCandidate)
+
+    if (verificationMethod === 'ai') {
+      aiVisible += 1
+    } else if (verificationMethod === 'deterministic') {
+      deterministicVisible += 1
+    }
+
+    if (shadowCandidate || audit?.resultState === 'error') {
+      shadowTraceCount += 1
+    }
+
+    if (audit?.resultState === 'error') {
+      errorCount += 1
+    }
+
+    if (row.created_at && (!lastTrace || row.created_at > lastTrace)) {
+      lastTrace = row.created_at
+    }
+  }
+
+  return {
+    counts: {
+      aiDecisions: aiVisible,
+      deterministicDecisions: deterministicVisible,
+      manualOverrides: 0
+    },
+    shadowTraceCount,
+    errorCount,
+    lastTrace,
+    note: buildOperatorWorkflowNote({
+      familyLabel: 'Verification',
+      outputLabel:
+        'Draft verification candidates are stored in emergency_resource_verification_events.details',
+      approvalBoundaryLabel:
+        'Verification status changes still require an operator action.',
+      shadowTraceCount,
+      errorCount,
+      includeVisibleDeterministicNote: shadowTraceCount > 0
+    })
+  }
+}
+
+export function summarizeModerationHealth(rows: ModerationHealthRow[]): OperatorWorkflowHealthSummary {
+  let llm = 0
+  let deterministic = 0
+  let manual = 0
+  let manualOverride = 0
+  let lastTrace: string | null = null
+
+  for (const row of rows) {
+    if (row.decision_source === 'llm') {
+      llm += 1
+    } else if (row.decision_source === 'deterministic') {
+      deterministic += 1
+    } else if (row.decision_source === 'manual') {
+      manual += 1
+    } else if (row.decision_source === 'manual_override') {
+      manualOverride += 1
+    }
+
+    if (row.created_at && (!lastTrace || row.created_at > lastTrace)) {
+      lastTrace = row.created_at
+    }
+  }
+
+  return {
+    counts: normalizeDecisionSourceCounts({
+      llm,
+      deterministic,
+      manual,
+      manualOverride
+    }),
+    shadowTraceCount: 0,
+    errorCount: 0,
+    lastTrace,
+    note:
+      'Draft moderation recommendations are recorded in ai_review_decisions. Final review approval or rejection still requires an operator action.'
+  }
+}
+
+export function summarizeDigestHealth(rows: DigestHealthRow[]): OperatorWorkflowHealthSummary {
+  let aiVisible = 0
+  let deterministicVisible = 0
+  let shadowTraceCount = 0
+  let errorCount = 0
+  let lastTrace: string | null = null
+
+  for (const row of rows) {
+    const summary = asRecord(row.ci_summary)
+    const audit = getAiAutomationAudit(summary)
+    const shadowCandidate = asRecord(summary?.shadowCandidate)
+
+    if (row.decision_source === 'llm') {
+      aiVisible += 1
+    } else if (row.decision_source === 'deterministic') {
+      deterministicVisible += 1
+    }
+
+    if ((row.ai_mode === 'shadow' && audit) || shadowCandidate) {
+      shadowTraceCount += 1
+    }
+
+    if (audit?.resultState === 'error') {
+      errorCount += 1
+    }
+
+    if (row.created_at && (!lastTrace || row.created_at > lastTrace)) {
+      lastTrace = row.created_at
+    }
+  }
+
+  return {
+    counts: {
+      aiDecisions: aiVisible,
+      deterministicDecisions: deterministicVisible,
+      manualOverrides: 0
+    },
+    shadowTraceCount,
+    errorCount,
+    lastTrace,
+    note: buildOperatorWorkflowNote({
+      familyLabel: 'Digest',
+      outputLabel: 'Ops digest output is advisory only',
+      approvalBoundaryLabel:
+        'No external action is executed from the digest by itself.',
+      shadowTraceCount,
+      errorCount,
+      includeVisibleDeterministicNote: shadowTraceCount > 0
     })
   }
 }

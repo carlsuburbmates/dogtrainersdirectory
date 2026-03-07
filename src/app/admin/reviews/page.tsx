@@ -19,6 +19,12 @@ interface Review {
   ai_decision?: string | null
   ai_reason?: string | null
   ai_confidence?: number | null
+  ai_mode?: string | null
+  ai_decision_source?: string | null
+  ai_approval_state?: string | null
+  ai_output_type?: string | null
+  ai_final_action?: string | null
+  ai_final_reason?: string | null
 }
 
 type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected'
@@ -104,20 +110,40 @@ export default function AdminReviewsPage() {
     return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
   }
 
-  const getAIDecisionBadge = (aiDecision: string | null | undefined) => {
-    if (!aiDecision) return null
+  const getAIDecisionBadge = (review: Review) => {
+    if (!review.ai_decision) return null
     
     const colors: Record<string, string> = {
-      'approve': 'bg-green-50 text-green-700 border-green-200',
-      'reject': 'bg-red-50 text-red-700 border-red-200',
-      'manual_review': 'bg-yellow-50 text-yellow-700 border-yellow-200',
-      'manual_approve': 'bg-blue-50 text-blue-700 border-blue-200',
-      'manual_reject': 'bg-gray-50 text-gray-700 border-gray-200'
+      auto_approve: 'bg-green-50 text-green-700 border-green-200',
+      auto_reject: 'bg-red-50 text-red-700 border-red-200',
+      manual: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      manual_approve: 'bg-blue-50 text-blue-700 border-blue-200',
+      manual_reject: 'bg-gray-50 text-gray-700 border-gray-200'
     }
+    const label =
+      review.ai_output_type === 'shadow_evaluation'
+        ? 'Shadow evaluation'
+        : 'Draft recommendation'
     
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded border ${colors[aiDecision] || 'bg-gray-50 text-gray-700'}`}>
-        AI: {aiDecision.replace('_', ' ')}
+      <span className={`px-2 py-1 text-xs font-medium rounded border ${colors[review.ai_decision] || 'bg-gray-50 text-gray-700'}`}>
+        {label}: {review.ai_decision.replace(/_/g, ' ')}
+      </span>
+    )
+  }
+
+  const getApprovalBadge = (review: Review) => {
+    if (!review.ai_approval_state) return null
+
+    const colors: Record<string, string> = {
+      pending: 'bg-amber-50 text-amber-800 border-amber-200',
+      approved: 'bg-green-50 text-green-800 border-green-200',
+      rejected: 'bg-red-50 text-red-800 border-red-200'
+    }
+
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded border ${colors[review.ai_approval_state] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+        Approval: {review.ai_approval_state.replace(/_/g, ' ')}
       </span>
     )
   }
@@ -270,7 +296,8 @@ export default function AdminReviewsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">{review.reviewer_name}</h3>
                     {getStatusBadge(review)}
-                    {getAIDecisionBadge(review.ai_decision)}
+                    {getAIDecisionBadge(review)}
+                    {getApprovalBadge(review)}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <span>{getRatingStars(review.rating)} ({review.rating}/5)</span>
@@ -298,13 +325,29 @@ export default function AdminReviewsPage() {
               {/* AI Moderation Info */}
               {review.ai_reason && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-                  <p className="text-sm text-blue-900">
-                    <span className="font-semibold">AI Analysis:</span> {review.ai_reason}
-                    {review.ai_confidence && (
-                      <span className="ml-2 text-xs">
-                        (Confidence: {(review.ai_confidence * 100).toFixed(0)}%)
-                      </span>
-                    )}
+                  <div className="space-y-1 text-sm text-blue-900">
+                    <p>
+                      <span className="font-semibold">Recommendation:</span> {review.ai_reason}
+                      {review.ai_confidence && (
+                        <span className="ml-2 text-xs">
+                          (Confidence: {(review.ai_confidence * 100).toFixed(0)}%)
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-blue-800">
+                      {review.ai_output_type === 'shadow_evaluation'
+                        ? 'Shadow evaluation only. The visible review state did not change.'
+                        : 'Draft recommendation only. Final approval or rejection still requires an operator action.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {review.ai_final_action && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+                  <p className="text-sm text-green-900">
+                    <span className="font-semibold">Final operator action:</span> {review.ai_final_action.replace(/_/g, ' ')}
+                    {review.ai_final_reason ? ` — ${review.ai_final_reason}` : ''}
                   </p>
                 </div>
               )}
@@ -326,7 +369,7 @@ export default function AdminReviewsPage() {
                     disabled={actionLoading === review.id}
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
-                    {actionLoading === review.id ? 'Processing...' : '✓ Approve'}
+                    {actionLoading === review.id ? 'Processing...' : 'Approve review'}
                   </button>
                   <button
                     onClick={() => {
@@ -338,19 +381,19 @@ export default function AdminReviewsPage() {
                     disabled={actionLoading === review.id}
                     className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
-                    {actionLoading === review.id ? 'Processing...' : '✕ Reject'}
+                    {actionLoading === review.id ? 'Processing...' : 'Reject review'}
                   </button>
                   <button
                     onClick={() => {
                       const reason = prompt('Enter notes for manual review:')
                       if (reason) {
-                        alert('Manual review flagging coming soon!')
+                        alert('This review is already pending operator review. Add your notes when you approve or reject it.')
                       }
                     }}
                     disabled={actionLoading === review.id}
                     className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
-                    🚩 Flag for Review
+                    Keep pending
                   </button>
                 </div>
               )}

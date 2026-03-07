@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import {
   describeModeSource,
+  getAiAutomationOperatorControl,
   getAiAutomationModeResolutions,
   getAiAutomationVisibility,
   type AiAutomationModeResolution,
@@ -9,7 +10,10 @@ import {
 } from '@/lib/ai-automation'
 import {
   normalizeDecisionSourceCounts,
+  summarizeModerationHealth,
+  summarizeDigestHealth,
   summarizeTriageHealth,
+  summarizeVerificationHealth,
   toAiPercentage
 } from './model'
 
@@ -229,51 +233,91 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
     )
   }
 
-  const moderationDecisionData = await countByDecisionSource('ai_review_decisions')
-  const moderationSuccessData = await lastAiSuccessFor('ai_review_decisions')
-  healthData.push(
-    toHealthRow('moderation', 'Review Moderation', {
-      lastSuccess: moderationSuccessData.lastSuccess,
-      aiDecisions: moderationDecisionData.counts.aiDecisions,
-      deterministicDecisions: moderationDecisionData.counts.deterministicDecisions,
-      manualOverrides: moderationDecisionData.counts.manualOverrides,
-      note:
-        moderationDecisionData.instrumented && moderationSuccessData.instrumented
-          ? 'Audit traces and decision-source counts come from ai_review_decisions (last 24h).'
-          : 'Audit trace counts are not available yet.',
-      auditConnected: true
-    })
-  )
+  const moderationRows = await supabaseAdmin
+    .from('ai_review_decisions')
+    .select('created_at, decision_source')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+  const moderationControl = getAiAutomationOperatorControl('moderation')
+  if (moderationRows.error) {
+    healthData.push(
+      toHealthRow('moderation', 'Review Moderation', {
+        lastSuccess: null,
+        note: 'Moderation audit traces are not available yet.',
+        auditConnected: true
+      })
+    )
+  } else {
+    const moderationSummary = summarizeModerationHealth(moderationRows.data ?? [])
+    healthData.push(
+      toHealthRow('moderation', 'Review Moderation', {
+        lastSuccess: moderationSummary.lastTrace,
+        aiDecisions: moderationSummary.counts.aiDecisions,
+        deterministicDecisions: moderationSummary.counts.deterministicDecisions,
+        manualOverrides: moderationSummary.counts.manualOverrides,
+        note: `${moderationSummary.note} Operator output: ${moderationControl?.outputLabel}. Rollback/disable: ${moderationControl?.rollbackLabel}`,
+        auditConnected: true
+      })
+    )
+  }
 
-  const verificationActivity = await lastActivityFor(
-    'emergency_resource_verification_events'
-  )
-  healthData.push(
-    toHealthRow('verification', 'Resource Verification', {
-      lastSuccess: verificationActivity.lastSuccess,
-      note:
-        verificationActivity.instrumented
-          ? 'Audit traces are stored in emergency_resource_verification_events.details. Decision-source counts are not yet broken out on this screen.'
-          : 'Verification audit traces are not available yet.',
-      auditConnected: true
-    })
-  )
+  const verificationRows = await supabaseAdmin
+    .from('emergency_resource_verification_events')
+    .select('created_at, details')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+  const verificationControl = getAiAutomationOperatorControl('verification')
+  if (verificationRows.error) {
+    healthData.push(
+      toHealthRow('verification', 'Resource Verification', {
+        lastSuccess: null,
+        note: 'Verification audit traces are not available yet.',
+        auditConnected: true
+      })
+    )
+  } else {
+    const verificationSummary = summarizeVerificationHealth(verificationRows.data ?? [])
+    healthData.push(
+      toHealthRow('verification', 'Resource Verification', {
+        lastSuccess: verificationSummary.lastTrace,
+        aiDecisions: verificationSummary.counts.aiDecisions,
+        deterministicDecisions: verificationSummary.counts.deterministicDecisions,
+        manualOverrides: verificationSummary.counts.manualOverrides,
+        errors24h: verificationSummary.errorCount,
+        note: `${verificationSummary.note} Rollback/disable: ${verificationControl?.rollbackLabel}`,
+        auditConnected: true
+      })
+    )
+  }
 
-  const digestDecisionData = await countByDecisionSource('daily_ops_digests')
-  const digestSuccessData = await lastAiSuccessFor('daily_ops_digests')
-  healthData.push(
-    toHealthRow('ops_digest', 'Ops Digest', {
-      lastSuccess: digestSuccessData.lastSuccess,
-      aiDecisions: digestDecisionData.counts.aiDecisions,
-      deterministicDecisions: digestDecisionData.counts.deterministicDecisions,
-      manualOverrides: digestDecisionData.counts.manualOverrides,
-      note:
-        digestDecisionData.instrumented && digestSuccessData.instrumented
-          ? 'Audit traces and decision-source counts come from daily_ops_digests (last 24h).'
-          : 'Audit trace counts are not available yet.',
-      auditConnected: true
-    })
-  )
+  const digestRows = await supabaseAdmin
+    .from('daily_ops_digests')
+    .select('created_at, ai_mode, decision_source, ci_summary')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+  const digestControl = getAiAutomationOperatorControl('ops_digest')
+  if (digestRows.error) {
+    healthData.push(
+      toHealthRow('ops_digest', 'Ops Digest', {
+        lastSuccess: null,
+        note: 'Ops digest audit traces are not available yet.',
+        auditConnected: true
+      })
+    )
+  } else {
+    const digestSummary = summarizeDigestHealth(digestRows.data ?? [])
+    healthData.push(
+      toHealthRow('ops_digest', 'Ops Digest', {
+        lastSuccess: digestSummary.lastTrace,
+        aiDecisions: digestSummary.counts.aiDecisions,
+        deterministicDecisions: digestSummary.counts.deterministicDecisions,
+        manualOverrides: digestSummary.counts.manualOverrides,
+        errors24h: digestSummary.errorCount,
+        note: `${digestSummary.note} Rollback/disable: ${digestControl?.rollbackLabel}`,
+        auditConnected: true
+      })
+    )
+  }
 
   return healthData
 }

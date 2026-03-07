@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getOrCreateDailyDigest } from '@/lib/digest'
+import {
+  getAiAutomationOperatorControl,
+  resolveAiAutomationMode
+} from '@/lib/ai-automation'
 
 const buildForwardedHeaders = (request: Request) => {
   const cookie = request.headers.get('cookie')
@@ -44,6 +48,8 @@ export async function GET(request: Request) {
     }
 
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const digestModeResolution = resolveAiAutomationMode('ops_digest')
+    const digestControl = getAiAutomationOperatorControl('ops_digest')
     
     // Get latency statistics
     let latencyStats = null
@@ -136,6 +142,16 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       digest,
+      digestControl: {
+        mode: digestModeResolution.effectiveMode,
+        outputLabel: digestControl?.outputLabel ?? 'Advisory output',
+        approvalBoundaryLabel:
+          digestControl?.approvalBoundaryLabel ??
+          'No external action is executed from the digest by itself.',
+        rollbackLabel:
+          digestControl?.rollbackLabel ??
+          'Disable with DIGEST_AI_MODE=disabled or AI_GLOBAL_MODE=disabled.'
+      },
       trainerSummary: {
         total: trainerCounts.count ?? 0,
         verified: trainerVerified.count ?? 0

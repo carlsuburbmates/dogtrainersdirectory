@@ -76,12 +76,14 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   const modeResolution = resolveAiAutomationMode('ops_digest')
   const prompt = buildDigestPrompt(metrics)
 
-  let summary = buildDeterministicDigest(metrics)
-  let decisionSource: 'llm' | 'deterministic' = 'deterministic'
+  const deterministicSummary = buildDeterministicDigest(metrics)
+  let visibleSummary = deterministicSummary
+  let auditDecisionSource: 'llm' | 'deterministic' = 'deterministic'
   let aiProvider: string | null = null
   let aiModel: string | null = null
   let auditResultState: 'result' | 'no_result' | 'error' = 'no_result'
   let auditErrorMessage: string | null = null
+  let shadowCandidate: string | null = null
 
   if (
     modeResolution.effectiveMode === 'live' ||
@@ -99,11 +101,21 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
     if (llm.provider === 'deterministic') {
       auditErrorMessage = llm.text
     } else {
-      summary = llm.text
-      decisionSource = 'llm'
+      auditDecisionSource = 'llm'
       auditResultState = 'result'
+
+      if (modeResolution.effectiveMode === 'live') {
+        visibleSummary = llm.text
+      } else {
+        shadowCandidate = llm.text
+      }
     }
   }
+
+  const visibleDecisionSource: 'llm' | 'deterministic' =
+    modeResolution.effectiveMode === 'live' && auditDecisionSource === 'llm'
+      ? 'llm'
+      : 'deterministic'
 
   // Store the digest — be tolerant to DB errors when running in a non-operator environment
   try {
@@ -112,11 +124,11 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
         .from('daily_ops_digests')
         .upsert({
           digest_date: today,
-          summary,
+          summary: visibleSummary,
           metrics,
           model: aiModel,
           generated_by: aiProvider,
-          decision_source: decisionSource,
+          decision_source: visibleDecisionSource,
           ai_mode: modeResolution.effectiveMode,
           ai_provider: aiProvider,
           ai_confidence: null,
@@ -129,18 +141,30 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
               effectiveMode: modeResolution.effectiveMode,
               approvalState: 'not_required',
               resultState: auditResultState,
-              decisionSource,
+              decisionSource: auditDecisionSource,
               routeOrJob: '/api/admin/ops-digest',
               summary:
                 modeResolution.effectiveMode === 'shadow'
-                  ? 'Ops digest stored while running in shadow mode.'
-                  : 'Ops digest stored.',
+                  ? 'Shadow digest trace recorded while deterministic advisory remained visible.'
+                  : 'Ops digest advisory stored.',
               errorMessage: auditErrorMessage,
               resultingRecordReferences: [
                 { table: 'daily_ops_digests', field: 'digest_date', id: today }
               ]
             },
             {
+              shadowCandidate: shadowCandidate
+                ? {
+                    summary: shadowCandidate
+                  }
+                : undefined,
+              operatorVisibleState: {
+                outputType:
+                  modeResolution.effectiveMode === 'shadow'
+                    ? 'shadow_evaluation'
+                    : 'advisory',
+                finalState: 'no_external_action'
+              },
               metricsSnapshot: {
                 onboardingToday: metrics.onboarding_today,
                 pendingAbnManual: metrics.pending_abn_manual,
@@ -167,7 +191,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   return {
     id: -1,
     digest_date: today,
-    summary,
+    summary: visibleSummary,
     metrics,
     model: aiModel || 'fallback',
     generated_by: aiProvider || 'deterministic',

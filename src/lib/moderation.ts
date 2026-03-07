@@ -73,7 +73,14 @@ export async function moderatePendingReviews(
   // (this can happen in developer machines pointing to remote Supabase without a service-role).
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('moderatePendingReviews: SUPABASE_SERVICE_ROLE_KEY not set — skipping moderation operations')
-    return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
+    return {
+      processed: 0,
+      autoApproved: 0,
+      autoRejected: 0,
+      recommendedApprove: 0,
+      recommendedReject: 0,
+      manualFlagged: 0
+    }
   }
 
   const modeResolution = resolveAiAutomationMode('moderation')
@@ -88,7 +95,14 @@ export async function moderatePendingReviews(
     .limit(limit)
 
   if (error || !reviews?.length) {
-    return { processed: 0, autoApproved: 0, autoRejected: 0, manualFlagged: 0 }
+    return {
+      processed: 0,
+      autoApproved: 0,
+      autoRejected: 0,
+      recommendedApprove: 0,
+      recommendedReject: 0,
+      manualFlagged: 0
+    }
   }
 
   const reviewsTyped = reviews as ReviewRecord[]
@@ -104,6 +118,8 @@ export async function moderatePendingReviews(
 
   let autoApproved = 0
   let autoRejected = 0
+  let recommendedApprove = 0
+  let recommendedReject = 0
   let manualFlagged = 0
   let processed = 0
 
@@ -111,25 +127,12 @@ export async function moderatePendingReviews(
     if (alreadyDecided.has(review.id)) continue
     const decision = evaluateReview(review)
     const decisionSource: DecisionSource = 'deterministic'
-    const approvalState =
-      decision.action === 'manual'
-        ? 'pending'
-        : effectiveMode === 'shadow'
-          ? 'pending'
-          : 'not_required'
+    const approvalState = 'pending'
 
-    if (effectiveMode !== 'shadow' && decision.action === 'auto_approve') {
-      await supabaseAdmin
-        .from('reviews')
-        .update({ is_approved: true, rejection_reason: null, is_rejected: false })
-        .eq('id', review.id)
-      autoApproved += 1
-    } else if (effectiveMode !== 'shadow' && decision.action === 'auto_reject') {
-      await supabaseAdmin
-        .from('reviews')
-        .update({ is_rejected: true, rejection_reason: decision.reason })
-        .eq('id', review.id)
-      autoRejected += 1
+    if (decision.action === 'auto_approve') {
+      recommendedApprove += 1
+    } else if (decision.action === 'auto_reject') {
+      recommendedReject += 1
     } else if (decision.action === 'manual') {
       manualFlagged += 1
     }
@@ -158,13 +161,26 @@ export async function moderatePendingReviews(
             routeOrJob: '/api/admin/moderation/run',
             summary:
               effectiveMode === 'shadow'
-                ? 'Shadow moderation trace recorded without changing review publication state.'
-                : 'Moderation decision recorded.',
+                ? 'Shadow moderation recommendation recorded without changing review publication state.'
+                : 'Moderation recommendation recorded for operator approval.',
             resultingRecordReferences: [
               { table: 'reviews', id: review.id, field: 'review_id' }
             ]
           },
           {
+            moderationRecommendation: {
+              action: decision.action,
+              reason: decision.reason,
+              confidence: decision.confidence,
+              source: decisionSource
+            },
+            finalAction: null,
+            operatorVisibleState: {
+              outputType:
+                effectiveMode === 'shadow' ? 'shadow_evaluation' : 'draft_recommendation',
+              finalState: 'pending_operator_approval',
+              reviewStateChanged: false
+            },
             review: {
               businessId: review.business_id,
               rating: review.rating
@@ -181,6 +197,8 @@ export async function moderatePendingReviews(
     processed,
     autoApproved,
     autoRejected,
+    recommendedApprove,
+    recommendedReject,
     manualFlagged
   }
 }

@@ -17,6 +17,8 @@ export interface ModerationRunResult {
   processedCount: number
   autoApproved: number
   autoRejected: number
+  recommendedApprove: number
+  recommendedReject: number
   manualReview: number
   errors: string[]
   startedAt: Date
@@ -54,6 +56,8 @@ export async function runModerationCycle(
   let processedCount = 0
   let autoApproved = 0
   let autoRejected = 0
+  let recommendedApprove = 0
+  let recommendedReject = 0
   let manualReview = 0
 
   // Log run start to cron_job_runs table
@@ -100,6 +104,8 @@ export async function runModerationCycle(
         processedCount: 0,
         autoApproved: 0,
         autoRejected: 0,
+        recommendedApprove: 0,
+        recommendedReject: 0,
         manualReview: 0,
         errors: [],
         startedAt,
@@ -114,6 +120,8 @@ export async function runModerationCycle(
     processedCount = results.processed
     autoApproved = results.autoApproved
     autoRejected = results.autoRejected
+    recommendedApprove = results.recommendedApprove
+    recommendedReject = results.recommendedReject
     manualReview = results.manualFlagged
 
     const completedAt = new Date()
@@ -131,6 +139,8 @@ export async function runModerationCycle(
             processedCount,
             autoApproved,
             autoRejected,
+            recommendedApprove,
+            recommendedReject,
             manualReview,
             mode
           }
@@ -143,6 +153,8 @@ export async function runModerationCycle(
       processedCount,
       autoApproved,
       autoRejected,
+      recommendedApprove,
+      recommendedReject,
       manualReview,
       errors,
       startedAt,
@@ -175,6 +187,8 @@ export async function runModerationCycle(
       processedCount,
       autoApproved,
       autoRejected,
+      recommendedApprove,
+      recommendedReject,
       manualReview,
       errors,
       startedAt,

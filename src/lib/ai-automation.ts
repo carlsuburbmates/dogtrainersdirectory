@@ -97,6 +97,12 @@ export type AiAutomationVisibility = {
   note: string
 }
 
+export type AiAutomationOperatorControl = {
+  outputLabel: string
+  approvalBoundaryLabel: string
+  rollbackLabel: string
+}
+
 function isDecisionMode(value: string | undefined | null): value is DecisionMode {
   return value === 'disabled' || value === 'shadow' || value === 'live'
 }
@@ -216,4 +222,37 @@ export function mergeAiAutomationAuditMetadata(
 
 export function describeModeSource(resolution: AiAutomationModeResolution): string {
   return resolution.usesGlobalDefault ? 'Global default' : resolution.overrideEnvVar
+}
+
+export function getAiAutomationOperatorControl(
+  workflow: AiAutomationWorkflow
+): AiAutomationOperatorControl | null {
+  switch (workflow) {
+    case 'moderation':
+      return {
+        outputLabel: 'Draft recommendation',
+        approvalBoundaryLabel:
+          'Final review approval or rejection still requires an operator action.',
+        rollbackLabel:
+          'Disable with MODERATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing recommendations remain drafts until an operator acts.'
+      }
+    case 'verification':
+      return {
+        outputLabel: 'Draft recommendation',
+        approvalBoundaryLabel:
+          'Verification status changes still require an operator action.',
+        rollbackLabel:
+          'Disable with VERIFICATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing candidate checks remain audit records only.'
+      }
+    case 'ops_digest':
+      return {
+        outputLabel: 'Advisory output',
+        approvalBoundaryLabel:
+          'No external action is executed from the digest by itself; operators decide what to do next.',
+        rollbackLabel:
+          'Disable with DIGEST_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Re-run the digest to replace an advisory summary if needed.'
+      }
+    default:
+      return null
+  }
 }

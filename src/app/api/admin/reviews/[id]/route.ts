@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import {
+  mergeAiAutomationAuditMetadata,
+  resolveAiAutomationMode
+} from '@/lib/ai-automation'
 
 export type ManualAction = 'approve' | 'reject'
 
@@ -48,20 +52,79 @@ if (isNaN(idNum)) {
       .limit(1)
       .maybeSingle()
 
+    const modeResolution = resolveAiAutomationMode('moderation')
+    const finalReason =
+      body?.reason ??
+      (action === 'approve'
+        ? 'Manually approved by operator'
+        : 'Manually rejected by operator')
+    const existingMetadata =
+      existingDecision?.metadata && typeof existingDecision.metadata === 'object'
+        ? existingDecision.metadata
+        : undefined
+    const existingRecommendation =
+      existingMetadata?.moderationRecommendation &&
+      typeof existingMetadata.moderationRecommendation === 'object'
+        ? existingMetadata.moderationRecommendation
+        : {
+            action: existingDecision?.ai_decision ?? null,
+            reason: existingDecision?.reason ?? null,
+            confidence: existingDecision?.confidence ?? null,
+            source:
+              typeof existingDecision?.decision_source === 'string'
+                ? existingDecision.decision_source
+                : null
+          }
+
     const payload: any = {
-      review_id: id,
-      ai_decision: action === 'approve' ? 'manual_approve' : 'manual_reject',
-      confidence: 1.0,
-      reason: body?.reason ?? (action === 'approve' ? 'Manually approved by admin' : 'Manually rejected by admin'),
+      review_id: idNum,
+      ai_decision:
+        existingDecision?.ai_decision ??
+        (action === 'approve' ? 'manual_approve' : 'manual_reject'),
+      confidence: existingDecision?.confidence ?? 1.0,
+      reason: existingDecision?.reason ?? finalReason,
       decision_source: 'manual_override',
-      ai_mode: existingDecision?.ai_mode ?? null,
+      ai_mode: existingDecision?.ai_mode ?? modeResolution.effectiveMode,
       ai_provider: existingDecision?.ai_provider ?? null,
       ai_model: existingDecision?.ai_model ?? null,
       ai_prompt_version: existingDecision?.ai_prompt_version ?? null,
-      raw_response: body?.raw_response ?? null
+      raw_response: body?.raw_response ?? null,
+      metadata: mergeAiAutomationAuditMetadata(
+        existingMetadata,
+        {
+          workflowFamily: 'moderation',
+          actorClass: modeResolution.actorClass,
+          effectiveMode:
+            existingDecision?.ai_mode ?? modeResolution.effectiveMode,
+          approvalState: action === 'approve' ? 'approved' : 'rejected',
+          resultState: 'result',
+          decisionSource: 'manual_override',
+          routeOrJob: `/api/admin/reviews/${idNum}`,
+          summary:
+            action === 'approve'
+              ? 'Operator approved the review after moderation review.'
+              : 'Operator rejected the review after moderation review.',
+          resultingRecordReferences: [{ table: 'reviews', id: idNum }]
+        },
+        {
+          moderationRecommendation: existingRecommendation,
+          finalAction: {
+            action,
+            reason: finalReason,
+            actor: 'operator'
+          },
+          operatorVisibleState: {
+            outputType: 'final_approved_action',
+            finalState: action === 'approve' ? 'approved' : 'rejected',
+            reviewStateChanged: true
+          }
+        }
+      )
     }
 
-    await supabaseAdmin.from('ai_review_decisions').upsert({ ...payload, review_id: idNum }, { onConflict: 'review_id' })
+    await supabaseAdmin
+      .from('ai_review_decisions')
+      .upsert(payload, { onConflict: 'review_id' })
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

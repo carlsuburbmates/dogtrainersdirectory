@@ -7,6 +7,12 @@ type AdminOverview = {
     summary: string
     metrics: Record<string, any>
   }
+  digestControl: {
+    mode: string
+    outputLabel: string
+    approvalBoundaryLabel: string
+    rollbackLabel: string
+  }
   trainerSummary: {
     total: number
     verified: number
@@ -235,8 +241,20 @@ export function EnhancedAdminDashboard() {
         <div className="space-y-6">
           {/* Daily Ops Digest Card */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6 space-y-3">
-            <h2 className="text-2xl font-bold text-blue-900">Daily Ops Digest</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-2xl font-bold text-blue-900">Daily Ops Digest</h2>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-800 border border-blue-200">
+                {overview.digestControl.outputLabel}
+              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-800 border border-blue-200">
+                Mode: {overview.digestControl.mode}
+              </span>
+            </div>
             <p className="text-gray-700">{overview.digest.summary}</p>
+            <div className="rounded-md border border-blue-100 bg-white/70 px-3 py-2 text-sm text-blue-900">
+              <p>{overview.digestControl.approvalBoundaryLabel}</p>
+              <p className="mt-1 text-xs text-blue-800">{overview.digestControl.rollbackLabel}</p>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
               {Object.entries(overview.digest.metrics).map(([key, value]) => (
                 <div key={key} className="bg-white rounded p-3 border border-blue-100">

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     if (!result.success) {
       return NextResponse.json(
         {
-          message: 'Moderation cycle completed with errors',
+          message: 'Moderation recommendation cycle completed with errors',
           ...result
         },
         { status: 500 }
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message: 'Moderation cycle completed successfully',
+        message: 'Moderation recommendation cycle completed successfully',
         ...result
       },
       { status: 200 }

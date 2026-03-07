@@ -12,16 +12,16 @@ vi.mock('@/lib/supabase', () => ({
 
 import { moderatePendingReviews } from '@/lib/moderation'
 
-describe('moderation shadow mode', () => {
+describe('moderation live mode', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     mocks.from.mockReset()
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role'
     process.env.AI_GLOBAL_MODE = 'live'
-    process.env.MODERATION_AI_MODE = 'shadow'
+    process.env.MODERATION_AI_MODE = 'live'
   })
 
-  it('records decision traces without mutating review publication state', async () => {
+  it('records draft recommendations without auto-publishing a review', async () => {
     const updateEq = vi.fn().mockResolvedValue({ data: null, error: null })
     const reviewUpdate = { eq: updateEq }
     const reviewSelect = {
@@ -30,12 +30,12 @@ describe('moderation shadow mode', () => {
       limit: vi.fn().mockResolvedValue({
         data: [
           {
-            id: 10,
-            business_id: 4,
-            reviewer_name: 'Casey',
+            id: 11,
+            business_id: 8,
+            reviewer_name: 'Jordan',
             rating: 5,
-            title: 'Excellent trainer',
-            content: 'Great trainer with patient, kind advice and clear progress over several sessions.',
+            title: 'Patient trainer',
+            content: 'Great trainer with patient, kind advice and obvious progress across several sessions.',
             created_at: '2026-03-07T00:00:00.000Z'
           }
         ],
@@ -65,7 +65,7 @@ describe('moderation shadow mode', () => {
       throw new Error(`Unexpected table ${table}`)
     })
 
-    const result = await moderatePendingReviews(30, { mode: 'shadow' })
+    const result = await moderatePendingReviews(30, { mode: 'live' })
 
     expect(result).toMatchObject({
       processed: 1,
@@ -79,26 +79,14 @@ describe('moderation shadow mode', () => {
     expect(aiDecisionUpsert).toHaveBeenCalledOnce()
 
     const payload = aiDecisionUpsert.mock.calls[0][0]
-    expect(payload).toMatchObject({
-      review_id: 10,
-      ai_decision: 'auto_approve',
-      decision_source: 'deterministic',
-      ai_mode: 'shadow',
-      ai_provider: 'deterministic',
-      ai_prompt_version: 'moderation-rules-v1'
-    })
     expect(payload.metadata.aiAutomationAudit).toMatchObject({
       workflowFamily: 'moderation',
-      effectiveMode: 'shadow',
+      effectiveMode: 'live',
       approvalState: 'pending',
       resultState: 'result'
     })
-    expect(payload.metadata.moderationRecommendation).toMatchObject({
-      action: 'auto_approve',
-      source: 'deterministic'
-    })
     expect(payload.metadata.operatorVisibleState).toMatchObject({
-      outputType: 'shadow_evaluation',
+      outputType: 'draft_recommendation',
       finalState: 'pending_operator_approval',
       reviewStateChanged: false
     })

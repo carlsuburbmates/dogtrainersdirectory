@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       try {
         const { data: decisionsData } = await supabaseAdmin
           .from('ai_review_decisions')
-          .select('review_id, ai_decision, confidence, reason')
+          .select('review_id, ai_decision, confidence, reason, decision_source, ai_mode, metadata')
           .in('review_id', reviewIds)
 
         if (decisionsData) {
@@ -91,12 +91,41 @@ export async function POST(request: Request) {
             ai_decision: string | null
             confidence: number | null
             reason: string | null
+            decision_source: string | null
+            ai_mode: string | null
+            metadata?: Record<string, any> | null
           }
           aiDecisions = (decisionsData as ReviewDecisionRow[]).reduce((acc: Record<number, any>, d) => {
+            const recommendation =
+              d.metadata?.moderationRecommendation &&
+              typeof d.metadata.moderationRecommendation === 'object'
+                ? d.metadata.moderationRecommendation
+                : null
+            const finalAction =
+              d.metadata?.finalAction && typeof d.metadata.finalAction === 'object'
+                ? d.metadata.finalAction
+                : null
+            const operatorVisibleState =
+              d.metadata?.operatorVisibleState &&
+              typeof d.metadata.operatorVisibleState === 'object'
+                ? d.metadata.operatorVisibleState
+                : null
+            const audit =
+              d.metadata?.aiAutomationAudit &&
+              typeof d.metadata.aiAutomationAudit === 'object'
+                ? d.metadata.aiAutomationAudit
+                : null
+
             acc[d.review_id] = {
-              ai_decision: d.ai_decision,
-              ai_confidence: d.confidence,
-              ai_reason: d.reason
+              ai_decision: recommendation?.action ?? d.ai_decision,
+              ai_confidence: recommendation?.confidence ?? d.confidence,
+              ai_reason: recommendation?.reason ?? d.reason,
+              ai_mode: d.ai_mode,
+              ai_decision_source: recommendation?.source ?? d.decision_source,
+              ai_approval_state: audit?.approvalState ?? null,
+              ai_output_type: operatorVisibleState?.outputType ?? null,
+              ai_final_action: finalAction?.action ?? null,
+              ai_final_reason: finalAction?.reason ?? null
             }
             return acc
           }, {} as Record<number, any>)
@@ -124,7 +153,13 @@ export async function POST(request: Request) {
       business_name: review.businesses?.name || `Business #${review.business_id}`,
       ai_decision: aiDecisions[review.id]?.ai_decision || null,
       ai_confidence: aiDecisions[review.id]?.ai_confidence || null,
-      ai_reason: aiDecisions[review.id]?.ai_reason || null
+      ai_reason: aiDecisions[review.id]?.ai_reason || null,
+      ai_mode: aiDecisions[review.id]?.ai_mode || null,
+      ai_decision_source: aiDecisions[review.id]?.ai_decision_source || null,
+      ai_approval_state: aiDecisions[review.id]?.ai_approval_state || null,
+      ai_output_type: aiDecisions[review.id]?.ai_output_type || null,
+      ai_final_action: aiDecisions[review.id]?.ai_final_action || null,
+      ai_final_reason: aiDecisions[review.id]?.ai_final_reason || null
     }))
 
     return NextResponse.json({ reviews })
