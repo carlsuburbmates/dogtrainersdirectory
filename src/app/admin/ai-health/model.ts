@@ -47,6 +47,11 @@ export type DigestHealthRow = {
   ci_summary?: unknown
 }
 
+export type OnboardingHealthRow = {
+  created_at: string | null
+  metadata?: unknown
+}
+
 export type OperatorWorkflowHealthSummary = {
   counts: NormalizedDecisionCounts
   shadowTraceCount: number
@@ -434,6 +439,53 @@ export function summarizeDigestHealth(rows: DigestHealthRow[]): OperatorWorkflow
       outputLabel: 'Ops digest output is advisory only',
       approvalBoundaryLabel:
         'No external action is executed from the digest by itself.',
+      shadowTraceCount,
+      errorCount,
+      includeVisibleDeterministicNote: shadowTraceCount > 0
+    })
+  }
+}
+
+export function summarizeOnboardingHealth(rows: OnboardingHealthRow[]): OperatorWorkflowHealthSummary {
+  let deterministicVisible = 0
+  let shadowTraceCount = 0
+  let errorCount = 0
+  let lastTrace: string | null = null
+
+  for (const row of rows) {
+    const metadata = asRecord(row.metadata)
+    const shadowTrace = asRecord(metadata?.onboardingShadowAssistance)
+    const audit = getAiAutomationAudit(shadowTrace)
+
+    if (shadowTrace) {
+      deterministicVisible += 1
+      shadowTraceCount += 1
+
+      if (row.created_at && (!lastTrace || row.created_at > lastTrace)) {
+        lastTrace = row.created_at
+      }
+    }
+
+    if (audit?.resultState === 'error') {
+      errorCount += 1
+    }
+  }
+
+  return {
+    counts: {
+      aiDecisions: 0,
+      deterministicDecisions: deterministicVisible,
+      manualOverrides: 0
+    },
+    shadowTraceCount,
+    errorCount,
+    lastTrace,
+    note: buildOperatorWorkflowNote({
+      familyLabel: 'Onboarding',
+      outputLabel:
+        'Business onboarding assistance is recorded as a shadow-only advisory trace in latency_metrics.metadata',
+      approvalBoundaryLabel:
+        'Submission payload, publication state, verification state, featured or spotlight state, and billing outcomes still follow the deterministic onboarding path.',
       shadowTraceCount,
       errorCount,
       includeVisibleDeterministicNote: shadowTraceCount > 0

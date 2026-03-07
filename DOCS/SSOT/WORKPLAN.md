@@ -48,7 +48,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - AI Automation Definition And Rollout is now open as the next governed delivery slice.
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
 - `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
-- Current top priority: `AA-705`.
+- `AA-705` is now complete and business onboarding assistance records shadow-only advisory traces without changing submission, publication, verification, or billing outcomes.
+- Current top priority: `AA-706`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -538,7 +539,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No search intent, ranking, contact action, or emergency escalation path is silently changed by the shadow run.
   - The existing deterministic `/triage -> /search` journey remains the user-visible truth.
 
-**AA-705: Roll business onboarding assistance in shadow mode**
+**AA-705: Roll business onboarding assistance in shadow mode (completed 2026-03-07)**
 - Purpose: evaluate business-facing assistive automation on the listing-entry path without changing publication or monetisation behaviour.
 - Definition of done:
   - AI assistance for onboarding and listing-quality guidance runs in `shadow` mode only.
@@ -546,7 +547,16 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Featured-placement, billing, and spotlight state remain fully outside the automation scope.
   - Audit traces capture the suggested guidance and no-write final outcome.
 
+**AA-706: Roll business listing-quality guidance in shadow mode**
+- Purpose: evaluate business-facing listing-quality and trust-signal guidance on the existing business record without changing publication, verification, or monetisation state.
+- Definition of done:
+  - Listing-quality guidance runs in `shadow` mode only against the current business workflow path.
+  - Suggested guidance remains audit-only and does not edit a public listing or verification record.
+  - Operator visibility, if surfaced, is explicit that the workflow is non-publishing and non-billing.
+  - No featured, spotlight, checkout, or ranking outcome is changed by the shadow run.
+
 ## Execution Log
+- 2026-03-07: `AA-705` completed by attaching a shadow-only business onboarding assistance trace to the existing deterministic `/api/onboarding` submission path. The visible onboarding validation gates, submission payload semantics, publication state, verification state, featured or spotlight state, and billing outcomes remain deterministic; shadow advisory traces are stored in `latency_metrics.metadata`, and `/admin/ai-health` now reports the workflow explicitly as shadow-only and non-outcome-changing. `AA-706` is now the active priority.
 - 2026-03-07: `AA-704` completed by attaching a shadow-only owner triage-to-search advisory trace to the existing deterministic `/api/emergency/triage` handoff path. The visible `/triage -> /search` journey, search params, search results, ranking, and emergency escalation behaviour remain deterministic; audit metadata now records owner handoff advisory candidates and `/admin/ai-health` summarises those traces explicitly as non-user-visible shadow output. `AA-705` is now the active priority.
 - 2026-03-07: `AA-703` completed by aligning the existing operator automation families to one canonical control model. Review moderation now records draft-only recommendations and preserves the final operator action as a separate audit state instead of auto-applying review publication changes; ops digest shadow mode now records candidate summaries without replacing the visible deterministic digest; `/admin/reviews`, `/api/admin/reviews/*`, the admin overview digest card, and `/admin/ai-health` now distinguish advisory output, draft recommendations, final operator actions, and workflow-specific rollback/disable paths. `AA-704` is now the active priority.
 - 2026-03-07: `AA-702` completed by centralising AI mode resolution into one shared substrate, wiring structured audit envelopes into the existing triage, moderation, digest, and verification workflow storage paths, and updating `/admin/ai-health` to show effective mode, kill-switch state, and degraded visibility for the connected workflow families. Shadow-mode traces now record without changing final public or moderation outcomes. `AA-703` is now the active priority.

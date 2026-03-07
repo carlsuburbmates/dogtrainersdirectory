@@ -69,7 +69,8 @@
 | AA-702 | AI Automation Definition And Rollout | Establish the automation control and audit substrate | completed | backend + main-control | `WORKPLAN` `AA-702` | workflow mode resolution, audit trail, kill switches, and admin visibility exist before new actor-facing automation goes live |
 | AA-703 | AI Automation Definition And Rollout | Align operator automation families to the canonical control model | completed | backend + main-control | `WORKPLAN` `AA-703` | moderation, verification, and digest workflows use shared modes, approval boundaries, and audit/rollback rules |
 | AA-704 | AI Automation Definition And Rollout | Roll owner triage-to-search advisory automation in shadow mode | completed | frontend + backend | `WORKPLAN` `AA-704` | owner advisory guidance is auditable and shadow-only with no route or record side effects |
-| AA-705 | AI Automation Definition And Rollout | Roll business onboarding assistance in shadow mode | pending | frontend + backend | `WORKPLAN` `AA-705` | business guidance stays draft-only and cannot publish listings or change monetisation state |
+| AA-705 | AI Automation Definition And Rollout | Roll business onboarding assistance in shadow mode | completed | frontend + backend | `WORKPLAN` `AA-705` | business guidance stays draft-only and cannot publish listings or change monetisation state |
+| AA-706 | AI Automation Definition And Rollout | Roll business listing-quality guidance in shadow mode | in_progress | frontend + backend | `WORKPLAN` `AA-706` | listing-quality guidance stays audit-only and does not change publication, verification, or monetisation outcomes |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -84,7 +85,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AA-705`.
+- Current active priority: `AA-706`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

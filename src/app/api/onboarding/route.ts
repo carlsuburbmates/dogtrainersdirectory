@@ -4,7 +4,16 @@ import { encryptValue } from '@/lib/encryption'
 import abrLib from '@/lib/abr'
 import { recordAbnFallbackEvent } from '@/lib/abnFallback'
 import { recordLatencyMetric } from '@/lib/telemetryLatency'
-import { parseOnboardingPayload } from '@/lib/services/onboardingPayload'
+import { parseOnboardingPayload, type OnboardingPayload } from '@/lib/services/onboardingPayload'
+import { generateLLMResponse } from '@/lib/llm'
+import { buildAiAutomationAuditEvent, resolveAiAutomationMode } from '@/lib/ai-automation'
+import {
+  buildOnboardingShadowPrompt,
+  parseOnboardingShadowCandidate,
+  type OnboardingShadowCandidate
+} from '@/lib/onboardingShadowAssistance'
+
+const ONBOARDING_ASSISTANCE_PROMPT_VERSION = 'onboarding-shadow-v1'
 
 const normalize = (value?: string) =>
   (value || '').replace(/\D/g, '').trim()
@@ -15,8 +24,131 @@ const computeSimilarity = (abn: string) => {
   return value.startsWith('12') ? 0.92 : value.length >= 9 ? 0.86 : 0.78
 }
 
+type OnboardingShadowAssistanceTrace = {
+  aiAutomationAudit: Record<string, unknown>
+  advisoryCandidate?: OnboardingShadowCandidate
+  visibleOutcome: {
+    submissionPayloadChanged: false
+    publicationOutcomeChanged: false
+    verificationOutcomeChanged: false
+    monetizationOutcomeChanged: false
+    featuredStateChanged: false
+    spotlightStateChanged: false
+  }
+}
+
+async function runOnboardingShadowAssistance(input: OnboardingPayload): Promise<{
+  candidate: OnboardingShadowCandidate | null
+  decisionSource: 'llm' | 'deterministic'
+  provider: string | null
+  model: string | null
+  resultState: 'result' | 'no_result' | 'error'
+  errorMessage: string | null
+}> {
+  const llmResponse = await generateLLMResponse({
+    systemPrompt:
+      'You are assessing a dog trainer onboarding submission for audit-only listing-quality advice. Respond with JSON only.',
+    userPrompt: buildOnboardingShadowPrompt(input)
+  })
+
+  if (llmResponse.provider === 'deterministic') {
+    return {
+      candidate: null,
+      decisionSource: 'deterministic',
+      provider: llmResponse.provider ?? null,
+      model: llmResponse.model ?? null,
+      resultState: 'no_result',
+      errorMessage: llmResponse.text
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(llmResponse.text)
+    const candidate = parseOnboardingShadowCandidate(parsed)
+
+    return {
+      candidate,
+      decisionSource: 'llm',
+      provider: llmResponse.provider ?? null,
+      model: llmResponse.model ?? null,
+      resultState: candidate ? 'result' : 'no_result',
+      errorMessage: candidate ? null : 'No onboarding advisory candidate was produced.'
+    }
+  } catch {
+    return {
+      candidate: null,
+      decisionSource: 'llm',
+      provider: llmResponse.provider ?? null,
+      model: llmResponse.model ?? null,
+      resultState: 'error',
+      errorMessage: 'Invalid JSON response from onboarding shadow assistant'
+    }
+  }
+}
+
+function buildOnboardingShadowTrace(input: {
+  effectiveMode: 'shadow'
+  resultState: 'result' | 'no_result' | 'error'
+  decisionSource: 'llm' | 'deterministic'
+  errorMessage: string | null
+  candidate: OnboardingShadowCandidate | null
+  businessId?: number | null
+}): OnboardingShadowAssistanceTrace {
+  const summary =
+    input.resultState === 'result'
+      ? 'Shadow onboarding assistance recorded while submission, publication, verification, and billing outcomes remained deterministic.'
+      : input.resultState === 'error'
+        ? 'Shadow onboarding assistance failed while submission, publication, verification, and billing outcomes remained deterministic.'
+        : 'Shadow onboarding assistance produced no candidate while submission, publication, verification, and billing outcomes remained deterministic.'
+
+  return {
+    aiAutomationAudit: buildAiAutomationAuditEvent({
+      workflowFamily: 'onboarding',
+      actorClass: 'business',
+      effectiveMode: input.effectiveMode,
+      approvalState: 'not_required',
+      resultState: input.resultState,
+      decisionSource: input.decisionSource,
+      routeOrJob: '/api/onboarding',
+      summary,
+      errorMessage: input.errorMessage,
+      resultingRecordReferences: [
+        {
+          table: 'latency_metrics',
+          field: 'metadata.onboardingShadowAssistance'
+        },
+        ...(input.businessId
+          ? [{ table: 'businesses', id: input.businessId }]
+          : [])
+      ],
+      notes: [
+        'Visible onboarding validation and submission payload semantics remained deterministic.',
+        'Publication, verification, featured, spotlight, and billing outcomes remained unchanged.'
+      ]
+    }),
+    ...(input.candidate ? { advisoryCandidate: input.candidate } : {}),
+    visibleOutcome: {
+      submissionPayloadChanged: false,
+      publicationOutcomeChanged: false,
+      verificationOutcomeChanged: false,
+      monetizationOutcomeChanged: false,
+      featuredStateChanged: false,
+      spotlightStateChanged: false
+    }
+  }
+}
+
 export async function POST(request: Request) {
   const start = Date.now()
+  let onboardingShadowTrace: OnboardingShadowAssistanceTrace | null = null
+  let onboardingAiProvider: string | null = null
+  let onboardingAiModel: string | null = null
+  let onboardingAiPromptVersion: string | null = null
+  let onboardingShadowResultState: 'result' | 'no_result' | 'error' = 'no_result'
+  let onboardingShadowDecisionSource: 'llm' | 'deterministic' = 'deterministic'
+  let onboardingShadowErrorMessage: string | null = null
+  let onboardingShadowCandidate: OnboardingShadowCandidate | null = null
+
   const finish = async (status: number, success: boolean, metadata?: Record<string, unknown>) => {
     await recordLatencyMetric({
       area: 'onboarding_api',
@@ -43,6 +175,26 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       )
+    }
+
+    const modeResolution = resolveAiAutomationMode('onboarding')
+
+    if (modeResolution.effectiveMode === 'shadow') {
+      const assistance = await runOnboardingShadowAssistance(parsedBody.data)
+      onboardingAiProvider = assistance.provider
+      onboardingAiModel = assistance.model
+      onboardingAiPromptVersion = ONBOARDING_ASSISTANCE_PROMPT_VERSION
+      onboardingShadowResultState = assistance.resultState
+      onboardingShadowDecisionSource = assistance.decisionSource
+      onboardingShadowErrorMessage = assistance.errorMessage
+      onboardingShadowCandidate = assistance.candidate
+      onboardingShadowTrace = buildOnboardingShadowTrace({
+        effectiveMode: 'shadow',
+        resultState: onboardingShadowResultState,
+        decisionSource: onboardingShadowDecisionSource,
+        errorMessage: onboardingShadowErrorMessage,
+        candidate: onboardingShadowCandidate
+      })
     }
 
     const {
@@ -72,7 +224,14 @@ export async function POST(request: Request) {
     })
     const user = (userData as any)?.user ?? userData
     if (createError || !user?.id) {
-      await finish(500, false, { reason: 'user_create_failed', message: createError?.message })
+      await finish(500, false, {
+        reason: 'user_create_failed',
+        message: createError?.message,
+        onboardingShadowAssistance: onboardingShadowTrace,
+        onboardingAiProvider,
+        onboardingAiModel,
+        onboardingAiPromptVersion
+      })
       return NextResponse.json(
         { error: 'Failed to create user account', message: createError?.message },
         { status: 500 }
@@ -80,7 +239,13 @@ export async function POST(request: Request) {
     }
     // Server-side ABN validation and authoritative ABR lookup
     if (!abrLib.isValidAbn(abn)) {
-      await finish(400, false, { reason: 'invalid_abn' })
+      await finish(400, false, {
+        reason: 'invalid_abn',
+        onboardingShadowAssistance: onboardingShadowTrace,
+        onboardingAiProvider,
+        onboardingAiModel,
+        onboardingAiPromptVersion
+      })
       return NextResponse.json({ error: 'Invalid ABN format' }, { status: 400 })
     }
 
@@ -153,11 +318,28 @@ export async function POST(request: Request) {
     }
 
     if (!business || businessErr) {
-      await finish(500, false, { reason: 'business_insert_failed' })
+      await finish(500, false, {
+        reason: 'business_insert_failed',
+        onboardingShadowAssistance: onboardingShadowTrace,
+        onboardingAiProvider,
+        onboardingAiModel,
+        onboardingAiPromptVersion
+      })
       return NextResponse.json({ error: 'Failed to create business record' }, { status: 500 })
     }
 
     const businessId = business.id as number
+
+    if (onboardingShadowTrace) {
+      onboardingShadowTrace = buildOnboardingShadowTrace({
+        effectiveMode: 'shadow',
+        resultState: onboardingShadowResultState,
+        decisionSource: onboardingShadowDecisionSource,
+        errorMessage: onboardingShadowErrorMessage,
+        candidate: onboardingShadowCandidate,
+        businessId
+      })
+    }
 
     if (fallbackReason) {
       await recordAbnFallbackEvent({
@@ -210,11 +392,24 @@ export async function POST(request: Request) {
       await abnInsertCall
     }
 
-    await finish(200, true, { businessId, abnStatus })
+    await finish(200, true, {
+      businessId,
+      abnStatus,
+      onboardingShadowAssistance: onboardingShadowTrace,
+      onboardingAiProvider,
+      onboardingAiModel,
+      onboardingAiPromptVersion
+    })
     return NextResponse.json({ success: true, trainer_id: user.id, business_id: businessId, abn_status: abnStatus })
   } catch (error: any) {
     console.error('Onboarding error', error)
-    await finish(500, false, { error: error?.message })
+    await finish(500, false, {
+      error: error?.message,
+      onboardingShadowAssistance: onboardingShadowTrace,
+      onboardingAiProvider,
+      onboardingAiModel,
+      onboardingAiPromptVersion
+    })
     return NextResponse.json({ error: 'Internal error', message: error?.message ?? 'unknown' }, { status: 500 })
   }
 }

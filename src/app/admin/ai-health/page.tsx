@@ -10,6 +10,7 @@ import {
 } from '@/lib/ai-automation'
 import {
   normalizeDecisionSourceCounts,
+  summarizeOnboardingHealth,
   summarizeModerationHealth,
   summarizeDigestHealth,
   summarizeTriageHealth,
@@ -314,6 +315,36 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
         manualOverrides: digestSummary.counts.manualOverrides,
         errors24h: digestSummary.errorCount,
         note: `${digestSummary.note} Rollback/disable: ${digestControl?.rollbackLabel}`,
+        auditConnected: true
+      })
+    )
+  }
+
+  const onboardingRows = await supabaseAdmin
+    .from('latency_metrics')
+    .select('created_at, metadata')
+    .eq('area', 'onboarding_api')
+    .eq('route', '/api/onboarding')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+  if (onboardingRows.error) {
+    healthData.push(
+      toHealthRow('onboarding', 'Business Onboarding', {
+        lastSuccess: null,
+        note: 'Onboarding shadow audit traces are not available yet.',
+        auditConnected: true
+      })
+    )
+  } else {
+    const onboardingSummary = summarizeOnboardingHealth(onboardingRows.data ?? [])
+    healthData.push(
+      toHealthRow('onboarding', 'Business Onboarding', {
+        lastSuccess: onboardingSummary.lastTrace,
+        aiDecisions: onboardingSummary.counts.aiDecisions,
+        deterministicDecisions: onboardingSummary.counts.deterministicDecisions,
+        manualOverrides: onboardingSummary.counts.manualOverrides,
+        errors24h: onboardingSummary.errorCount,
+        note: onboardingSummary.note,
         auditConnected: true
       })
     )

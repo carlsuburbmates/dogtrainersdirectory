@@ -31,6 +31,17 @@ describe('ai automation substrate', () => {
     expect(resolution.killSwitchActive).toBe(true)
   })
 
+  it('clamps onboarding to shadow even when the global mode is live', () => {
+    const resolution = resolveAiAutomationMode('onboarding', env({
+      AI_GLOBAL_MODE: 'live'
+    }))
+
+    expect(resolution.overrideMode).toBeNull()
+    expect(resolution.effectiveMode).toBe('shadow')
+    expect(resolution.auditStorage).toBe('latency_metrics')
+    expect(resolution.usesGlobalDefault).toBe(true)
+  })
+
   it('marks llm-backed workflows as degraded when the provider is not configured', () => {
     const resolution = resolveAiAutomationMode('ops_digest', env({
       AI_GLOBAL_MODE: 'shadow'

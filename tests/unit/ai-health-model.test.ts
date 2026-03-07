@@ -3,6 +3,7 @@ import {
   normalizeDecisionSourceCounts,
   summarizeModerationHealth,
   summarizeDigestHealth,
+  summarizeOnboardingHealth,
   summarizeTriageHealth,
   summarizeVerificationHealth,
   toAiPercentage
@@ -228,5 +229,86 @@ describe('ai-health model helpers', () => {
     expect(summary.errorCount).toBe(0)
     expect(summary.note).toContain('Ops digest output is advisory only')
     expect(summary.note).toContain('No external action is executed from the digest by itself')
+  })
+
+  it('summarises onboarding shadow traces as non-outcome-changing business assistance', () => {
+    const summary = summarizeOnboardingHealth([
+      {
+        created_at: '2026-03-07T08:30:00.000Z',
+        metadata: {
+          requestPath: '/api/onboarding',
+          step: 'submit'
+        }
+      },
+      {
+        created_at: '2026-03-07T09:00:00.000Z',
+        metadata: {
+          onboardingShadowAssistance: {
+            aiAutomationAudit: {
+              resultState: 'result'
+            },
+            advisoryCandidate: {
+              summary: 'Add a clearer bio and public website.'
+            }
+          }
+        }
+      },
+      {
+        created_at: '2026-03-07T10:00:00.000Z',
+        metadata: {
+          onboardingShadowAssistance: {
+            aiAutomationAudit: {
+              resultState: 'error'
+            }
+          }
+        }
+      }
+    ])
+
+    expect(summary.counts).toEqual({
+      aiDecisions: 0,
+      deterministicDecisions: 2,
+      manualOverrides: 0
+    })
+    expect(summary.shadowTraceCount).toBe(2)
+    expect(summary.errorCount).toBe(1)
+    expect(summary.lastTrace).toBe('2026-03-07T10:00:00.000Z')
+    expect(summary.note).toContain('Business onboarding assistance is recorded as a shadow-only advisory trace')
+    expect(summary.note).toContain('publication state, verification state, featured or spotlight state, and billing outcomes still follow the deterministic onboarding path')
+    expect(summary.note).toContain('Shadow traces did not replace the visible deterministic outcome')
+  })
+
+  it('uses only real onboarding shadow traces for the onboarding last-trace summary', () => {
+    const summary = summarizeOnboardingHealth([
+      {
+        created_at: '2026-03-07T11:30:00.000Z',
+        metadata: {
+          requestPath: '/api/onboarding',
+          step: 'submit'
+        }
+      },
+      {
+        created_at: '2026-03-07T10:45:00.000Z',
+        metadata: {
+          onboardingShadowAssistance: {
+            aiAutomationAudit: {
+              resultState: 'result'
+            },
+            advisoryCandidate: {
+              summary: 'Clarify service areas before publication review.'
+            }
+          }
+        }
+      }
+    ])
+
+    expect(summary.counts).toEqual({
+      aiDecisions: 0,
+      deterministicDecisions: 1,
+      manualOverrides: 0
+    })
+    expect(summary.shadowTraceCount).toBe(1)
+    expect(summary.errorCount).toBe(0)
+    expect(summary.lastTrace).toBe('2026-03-07T10:45:00.000Z')
   })
 })

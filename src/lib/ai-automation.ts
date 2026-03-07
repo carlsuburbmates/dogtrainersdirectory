@@ -1,6 +1,11 @@
-import type { DecisionMode, DecisionSource, LlmPipeline } from './ai-types'
+import type { DecisionMode, DecisionSource } from './ai-types'
 
-export type AiAutomationWorkflow = LlmPipeline
+export type AiAutomationWorkflow =
+  | 'triage'
+  | 'moderation'
+  | 'verification'
+  | 'ops_digest'
+  | 'onboarding'
 export type AiAutomationActorClass = 'owner' | 'business' | 'operator'
 export type AiAutomationApprovalState =
   | 'not_required'
@@ -39,9 +44,10 @@ type WorkflowConfig = {
   overrideEnvVar: keyof Pick<
     NodeJS.ProcessEnv,
     'TRIAGE_AI_MODE' | 'MODERATION_AI_MODE' | 'VERIFICATION_AI_MODE' | 'DIGEST_AI_MODE'
-  >
+  > | null
   usesLlm: boolean
   auditStorage: string | null
+  maxMode: DecisionMode
 }
 
 const DEFAULT_MODE: DecisionMode = 'live'
@@ -52,28 +58,40 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     actorClass: 'owner',
     overrideEnvVar: 'TRIAGE_AI_MODE',
     usesLlm: true,
-    auditStorage: 'emergency_triage_logs'
+    auditStorage: 'emergency_triage_logs',
+    maxMode: 'live'
   },
   moderation: {
     label: 'Review Moderation',
     actorClass: 'operator',
     overrideEnvVar: 'MODERATION_AI_MODE',
     usesLlm: false,
-    auditStorage: 'ai_review_decisions'
+    auditStorage: 'ai_review_decisions',
+    maxMode: 'live'
   },
   verification: {
     label: 'Resource Verification',
     actorClass: 'operator',
     overrideEnvVar: 'VERIFICATION_AI_MODE',
     usesLlm: true,
-    auditStorage: 'emergency_resource_verification_events'
+    auditStorage: 'emergency_resource_verification_events',
+    maxMode: 'live'
   },
   ops_digest: {
     label: 'Ops Digest',
     actorClass: 'operator',
     overrideEnvVar: 'DIGEST_AI_MODE',
     usesLlm: true,
-    auditStorage: 'daily_ops_digests'
+    auditStorage: 'daily_ops_digests',
+    maxMode: 'live'
+  },
+  onboarding: {
+    label: 'Business Onboarding',
+    actorClass: 'business',
+    overrideEnvVar: null,
+    usesLlm: true,
+    auditStorage: 'latency_metrics',
+    maxMode: 'shadow'
   }
 }
 
@@ -120,9 +138,11 @@ export function resolveAiAutomationMode(
 ): AiAutomationModeResolution {
   const config = WORKFLOW_CONFIG[workflow]
   const globalMode = normaliseDecisionMode(env.AI_GLOBAL_MODE, DEFAULT_MODE)
-  const overrideRaw = env[config.overrideEnvVar]
+  const overrideRaw = config.overrideEnvVar ? env[config.overrideEnvVar] : null
   const overrideMode = isDecisionMode(overrideRaw) ? overrideRaw : null
-  const effectiveMode = overrideMode ?? globalMode
+  const requestedMode = overrideMode ?? globalMode
+  const effectiveMode =
+    config.maxMode === 'shadow' && requestedMode === 'live' ? 'shadow' : requestedMode
 
   return {
     workflow,
@@ -221,7 +241,11 @@ export function mergeAiAutomationAuditMetadata(
 }
 
 export function describeModeSource(resolution: AiAutomationModeResolution): string {
-  return resolution.usesGlobalDefault ? 'Global default' : resolution.overrideEnvVar
+  if (resolution.usesGlobalDefault || !resolution.overrideEnvVar) {
+    return 'Global default'
+  }
+
+  return resolution.overrideEnvVar
 }
 
 export function getAiAutomationOperatorControl(
