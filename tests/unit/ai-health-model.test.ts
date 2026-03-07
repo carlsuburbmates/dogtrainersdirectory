@@ -86,6 +86,14 @@ describe('ai-health model helpers', () => {
           },
           shadowCandidate: {
             classification: 'medical'
+          },
+          ownerSearchHandoff: {
+            aiAutomationAudit: {
+              resultState: 'result'
+            },
+            advisoryCandidate: {
+              summary: 'Audit-only owner handoff advice'
+            }
           }
         }
       }
@@ -99,12 +107,16 @@ describe('ai-health model helpers', () => {
     expect(summary.shadowTraceCount).toBe(3)
     expect(summary.shadowErrorCount).toBe(1)
     expect(summary.shadowDisagreementCount).toBe(1)
+    expect(summary.handoffShadowTraceCount).toBe(1)
+    expect(summary.handoffShadowErrorCount).toBe(0)
     expect(summary.lastTrace).toBe('2026-03-07T10:45:00.000Z')
     expect(summary.note).toContain('Visible decision counts come from emergency_triage_logs.decision_source.')
-    expect(summary.note).toContain('3 shadow traces recorded')
+    expect(summary.note).toContain('3 emergency triage shadow traces recorded')
     expect(summary.note).toContain('1 differed from the visible deterministic outcome')
     expect(summary.note).toContain('1 ended in an AI error')
     expect(summary.note).toContain('did not change the visible outcome')
+    expect(summary.note).toContain('1 triage-to-search advisory shadow trace recorded')
+    expect(summary.note).toContain('did not change visible search params or results')
   })
 
   it('summarises verification traces from audit metadata as draft recommendations', () => {

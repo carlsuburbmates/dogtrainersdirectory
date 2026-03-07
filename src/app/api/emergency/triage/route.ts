@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
 import {
+  buildAiAutomationAuditEvent,
   mergeAiAutomationAuditMetadata,
   resolveAiAutomationMode
 } from '@/lib/ai-automation'
 import type { DecisionMode, DecisionSource } from '@/lib/ai-types'
 import { detectMedicalEmergency } from '@/lib/medicalDetector'
+import {
+  buildTriageShadowEvaluationPrompt,
+  parseOwnerSearchHandoffShadowCandidate,
+  type OwnerSearchHandoffShadowCandidate
+} from '@/lib/triageSearchHandoff'
 import {
   buildEmergencyTriageLogInsert,
   normaliseEmergencyClassificationForPersistence
@@ -22,6 +28,16 @@ type TriageOutcome = {
   classification: string
   priority: string
   followUpActions: string[]
+}
+
+type OwnerSearchHandoffShadowTrace = {
+  aiAutomationAudit: Record<string, unknown>
+  advisoryCandidate?: OwnerSearchHandoffShadowCandidate
+  visibleOutcome: {
+    searchParamsChanged: false
+    searchResultsChanged: false
+    emergencyEscalationChanged: false
+  }
 }
 
 function buildDeterministicTriageOutcome(situation: string): TriageOutcome {
@@ -67,30 +83,26 @@ async function runAiTriageEvaluation(input: {
   situation: string
   location: string | null
   contact: string | null
+  age: string | null
+  issues: string[] | null
 }): Promise<{
   outcome: TriageOutcome | null
+  searchAdvisory: OwnerSearchHandoffShadowCandidate | null
   decisionSource: DecisionSource
   provider: string | null
   model: string | null
   resultState: 'result' | 'no_result' | 'error'
   errorMessage: string | null
 }> {
-  const prompt = `Classify this dog emergency situation into one of these categories: "medical", "stray", "crisis", or "normal".
-
-Situation: ${input.situation}
-Location: ${input.location || 'Not provided'}
-Contact: ${input.contact || 'Not provided'}
-
-Return JSON: {"classification":"medical|stray|crisis|normal","priority":"high|medium|low","followUpActions":["action1","action2"]}`
-
   const llmResponse = await generateLLMResponse({
     systemPrompt: 'You are classifying dog emergency situations. Respond with JSON only.',
-    userPrompt: prompt
+    userPrompt: buildTriageShadowEvaluationPrompt(input)
   })
 
   if (llmResponse.provider === 'deterministic') {
     return {
       outcome: null,
+      searchAdvisory: null,
       decisionSource: 'deterministic',
       provider: llmResponse.provider ?? null,
       model: llmResponse.model ?? null,
@@ -109,6 +121,7 @@ Return JSON: {"classification":"medical|stray|crisis|normal","priority":"high|me
           ? aiResult.followUpActions
           : []
       },
+      searchAdvisory: parseOwnerSearchHandoffShadowCandidate(aiResult.searchAdvisory),
       decisionSource: 'llm',
       provider: llmResponse.provider ?? null,
       model: llmResponse.model ?? null,
@@ -118,11 +131,58 @@ Return JSON: {"classification":"medical|stray|crisis|normal","priority":"high|me
   } catch {
     return {
       outcome: null,
+      searchAdvisory: null,
       decisionSource: 'llm',
       provider: llmResponse.provider ?? null,
       model: llmResponse.model ?? null,
       resultState: 'error',
       errorMessage: 'Invalid JSON response from emergency triage model'
+    }
+  }
+}
+
+function buildOwnerSearchHandoffShadowTrace(input: {
+  effectiveMode: DecisionMode
+  actorClass: 'owner'
+  decisionSource: DecisionSource
+  resultState: 'result' | 'no_result' | 'error'
+  errorMessage: string | null
+  advisoryCandidate: OwnerSearchHandoffShadowCandidate | null
+}): OwnerSearchHandoffShadowTrace {
+  const summary =
+    input.resultState === 'result'
+      ? 'Shadow owner search advisory recorded while deterministic /triage -> /search remained the visible outcome.'
+      : input.resultState === 'error'
+        ? 'Shadow owner search advisory failed while deterministic /triage -> /search remained the visible outcome.'
+        : 'Shadow owner search advisory produced no candidate while deterministic /triage -> /search remained the visible outcome.'
+
+  return {
+    aiAutomationAudit: buildAiAutomationAuditEvent({
+      workflowFamily: 'triage',
+      actorClass: input.actorClass,
+      effectiveMode: input.effectiveMode,
+      approvalState: 'not_required',
+      resultState: input.resultState,
+      decisionSource: input.decisionSource,
+      routeOrJob: '/triage -> /search',
+      summary,
+      errorMessage: input.errorMessage,
+      resultingRecordReferences: [
+        {
+          table: 'emergency_triage_logs',
+          field: 'metadata.ownerSearchHandoff'
+        }
+      ],
+      notes: [
+        'Visible search intent and params remained deterministic.',
+        'Visible search results and ranking remained unchanged.'
+      ]
+    }),
+    ...(input.advisoryCandidate ? { advisoryCandidate: input.advisoryCandidate } : {}),
+    visibleOutcome: {
+      searchParamsChanged: false,
+      searchResultsChanged: false,
+      emergencyEscalationChanged: false
     }
   }
 }
@@ -167,6 +227,7 @@ export async function POST(request: Request) {
     let aiProvider: string | null = null
     let aiModel: string | null = null
     let shadowOutcome: TriageOutcome | null = null
+    let ownerSearchHandoff: OwnerSearchHandoffShadowTrace | null = null
 
     if (
       modeResolution.effectiveMode === 'live' ||
@@ -175,7 +236,9 @@ export async function POST(request: Request) {
       const aiEvaluation = await runAiTriageEvaluation({
         situation,
         location,
-        contact
+        contact,
+        age: dogAge,
+        issues
       })
 
       auditDecisionSource = aiEvaluation.decisionSource
@@ -190,6 +253,33 @@ export async function POST(request: Request) {
         } else {
           shadowOutcome = aiEvaluation.outcome
         }
+      }
+
+      if (
+        modeResolution.effectiveMode === 'shadow' &&
+        deterministicOutcome.classification === 'normal'
+      ) {
+        ownerSearchHandoff = buildOwnerSearchHandoffShadowTrace({
+          effectiveMode: modeResolution.effectiveMode,
+          actorClass: 'owner',
+          decisionSource:
+            aiEvaluation.resultState === 'result' && aiEvaluation.searchAdvisory
+              ? 'llm'
+              : aiEvaluation.decisionSource,
+          resultState:
+            aiEvaluation.resultState === 'result' && aiEvaluation.searchAdvisory
+              ? 'result'
+              : aiEvaluation.resultState === 'error'
+                ? 'error'
+                : 'no_result',
+          errorMessage:
+            aiEvaluation.resultState === 'error'
+              ? aiEvaluation.errorMessage
+              : aiEvaluation.resultState === 'result' && !aiEvaluation.searchAdvisory
+                ? 'No owner search advisory candidate was produced.'
+                : null,
+          advisoryCandidate: aiEvaluation.searchAdvisory
+        })
       }
     }
 
@@ -249,9 +339,12 @@ export async function POST(request: Request) {
                       classification: shadowOutcome.classification,
                       priority: shadowOutcome.priority,
                       followUpActions: shadowOutcome.followUpActions
-                    }
+                    },
+                    ...(ownerSearchHandoff ? { ownerSearchHandoff } : {})
                   }
-                : undefined
+                : ownerSearchHandoff
+                  ? { ownerSearchHandoff }
+                  : undefined
             )
           })
         )

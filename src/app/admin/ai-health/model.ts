@@ -24,6 +24,8 @@ export type TriageHealthSummary = {
   shadowTraceCount: number
   shadowErrorCount: number
   shadowDisagreementCount: number
+  handoffShadowTraceCount: number
+  handoffShadowErrorCount: number
   lastTrace: string | null
   note: string
 }
@@ -60,6 +62,10 @@ type TriageAuditRecord = {
 
 type TriageShadowCandidate = {
   classification?: string
+}
+
+type OwnerSearchHandoffTrace = {
+  resultState?: string
 }
 
 export function normalizeDecisionSourceCounts(counts: DecisionSourceCounts): NormalizedDecisionCounts {
@@ -117,19 +123,41 @@ function getShadowCandidate(row: TriageHealthRow): TriageShadowCandidate | null 
   }
 }
 
+function getOwnerSearchHandoffTrace(row: TriageHealthRow): OwnerSearchHandoffTrace | null {
+  const metadata = asRecord(row.metadata)
+  const handoff = asRecord(metadata?.ownerSearchHandoff)
+  const audit = asRecord(handoff?.aiAutomationAudit)
+
+  if (!audit) {
+    return null
+  }
+
+  return {
+    resultState: typeof audit.resultState === 'string' ? audit.resultState : undefined
+  }
+}
+
 function buildTriageHealthNote(summary: {
   shadowTraceCount: number
   shadowErrorCount: number
   shadowDisagreementCount: number
+  handoffShadowTraceCount: number
+  handoffShadowErrorCount: number
 }): string {
   const intro =
     'Visible decision counts come from emergency_triage_logs.decision_source. Shadow AI traces are summarised separately from audit metadata.'
 
-  if (summary.shadowTraceCount <= 0) {
+  if (summary.shadowTraceCount <= 0 && summary.handoffShadowTraceCount <= 0) {
     return `${intro} No triage shadow traces were recorded in the last 24h.`
   }
 
-  const parts = [`${summary.shadowTraceCount} shadow trace${summary.shadowTraceCount === 1 ? '' : 's'} recorded`]
+  const parts: string[] = []
+
+  if (summary.shadowTraceCount > 0) {
+    parts.push(
+      `${summary.shadowTraceCount} emergency triage shadow trace${summary.shadowTraceCount === 1 ? '' : 's'} recorded`
+    )
+  }
 
   if (summary.shadowDisagreementCount > 0) {
     parts.push(
@@ -141,7 +169,19 @@ function buildTriageHealthNote(summary: {
     parts.push(`${summary.shadowErrorCount} ended in an AI error`)
   }
 
-  return `${intro} ${parts.join('; ')}. Shadow traces did not change the visible outcome.`
+  if (summary.handoffShadowTraceCount > 0) {
+    parts.push(
+      `${summary.handoffShadowTraceCount} triage-to-search advisory shadow trace${summary.handoffShadowTraceCount === 1 ? '' : 's'} recorded`
+    )
+  }
+
+  if (summary.handoffShadowErrorCount > 0) {
+    parts.push(
+      `${summary.handoffShadowErrorCount} triage-to-search advisory trace${summary.handoffShadowErrorCount === 1 ? '' : 's'} ended in an AI error`
+    )
+  }
+
+  return `${intro} ${parts.join('; ')}. Shadow traces did not change the visible outcome. Triage-to-search advisories did not change visible search params or results.`
 }
 
 export function summarizeTriageHealth(rows: TriageHealthRow[]): TriageHealthSummary {
@@ -152,12 +192,15 @@ export function summarizeTriageHealth(rows: TriageHealthRow[]): TriageHealthSumm
   let shadowTraceCount = 0
   let shadowErrorCount = 0
   let shadowDisagreementCount = 0
+  let handoffShadowTraceCount = 0
+  let handoffShadowErrorCount = 0
   let lastTrace: string | null = null
 
   for (const row of rows) {
     const decisionSource = row.decision_source
     const audit = getTriageAuditRecord(row)
     const shadowCandidate = getShadowCandidate(row)
+    const ownerSearchHandoff = getOwnerSearchHandoffTrace(row)
 
     if (decisionSource === 'llm') {
       llm += 1
@@ -188,6 +231,14 @@ export function summarizeTriageHealth(rows: TriageHealthRow[]): TriageHealthSumm
         shadowDisagreementCount += 1
       }
     }
+
+    if (row.ai_mode === 'shadow' && ownerSearchHandoff) {
+      handoffShadowTraceCount += 1
+
+      if (ownerSearchHandoff.resultState === 'error') {
+        handoffShadowErrorCount += 1
+      }
+    }
   }
 
   const counts = normalizeDecisionSourceCounts({
@@ -202,11 +253,15 @@ export function summarizeTriageHealth(rows: TriageHealthRow[]): TriageHealthSumm
     shadowTraceCount,
     shadowErrorCount,
     shadowDisagreementCount,
+    handoffShadowTraceCount,
+    handoffShadowErrorCount,
     lastTrace,
     note: buildTriageHealthNote({
       shadowTraceCount,
       shadowErrorCount,
-      shadowDisagreementCount
+      shadowDisagreementCount,
+      handoffShadowTraceCount,
+      handoffShadowErrorCount
     })
   }
 }

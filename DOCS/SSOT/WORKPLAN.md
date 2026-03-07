@@ -47,7 +47,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AA-701` is now complete and `DOCS/SSOT/07_AI_AUTOMATION.md` defines the canonical cross-actor AI Automation programme for DTD.
 - AI Automation Definition And Rollout is now open as the next governed delivery slice.
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
-- Current top priority: `AA-704`.
+- `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
+- Current top priority: `AA-705`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -529,7 +530,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Externally meaningful outcomes still require operator approval and leave a reconstructable audit trail.
   - Rollback and disable procedures are explicit for each operator workflow family in scope.
 
-**AA-704: Roll owner triage-to-search advisory automation in shadow mode**
+**AA-704: Roll owner triage-to-search advisory automation in shadow mode (completed 2026-03-07)**
 - Purpose: evaluate owner-facing automation on the core DTD public journey without changing route behaviour or writing final product state.
 - Definition of done:
   - Owner-side AI output for triage-to-search handoff runs in `shadow` mode only.
@@ -546,6 +547,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Audit traces capture the suggested guidance and no-write final outcome.
 
 ## Execution Log
+- 2026-03-07: `AA-704` completed by attaching a shadow-only owner triage-to-search advisory trace to the existing deterministic `/api/emergency/triage` handoff path. The visible `/triage -> /search` journey, search params, search results, ranking, and emergency escalation behaviour remain deterministic; audit metadata now records owner handoff advisory candidates and `/admin/ai-health` summarises those traces explicitly as non-user-visible shadow output. `AA-705` is now the active priority.
 - 2026-03-07: `AA-703` completed by aligning the existing operator automation families to one canonical control model. Review moderation now records draft-only recommendations and preserves the final operator action as a separate audit state instead of auto-applying review publication changes; ops digest shadow mode now records candidate summaries without replacing the visible deterministic digest; `/admin/reviews`, `/api/admin/reviews/*`, the admin overview digest card, and `/admin/ai-health` now distinguish advisory output, draft recommendations, final operator actions, and workflow-specific rollback/disable paths. `AA-704` is now the active priority.
 - 2026-03-07: `AA-702` completed by centralising AI mode resolution into one shared substrate, wiring structured audit envelopes into the existing triage, moderation, digest, and verification workflow storage paths, and updating `/admin/ai-health` to show effective mode, kill-switch state, and degraded visibility for the connected workflow families. Shadow-mode traces now record without changing final public or moderation outcomes. `AA-703` is now the active priority.
 - 2026-03-07: `AA-701` completed by rewriting `DOCS/SSOT/07_AI_AUTOMATION.md` from a narrow modes-and-pipelines note into the canonical DTD AI Automation programme definition. The new canon now covers owner-facing, business-facing, and operator-facing workflow scope; advisory/assistive/write-capable classes; `disabled`/`shadow`/`live` mode semantics; approval boundaries; kill switches; audit requirements; and explicit non-goals. Phase 11 is now open with `AA-702` as the next active priority.

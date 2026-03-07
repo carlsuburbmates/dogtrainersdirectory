@@ -15,6 +15,7 @@ import {
   parseCanonicalSuburbId,
   rehydrateTriageLocation
 } from '@/lib/triageLocation'
+import { buildTriageSearchHandoffParams } from '@/lib/triageSearchHandoff'
 import {
   Badge,
   Capsule,
@@ -40,12 +41,6 @@ const stepLabels: Record<(typeof steps)[number], string> = {
   issues: 'Issues',
   location: 'Location',
   review: 'Review'
-}
-
-const mapRadiusToDistance = (radius: number) => {
-  if (radius <= 5) return '0-5'
-  if (radius <= 15) return '5-15'
-  return 'greater'
 }
 
 const buildSituationSummary = (age: AgeSpecialty, issues: BehaviorIssue[]) => {
@@ -210,17 +205,12 @@ function TriageContent() {
         return
       }
 
-      const qs = new URLSearchParams()
-      qs.set('age_specialties', payload.age)
-      if (payload.issues.length > 0) qs.set('behavior_issues', payload.issues.join(','))
-      qs.set('distance', mapRadiusToDistance(payload.radius))
-      qs.set('lat', String(selectedSuburb.latitude))
-      qs.set('lng', String(selectedSuburb.longitude))
-      qs.set('suburbId', String(selectedSuburb.id))
-      qs.set('suburbName', selectedSuburb.name)
-      qs.set('postcode', selectedSuburb.postcode)
-      qs.set('councilId', String(selectedSuburb.council_id))
-      qs.set('flow_source', 'triage')
+      const qs = buildTriageSearchHandoffParams({
+        age: payload.age,
+        issues: payload.issues,
+        radius: payload.radius,
+        suburb: selectedSuburb
+      })
 
       router.push(`/search?${qs.toString()}`)
     } catch (e: any) {
