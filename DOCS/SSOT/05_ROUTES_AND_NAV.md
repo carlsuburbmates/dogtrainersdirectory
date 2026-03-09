@@ -32,6 +32,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - Admin pages must be protected by middleware and role checks (see `DOCS/SSOT/10_SECURITY_AND_PRIVACY.md`).
 - Admin pages must render inside an operator-specific shell and navigation model, not the public marketing shell.
 - Public acquisition CTAs and the public footer chrome must not be shown on `/admin/**` routes.
+- Scaffold-review queue routes under `/admin/**` and `/api/admin/**`, including `/api/admin/scaffolded`, are operator-only workflows. They are not business-owned listing-management routes.
 
 ## 4. Canonical routing decisions
 - Canonical trainer listing route is `/directory`.
