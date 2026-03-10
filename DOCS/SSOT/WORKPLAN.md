@@ -49,9 +49,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
 - `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
 - `AA-705` is now complete and business onboarding assistance records shadow-only advisory traces without changing submission, publication, verification, or billing outcomes.
-- `AA-706` implementation is now in place and the generated SSOT inventories reflect `/account/business/**`, but the slice remains the current active priority pending main-control acceptance.
+- `AA-706` is now complete and the first truthful business-owned post-onboarding management slice exists at `/account/business/**`, with deterministic profile maintenance and shadow-only listing-quality guidance bound to that surface.
 - `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
-- Current top priority: `AA-706`.
+- Current top priority: await next prioritisation cycle.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -549,7 +549,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Featured-placement, billing, and spotlight state remain fully outside the automation scope.
   - Audit traces capture the suggested guidance and no-write final outcome.
 
-**AA-706: Roll business listing-quality guidance in shadow mode (implemented; pending acceptance)**
+**AA-706: Roll business listing-quality guidance in shadow mode (completed 2026-03-11)**
 - Purpose: implement the first truthful business-owned post-onboarding `/account/business/**` management slice and evaluate business-facing listing-quality and trust-signal guidance there without changing publication, verification, or monetisation state.
 - Definition of done:
   - Listing-quality guidance runs in `shadow` mode only on the implemented `/account/business/**` business-owned management surface, not on onboarding, `/promote`, or any `/admin/**` path.
@@ -568,6 +568,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The task is not labelled business-facing, because the route and approving actor are operator-side.
 
 ## Execution Log
+- 2026-03-11: `AA-706` accepted as complete after correction. The generated SSOT inventories now include `/account/business`, `/account/business/[businessId]`, and `PATCH /api/account/business/[businessId]`, so the implemented route/API surface is in sync with canon. The first truthful business-owned post-onboarding management slice is now complete, with deterministic profile maintenance and shadow-only listing-quality guidance on the owned save path. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.
 - 2026-03-11: `AA-706-CORRECTION` refreshed `DOCS/SSOT/_generated/routes.md` and `DOCS/SSOT/_generated/api.md` so the new `/account/business/**` route family and `PATCH /api/account/business/[businessId]` are present in generated SSOT inventory. Control state was restored to the truthful unaccepted position: `AA-706` remains the single active priority pending main-control acceptance, and the roadmap does not advance to awaiting prioritisation yet.
 - 2026-03-10: `AA-706` completed by implementing `/account/business` and `/account/business/[businessId]` as the first truthful business-owned post-onboarding management slice, adding the bounded `PATCH /api/account/business/[businessId]` owned-record update contract, and attaching deterministic completeness scoring plus shadow-only listing-quality audit traces on the business-owned save path. Publication, verification, scaffold review, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.
 - 2026-03-10: `AA-706C` canonised the future business-owned post-onboarding management surface as the planned authenticated `/account/business/**` route family. `AA-706` remains the single active priority and now explicitly binds to that future business-owned surface rather than a vague existing record path.
