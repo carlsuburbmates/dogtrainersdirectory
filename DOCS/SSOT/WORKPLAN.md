@@ -49,7 +49,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
 - `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
 - `AA-705` is now complete and business onboarding assistance records shadow-only advisory traces without changing submission, publication, verification, or billing outcomes.
-- `AA-706` remains pending future business-facing implementation, because no genuine business-owned listing-quality workflow path is canonically available yet.
+- `AA-706` remains the pending business-facing listing-quality priority, now bound to the planned future authenticated `/account/business/**` business profile-management surface rather than any admin/operator path.
 - `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
 - Current top priority: `AA-706`.
 - The current delivery sequence is:
@@ -550,10 +550,10 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Audit traces capture the suggested guidance and no-write final outcome.
 
 **AA-706: Roll business listing-quality guidance in shadow mode (reopened; not yet implemented)**
-- Purpose: evaluate business-facing listing-quality and trust-signal guidance on the existing business record without changing publication, verification, or monetisation state.
+- Purpose: evaluate business-facing listing-quality and trust-signal guidance on the planned future authenticated `/account/business/**` business profile-management surface without changing publication, verification, or monetisation state.
 - Definition of done:
-  - Listing-quality guidance runs in `shadow` mode only against the current business workflow path.
-  - The workflow is bound to a genuine business-owned route or authenticated business record-management surface. `/admin/**` and `/api/admin/**` scaffold-review routes do not satisfy this task.
+  - Listing-quality guidance runs in `shadow` mode only on the implemented `/account/business/**` business-owned management surface, not on onboarding, `/promote`, or any `/admin/**` path.
+  - The route family is authenticated and business-owned: it is accessible only to the business actor managing that record, and it is distinct from operator/admin workflows.
   - Suggested guidance remains audit-only and does not edit a public listing or verification record.
   - Operator visibility, if surfaced, is explicit that the workflow is non-publishing and non-billing.
   - No featured, spotlight, checkout, or ranking outcome is changed by the shadow run.
@@ -567,6 +567,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The task is not labelled business-facing, because the route and approving actor are operator-side.
 
 ## Execution Log
+- 2026-03-10: `AA-706C` canonised the future business-owned post-onboarding management surface as the planned authenticated `/account/business/**` route family. `AA-706` remains the single active priority and now explicitly binds to that future business-owned surface rather than a vague existing record path.
 - 2026-03-10: Control-state correction applied for `AA-706B`. The operator scaffold-review shadow implementation remains the current active priority pending main-control acceptance; `AA-706` remains pending future business-facing work on a genuine business-owned path, and no `AA-707` is opened.
 - 2026-03-10: `AA-706B` completed by attaching a shadow-only operator scaffold-review guidance trace to the existing deterministic `/api/admin/scaffolded` queue path. The workflow remains operator-side throughout, audit traces are recorded via `latency_metrics.metadata.operatorScaffoldReviewGuidance`, and scaffold approval, publication, verification, featured/spotlight, billing, and ranking outcomes remain unchanged. `AA-706` is now the active priority again as the pending future business-facing listing-quality slice.
 - 2026-03-07: `AA-706A` corrected the roadmap by reopening `AA-706` as not accepted. The attempted implementation was rejected because it attached a business-labelled workflow to `/api/admin/scaffolded`, which is an operator scaffold-review path. Canonical scope now keeps business listing-quality guidance reserved for a genuine business-owned route, and opens `AA-706B` as the next active implementation task for operator-side scaffolded listing review guidance.

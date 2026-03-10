@@ -1,8 +1,8 @@
 # Security & Privacy — Auth, Data Protection, Secrets
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.2  
-**Last Updated:** 2026-03-06
+**Version:** v1.3  
+**Last Updated:** 2026-03-10
 
 ## 1. Secret handling
 - Never commit real secrets. Use `.env.example` as the only env template.
@@ -62,6 +62,12 @@
 - `/api/test/**` endpoints are not public production surfaces.
 - Outside explicit `E2E_TEST_MODE`, test endpoints that can write data or trigger side effects must be operator-only.
 - `E2E_TEST_MODE` bypass exists only for deterministic automated verification and must not be relied on as production access control.
+
+## 3.4 Planned business-owned authenticated surface
+- If DTD implements the planned `/account/business/**` route family, it must use authenticated business-ownership checks that are separate from admin-role checks.
+- Access must be limited to the signed-in business actor for the associated business record. Authenticated access alone is not sufficient without owned-record authorisation.
+- `/account/business/**` is not an operator surface and must not inherit `/admin/**` capabilities simply because it manages listing/profile data.
+- Any future API routes that serve `/account/business/**` must remain outside `/api/admin/**` and must not grant verification, publication, moderation, billing, featured, or spotlight actions unless SSOT later opens those capabilities explicitly.
 
 ## 4. Sensitive fields
 Bundle indicates encrypted columns exist for contact fields and are decrypted via `decrypt_sensitive` using `SUPABASE_PGCRYPTO_KEY`.

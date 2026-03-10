@@ -1,8 +1,8 @@
 # Product Context - Dog Trainers Directory (DTD)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1  
-**Last Updated:** 2026-03-04
+**Version:** v1.2  
+**Last Updated:** 2026-03-10
 
 ## 1. What this app is
 DTD is a mobile-first dog trainer discovery and guidance platform.
@@ -64,6 +64,11 @@ This document is a plain-English product model. It summarises how the current pr
    - If checkout is available, the business can start one-time Stripe Checkout
    - If checkout is not available, the product shows a controlled unavailable state instead of a broken payment path
 
+3. **Profile management (planned)**
+   - Business starts on the future authenticated `/account/business/**` route family
+   - Business reviews and maintains its own listing/profile information after onboarding
+   - This surface is for business-owned profile quality and completeness work, not verification, promotion purchase, or operator review
+
 ### 3.3 Admin/operator workflows
 1. **Platform oversight**
    - Operator starts on `/admin`
@@ -95,7 +100,10 @@ This document is a plain-English product model. It summarises how the current pr
 - `/terms`
 - `/disclaimer`
 
-### 4.2 Visible admin IA
+### 4.2 Planned authenticated business IA
+- `/account/business/**` - future business-owned listing/profile management family for authenticated self-service maintenance after onboarding
+
+### 4.3 Visible admin IA
 - `/admin` - operator dashboard
 - `/admin/reviews` - moderation
 - `/admin/ai-health` - AI health monitoring
@@ -103,9 +111,10 @@ This document is a plain-English product model. It summarises how the current pr
 - `/admin/errors` - error monitoring
 - `/admin/triage` - triage monitoring
 
-### 4.3 Navigation domains
+### 4.4 Navigation domains
 - **Public discovery domain:** `/`, `/search`, `/directory`, `/trainers/[id]`, `/triage`, `/emergency`
 - **Business acquisition domain:** `/onboarding`, `/promote`
+- **Business management domain:** planned future `/account/business/**`
 - **Operator domain:** `/admin` and `/admin/**`
 
 Admin routes must remain visually and operationally separate from public acquisition routes.
@@ -123,6 +132,8 @@ Examples:
 - **Onboarding support:** `/api/onboarding`, `/api/abn/verify`
 - **Monetisation support:** `/api/stripe/create-checkout-session`, Stripe webhooks
 - **Admin support:** `/api/admin/**`
+
+There is not yet a canonical post-onboarding business self-service API surface for `/account/business/**`. Any future APIs for that planned route family must be added to `DOCS/SSOT/04_API_CONTRACTS.md` before rollout.
 
 These routes exist to power the visible product. They are not intended to be user-facing navigation destinations.
 

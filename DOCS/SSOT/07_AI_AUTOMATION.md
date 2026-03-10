@@ -1,8 +1,8 @@
 # AI Automation - Programme Scope, Modes, Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v2.0
-**Last Updated:** 2026-03-07
+**Version:** v2.1
+**Last Updated:** 2026-03-10
 
 ## 1. Purpose
 This document defines the canonical AI Automation programme for DTD.
@@ -40,9 +40,12 @@ Business-facing automation is in scope when it helps a trainer business complete
 
 Business-facing listing-quality guidance is only in scope when it is attached to a genuine business-owned workflow path.
 
+The canonical post-onboarding surface for that work is the planned authenticated `/account/business/**` business profile-management family. It is reserved for business-owned profile maintenance and listing-quality guidance, not operator review or monetisation handling.
+
 Current canonical examples are:
-- `/onboarding`
-- a future authenticated business record-management surface, if one is later added canonically
+- the planned future `/account/business/**` business profile-management surface
+
+`/onboarding` remains reserved for onboarding completion guidance and listing entry. It is not the canonical post-onboarding listing-quality surface.
 
 Non-example:
 - an operator queue or scaffold-review route under `/admin/**` or `/api/admin/**` is not a business-facing workflow, even when the record being reviewed belongs to a business
@@ -202,7 +205,7 @@ These families define the intended DTD programme surface. They are not all live 
 | Triage-to-search handoff guidance | Dog owner | advisory | defined for rollout | may explain or suggest, but must not silently rewrite search intent |
 | Search and trainer-fit explanation | Dog owner | advisory | defined for rollout | cannot change ranking or contact a trainer |
 | Onboarding completion guidance | Business | assistive | defined for rollout | no auto-submit or public publish |
-| Listing-quality and trust-signal guidance | Business | assistive | defined for rollout | must bind to a genuine business-owned workflow path such as `/onboarding` or a future authenticated business record surface; not `/admin/**` |
+| Listing-quality and trust-signal guidance | Business | assistive | defined for rollout | must bind to the planned authenticated `/account/business/**` business profile-management surface; not `/onboarding`, `/promote`, or `/admin/**` |
 | Promotion-support guidance | Business | advisory | defined for rollout | no checkout initiation or featured/spotlight state change |
 | Scaffolded listing review guidance | Admin/operator | assistive | defined for rollout | limited to operator queue workflows under `/admin/**` and `/api/admin/**`; does not become business-facing because the subject record is a business listing |
 | Review moderation support | Admin/operator | assistive -> write-capable internal draft only | partially implemented family | final moderation action remains operator-approved |

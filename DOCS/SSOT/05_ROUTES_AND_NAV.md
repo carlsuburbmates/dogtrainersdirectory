@@ -1,8 +1,8 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.11
-**Last Updated:** 2026-03-06
+**Version:** v1.12
+**Last Updated:** 2026-03-10
 
 ## 1. Inventory source
 Implementation-discovered route inventory is generated and versioned at:
@@ -26,7 +26,17 @@ This file defines navigation intent, canonical route decisions, and separation r
 - `/trainer/[id]` compatibility redirects must preserve meaningful query-string context when forwarding to `/trainers/[id]`.
 - Legal and policy pages (`/privacy`, `/terms`, `/disclaimer`) must remain publicly accessible.
 
-## 3. Admin separation
+## 3. Business-owned management surface
+- `/onboarding` remains the canonical business listing-submission path for first entry into DTD.
+- `/promote` remains the canonical promotion and checkout support path. It is not the business listing/profile management surface.
+- DTD canon reserves a future authenticated business profile-management route family under `/account/business/**` as the post-onboarding business-owned management surface. This family is planned, not implemented today.
+- The purpose of `/account/business/**` is to let an authenticated business owner maintain the business-owned facts, profile content, and listing-quality inputs for their own record after onboarding, without entering operator workflows.
+- Access to `/account/business/**` is for the authenticated business actor associated with the business record being managed. It is not an admin or multi-business operator surface.
+- `/account/business/**` may cover self-service profile maintenance, completeness review, and future listing-quality guidance for the owned record.
+- `/account/business/**` must not be treated as the place for verification grants, publication decisions, review moderation, scaffold review, checkout, featured or spotlight changes, or other operator/admin actions.
+- Any future implementation of `/account/business/**` must add the supporting route, API, auth, and data-contract truth to SSOT before rollout.
+
+## 4. Admin separation
 - Admin surfaces are under `/admin/**` only.
 - `/emergency` is a public surface and must not be repurposed as an admin console.
 - Admin pages must be protected by middleware and role checks (see `DOCS/SSOT/10_SECURITY_AND_PRIVACY.md`).
@@ -34,7 +44,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 - Public acquisition CTAs and the public footer chrome must not be shown on `/admin/**` routes.
 - Scaffold-review queue routes under `/admin/**` and `/api/admin/**`, including `/api/admin/scaffolded`, are operator-only workflows. They are not business-owned listing-management routes.
 
-## 4. Canonical routing decisions
+## 5. Canonical routing decisions
 - Canonical trainer listing route is `/directory`.
 - `/trainers` is a compatibility route and may redirect to `/directory`.
 - Route additions/removals must be reflected by regenerating `DOCS/SSOT/_generated/routes.md`.
