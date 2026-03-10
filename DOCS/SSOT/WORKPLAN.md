@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-07)
+## Current State (as of 2026-03-10)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -45,11 +45,11 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Integrity And SSOT Realignment is complete.
 - Runtime Resilience is complete.
 - `AA-701` is now complete and `DOCS/SSOT/07_AI_AUTOMATION.md` defines the canonical cross-actor AI Automation programme for DTD.
-- AI Automation Definition And Rollout is now open as the next governed delivery slice.
+- AI Automation Definition And Rollout remains open for the current governed delivery slice.
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
 - `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
 - `AA-705` is now complete and business onboarding assistance records shadow-only advisory traces without changing submission, publication, verification, or billing outcomes.
-- `AA-706` remains the pending business-facing listing-quality priority, now bound to the planned future authenticated `/account/business/**` business profile-management surface rather than any admin/operator path.
+- `AA-706` implementation is now in place and the generated SSOT inventories reflect `/account/business/**`, but the slice remains the current active priority pending main-control acceptance.
 - `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
 - Current top priority: `AA-706`.
 - The current delivery sequence is:
@@ -549,11 +549,12 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Featured-placement, billing, and spotlight state remain fully outside the automation scope.
   - Audit traces capture the suggested guidance and no-write final outcome.
 
-**AA-706: Roll business listing-quality guidance in shadow mode (reopened; not yet implemented)**
-- Purpose: evaluate business-facing listing-quality and trust-signal guidance on the planned future authenticated `/account/business/**` business profile-management surface without changing publication, verification, or monetisation state.
+**AA-706: Roll business listing-quality guidance in shadow mode (implemented; pending acceptance)**
+- Purpose: implement the first truthful business-owned post-onboarding `/account/business/**` management slice and evaluate business-facing listing-quality and trust-signal guidance there without changing publication, verification, or monetisation state.
 - Definition of done:
   - Listing-quality guidance runs in `shadow` mode only on the implemented `/account/business/**` business-owned management surface, not on onboarding, `/promote`, or any `/admin/**` path.
   - The route family is authenticated and business-owned: it is accessible only to the business actor managing that record, and it is distinct from operator/admin workflows.
+  - The slice includes a deterministic business-owned profile-maintenance contract and completeness model before any AI guidance is attached.
   - Suggested guidance remains audit-only and does not edit a public listing or verification record.
   - Operator visibility, if surfaced, is explicit that the workflow is non-publishing and non-billing.
   - No featured, spotlight, checkout, or ranking outcome is changed by the shadow run.
@@ -567,6 +568,8 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The task is not labelled business-facing, because the route and approving actor are operator-side.
 
 ## Execution Log
+- 2026-03-11: `AA-706-CORRECTION` refreshed `DOCS/SSOT/_generated/routes.md` and `DOCS/SSOT/_generated/api.md` so the new `/account/business/**` route family and `PATCH /api/account/business/[businessId]` are present in generated SSOT inventory. Control state was restored to the truthful unaccepted position: `AA-706` remains the single active priority pending main-control acceptance, and the roadmap does not advance to awaiting prioritisation yet.
+- 2026-03-10: `AA-706` completed by implementing `/account/business` and `/account/business/[businessId]` as the first truthful business-owned post-onboarding management slice, adding the bounded `PATCH /api/account/business/[businessId]` owned-record update contract, and attaching deterministic completeness scoring plus shadow-only listing-quality audit traces on the business-owned save path. Publication, verification, scaffold review, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.
 - 2026-03-10: `AA-706C` canonised the future business-owned post-onboarding management surface as the planned authenticated `/account/business/**` route family. `AA-706` remains the single active priority and now explicitly binds to that future business-owned surface rather than a vague existing record path.
 - 2026-03-10: Control-state correction applied for `AA-706B`. The operator scaffold-review shadow implementation remains the current active priority pending main-control acceptance; `AA-706` remains pending future business-facing work on a genuine business-owned path, and no `AA-707` is opened.
 - 2026-03-10: `AA-706B` completed by attaching a shadow-only operator scaffold-review guidance trace to the existing deterministic `/api/admin/scaffolded` queue path. The workflow remains operator-side throughout, audit traces are recorded via `latency_metrics.metadata.operatorScaffoldReviewGuidance`, and scaffold approval, publication, verification, featured/spotlight, billing, and ranking outcomes remain unchanged. `AA-706` is now the active priority again as the pending future business-facing listing-quality slice.

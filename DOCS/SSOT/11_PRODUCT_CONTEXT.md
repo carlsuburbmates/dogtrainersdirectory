@@ -64,9 +64,11 @@ This document is a plain-English product model. It summarises how the current pr
    - If checkout is available, the business can start one-time Stripe Checkout
    - If checkout is not available, the product shows a controlled unavailable state instead of a broken payment path
 
-3. **Profile management (planned)**
-   - Business starts on the future authenticated `/account/business/**` route family
+3. **Profile management**
+   - Business starts on `/account/business`
+   - If only one owned business record exists, the flow can continue directly to `/account/business/[businessId]`
    - Business reviews and maintains its own listing/profile information after onboarding
+   - The owned-record detail surface is `/account/business/[businessId]`
    - This surface is for business-owned profile quality and completeness work, not verification, promotion purchase, or operator review
 
 ### 3.3 Admin/operator workflows
@@ -100,8 +102,9 @@ This document is a plain-English product model. It summarises how the current pr
 - `/terms`
 - `/disclaimer`
 
-### 4.2 Planned authenticated business IA
-- `/account/business/**` - future business-owned listing/profile management family for authenticated self-service maintenance after onboarding
+### 4.2 Authenticated business IA
+- `/account/business` - business-owned profile-management entry point after onboarding
+- `/account/business/[businessId]` - owned business record maintenance and completeness surface
 
 ### 4.3 Visible admin IA
 - `/admin` - operator dashboard
@@ -114,7 +117,7 @@ This document is a plain-English product model. It summarises how the current pr
 ### 4.4 Navigation domains
 - **Public discovery domain:** `/`, `/search`, `/directory`, `/trainers/[id]`, `/triage`, `/emergency`
 - **Business acquisition domain:** `/onboarding`, `/promote`
-- **Business management domain:** planned future `/account/business/**`
+- **Business management domain:** `/account/business/**`
 - **Operator domain:** `/admin` and `/admin/**`
 
 Admin routes must remain visually and operationally separate from public acquisition routes.
@@ -130,10 +133,11 @@ Examples:
 - **Public discovery support:** `/api/public/search`, `/api/public/autocomplete`
 - **Emergency support:** `/api/emergency/resources`, `/api/emergency/triage`
 - **Onboarding support:** `/api/onboarding`, `/api/abn/verify`
+- **Business management support:** `/api/account/business/[businessId]`
 - **Monetisation support:** `/api/stripe/create-checkout-session`, Stripe webhooks
 - **Admin support:** `/api/admin/**`
 
-There is not yet a canonical post-onboarding business self-service API surface for `/account/business/**`. Any future APIs for that planned route family must be added to `DOCS/SSOT/04_API_CONTRACTS.md` before rollout.
+The first canonical post-onboarding business self-service API surface now exists at `/api/account/business/[businessId]`. It is limited to the authenticated business-owned profile-management contract and does not overlap with admin, verification, or monetisation APIs.
 
 These routes exist to power the visible product. They are not intended to be user-facing navigation destinations.
 
@@ -214,6 +218,7 @@ That means:
 - trainer profile and failure recovery paths work
 - triage and emergency escalation logic are aligned
 - onboarding and promotion flows are present
+- the first business-owned post-onboarding profile-management slice is present under `/account/business/**`
 - featured placement no longer exposes a broken checkout path
 - admin monitoring and moderation surfaces are operationally separated and functionally usable for the audited scope
 

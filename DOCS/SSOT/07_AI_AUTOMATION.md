@@ -40,10 +40,10 @@ Business-facing automation is in scope when it helps a trainer business complete
 
 Business-facing listing-quality guidance is only in scope when it is attached to a genuine business-owned workflow path.
 
-The canonical post-onboarding surface for that work is the planned authenticated `/account/business/**` business profile-management family. It is reserved for business-owned profile maintenance and listing-quality guidance, not operator review or monetisation handling.
+The canonical post-onboarding surface for that work is the authenticated `/account/business/**` business profile-management family. Its first truthful slice is now implemented for business-owned profile maintenance and shadow-only listing-quality guidance, not operator review or monetisation handling.
 
 Current canonical examples are:
-- the planned future `/account/business/**` business profile-management surface
+- the implemented `/account/business` and `/account/business/[businessId]` business profile-management surface
 
 `/onboarding` remains reserved for onboarding completion guidance and listing entry. It is not the canonical post-onboarding listing-quality surface.
 
@@ -168,7 +168,7 @@ Current canonical overrides already present in deployment SSOT:
 - `DIGEST_AI_MODE`
 - `VERIFICATION_AI_MODE`
 
-For any future owner-facing or business-facing workflow family, a dedicated override must be added to deployment SSOT before that workflow can be live. Until that happens, the workflow is canonically treated as `disabled`.
+For any future owner-facing or business-facing workflow family, a dedicated override must be added to deployment SSOT before that workflow can be live. Until that happens, the workflow must remain bounded below `live` by its implemented ceiling and must not be treated as live-capable.
 
 ### 5.3 Mode meanings
 `disabled`
@@ -205,7 +205,7 @@ These families define the intended DTD programme surface. They are not all live 
 | Triage-to-search handoff guidance | Dog owner | advisory | defined for rollout | may explain or suggest, but must not silently rewrite search intent |
 | Search and trainer-fit explanation | Dog owner | advisory | defined for rollout | cannot change ranking or contact a trainer |
 | Onboarding completion guidance | Business | assistive | defined for rollout | no auto-submit or public publish |
-| Listing-quality and trust-signal guidance | Business | assistive | defined for rollout | must bind to the planned authenticated `/account/business/**` business profile-management surface; not `/onboarding`, `/promote`, or `/admin/**` |
+| Listing-quality and trust-signal guidance | Business | assistive | partially implemented family | must bind to the authenticated `/account/business/**` business profile-management surface, currently through the deterministic business-owned profile save path with shadow-only audit traces; not `/onboarding`, `/promote`, or `/admin/**` |
 | Promotion-support guidance | Business | advisory | defined for rollout | no checkout initiation or featured/spotlight state change |
 | Scaffolded listing review guidance | Admin/operator | assistive | defined for rollout | limited to operator queue workflows under `/admin/**` and `/api/admin/**`; does not become business-facing because the subject record is a business listing |
 | Review moderation support | Admin/operator | assistive -> write-capable internal draft only | partially implemented family | final moderation action remains operator-approved |

@@ -63,11 +63,11 @@
 - Outside explicit `E2E_TEST_MODE`, test endpoints that can write data or trigger side effects must be operator-only.
 - `E2E_TEST_MODE` bypass exists only for deterministic automated verification and must not be relied on as production access control.
 
-## 3.4 Planned business-owned authenticated surface
-- If DTD implements the planned `/account/business/**` route family, it must use authenticated business-ownership checks that are separate from admin-role checks.
+## 3.4 Business-owned authenticated surface
+- `/account/business` and `/account/business/[businessId]` are business-owned authenticated pages, separate from admin-role checks and `/admin/**` capabilities.
 - Access must be limited to the signed-in business actor for the associated business record. Authenticated access alone is not sufficient without owned-record authorisation.
 - `/account/business/**` is not an operator surface and must not inherit `/admin/**` capabilities simply because it manages listing/profile data.
-- Any future API routes that serve `/account/business/**` must remain outside `/api/admin/**` and must not grant verification, publication, moderation, billing, featured, or spotlight actions unless SSOT later opens those capabilities explicitly.
+- `/api/account/business/[businessId]` is the bounded supporting API for this surface. It must remain outside `/api/admin/**` and must not grant verification, publication, moderation, scaffold-review, billing, featured, or spotlight actions unless SSOT later opens those capabilities explicitly.
 
 ## 4. Sensitive fields
 Bundle indicates encrypted columns exist for contact fields and are decrypted via `decrypt_sensitive` using `SUPABASE_PGCRYPTO_KEY`.

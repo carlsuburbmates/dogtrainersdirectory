@@ -21,3 +21,26 @@ export async function encryptValue(value: string): Promise<string> {
 
   return data
 }
+
+export async function decryptValue(value: string): Promise<string | null> {
+  const key = process.env.SUPABASE_PGCRYPTO_KEY
+  if (!key) {
+    throw new Error('SUPABASE_PGCRYPTO_KEY is required for decryption')
+  }
+
+  const { data, error } = await supabaseAdmin.rpc('decrypt_sensitive', {
+    p_input: value,
+    p_key: key
+  })
+
+  if (error) {
+    throw new Error(`decrypt_sensitive failed: ${error.message}`)
+  }
+
+  if (typeof data !== 'string') {
+    return null
+  }
+
+  const decrypted = data.trim()
+  return decrypted || null
+}

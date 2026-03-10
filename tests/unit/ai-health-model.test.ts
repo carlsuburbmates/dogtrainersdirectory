@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   normalizeDecisionSourceCounts,
+  summarizeBusinessListingQualityHealth,
   summarizeModerationHealth,
   summarizeDigestHealth,
   summarizeOnboardingHealth,
@@ -310,5 +311,45 @@ describe('ai-health model helpers', () => {
     expect(summary.shadowTraceCount).toBe(1)
     expect(summary.errorCount).toBe(0)
     expect(summary.lastTrace).toBe('2026-03-07T10:45:00.000Z')
+  })
+
+  it('summarises business listing-quality shadow traces as business-facing advisory output', () => {
+    const summary = summarizeBusinessListingQualityHealth([
+      {
+        created_at: '2026-03-10T11:00:00.000Z',
+        metadata: {
+          businessListingQualityShadow: {
+            aiAutomationAudit: {
+              resultState: 'result'
+            },
+            advisoryCandidate: {
+              summary: 'Add clearer pricing guidance.'
+            }
+          }
+        }
+      },
+      {
+        created_at: '2026-03-10T12:00:00.000Z',
+        metadata: {
+          businessListingQualityShadow: {
+            aiAutomationAudit: {
+              resultState: 'error'
+            }
+          }
+        }
+      }
+    ])
+
+    expect(summary.counts).toEqual({
+      aiDecisions: 0,
+      deterministicDecisions: 2,
+      manualOverrides: 0
+    })
+    expect(summary.shadowTraceCount).toBe(2)
+    expect(summary.errorCount).toBe(1)
+    expect(summary.lastTrace).toBe('2026-03-10T12:00:00.000Z')
+    expect(summary.note).toContain('Business listing-quality guidance is recorded as a business-facing shadow-only advisory trace')
+    expect(summary.note).toContain('publication, verification, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged')
+    expect(summary.note).toContain('Shadow traces did not replace the visible deterministic outcome')
   })
 })

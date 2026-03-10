@@ -1,8 +1,8 @@
 # API Contracts - Boundaries and Invariants
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.5
-**Last Updated:** 2026-03-06
+**Version:** v1.6
+**Last Updated:** 2026-03-10
 
 ## 1. Inventory source
 Implementation-discovered API inventory is generated and versioned at:
@@ -14,6 +14,8 @@ This file defines policy-level API contracts and security boundaries only.
 ## 2. Auth boundary (canonical)
 - Any endpoint under `/api/admin/**` is admin-only.
 - Non-admin requests to `/api/admin/**` must return `401`.
+- `/api/account/business/[businessId]` is a business-owned authenticated endpoint. It must return `401` when the caller is not signed in and must not treat general authenticated access as sufficient without owned-record authorisation.
+- `/api/account/business/[businessId]` must stay outside `/api/admin/**` and must not inherit admin/operator powers simply because it updates business-owned profile data.
 - Public endpoints must not expose privileged ops actions or secrets.
 - Middleware and admin checks are implementation details; boundary rules here are normative.
 
@@ -28,6 +30,10 @@ This file defines policy-level API contracts and security boundaries only.
 - `/api/test/**`: test endpoints are not public truth surfaces. Outside explicit E2E mode they must be operator-only, and they must not expose unauthorised write or side-effect behaviour.
 - `/api/test/seed-review`: any allowed seeded review write must remain schema-compatible with `public.reviews` and must create a pending review only.
 - `/api/trainer/dashboard`: must not present fabricated analytics as real business performance. If analytics are unavailable, the route must return an explicit unavailable/unsupported response or clearly null unsupported fields instead of random values.
+- `PATCH /api/account/business/[businessId]`: must load and update only the owned business record associated with the authenticated business actor and must return `404` for non-owned or missing business IDs.
+- `PATCH /api/account/business/[businessId]`: must accept only the bounded profile-maintenance fields used by the business-owned profile surface (`businessName`, public contact fields, website, address, bio, pricing, primary and secondary service selections, age specialties, behaviour issues).
+- `PATCH /api/account/business/[businessId]`: must reject verification, ABN, publication, moderation, scaffold-review, featured, spotlight, billing, checkout, ranking, and other admin-only or monetisation fields rather than silently ignoring them.
+- `PATCH /api/account/business/[businessId]`: deterministic profile persistence remains the visible source of truth. Any `AA-706` listing-quality guidance attached to this route must stay shadow-only, audit-only, and non-outcome-changing for publication, verification, featured or spotlight state, monetisation, and ranking.
 
 ## 4. Endpoint contract source
 - Full method lists are in `DOCS/SSOT/_generated/api.md`.

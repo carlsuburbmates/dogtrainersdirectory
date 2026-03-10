@@ -6,6 +6,7 @@ export type AiAutomationWorkflow =
   | 'verification'
   | 'ops_digest'
   | 'onboarding'
+  | 'business_listing_quality'
   | 'scaffold_review_guidance'
 export type AiAutomationActorClass = 'owner' | 'business' | 'operator'
 export type AiAutomationApprovalState =
@@ -88,6 +89,14 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
   },
   onboarding: {
     label: 'Business Onboarding',
+    actorClass: 'business',
+    overrideEnvVar: null,
+    usesLlm: true,
+    auditStorage: 'latency_metrics',
+    maxMode: 'shadow'
+  },
+  business_listing_quality: {
+    label: 'Business Listing Quality',
     actorClass: 'business',
     overrideEnvVar: null,
     usesLlm: true,

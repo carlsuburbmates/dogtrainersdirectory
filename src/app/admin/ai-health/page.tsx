@@ -9,6 +9,7 @@ import {
   type AiAutomationWorkflow
 } from '@/lib/ai-automation'
 import {
+  summarizeBusinessListingQualityHealth,
   normalizeDecisionSourceCounts,
   summarizeOnboardingHealth,
   summarizeModerationHealth,
@@ -345,6 +346,38 @@ async function getPipelineHealth(): Promise<PipelineHealth[]> {
         manualOverrides: onboardingSummary.counts.manualOverrides,
         errors24h: onboardingSummary.errorCount,
         note: onboardingSummary.note,
+        auditConnected: true
+      })
+    )
+  }
+
+  const businessListingRows = await supabaseAdmin
+    .from('latency_metrics')
+    .select('created_at, metadata')
+    .eq('area', 'business_profile_api')
+    .eq('route', '/api/account/business/[businessId]')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+  if (businessListingRows.error) {
+    healthData.push(
+      toHealthRow('business_listing_quality', 'Business Listing Quality', {
+        lastSuccess: null,
+        note: 'Business listing-quality shadow audit traces are not available yet.',
+        auditConnected: true
+      })
+    )
+  } else {
+    const businessListingSummary = summarizeBusinessListingQualityHealth(
+      businessListingRows.data ?? []
+    )
+    healthData.push(
+      toHealthRow('business_listing_quality', 'Business Listing Quality', {
+        lastSuccess: businessListingSummary.lastTrace,
+        aiDecisions: businessListingSummary.counts.aiDecisions,
+        deterministicDecisions: businessListingSummary.counts.deterministicDecisions,
+        manualOverrides: businessListingSummary.counts.manualOverrides,
+        errors24h: businessListingSummary.errorCount,
+        note: businessListingSummary.note,
         auditConnected: true
       })
     )

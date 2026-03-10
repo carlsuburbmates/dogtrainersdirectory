@@ -14,6 +14,7 @@ export type LatencyArea =
   | 'admin_scaffolded_queue'
   | 'abn_verify_api'
   | 'onboarding_api'
+  | 'business_profile_api'
   | 'monetization_api'
 
 export interface LatencyMetricPayload {

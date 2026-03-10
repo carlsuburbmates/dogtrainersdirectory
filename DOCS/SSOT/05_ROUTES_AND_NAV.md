@@ -29,12 +29,14 @@ This file defines navigation intent, canonical route decisions, and separation r
 ## 3. Business-owned management surface
 - `/onboarding` remains the canonical business listing-submission path for first entry into DTD.
 - `/promote` remains the canonical promotion and checkout support path. It is not the business listing/profile management surface.
-- DTD canon reserves a future authenticated business profile-management route family under `/account/business/**` as the post-onboarding business-owned management surface. This family is planned, not implemented today.
+- `/account/business` is the business-owned authenticated entry point for post-onboarding profile management.
+- `/account/business/[businessId]` is the canonical owned-record detail surface for post-onboarding business profile maintenance.
 - The purpose of `/account/business/**` is to let an authenticated business owner maintain the business-owned facts, profile content, and listing-quality inputs for their own record after onboarding, without entering operator workflows.
-- Access to `/account/business/**` is for the authenticated business actor associated with the business record being managed. It is not an admin or multi-business operator surface.
-- `/account/business/**` may cover self-service profile maintenance, completeness review, and future listing-quality guidance for the owned record.
+- Access to `/account/business/**` is for the authenticated business actor associated with the business record being managed. It is not an admin or operator surface.
+- `/account/business` may redirect directly to the single owned record when the signed-in actor owns exactly one business, or present a bounded chooser when the actor owns multiple business records.
+- `/account/business/**` covers self-service profile maintenance, deterministic completeness review, and shadow-only listing-quality guidance for the owned record.
 - `/account/business/**` must not be treated as the place for verification grants, publication decisions, review moderation, scaffold review, checkout, featured or spotlight changes, or other operator/admin actions.
-- Any future implementation of `/account/business/**` must add the supporting route, API, auth, and data-contract truth to SSOT before rollout.
+- Supporting `/api/account/business/[businessId]` APIs must remain business-owned and bounded to this profile-management contract rather than reusing admin/operator workflow paths.
 
 ## 4. Admin separation
 - Admin surfaces are under `/admin/**` only.

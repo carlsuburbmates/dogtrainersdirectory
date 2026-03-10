@@ -42,6 +42,17 @@ describe('ai automation substrate', () => {
     expect(resolution.usesGlobalDefault).toBe(true)
   })
 
+  it('clamps business listing quality guidance to shadow even when the global mode is live', () => {
+    const resolution = resolveAiAutomationMode('business_listing_quality', env({
+      AI_GLOBAL_MODE: 'live'
+    }))
+
+    expect(resolution.overrideMode).toBeNull()
+    expect(resolution.effectiveMode).toBe('shadow')
+    expect(resolution.actorClass).toBe('business')
+    expect(resolution.auditStorage).toBe('latency_metrics')
+  })
+
   it('marks llm-backed workflows as degraded when the provider is not configured', () => {
     const resolution = resolveAiAutomationMode('ops_digest', env({
       AI_GLOBAL_MODE: 'shadow'

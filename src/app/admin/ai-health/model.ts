@@ -52,6 +52,11 @@ export type OnboardingHealthRow = {
   metadata?: unknown
 }
 
+export type BusinessListingQualityHealthRow = {
+  created_at: string | null
+  metadata?: unknown
+}
+
 export type OperatorWorkflowHealthSummary = {
   counts: NormalizedDecisionCounts
   shadowTraceCount: number
@@ -486,6 +491,55 @@ export function summarizeOnboardingHealth(rows: OnboardingHealthRow[]): Operator
         'Business onboarding assistance is recorded as a shadow-only advisory trace in latency_metrics.metadata',
       approvalBoundaryLabel:
         'Submission payload, publication state, verification state, featured or spotlight state, and billing outcomes still follow the deterministic onboarding path.',
+      shadowTraceCount,
+      errorCount,
+      includeVisibleDeterministicNote: shadowTraceCount > 0
+    })
+  }
+}
+
+export function summarizeBusinessListingQualityHealth(
+  rows: BusinessListingQualityHealthRow[]
+): OperatorWorkflowHealthSummary {
+  let deterministicVisible = 0
+  let shadowTraceCount = 0
+  let errorCount = 0
+  let lastTrace: string | null = null
+
+  for (const row of rows) {
+    const metadata = asRecord(row.metadata)
+    const shadowTrace = asRecord(metadata?.businessListingQualityShadow)
+    const audit = getAiAutomationAudit(shadowTrace)
+
+    if (shadowTrace) {
+      deterministicVisible += 1
+      shadowTraceCount += 1
+
+      if (row.created_at && (!lastTrace || row.created_at > lastTrace)) {
+        lastTrace = row.created_at
+      }
+    }
+
+    if (audit?.resultState === 'error') {
+      errorCount += 1
+    }
+  }
+
+  return {
+    counts: {
+      aiDecisions: 0,
+      deterministicDecisions: deterministicVisible,
+      manualOverrides: 0
+    },
+    shadowTraceCount,
+    errorCount,
+    lastTrace,
+    note: buildOperatorWorkflowNote({
+      familyLabel: 'Business listing quality',
+      outputLabel:
+        'Business listing-quality guidance is recorded as a business-facing shadow-only advisory trace in latency_metrics.metadata',
+      approvalBoundaryLabel:
+        'The owned profile save stays deterministic, and publication, verification, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged.',
       shadowTraceCount,
       errorCount,
       includeVisibleDeterministicNote: shadowTraceCount > 0
