@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import {
+  recordOperatorScaffoldReviewGuidanceShadowTrace,
+  type ScaffoldReviewQueueItem
+} from '@/lib/operatorScaffoldReviewGuidanceShadow'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 
@@ -28,6 +32,7 @@ function scaffoldedErrorResponse(
 }
 
 export async function GET() {
+  const started = Date.now()
   try {
     const { data, error } = await supabaseAdmin
       .from('businesses')
@@ -37,6 +42,12 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (error) {
+      await recordOperatorScaffoldReviewGuidanceShadowTrace({
+        route: '/api/admin/scaffolded',
+        durationMs: Date.now() - started,
+        scaffoldedQueue: [],
+        errorMessage: error.message
+      })
       return scaffoldedErrorResponse(
         'Unable to fetch scaffolded listings',
         500,
@@ -44,12 +55,24 @@ export async function GET() {
       )
     }
 
+    await recordOperatorScaffoldReviewGuidanceShadowTrace({
+      route: '/api/admin/scaffolded',
+      durationMs: Date.now() - started,
+      scaffoldedQueue: (data || []) as unknown as ScaffoldReviewQueueItem[]
+    })
+
     return NextResponse.json({
       success: true,
       scaffolded: (data || []) as ScaffoldedListing[],
     })
   } catch (error: any) {
     console.error('Scaffolded GET failed', error)
+    await recordOperatorScaffoldReviewGuidanceShadowTrace({
+      route: '/api/admin/scaffolded',
+      durationMs: Date.now() - started,
+      scaffoldedQueue: [],
+      errorMessage: error?.message ?? null
+    })
     return scaffoldedErrorResponse(
       'Unable to fetch scaffolded listings',
       500,

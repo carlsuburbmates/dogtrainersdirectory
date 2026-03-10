@@ -11,6 +11,7 @@ export type LatencyArea =
   | 'emergency_weekly_api'
   | 'admin_health_endpoint'
   | 'ai_health_endpoint'
+  | 'admin_scaffolded_queue'
   | 'abn_verify_api'
   | 'onboarding_api'
   | 'monetization_api'

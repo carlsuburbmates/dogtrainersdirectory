@@ -49,8 +49,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
 - `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
 - `AA-705` is now complete and business onboarding assistance records shadow-only advisory traces without changing submission, publication, verification, or billing outcomes.
-- `AA-706` is reopened as not yet implemented or accepted, because the rejected attempt attached the slice to `/api/admin/scaffolded`, which is an operator queue path rather than a business-owned workflow.
-- Current top priority: `AA-706B`.
+- `AA-706` remains pending future business-facing implementation, because no genuine business-owned listing-quality workflow path is canonically available yet.
+- `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
+- Current top priority: `AA-706`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -557,7 +558,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Operator visibility, if surfaced, is explicit that the workflow is non-publishing and non-billing.
   - No featured, spotlight, checkout, or ranking outcome is changed by the shadow run.
 
-**AA-706B: Roll operator scaffolded listing review guidance in shadow mode**
+**AA-706B: Roll operator scaffolded listing review guidance in shadow mode (completed 2026-03-10)**
 - Purpose: evaluate operator-side scaffolded listing review guidance on the existing scaffold-review queue path without changing publication, verification, or monetisation state.
 - Definition of done:
   - Guidance runs in `shadow` mode only on the existing operator scaffold-review workflow path.
@@ -566,6 +567,8 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The task is not labelled business-facing, because the route and approving actor are operator-side.
 
 ## Execution Log
+- 2026-03-10: Control-state correction applied for `AA-706B`. The operator scaffold-review shadow implementation remains the current active priority pending main-control acceptance; `AA-706` remains pending future business-facing work on a genuine business-owned path, and no `AA-707` is opened.
+- 2026-03-10: `AA-706B` completed by attaching a shadow-only operator scaffold-review guidance trace to the existing deterministic `/api/admin/scaffolded` queue path. The workflow remains operator-side throughout, audit traces are recorded via `latency_metrics.metadata.operatorScaffoldReviewGuidance`, and scaffold approval, publication, verification, featured/spotlight, billing, and ranking outcomes remain unchanged. `AA-706` is now the active priority again as the pending future business-facing listing-quality slice.
 - 2026-03-07: `AA-706A` corrected the roadmap by reopening `AA-706` as not accepted. The attempted implementation was rejected because it attached a business-labelled workflow to `/api/admin/scaffolded`, which is an operator scaffold-review path. Canonical scope now keeps business listing-quality guidance reserved for a genuine business-owned route, and opens `AA-706B` as the next active implementation task for operator-side scaffolded listing review guidance.
 - 2026-03-07: `AA-705` completed by attaching a shadow-only business onboarding assistance trace to the existing deterministic `/api/onboarding` submission path. The visible onboarding validation gates, submission payload semantics, publication state, verification state, featured or spotlight state, and billing outcomes remain deterministic; shadow advisory traces are stored in `latency_metrics.metadata`, and `/admin/ai-health` now reports the workflow explicitly as shadow-only and non-outcome-changing. `AA-706` is now the active priority.
 - 2026-03-07: `AA-704` completed by attaching a shadow-only owner triage-to-search advisory trace to the existing deterministic `/api/emergency/triage` handoff path. The visible `/triage -> /search` journey, search params, search results, ranking, and emergency escalation behaviour remain deterministic; audit metadata now records owner handoff advisory candidates and `/admin/ai-health` summarises those traces explicitly as non-user-visible shadow output. `AA-705` is now the active priority.

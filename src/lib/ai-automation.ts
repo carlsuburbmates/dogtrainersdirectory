@@ -6,6 +6,7 @@ export type AiAutomationWorkflow =
   | 'verification'
   | 'ops_digest'
   | 'onboarding'
+  | 'scaffold_review_guidance'
 export type AiAutomationActorClass = 'owner' | 'business' | 'operator'
 export type AiAutomationApprovalState =
   | 'not_required'
@@ -90,6 +91,14 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     actorClass: 'business',
     overrideEnvVar: null,
     usesLlm: true,
+    auditStorage: 'latency_metrics',
+    maxMode: 'shadow'
+  },
+  scaffold_review_guidance: {
+    label: 'Scaffold Review Guidance',
+    actorClass: 'operator',
+    overrideEnvVar: null,
+    usesLlm: false,
     auditStorage: 'latency_metrics',
     maxMode: 'shadow'
   }
