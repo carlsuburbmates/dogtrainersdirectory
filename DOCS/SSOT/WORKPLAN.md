@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-10)
+## Current State (as of 2026-03-11)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -45,13 +45,15 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Integrity And SSOT Realignment is complete.
 - Runtime Resilience is complete.
 - `AA-701` is now complete and `DOCS/SSOT/07_AI_AUTOMATION.md` defines the canonical cross-actor AI Automation programme for DTD.
-- AI Automation Definition And Rollout remains open for the current governed delivery slice.
+- AI Automation Definition And Rollout is complete for the current governed delivery slice.
 - `AA-702` is now complete and the shared AI Automation control and audit substrate is in place for the currently connected workflow families.
 - `AA-704` is now complete and owner triage-to-search advisory automation records shadow-only audit traces without changing the visible public handoff.
 - `AA-705` is now complete and business onboarding assistance records shadow-only advisory traces without changing submission, publication, verification, or billing outcomes.
 - `AA-706` is now complete and the first truthful business-owned post-onboarding management slice exists at `/account/business/**`, with deterministic profile maintenance and shadow-only listing-quality guidance bound to that surface.
 - `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
-- Current top priority: await next prioritisation cycle.
+- `AS-801` is now complete and the supervised automation rollout model is canonically defined before any new control-plane implementation work.
+- Supervised Automation Operations is now open as the next setup/control phase.
+- Current top priority: `AS-802`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -64,6 +66,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   9. Integrity And SSOT Realignment
   10. Runtime Resilience
   11. AI Automation Definition And Rollout
+  12. Supervised Automation Operations
 
 ## Completed Foundation Milestones
 
@@ -567,7 +570,50 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Operator visibility, if surfaced, is explicit that the workflow is operator-side and non-outcome-changing.
   - The task is not labelled business-facing, because the route and approving actor are operator-side.
 
+### Phase 12 - Supervised Automation Operations
+
+**Phase rule**
+- This phase is setup/control work only.
+- It must not introduce new product automation features.
+- It must not widen billing, publication, verification, moderation, ranking, or owner/business live automation boundaries without a separate Tier-0/Tier-1 SSOT change.
+
+**AS-801: Define the supervised automation rollout model canonically (completed 2026-03-11)**
+- Purpose: strengthen AI Automation canon so DTD has one explicit rollout-state model, supervision model, and approval rubric before any new control-plane implementation begins.
+- Definition of done:
+  - Canonical SSOT distinguishes `disabled`, `shadow`, `live`, `shadow_only`, `shadow_live_ready`, `controlled_live`, and `paused_after_review`.
+  - The dashboard-first supervision model, evidence rubric, and rollback triggers are explicit in SSOT.
+  - The first controlled-live candidate policy is defined canonically without changing implementation.
+
+**AS-802: Establish the supervised rollout registry and control model**
+- Purpose: add the implementation substrate needed to represent rollout state separately from raw env mode and to keep shadow-capped workflows bounded.
+- Definition of done:
+  - DTD has one canonical implementation path for workflow rollout state separate from raw env mode.
+  - Workflows capped as shadow-only cannot be represented as live-ready or live in the control surface.
+  - The control model can represent `paused_after_review` without changing route/API/schema semantics beyond what SSOT allows.
+
+**AS-803: Extend `/admin/ai-health` into the supervised rollout surface**
+- Purpose: make the existing AI health surface the truthful operator cockpit for rollout readiness and rollback state.
+- Definition of done:
+  - `/admin/ai-health` shows effective mode, rollout state, shadow-cap status, review readiness, risk/error/disagreement signals, and rollback/disable guidance per workflow family.
+  - Shadow traces and actor-visible live outcomes are reported distinctly and truthfully.
+  - The surface remains dashboard-first, mobile-friendly, and low-noise.
+
+**AS-804: Add operator pause/disable and selective-enable controls**
+- Purpose: let operators pause or disable live-capable workflows safely and auditably without editing application logic.
+- Definition of done:
+  - Operators have bounded, auditable controls for pause/disable and any canonically allowed selective enablement.
+  - The controls preserve admin auth boundaries and do not bypass existing approval rules.
+  - Shadow-only workflows cannot be selectively enabled beyond their canonical ceiling.
+
+**AS-805: Add rollout verification and first controlled-live execution support**
+- Purpose: prove the new supervision/control layer works before any broader live automation move is considered.
+- Definition of done:
+  - Focused verification covers rollout-state resolution, truthful supervision rendering, and rollback/disable behaviour.
+  - The first controlled-live candidate policy is executable through the new supervision/control model.
+  - No owner-facing or business-facing workflow moves toward live use unless the supervision prerequisites are satisfied and canon explicitly permits it.
+
 ## Execution Log
+- 2026-03-11: `AS-801` completed. AI Automation canon now distinguishes runtime mode from rollout state, defines the dashboard-first supervision model and approval/evidence rubric for controlled live use, and opens `Phase 12 - Supervised Automation Operations` with `AS-802` as the active priority. No implementation surfaces or approval boundaries were widened in this docs-only task.
 - 2026-03-11: `AA-706` accepted as complete after correction. The generated SSOT inventories now include `/account/business`, `/account/business/[businessId]`, and `PATCH /api/account/business/[businessId]`, so the implemented route/API surface is in sync with canon. The first truthful business-owned post-onboarding management slice is now complete, with deterministic profile maintenance and shadow-only listing-quality guidance on the owned save path. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.
 - 2026-03-11: `AA-706-CORRECTION` refreshed `DOCS/SSOT/_generated/routes.md` and `DOCS/SSOT/_generated/api.md` so the new `/account/business/**` route family and `PATCH /api/account/business/[businessId]` are present in generated SSOT inventory. Control state was restored to the truthful unaccepted position: `AA-706` remains the single active priority pending main-control acceptance, and the roadmap does not advance to awaiting prioritisation yet.
 - 2026-03-10: `AA-706` completed by implementing `/account/business` and `/account/business/[businessId]` as the first truthful business-owned post-onboarding management slice, adding the bounded `PATCH /api/account/business/[businessId]` owned-record update contract, and attaching deterministic completeness scoring plus shadow-only listing-quality audit traces on the business-owned save path. Publication, verification, scaffold review, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.

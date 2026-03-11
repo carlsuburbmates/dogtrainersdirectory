@@ -1,8 +1,8 @@
 # AI Automation - Programme Scope, Modes, Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v2.1
-**Last Updated:** 2026-03-10
+**Version:** v2.2
+**Last Updated:** 2026-03-11
 
 ## 1. Purpose
 This document defines the canonical AI Automation programme for DTD.
@@ -17,6 +17,12 @@ For DTD, AI Automation is the governed use of AI-assisted workflow steps across 
 This document defines scope, classes, safety rules, approval boundaries, mode handling, and audit requirements before any new implementation lane starts.
 
 It does not mean every workflow family below is already live in production. A workflow is only live when its route, API, data, deployment, and security contracts are implemented and reflected in SSOT.
+
+DTD's operating north star for this programme is:
+- mostly self-running post-launch operation
+- weekly exception review instead of daily queue babysitting
+- deterministic-first automation with bounded AI where judgement adds value
+- dashboard-first, mobile-friendly, low-noise supervision with critical escalation only when the dashboard model is not enough
 
 ## 2. Programme Scope By Actor
 ### 2.1 Dog owner workflows
@@ -186,7 +192,61 @@ For any future owner-facing or business-facing workflow family, a dedicated over
 - live mode does not remove human approval requirements
 - live mode does not override auth, route, or kill-switch boundaries
 
-### 5.4 Kill switches
+### 5.4 Rollout states
+Mode alone is not the full rollout truth.
+
+DTD canon distinguishes the runtime effective mode from the workflow rollout state.
+
+Canonical rollout states:
+- `disabled`
+  - the workflow is intentionally off and must follow the deterministic non-AI path
+- `shadow`
+  - the workflow is currently running in evaluation mode only
+- `shadow_only`
+  - the workflow is capped below `live` by canonical boundary and must not be treated as live-capable
+- `shadow_live_ready`
+  - the workflow is canonically allowed to move toward controlled live use, but is still shadowed pending review approval
+- `controlled_live`
+  - the workflow is approved for bounded live use within its documented class, approval boundary, and rollback path
+- `paused_after_review`
+  - the workflow was previously eligible for or using controlled live operation, but has been paused after operator or governance review
+
+Interpretation rules:
+- a workflow may only be `controlled_live` when its effective mode is `live`
+- a workflow with effective mode `shadow` may still be `shadow_live_ready` if canon permits eventual live use and the evidence threshold is met
+- a workflow with a canonical class ceiling or actor boundary that forbids live operation must be represented as `shadow_only`
+- `paused_after_review` is a canonical supervision state, not a synonym for environment drift; the workflow should then run with effective mode `disabled` unless a narrower documented fallback is explicitly allowed
+
+### 5.5 Supervised rollout requirements
+DTD must not treat shadow traces as sufficient proof of safe live operation without explicit supervised review.
+
+Before a workflow can move from `shadow` or `shadow_live_ready` toward `controlled_live`, all of the following must be true:
+- the workflow is not capped as `shadow_only` by canonical boundary
+- the workflow already exposes truthful audit and failure visibility on the operator supervision surface
+- a named review owner has examined the recent shadow evidence
+- a named approver has accepted the controlled-live move under the current boundary rules
+- rollback and disable steps are documented in the runbook before enablement
+
+Minimum evidence threshold:
+- request-driven workflows require at least `25` recent shadow traces spanning ordinary cases plus degraded or fallback conditions
+- scheduled or low-frequency workflows require at least `7` consecutive shadow runs with no unresolved critical failure
+- the evidence window must include recent disagreement, failure, and fallback review rather than only successful samples
+
+Mandatory review contents:
+- effective mode and visible deterministic path during the evidence window
+- whether the workflow is `shadow_only` or `shadow_live_ready`
+- recent error, fallback, and disagreement signals
+- confirmation that actor-visible or externally meaningful outcomes did not exceed the current automation class
+- confirmation that kill switches, rollback, and audit paths were exercised or explicitly re-checked
+
+Mandatory rollback or pause triggers:
+- any breach of the documented approval boundary
+- any actor-visible outcome that exceeds the workflow's canonical class or route/auth boundary
+- any incorrect externally meaningful outcome involving billing, publication, verification, moderation, ranking, or emergency handling
+- repeated or unresolved critical live-path errors
+- operator review concludes the output is unsafe, misleading, or no longer trustworthy
+
+### 5.6 Kill switches
 DTD requires two kill-switch layers:
 - programme-wide kill switch: set `AI_GLOBAL_MODE=disabled`
 - workflow-specific kill switch: set the relevant workflow override to `disabled`
@@ -196,7 +256,39 @@ Operational requirements:
 - operators must be able to disable a live workflow without editing application logic
 - repeated failures, poor output quality, or unsafe behaviour must be handled by disabling the workflow first, then investigating
 
-## 6. Workflow Families
+## 6. Dashboard-First Supervision Model
+DTD supervision is dashboard-first.
+
+The canonical operator role is:
+- exception review
+- audit review
+- bounded override
+- kill-switch and rollback action when required
+
+It is not routine queue clearing for every normal-case automation step.
+
+Supervision requirements:
+- the primary supervision surface is `/admin/ai-health` until a canonically defined replacement exists
+- the surface must remain mobile-friendly and readable in a quick operator pass
+- dashboard state is the default source of truth; email, Slack, or webhook alerts are for critical exceptions only
+- non-critical automation review should stay on-dashboard and low-noise by default
+
+Per workflow family, the supervision surface must show:
+- effective mode
+- rollout state
+- whether the workflow is capped as `shadow_only`
+- whether the workflow is live-capable but currently shadowed
+- last review timestamp or explicit `not reviewed yet` state
+- whether minimum shadow evidence is satisfied
+- meaningful error, fallback, degradation, and disagreement signals
+- rollback and disable guidance appropriate to that workflow family
+
+Truthfulness rule:
+- shadow traces must be labelled as shadow traces
+- actor-visible live outcomes must be distinguishable from shadow candidates
+- a workflow must not be described as live-ready when canon still caps it below `live`
+
+## 7. Workflow Families
 These families define the intended DTD programme surface. They are not all live today.
 
 | Workflow family | Primary actor | Class ceiling | Current programme status | Canonical boundary |
@@ -210,9 +302,9 @@ These families define the intended DTD programme surface. They are not all live 
 | Scaffolded listing review guidance | Admin/operator | assistive | defined for rollout | limited to operator queue workflows under `/admin/**` and `/api/admin/**`; does not become business-facing because the subject record is a business listing |
 | Review moderation support | Admin/operator | assistive -> write-capable internal draft only | partially implemented family | final moderation action remains operator-approved |
 | Verification and ABN-support assistance | Admin/operator | assistive -> write-capable internal draft only | partially implemented family | final verification state remains operator-approved |
-| Ops digests and AI-health summaries | Admin/operator | advisory -> write-capable internal draft only | partially implemented family | no autonomous incident response or external comms |
+| Ops digests and AI-health summaries | Admin/operator | advisory -> write-capable internal draft only | partially implemented family | no autonomous incident response or external comms; first candidate for future controlled live evaluation once supervised rollout controls exist |
 
-## 7. Observability And Audit Trail Requirements
+## 8. Observability And Audit Trail Requirements
 Every AI Automation workflow must be traceable enough for DTD operators to answer:
 - what ran
 - for which actor and record
@@ -250,7 +342,26 @@ Current-state constraint:
 - current AI health and telemetry surfaces are not, by themselves, a complete programme-wide audit trail
 - any future write-capable workflow must update the canonical data and API contract SSOT before rollout if new audit storage or endpoints are required
 
-## 8. Non-Goals
+## 9. First Controlled-Live Candidate Policy
+The first workflow family that may be considered for controlled live use is `ops_digest`.
+
+Reason:
+- it is operator-facing rather than public or business-facing
+- it is advisory and bounded
+- it has lower blast radius than triage, moderation, verification, or any owner/business-facing workflow
+- a poor digest can be rolled back, ignored, or disabled without creating a billing, publication, verification, or ranking event
+
+This is not blanket approval to enable it now.
+
+Before `ops_digest` may move to `controlled_live`, DTD must first have:
+- the supervised rollout registry/control layer
+- truthful rollout-state reporting on `/admin/ai-health`
+- operator pause or disable controls
+- focused verification proving the workflow can be enabled and rolled back cleanly
+
+No owner-facing or business-facing workflow should move toward live use until those prerequisites exist and the relevant workflow family meets the evidence and approval rubric above.
+
+## 10. Non-Goals
 The DTD AI Automation programme is not:
 - a general-purpose site chatbot
 - a replacement for deterministic search, filters, auth, or admin controls
@@ -259,7 +370,7 @@ The DTD AI Automation programme is not:
 - a bucket for unrelated experiments that do not clearly belong to owner, business, or operator workflows already defined in DTD
 - a licence to continue unfinished spotlight, monetisation, or route-expansion work under an AI label
 
-## 9. Canonical References
+## 11. Canonical References
 - `DOCS/SSOT/00_BLUEPRINT_SSOT.md` - Tier-0 authority and actor model
 - `DOCS/SSOT/05_ROUTES_AND_NAV.md` - canonical route and surface boundaries
 - `DOCS/SSOT/08_OPS_RUNBOOK.md` - operator model, cron reality, and current admin surfaces

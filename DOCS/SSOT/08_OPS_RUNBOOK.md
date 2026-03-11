@@ -1,7 +1,8 @@
 # Ops Runbook — Post-launch Operations (Reality)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.0
+**Version:** v1.1
+**Last Updated:** 2026-03-11
 
 ## 1. Operating model (canonical)
 Ops is **pull-based**:
@@ -9,9 +10,18 @@ Ops is **pull-based**:
 - Queues are action surfaces
 There is **no support inbox** concept in code.
 
+### 1.1 Automation supervision model
+Automation supervision is dashboard-first.
+
+Canonical operator expectations:
+- use `/admin/ai-health` as the primary automation supervision surface
+- review exceptions, audit trails, and bounded overrides rather than clearing routine AI queues
+- keep supervision mobile-friendly and low-noise by default
+- rely on off-dashboard escalation only for critical exceptions, blocked review states, or explicit disable events
+
 ## 2. Admin surfaces (canonical)
 - `/admin` — overview
-- `/admin/ai-health` — AI mode + health visibility
+- `/admin/ai-health` — AI mode, rollout state, health visibility, and supervised automation readiness
 - `/admin/cron-health` — cron monitoring
 - `/admin/errors` — error monitoring
 - `/admin/reviews` — moderation queues
@@ -33,6 +43,12 @@ There is **no support inbox** concept in code.
 
 ## 6. Alerts
 Env-driven alerts exist for email/Slack/webhook (see `ENV_VARS_INVENTORY.md` and `OPS_REALITY.md`).
+
+Canonical alert posture:
+- dashboard state is the default source of automation truth
+- alerts should remain low-noise and critical-only
+- alerts are appropriate for critical exceptions, repeated disable-worthy failures, or blocked operator review states
+- non-critical shadow review and readiness signals should remain on-dashboard
 
 ## 7. Environment + connections (canonical)
 - Remote-first: use a Supabase dev/staging project for daily development and ops testing.

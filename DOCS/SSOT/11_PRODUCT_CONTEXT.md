@@ -1,8 +1,8 @@
 # Product Context - Dog Trainers Directory (DTD)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.2  
-**Last Updated:** 2026-03-10
+**Version:** v1.3  
+**Last Updated:** 2026-03-11
 
 ## 1. What this app is
 DTD is a mobile-first dog trainer discovery and guidance platform.
@@ -14,6 +14,8 @@ In plain English, it does four jobs:
 - helps trainer businesses join the directory and pay for featured visibility
 
 It also includes a separate admin operations surface used to run and govern the platform.
+
+Post-launch, the operating goal is a mostly self-running product where the owner supervises weekly exceptions, audits, and bounded overrides rather than doing routine daily queue babysitting.
 
 This document is a plain-English product model. It summarises how the current product is meant to work, but it does not override the route, API, data, monetisation, security, or operations contracts defined elsewhere in Tier-0/Tier-1 SSOT.
 
@@ -82,7 +84,7 @@ This document is a plain-English product model. It summarises how the current pr
 
 3. **Monitoring**
    - Operator uses `/admin/ai-health`, `/admin/cron-health`, `/admin/errors`, and `/admin/triage`
-   - Operator monitors platform health, errors, triage activity, and AI-related status
+   - Operator monitors platform health, errors, triage activity, rollout readiness, and AI-related status through a dashboard-first, low-noise supervision model
 
 **Source:** `DOCS/SSOT/01_SYSTEM_MODEL.md`, `DOCS/SSOT/05_ROUTES_AND_NAV.md`, `DOCS/SSOT/06_MONETISATION.md`
 
@@ -109,7 +111,7 @@ This document is a plain-English product model. It summarises how the current pr
 ### 4.3 Visible admin IA
 - `/admin` - operator dashboard
 - `/admin/reviews` - moderation
-- `/admin/ai-health` - AI health monitoring
+- `/admin/ai-health` - AI health, rollout-state, and supervision monitoring
 - `/admin/cron-health` - cron and scheduled-job monitoring
 - `/admin/errors` - error monitoring
 - `/admin/triage` - triage monitoring
