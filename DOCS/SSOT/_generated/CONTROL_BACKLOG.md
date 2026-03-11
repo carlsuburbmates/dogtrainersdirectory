@@ -73,10 +73,10 @@
 | AA-706 | AI Automation Definition And Rollout | Roll business listing-quality guidance in shadow mode | completed | frontend + backend | `WORKPLAN` `AA-706` | listing-quality guidance stays audit-only on the authenticated `/account/business/**` business-owned management surface, backed by deterministic profile maintenance, and does not change publication, verification, or monetisation outcomes |
 | AA-706B | AI Automation Definition And Rollout | Roll operator scaffolded listing review guidance in shadow mode | completed | backend + main-control | `WORKPLAN` `AA-706B` | scaffold-review guidance stays operator-side, shadow-only, and does not change publication, verification, or monetisation outcomes |
 | AS-801 | Supervised Automation Operations | Define the supervised automation rollout model canonically | completed | main-control | `WORKPLAN` `AS-801` | rollout states, dashboard-first supervision rules, approval rubric, and first controlled-live candidate policy are canonical before new control-plane implementation |
-| AS-802 | Supervised Automation Operations | Establish the supervised rollout registry and control model | in_progress | backend + main-control | `WORKPLAN` `AS-802` | rollout state is represented separately from raw mode and shadow-capped workflows cannot be treated as live-ready |
-| AS-803 | Supervised Automation Operations | Extend `/admin/ai-health` into the supervised rollout surface | pending | frontend + backend + main-control | `WORKPLAN` `AS-803` | operator supervision shows truthful rollout state, readiness, and rollback guidance per workflow family |
-| AS-804 | Supervised Automation Operations | Add operator pause/disable and selective-enable controls | pending | backend + main-control | `WORKPLAN` `AS-804` | operators can pause or disable live-capable workflows safely and auditably without bypassing admin boundaries |
-| AS-805 | Supervised Automation Operations | Add rollout verification and first controlled-live execution support | pending | backend + main-control | `WORKPLAN` `AS-805` | focused verification exists and the first controlled-live candidate can be exercised through the new control model |
+| AS-802 | Supervised Automation Operations | Establish the supervised rollout registry and control model | completed | backend + main-control | `WORKPLAN` `AS-802` | rollout state is represented separately from raw mode and shadow-capped workflows cannot be treated as live-ready |
+| AS-803 | Supervised Automation Operations | Extend `/admin/ai-health` into the supervised rollout surface | completed | frontend + backend + main-control | `WORKPLAN` `AS-803` | operator supervision shows truthful rollout state, readiness, and rollback guidance per workflow family |
+| AS-804 | Supervised Automation Operations | Add operator pause/disable and selective-enable controls | completed | backend + main-control | `WORKPLAN` `AS-804` | operators can pause or disable live-capable workflows safely and auditably without bypassing admin boundaries |
+| AS-805 | Supervised Automation Operations | Add rollout verification and first controlled-live execution support | completed | backend + main-control | `WORKPLAN` `AS-805` | focused verification exists and the first controlled-live candidate can be exercised through the new control model |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -87,12 +87,12 @@
 - Integrity And SSOT Realignment is complete.
 - Runtime Resilience is complete.
 - AI Automation Definition And Rollout is complete for the current planned slice.
-- Supervised Automation Operations is open.
-- `AS-801` is complete as the Phase 12 definition slice.
+- Supervised Automation Operations is complete for the current planned slice.
+- `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AS-802`.
+- Current active priority: awaiting next prioritisation cycle.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

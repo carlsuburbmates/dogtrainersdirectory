@@ -52,8 +52,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AA-706` is now complete and the first truthful business-owned post-onboarding management slice exists at `/account/business/**`, with deterministic profile maintenance and shadow-only listing-quality guidance bound to that surface.
 - `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
 - `AS-801` is now complete and the supervised automation rollout model is canonically defined before any new control-plane implementation work.
-- Supervised Automation Operations is now open as the next setup/control phase.
-- Current top priority: `AS-802`.
+- Supervised Automation Operations is complete for the current planned slice.
+- Current top priority: awaiting next prioritisation cycle.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -584,28 +584,28 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The dashboard-first supervision model, evidence rubric, and rollback triggers are explicit in SSOT.
   - The first controlled-live candidate policy is defined canonically without changing implementation.
 
-**AS-802: Establish the supervised rollout registry and control model**
+**AS-802: Establish the supervised rollout registry and control model (completed 2026-03-11)**
 - Purpose: add the implementation substrate needed to represent rollout state separately from raw env mode and to keep shadow-capped workflows bounded.
 - Definition of done:
   - DTD has one canonical implementation path for workflow rollout state separate from raw env mode.
   - Workflows capped as shadow-only cannot be represented as live-ready or live in the control surface.
   - The control model can represent `paused_after_review` without changing route/API/schema semantics beyond what SSOT allows.
 
-**AS-803: Extend `/admin/ai-health` into the supervised rollout surface**
+**AS-803: Extend `/admin/ai-health` into the supervised rollout surface (completed 2026-03-11)**
 - Purpose: make the existing AI health surface the truthful operator cockpit for rollout readiness and rollback state.
 - Definition of done:
   - `/admin/ai-health` shows effective mode, rollout state, shadow-cap status, review readiness, risk/error/disagreement signals, and rollback/disable guidance per workflow family.
   - Shadow traces and actor-visible live outcomes are reported distinctly and truthfully.
   - The surface remains dashboard-first, mobile-friendly, and low-noise.
 
-**AS-804: Add operator pause/disable and selective-enable controls**
+**AS-804: Add operator pause/disable and selective-enable controls (completed 2026-03-11)**
 - Purpose: let operators pause or disable live-capable workflows safely and auditably without editing application logic.
 - Definition of done:
   - Operators have bounded, auditable controls for pause/disable and any canonically allowed selective enablement.
   - The controls preserve admin auth boundaries and do not bypass existing approval rules.
   - Shadow-only workflows cannot be selectively enabled beyond their canonical ceiling.
 
-**AS-805: Add rollout verification and first controlled-live execution support**
+**AS-805: Add rollout verification and first controlled-live execution support (completed 2026-03-11)**
 - Purpose: prove the new supervision/control layer works before any broader live automation move is considered.
 - Definition of done:
   - Focused verification covers rollout-state resolution, truthful supervision rendering, and rollback/disable behaviour.
@@ -613,6 +613,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No owner-facing or business-facing workflow moves toward live use unless the supervision prerequisites are satisfied and canon explicitly permits it.
 
 ## Execution Log
+- 2026-03-11: `AS-802` to `AS-805` completed as one bounded Phase 12 control-plane slice. DTD now has schema-backed rollout controls and append-only rollout events, rollout-aware runtime resolution layered on top of the env ceiling, admin rollout control APIs, `/admin/ai-health` as the canonical supervision surface, bounded operator pause/disable/ready-for-review/controlled-live controls, and focused verification including admin browser coverage. `ops_digest` is the only controlled-live candidate supported by the implementation, and no owner-facing or business-facing workflow gained a live path. Supervised Automation Operations is now complete for the current planned slice and the roadmap returns to awaiting the next prioritisation cycle.
 - 2026-03-11: `AS-801` completed. AI Automation canon now distinguishes runtime mode from rollout state, defines the dashboard-first supervision model and approval/evidence rubric for controlled live use, and opens `Phase 12 - Supervised Automation Operations` with `AS-802` as the active priority. No implementation surfaces or approval boundaries were widened in this docs-only task.
 - 2026-03-11: `AA-706` accepted as complete after correction. The generated SSOT inventories now include `/account/business`, `/account/business/[businessId]`, and `PATCH /api/account/business/[businessId]`, so the implemented route/API surface is in sync with canon. The first truthful business-owned post-onboarding management slice is now complete, with deterministic profile maintenance and shadow-only listing-quality guidance on the owned save path. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.
 - 2026-03-11: `AA-706-CORRECTION` refreshed `DOCS/SSOT/_generated/routes.md` and `DOCS/SSOT/_generated/api.md` so the new `/account/business/**` route family and `PATCH /api/account/business/[businessId]` are present in generated SSOT inventory. Control state was restored to the truthful unaccepted position: `AA-706` remains the single active priority pending main-control acceptance, and the roadmap does not advance to awaiting prioritisation yet.

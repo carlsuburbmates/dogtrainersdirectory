@@ -8,6 +8,7 @@ export type AiAutomationWorkflow =
   | 'onboarding'
   | 'business_listing_quality'
   | 'scaffold_review_guidance'
+
 export type AiAutomationActorClass = 'owner' | 'business' | 'operator'
 export type AiAutomationApprovalState =
   | 'not_required'
@@ -19,6 +20,14 @@ export type AiAutomationVisibilityState =
   | 'connected'
   | 'degraded'
   | 'not_connected'
+export type AiAutomationEvidenceMode = 'request_driven' | 'scheduled'
+export type AiAutomationRolloutState =
+  | 'disabled'
+  | 'shadow'
+  | 'shadow_only'
+  | 'shadow_live_ready'
+  | 'controlled_live'
+  | 'paused_after_review'
 
 export type AiAutomationRecordReference = {
   table: string
@@ -40,6 +49,19 @@ export type AiAutomationAuditEvent = {
   notes?: string[]
 }
 
+export type AiAutomationRolloutControl = {
+  workflow: AiAutomationWorkflow
+  rolloutState: AiAutomationRolloutState
+  reason?: string | null
+  reviewOwner?: string | null
+  approvedBy?: string | null
+  updatedByUserId?: string | null
+  lastReviewedAt?: string | null
+  metadata?: Record<string, unknown> | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
 type WorkflowConfig = {
   label: string
   actorClass: AiAutomationActorClass
@@ -50,9 +72,30 @@ type WorkflowConfig = {
   usesLlm: boolean
   auditStorage: string | null
   maxMode: DecisionMode
+  evidenceMode: AiAutomationEvidenceMode
+  controlledLiveCandidate: boolean
 }
 
 const DEFAULT_MODE: DecisionMode = 'live'
+
+const AI_AUTOMATION_WORKFLOWS: AiAutomationWorkflow[] = [
+  'triage',
+  'moderation',
+  'verification',
+  'ops_digest',
+  'onboarding',
+  'business_listing_quality',
+  'scaffold_review_guidance'
+]
+
+const AI_AUTOMATION_ROLLOUT_STATES: AiAutomationRolloutState[] = [
+  'disabled',
+  'shadow',
+  'shadow_only',
+  'shadow_live_ready',
+  'controlled_live',
+  'paused_after_review'
+]
 
 const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
   triage: {
@@ -61,7 +104,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: 'TRIAGE_AI_MODE',
     usesLlm: true,
     auditStorage: 'emergency_triage_logs',
-    maxMode: 'live'
+    maxMode: 'live',
+    evidenceMode: 'request_driven',
+    controlledLiveCandidate: false
   },
   moderation: {
     label: 'Review Moderation',
@@ -69,7 +114,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: 'MODERATION_AI_MODE',
     usesLlm: false,
     auditStorage: 'ai_review_decisions',
-    maxMode: 'live'
+    maxMode: 'live',
+    evidenceMode: 'scheduled',
+    controlledLiveCandidate: false
   },
   verification: {
     label: 'Resource Verification',
@@ -77,7 +124,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: 'VERIFICATION_AI_MODE',
     usesLlm: true,
     auditStorage: 'emergency_resource_verification_events',
-    maxMode: 'live'
+    maxMode: 'live',
+    evidenceMode: 'scheduled',
+    controlledLiveCandidate: false
   },
   ops_digest: {
     label: 'Ops Digest',
@@ -85,7 +134,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: 'DIGEST_AI_MODE',
     usesLlm: true,
     auditStorage: 'daily_ops_digests',
-    maxMode: 'live'
+    maxMode: 'live',
+    evidenceMode: 'scheduled',
+    controlledLiveCandidate: true
   },
   onboarding: {
     label: 'Business Onboarding',
@@ -93,7 +144,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: null,
     usesLlm: true,
     auditStorage: 'latency_metrics',
-    maxMode: 'shadow'
+    maxMode: 'shadow',
+    evidenceMode: 'request_driven',
+    controlledLiveCandidate: false
   },
   business_listing_quality: {
     label: 'Business Listing Quality',
@@ -101,7 +154,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: null,
     usesLlm: true,
     auditStorage: 'latency_metrics',
-    maxMode: 'shadow'
+    maxMode: 'shadow',
+    evidenceMode: 'request_driven',
+    controlledLiveCandidate: false
   },
   scaffold_review_guidance: {
     label: 'Scaffold Review Guidance',
@@ -109,7 +164,9 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     overrideEnvVar: null,
     usesLlm: false,
     auditStorage: 'latency_metrics',
-    maxMode: 'shadow'
+    maxMode: 'shadow',
+    evidenceMode: 'request_driven',
+    controlledLiveCandidate: false
   }
 }
 
@@ -125,6 +182,27 @@ export type AiAutomationModeResolution = {
   auditStorage: string | null
   killSwitchActive: boolean
   usesGlobalDefault: boolean
+  maxMode: DecisionMode
+  evidenceMode: AiAutomationEvidenceMode
+  controlledLiveCandidate: boolean
+}
+
+export type AiAutomationRolloutResolution = AiAutomationModeResolution & {
+  implicitRolloutState: AiAutomationRolloutState
+  configuredRolloutState: AiAutomationRolloutState | null
+  rolloutState: AiAutomationRolloutState
+  finalRuntimeMode: DecisionMode
+  shadowCapped: boolean
+  liveCapable: boolean
+  liveCapableButShadowed: boolean
+  reason: string | null
+  reviewOwner: string | null
+  approvedBy: string | null
+  updatedByUserId: string | null
+  lastReviewedAt: string | null
+  metadata: Record<string, unknown> | null
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 export type AiAutomationVisibility = {
@@ -143,11 +221,35 @@ function isDecisionMode(value: string | undefined | null): value is DecisionMode
   return value === 'disabled' || value === 'shadow' || value === 'live'
 }
 
+export function isAiAutomationWorkflow(value: string | undefined | null): value is AiAutomationWorkflow {
+  return typeof value === 'string' && AI_AUTOMATION_WORKFLOWS.includes(value as AiAutomationWorkflow)
+}
+
+export function isAiAutomationRolloutState(
+  value: string | undefined | null
+): value is AiAutomationRolloutState {
+  return (
+    typeof value === 'string' &&
+    AI_AUTOMATION_ROLLOUT_STATES.includes(value as AiAutomationRolloutState)
+  )
+}
+
 export function normaliseDecisionMode(
   value: string | undefined | null,
   fallback: DecisionMode = DEFAULT_MODE
 ): DecisionMode {
   return isDecisionMode(value) ? value : fallback
+}
+
+export function normaliseAiAutomationRolloutState(
+  value: string | undefined | null,
+  fallback: AiAutomationRolloutState
+): AiAutomationRolloutState {
+  return isAiAutomationRolloutState(value) ? value : fallback
+}
+
+export function getAiAutomationWorkflows(): AiAutomationWorkflow[] {
+  return [...AI_AUTOMATION_WORKFLOWS]
 }
 
 export function resolveAiAutomationMode(
@@ -173,26 +275,97 @@ export function resolveAiAutomationMode(
     usesLlm: config.usesLlm,
     auditStorage: config.auditStorage,
     killSwitchActive: effectiveMode === 'disabled',
-    usesGlobalDefault: overrideMode === null
+    usesGlobalDefault: overrideMode === null,
+    maxMode: config.maxMode,
+    evidenceMode: config.evidenceMode,
+    controlledLiveCandidate: config.controlledLiveCandidate
   }
 }
 
 export function getAiAutomationModeResolutions(
   env: NodeJS.ProcessEnv = process.env
 ): AiAutomationModeResolution[] {
-  return (Object.keys(WORKFLOW_CONFIG) as AiAutomationWorkflow[]).map((workflow) =>
-    resolveAiAutomationMode(workflow, env)
-  )
+  return AI_AUTOMATION_WORKFLOWS.map((workflow) => resolveAiAutomationMode(workflow, env))
+}
+
+export function getImplicitAiAutomationRolloutState(
+  workflowOrResolution: AiAutomationWorkflow | AiAutomationModeResolution
+): AiAutomationRolloutState {
+  const resolution =
+    typeof workflowOrResolution === 'string'
+      ? resolveAiAutomationMode(workflowOrResolution)
+      : workflowOrResolution
+
+  return resolution.maxMode === 'shadow' ? 'shadow_only' : 'shadow'
+}
+
+function toMetadataRecord(
+  value: Record<string, unknown> | null | undefined
+): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : null
+}
+
+export function resolveAiAutomationRolloutResolution(
+  modeResolution: AiAutomationModeResolution,
+  control: AiAutomationRolloutControl | null | undefined
+): AiAutomationRolloutResolution {
+  const implicitRolloutState = getImplicitAiAutomationRolloutState(modeResolution)
+  const configuredRolloutState = control?.rolloutState ?? null
+
+  let rolloutState = implicitRolloutState
+
+  if (configuredRolloutState === 'disabled') {
+    rolloutState = 'disabled'
+  } else if (modeResolution.maxMode === 'shadow') {
+    rolloutState = implicitRolloutState
+  } else if (configuredRolloutState) {
+    rolloutState = configuredRolloutState
+  }
+
+  let finalRuntimeMode: DecisionMode
+  if (modeResolution.effectiveMode === 'disabled') {
+    finalRuntimeMode = 'disabled'
+  } else if (rolloutState === 'disabled' || rolloutState === 'paused_after_review') {
+    finalRuntimeMode = 'disabled'
+  } else if (rolloutState === 'controlled_live' && modeResolution.effectiveMode === 'live') {
+    finalRuntimeMode = 'live'
+  } else {
+    finalRuntimeMode = 'shadow'
+  }
+
+  const shadowCapped = implicitRolloutState === 'shadow_only'
+  const liveCapable = !shadowCapped
+
+  return {
+    ...modeResolution,
+    implicitRolloutState,
+    configuredRolloutState,
+    rolloutState,
+    finalRuntimeMode,
+    shadowCapped,
+    liveCapable,
+    liveCapableButShadowed: liveCapable && rolloutState !== 'controlled_live',
+    reason: control?.reason ?? null,
+    reviewOwner: control?.reviewOwner ?? null,
+    approvedBy: control?.approvedBy ?? null,
+    updatedByUserId: control?.updatedByUserId ?? null,
+    lastReviewedAt: control?.lastReviewedAt ?? null,
+    metadata: toMetadataRecord(control?.metadata),
+    createdAt: control?.createdAt ?? null,
+    updatedAt: control?.updatedAt ?? null
+  }
 }
 
 export function getAiAutomationVisibility(
-  resolution: AiAutomationModeResolution,
+  resolution: AiAutomationModeResolution | AiAutomationRolloutResolution,
   options: {
     auditConnected?: boolean
     llmConfigured?: boolean
   } = {}
 ): AiAutomationVisibility {
   const auditConnected = options.auditConnected ?? Boolean(resolution.auditStorage)
+  const runtimeMode =
+    'finalRuntimeMode' in resolution ? resolution.finalRuntimeMode : resolution.effectiveMode
 
   if (!auditConnected) {
     return {
@@ -202,11 +375,16 @@ export function getAiAutomationVisibility(
     }
   }
 
-  if (resolution.killSwitchActive) {
+  if (runtimeMode === 'disabled') {
+    const note =
+      'finalRuntimeMode' in resolution && resolution.rolloutState === 'paused_after_review'
+        ? 'This workflow is paused after review. Env ceiling remains separate from the rollout state.'
+        : 'This workflow is disabled by the current effective mode or rollout state.'
+
     return {
       state: 'connected',
-      label: 'Kill switch active',
-      note: 'This workflow is disabled by the effective mode.'
+      label: 'Disabled',
+      note
     }
   }
 
@@ -220,10 +398,10 @@ export function getAiAutomationVisibility(
 
   return {
     state: 'connected',
-    label: 'Connected',
+    label: runtimeMode === 'live' ? 'Live-capable' : 'Shadowed',
     note: resolution.usesGlobalDefault
-      ? 'Using the global AI mode.'
-      : `Using ${resolution.overrideEnvVar}.`
+      ? 'Env ceiling uses the global AI mode.'
+      : `Env ceiling uses ${resolution.overrideEnvVar}.`
   }
 }
 
@@ -276,7 +454,7 @@ export function getAiAutomationOperatorControl(
         approvalBoundaryLabel:
           'Final review approval or rejection still requires an operator action.',
         rollbackLabel:
-          'Disable with MODERATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing recommendations remain drafts until an operator acts.'
+          'Pause or disable from /admin/ai-health, or set MODERATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing recommendations remain drafts until an operator acts.'
       }
     case 'verification':
       return {
@@ -284,7 +462,7 @@ export function getAiAutomationOperatorControl(
         approvalBoundaryLabel:
           'Verification status changes still require an operator action.',
         rollbackLabel:
-          'Disable with VERIFICATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing candidate checks remain audit records only.'
+          'Pause or disable from /admin/ai-health, or set VERIFICATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing candidate checks remain audit records only.'
       }
     case 'ops_digest':
       return {
@@ -292,7 +470,7 @@ export function getAiAutomationOperatorControl(
         approvalBoundaryLabel:
           'No external action is executed from the digest by itself; operators decide what to do next.',
         rollbackLabel:
-          'Disable with DIGEST_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Re-run the digest to replace an advisory summary if needed.'
+          'Pause or disable from /admin/ai-health, or set DIGEST_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Re-run the digest to replace an advisory summary if needed.'
       }
     default:
       return null

@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import {
-  mergeAiAutomationAuditMetadata,
-  resolveAiAutomationMode
-} from '@/lib/ai-automation'
+import { mergeAiAutomationAuditMetadata } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 
 export type ManualAction = 'approve' | 'reject'
 
@@ -52,7 +50,7 @@ if (isNaN(idNum)) {
       .limit(1)
       .maybeSingle()
 
-    const modeResolution = resolveAiAutomationMode('moderation')
+    const rolloutResolution = await getAiAutomationRuntimeResolution('moderation')
     const finalReason =
       body?.reason ??
       (action === 'approve'
@@ -84,7 +82,7 @@ if (isNaN(idNum)) {
       confidence: existingDecision?.confidence ?? 1.0,
       reason: existingDecision?.reason ?? finalReason,
       decision_source: 'manual_override',
-      ai_mode: existingDecision?.ai_mode ?? modeResolution.effectiveMode,
+      ai_mode: existingDecision?.ai_mode ?? rolloutResolution.finalRuntimeMode,
       ai_provider: existingDecision?.ai_provider ?? null,
       ai_model: existingDecision?.ai_model ?? null,
       ai_prompt_version: existingDecision?.ai_prompt_version ?? null,
@@ -93,9 +91,9 @@ if (isNaN(idNum)) {
         existingMetadata,
         {
           workflowFamily: 'moderation',
-          actorClass: modeResolution.actorClass,
+          actorClass: rolloutResolution.actorClass,
           effectiveMode:
-            existingDecision?.ai_mode ?? modeResolution.effectiveMode,
+            existingDecision?.ai_mode ?? rolloutResolution.finalRuntimeMode,
           approvalState: action === 'approve' ? 'approved' : 'rejected',
           resultState: 'result',
           decisionSource: 'manual_override',

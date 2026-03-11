@@ -1,8 +1,8 @@
 import { supabaseAdmin } from './supabase'
 import {
-  mergeAiAutomationAuditMetadata,
-  resolveAiAutomationMode
+  mergeAiAutomationAuditMetadata
 } from './ai-automation'
+import { getAiAutomationRuntimeResolution } from './ai-rollouts'
 import type { DecisionMode, DecisionSource } from './ai-types'
 
 export type ReviewRecord = {
@@ -83,8 +83,8 @@ export async function moderatePendingReviews(
     }
   }
 
-  const modeResolution = resolveAiAutomationMode('moderation')
-  const effectiveMode = options.mode ?? modeResolution.effectiveMode
+  const rolloutResolution = await getAiAutomationRuntimeResolution('moderation')
+  const effectiveMode = options.mode ?? rolloutResolution.finalRuntimeMode
 
   const { data: reviews, error } = await supabaseAdmin
     .from('reviews')
@@ -153,7 +153,7 @@ export async function moderatePendingReviews(
           undefined,
           {
             workflowFamily: 'moderation',
-            actorClass: modeResolution.actorClass,
+            actorClass: rolloutResolution.actorClass,
             effectiveMode,
             approvalState,
             resultState: 'result',

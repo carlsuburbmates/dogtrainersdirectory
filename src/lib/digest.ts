@@ -1,8 +1,8 @@
 import { supabaseAdmin } from './supabase'
 import {
-  mergeAiAutomationAuditMetadata,
-  resolveAiAutomationMode
+  mergeAiAutomationAuditMetadata
 } from './ai-automation'
+import { getAiAutomationRuntimeResolution } from './ai-rollouts'
 import { fetchDigestMetrics, DailyDigestMetrics } from './emergency'
 import { generateLLMResponse } from './llm'
 
@@ -73,7 +73,8 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   }
 
   const metrics = await fetchDigestMetrics()
-  const modeResolution = resolveAiAutomationMode('ops_digest')
+  const rolloutResolution = await getAiAutomationRuntimeResolution('ops_digest')
+  const runtimeMode = rolloutResolution.finalRuntimeMode
   const prompt = buildDigestPrompt(metrics)
 
   const deterministicSummary = buildDeterministicDigest(metrics)
@@ -86,8 +87,8 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   let shadowCandidate: string | null = null
 
   if (
-    modeResolution.effectiveMode === 'live' ||
-    modeResolution.effectiveMode === 'shadow'
+    runtimeMode === 'live' ||
+    runtimeMode === 'shadow'
   ) {
     const llm = await generateLLMResponse({
       systemPrompt:
@@ -104,7 +105,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
       auditDecisionSource = 'llm'
       auditResultState = 'result'
 
-      if (modeResolution.effectiveMode === 'live') {
+      if (runtimeMode === 'live') {
         visibleSummary = llm.text
       } else {
         shadowCandidate = llm.text
@@ -113,7 +114,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
   }
 
   const visibleDecisionSource: 'llm' | 'deterministic' =
-    modeResolution.effectiveMode === 'live' && auditDecisionSource === 'llm'
+    runtimeMode === 'live' && auditDecisionSource === 'llm'
       ? 'llm'
       : 'deterministic'
 
@@ -129,7 +130,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
           model: aiModel,
           generated_by: aiProvider,
           decision_source: visibleDecisionSource,
-          ai_mode: modeResolution.effectiveMode,
+          ai_mode: runtimeMode,
           ai_provider: aiProvider,
           ai_confidence: null,
           ai_prompt_version: DIGEST_PROMPT_VERSION,
@@ -137,14 +138,14 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
             undefined,
             {
               workflowFamily: 'ops_digest',
-              actorClass: modeResolution.actorClass,
-              effectiveMode: modeResolution.effectiveMode,
+              actorClass: rolloutResolution.actorClass,
+              effectiveMode: runtimeMode,
               approvalState: 'not_required',
               resultState: auditResultState,
               decisionSource: auditDecisionSource,
               routeOrJob: '/api/admin/ops-digest',
               summary:
-                modeResolution.effectiveMode === 'shadow'
+                runtimeMode === 'shadow'
                   ? 'Shadow digest trace recorded while deterministic advisory remained visible.'
                   : 'Ops digest advisory stored.',
               errorMessage: auditErrorMessage,
@@ -160,7 +161,7 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
                 : undefined,
               operatorVisibleState: {
                 outputType:
-                  modeResolution.effectiveMode === 'shadow'
+                  runtimeMode === 'shadow'
                     ? 'shadow_evaluation'
                     : 'advisory',
                 finalState: 'no_external_action'

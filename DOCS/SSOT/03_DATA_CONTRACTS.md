@@ -46,6 +46,8 @@ This list is aligned to the current implementation (code + migrations), not just
 - `ops_overrides`
 - `daily_ops_digests`
 - `cron_job_runs`
+- `ai_automation_rollout_controls`
+- `ai_automation_rollout_events`
 
 ### 1.7 Error logging & alerting
 - `error_logs`
@@ -100,3 +102,5 @@ This list is aligned to the current implementation (code + migrations), not just
   - `trainer_behavior_issues` (not “behaviours”)
   - `trainer_services.service_type`
 - Emergency verification state is stored on `businesses` for emergency resource listings.
+- `ai_automation_rollout_controls` is the canonical current-state registry for workflow rollout status. It must not be replaced by `ops_overrides` or inferred solely from env vars.
+- `ai_automation_rollout_events` is append-only rollout audit history. Each mutation must record workflow, state transition, reason, and acting admin identity.

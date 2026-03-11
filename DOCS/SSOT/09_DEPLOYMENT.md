@@ -46,6 +46,11 @@ From `package.json` and CI:
 - `TRIAGE_AI_MODE` (server + admin UI)
 - `VERIFICATION_AI_MODE` (server + admin UI)
 
+**Rollout control rule:**
+- Env modes remain the hard ceiling for automation.
+- Phase 12 rollout controls are persisted in Supabase and may only narrow, pause, disable, or stage rollout inside the env ceiling.
+- No rollout-control record may widen a workflow beyond canonical ceilings or env-derived mode.
+
 ### 4.4 ABN and ABR
 - `ABN_FALLBACK_MAX_RATE_24H` (staging/prod checks)
 - `ABN_FALLBACK_MIN_SAMPLE_24H` (staging/prod checks)
@@ -68,3 +73,8 @@ From `package.json` and CI:
 - Function inventory is generated at `DOCS/SSOT/_generated/edge_functions.md`.
 - Deploy via `scripts/deploy_supabase_functions.sh`.
 - Public functions used in browser flows may require `--no-verify-jwt`; this is handled by the deploy script.
+
+## 7. Rollout control deployment notes
+- `ai_automation_rollout_controls` and `ai_automation_rollout_events` are schema-backed control-plane tables and must be deployed via Supabase migration.
+- `/api/admin/ai-rollouts` relies on `SUPABASE_SERVICE_ROLE_KEY` for control-plane reads and writes.
+- No new public env vars are introduced for rollout state. Operator-facing control is database-backed and admin-authenticated.

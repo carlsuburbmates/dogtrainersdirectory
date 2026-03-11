@@ -9,7 +9,7 @@ import {
   parseBusinessProfileUpdatePayload,
   saveOwnedBusinessProfile
 } from '@/lib/businessProfileManagement'
-import { resolveAiAutomationMode } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 import { recordLatencyMetric } from '@/lib/telemetryLatency'
 
 const API_ROUTE = '/api/account/business/[businessId]'
@@ -78,9 +78,9 @@ export async function PATCH(
       )
     }
 
-    const modeResolution = resolveAiAutomationMode('business_listing_quality')
+    const rolloutResolution = await getAiAutomationRuntimeResolution('business_listing_quality')
 
-    if (modeResolution.effectiveMode === 'shadow') {
+    if (rolloutResolution.finalRuntimeMode === 'shadow') {
       const shadowRun = await runBusinessListingQualityShadow(updatedProfile)
       aiProvider = shadowRun.provider
       aiModel = shadowRun.model

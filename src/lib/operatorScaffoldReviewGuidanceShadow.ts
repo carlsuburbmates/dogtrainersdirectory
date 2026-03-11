@@ -1,4 +1,5 @@
-import { buildAiAutomationAuditEvent, resolveAiAutomationMode } from './ai-automation'
+import { buildAiAutomationAuditEvent } from './ai-automation'
+import { getAiAutomationRuntimeResolution } from './ai-rollouts'
 import { recordLatencyMetric } from './telemetryLatency'
 
 export type ScaffoldReviewQueueItem = {
@@ -131,8 +132,8 @@ export async function recordOperatorScaffoldReviewGuidanceShadowTrace(input: {
   scaffoldedQueue: ScaffoldReviewQueueItem[]
   errorMessage?: string | null
 }): Promise<void> {
-  const modeResolution = resolveAiAutomationMode('scaffold_review_guidance')
-  if (modeResolution.effectiveMode !== 'shadow') return
+  const rolloutResolution = await getAiAutomationRuntimeResolution('scaffold_review_guidance')
+  if (rolloutResolution.finalRuntimeMode !== 'shadow') return
 
   let resultState: 'result' | 'no_result' | 'error' = 'no_result'
   let candidate: OperatorScaffoldReviewGuidanceCandidate | null = null

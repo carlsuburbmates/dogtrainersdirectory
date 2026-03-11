@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getOrCreateDailyDigest } from '@/lib/digest'
-import {
-  getAiAutomationOperatorControl,
-  resolveAiAutomationMode
-} from '@/lib/ai-automation'
+import { getAiAutomationOperatorControl } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 
 const buildForwardedHeaders = (request: Request) => {
   const cookie = request.headers.get('cookie')
@@ -48,7 +46,7 @@ export async function GET(request: Request) {
     }
 
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const digestModeResolution = resolveAiAutomationMode('ops_digest')
+    const digestRolloutResolution = await getAiAutomationRuntimeResolution('ops_digest')
     const digestControl = getAiAutomationOperatorControl('ops_digest')
     
     // Get latency statistics
@@ -143,7 +141,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       digest,
       digestControl: {
-        mode: digestModeResolution.effectiveMode,
+        mode: digestRolloutResolution.finalRuntimeMode,
         outputLabel: digestControl?.outputLabel ?? 'Advisory output',
         approvalBoundaryLabel:
           digestControl?.approvalBoundaryLabel ??

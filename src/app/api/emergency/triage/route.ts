@@ -3,9 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
 import {
   buildAiAutomationAuditEvent,
-  mergeAiAutomationAuditMetadata,
-  resolveAiAutomationMode
+  mergeAiAutomationAuditMetadata
 } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 import type { DecisionMode, DecisionSource } from '@/lib/ai-types'
 import { detectMedicalEmergency } from '@/lib/medicalDetector'
 import {
@@ -217,7 +217,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const modeResolution = resolveAiAutomationMode('triage')
+    const rolloutResolution = await getAiAutomationRuntimeResolution('triage')
+    const runtimeMode = rolloutResolution.finalRuntimeMode
     const deterministicOutcome = buildDeterministicTriageOutcome(situation)
 
     let visibleOutcome = deterministicOutcome
@@ -230,8 +231,8 @@ export async function POST(request: Request) {
     let ownerSearchHandoff: OwnerSearchHandoffShadowTrace | null = null
 
     if (
-      modeResolution.effectiveMode === 'live' ||
-      modeResolution.effectiveMode === 'shadow'
+      runtimeMode === 'live' ||
+      runtimeMode === 'shadow'
     ) {
       const aiEvaluation = await runAiTriageEvaluation({
         situation,
@@ -248,7 +249,7 @@ export async function POST(request: Request) {
       aiModel = aiEvaluation.model
 
       if (aiEvaluation.outcome) {
-        if (modeResolution.effectiveMode === 'live') {
+        if (runtimeMode === 'live') {
           visibleOutcome = aiEvaluation.outcome
         } else {
           shadowOutcome = aiEvaluation.outcome
@@ -256,11 +257,11 @@ export async function POST(request: Request) {
       }
 
       if (
-        modeResolution.effectiveMode === 'shadow' &&
+        runtimeMode === 'shadow' &&
         deterministicOutcome.classification === 'normal'
       ) {
         ownerSearchHandoff = buildOwnerSearchHandoffShadowTrace({
-          effectiveMode: modeResolution.effectiveMode,
+          effectiveMode: runtimeMode,
           actorClass: 'owner',
           decisionSource:
             aiEvaluation.resultState === 'result' && aiEvaluation.searchAdvisory
@@ -284,7 +285,7 @@ export async function POST(request: Request) {
     }
 
     const visibleDecisionSource: DecisionSource =
-      modeResolution.effectiveMode === 'live' && auditDecisionSource === 'llm'
+      runtimeMode === 'live' && auditDecisionSource === 'llm'
         ? 'llm'
         : 'deterministic'
 
@@ -310,7 +311,7 @@ export async function POST(request: Request) {
             priority: visibleOutcome.priority,
             followUpActions: visibleOutcome.followUpActions,
             decisionSource: visibleDecisionSource,
-            aiMode: modeResolution.effectiveMode as DecisionMode,
+            aiMode: runtimeMode as DecisionMode,
             aiProvider,
             aiModel,
             aiPromptVersion: TRIAGE_PROMPT_VERSION,
@@ -318,14 +319,14 @@ export async function POST(request: Request) {
               undefined,
               {
                 workflowFamily: 'triage',
-                actorClass: modeResolution.actorClass,
-                effectiveMode: modeResolution.effectiveMode,
+                actorClass: rolloutResolution.actorClass,
+                effectiveMode: runtimeMode,
                 approvalState: 'not_required',
                 resultState: auditResultState,
                 decisionSource: auditDecisionSource,
                 routeOrJob: '/api/emergency/triage',
                 summary:
-                  modeResolution.effectiveMode === 'shadow'
+                  runtimeMode === 'shadow'
                     ? 'Shadow AI trace recorded while deterministic triage remained the visible outcome.'
                     : 'Emergency triage classification recorded.',
                 errorMessage: auditErrorMessage,
@@ -375,7 +376,7 @@ export async function POST(request: Request) {
           classification: visibleOutcome.classification,
           priority: visibleOutcome.priority,
           decisionSource: visibleDecisionSource,
-          aiMode: modeResolution.effectiveMode
+          aiMode: runtimeMode
         }
       })
       return NextResponse.json(
@@ -409,7 +410,7 @@ export async function POST(request: Request) {
         classification: visibleOutcome.classification,
         priority: visibleOutcome.priority,
         decisionSource: visibleDecisionSource,
-        aiMode: modeResolution.effectiveMode
+        aiMode: runtimeMode
       }
     })
     await recordCommercialFunnelMetric({
@@ -422,7 +423,7 @@ export async function POST(request: Request) {
         priority: visibleOutcome.priority,
         routesToSearch: visibleOutcome.classification === 'normal',
         decisionSource: visibleDecisionSource,
-        aiMode: modeResolution.effectiveMode,
+        aiMode: runtimeMode,
         triageId: data.id
       }
     })
@@ -436,7 +437,7 @@ export async function POST(request: Request) {
         priority: visibleOutcome.priority,
         followUpActions: visibleOutcome.followUpActions,
         decisionSource: visibleDecisionSource,
-        effectiveMode: modeResolution.effectiveMode,
+        effectiveMode: runtimeMode,
         triageId: data.id
       }
     })

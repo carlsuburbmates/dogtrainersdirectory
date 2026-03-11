@@ -69,6 +69,13 @@
 - `/account/business/**` is not an operator surface and must not inherit `/admin/**` capabilities simply because it manages listing/profile data.
 - `/api/account/business/[businessId]` is the bounded supporting API for this surface. It must remain outside `/api/admin/**` and must not grant verification, publication, moderation, scaffold-review, billing, featured, or spotlight actions unless SSOT later opens those capabilities explicitly.
 
+## 3.5 Automation rollout control boundary
+- `/api/admin/ai-rollouts` and `/api/admin/ai-rollouts/[workflow]` are admin-only control-plane endpoints.
+- These endpoints may stage, pause, disable, or mark workflows ready for review, but they must not bypass canonical ceilings or env kill switches.
+- `ai_automation_rollout_controls` and `ai_automation_rollout_events` are service-role-backed control-plane tables and must not be client-readable or client-writable.
+- Every rollout mutation must record the acting admin identity, reason, and state transition as part of the audit trail.
+- Rollout readiness evidence does not authorise live use by itself; human approval remains mandatory.
+
 ## 4. Sensitive fields
 Bundle indicates encrypted columns exist for contact fields and are decrypted via `decrypt_sensitive` using `SUPABASE_PGCRYPTO_KEY`.
 

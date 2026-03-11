@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateLLMResponse } from '@/lib/llm'
 import {
-  mergeAiAutomationAuditMetadata,
-  resolveAiAutomationMode
+  mergeAiAutomationAuditMetadata
 } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 import type { DecisionSource } from '@/lib/ai-types'
 
 const VERIFICATION_PROMPT_VERSION = 'resource-verification-v1'
@@ -57,7 +57,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const modeResolution = resolveAiAutomationMode('verification')
+    const rolloutResolution = await getAiAutomationRuntimeResolution('verification')
+    const runtimeMode = rolloutResolution.finalRuntimeMode
     const deterministicOutcome = buildDeterministicVerificationOutcome(phone, website)
     let visibleOutcome = deterministicOutcome
     let auditDecisionSource: DecisionSource = 'deterministic'
@@ -68,8 +69,8 @@ export async function POST(request: Request) {
     let shadowCandidate: VerificationOutcome | null = null
 
     if (
-      modeResolution.effectiveMode === 'live' ||
-      modeResolution.effectiveMode === 'shadow'
+      runtimeMode === 'live' ||
+      runtimeMode === 'shadow'
     ) {
       // AI-based verification
       const prompt = `Verify if this emergency resource contact information is likely valid:
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
           auditDecisionSource = 'llm'
           auditResultState = 'result'
 
-          if (modeResolution.effectiveMode === 'live') {
+          if (runtimeMode === 'live') {
             visibleOutcome = aiOutcome
           } else {
             shadowCandidate = aiOutcome
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     const visibleDecisionSource: DecisionSource =
-      modeResolution.effectiveMode === 'live' && auditDecisionSource === 'llm'
+      runtimeMode === 'live' && auditDecisionSource === 'llm'
         ? 'llm'
         : 'deterministic'
 
@@ -140,14 +141,14 @@ export async function POST(request: Request) {
             },
             {
               workflowFamily: 'verification',
-              actorClass: modeResolution.actorClass,
-              effectiveMode: modeResolution.effectiveMode,
+              actorClass: rolloutResolution.actorClass,
+              effectiveMode: runtimeMode,
               approvalState: 'pending',
               resultState: auditResultState,
               decisionSource: auditDecisionSource,
               routeOrJob: '/api/emergency/verify',
               summary:
-                modeResolution.effectiveMode === 'shadow'
+                runtimeMode === 'shadow'
                   ? 'Shadow verification trace recorded while deterministic verification remained the visible outcome.'
                   : 'Emergency resource verification event recorded.',
               errorMessage: auditErrorMessage,
@@ -191,7 +192,7 @@ export async function POST(request: Request) {
         reason: visibleOutcome.reason,
         confidence: visibleOutcome.confidence,
         verificationMethod: visibleDecisionSource === 'llm' ? 'ai' : 'deterministic',
-        effectiveMode: modeResolution.effectiveMode,
+        effectiveMode: runtimeMode,
         aiProvider,
         aiModel,
         verificationId: data.id,

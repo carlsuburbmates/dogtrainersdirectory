@@ -57,11 +57,23 @@ export type BusinessListingQualityHealthRow = {
   metadata?: unknown
 }
 
+export type ScaffoldReviewGuidanceHealthRow = {
+  created_at: string | null
+  metadata?: unknown
+}
+
 export type OperatorWorkflowHealthSummary = {
   counts: NormalizedDecisionCounts
   shadowTraceCount: number
   errorCount: number
   lastTrace: string | null
+  note: string
+}
+
+export type ScheduledRolloutEvidenceSummary = {
+  observedRuns: number
+  requiredRuns: number
+  ready: boolean
   note: string
 }
 
@@ -451,6 +463,49 @@ export function summarizeDigestHealth(rows: DigestHealthRow[]): OperatorWorkflow
   }
 }
 
+export function summarizeScheduledShadowEvidence(
+  rows: Array<{ ai_mode?: string | null; created_at: string | null; metadata?: unknown; ci_summary?: unknown }>,
+  requiredRuns = 7
+): ScheduledRolloutEvidenceSummary {
+  let observedRuns = 0
+
+  for (const row of rows) {
+    const auditSource = row.ci_summary ?? row.metadata
+    const audit = getAiAutomationAudit(auditSource)
+
+    if (row.ai_mode !== 'shadow') {
+      continue
+    }
+
+    if (audit?.resultState === 'error') {
+      return {
+        observedRuns,
+        requiredRuns,
+        ready: false,
+        note: 'Recent shadow evidence includes an error state. Review the failed trace before any live approval.'
+      }
+    }
+
+    observedRuns += 1
+
+    if (observedRuns >= requiredRuns) {
+      return {
+        observedRuns,
+        requiredRuns,
+        ready: true,
+        note: 'Minimum scheduled shadow evidence is available. Human review is still required before any live move.'
+      }
+    }
+  }
+
+  return {
+    observedRuns,
+    requiredRuns,
+    ready: false,
+    note: `Need ${requiredRuns} consecutive shadow runs without critical errors before live review can start.`
+  }
+}
+
 export function summarizeOnboardingHealth(rows: OnboardingHealthRow[]): OperatorWorkflowHealthSummary {
   let deterministicVisible = 0
   let shadowTraceCount = 0
@@ -540,6 +595,55 @@ export function summarizeBusinessListingQualityHealth(
         'Business listing-quality guidance is recorded as a business-facing shadow-only advisory trace in latency_metrics.metadata',
       approvalBoundaryLabel:
         'The owned profile save stays deterministic, and publication, verification, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged.',
+      shadowTraceCount,
+      errorCount,
+      includeVisibleDeterministicNote: shadowTraceCount > 0
+    })
+  }
+}
+
+export function summarizeScaffoldReviewGuidanceHealth(
+  rows: ScaffoldReviewGuidanceHealthRow[]
+): OperatorWorkflowHealthSummary {
+  let deterministicVisible = 0
+  let shadowTraceCount = 0
+  let errorCount = 0
+  let lastTrace: string | null = null
+
+  for (const row of rows) {
+    const metadata = asRecord(row.metadata)
+    const shadowTrace = asRecord(metadata?.operatorScaffoldReviewGuidance)
+    const audit = getAiAutomationAudit(shadowTrace)
+
+    if (shadowTrace) {
+      deterministicVisible += 1
+      shadowTraceCount += 1
+
+      if (row.created_at && (!lastTrace || row.created_at > lastTrace)) {
+        lastTrace = row.created_at
+      }
+    }
+
+    if (audit?.resultState === 'error') {
+      errorCount += 1
+    }
+  }
+
+  return {
+    counts: {
+      aiDecisions: 0,
+      deterministicDecisions: deterministicVisible,
+      manualOverrides: 0
+    },
+    shadowTraceCount,
+    errorCount,
+    lastTrace,
+    note: buildOperatorWorkflowNote({
+      familyLabel: 'Scaffold review guidance',
+      outputLabel:
+        'Scaffold review guidance is an operator-only shadow trace recorded in latency_metrics.metadata',
+      approvalBoundaryLabel:
+        'The visible scaffold queue, approval decisions, publication state, verification state, spotlight state, billing state, and ranking remain unchanged.',
       shadowTraceCount,
       errorCount,
       includeVisibleDeterministicNote: shadowTraceCount > 0

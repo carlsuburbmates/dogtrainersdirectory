@@ -8,7 +8,7 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase'
-import { resolveAiAutomationMode } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 import { moderatePendingReviews } from '@/lib/moderation'
 import type { DecisionMode } from '@/lib/ai-types'
 
@@ -44,9 +44,10 @@ const DEFAULT_BATCH_SIZE = 50
 export async function runModerationCycle(
   options: ModerationOptions = {}
 ): Promise<ModerationRunResult> {
+  const rolloutResolution = await getAiAutomationRuntimeResolution('moderation')
   const {
     batchSize = DEFAULT_BATCH_SIZE,
-    mode = resolveAiAutomationMode('moderation').effectiveMode,
+    mode = rolloutResolution.finalRuntimeMode,
     dryRun = false
   } = options
 

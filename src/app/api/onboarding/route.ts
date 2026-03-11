@@ -6,7 +6,8 @@ import { recordAbnFallbackEvent } from '@/lib/abnFallback'
 import { recordLatencyMetric } from '@/lib/telemetryLatency'
 import { parseOnboardingPayload, type OnboardingPayload } from '@/lib/services/onboardingPayload'
 import { generateLLMResponse } from '@/lib/llm'
-import { buildAiAutomationAuditEvent, resolveAiAutomationMode } from '@/lib/ai-automation'
+import { buildAiAutomationAuditEvent } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 import {
   buildOnboardingShadowPrompt,
   parseOnboardingShadowCandidate,
@@ -177,9 +178,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const modeResolution = resolveAiAutomationMode('onboarding')
+    const rolloutResolution = await getAiAutomationRuntimeResolution('onboarding')
 
-    if (modeResolution.effectiveMode === 'shadow') {
+    if (rolloutResolution.finalRuntimeMode === 'shadow') {
       const assistance = await runOnboardingShadowAssistance(parsedBody.data)
       onboardingAiProvider = assistance.provider
       onboardingAiModel = assistance.model

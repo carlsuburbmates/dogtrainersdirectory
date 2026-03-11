@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildAiAutomationAuditEvent,
   getAiAutomationVisibility,
-  resolveAiAutomationMode
+  getImplicitAiAutomationRolloutState,
+  resolveAiAutomationMode,
+  resolveAiAutomationRolloutResolution
 } from '@/lib/ai-automation'
 
 function env(values: Record<string, string>): NodeJS.ProcessEnv {
@@ -96,5 +98,55 @@ describe('ai automation substrate', () => {
       resultingRecordReferences: [{ table: 'emergency_triage_logs', id: 42 }],
       notes: []
     })
+  })
+
+  it('uses shadow_only as the implicit rollout state for canonically shadow-capped workflows', () => {
+    expect(getImplicitAiAutomationRolloutState('onboarding')).toBe('shadow_only')
+    expect(getImplicitAiAutomationRolloutState('business_listing_quality')).toBe('shadow_only')
+  })
+
+  it('uses shadow as the implicit rollout state for live-capable workflows without control rows', () => {
+    expect(getImplicitAiAutomationRolloutState('triage')).toBe('shadow')
+    expect(getImplicitAiAutomationRolloutState('ops_digest')).toBe('shadow')
+  })
+
+  it('keeps controlled_live shadowed when the env ceiling is not live', () => {
+    const modeResolution = resolveAiAutomationMode('ops_digest', env({
+      AI_GLOBAL_MODE: 'shadow'
+    }))
+
+    const resolution = resolveAiAutomationRolloutResolution(modeResolution, {
+      workflow: 'ops_digest',
+      rolloutState: 'controlled_live'
+    })
+
+    expect(resolution.rolloutState).toBe('controlled_live')
+    expect(resolution.finalRuntimeMode).toBe('shadow')
+  })
+
+  it('allows controlled_live to resolve to live only when the env ceiling is live', () => {
+    const modeResolution = resolveAiAutomationMode('ops_digest', env({
+      AI_GLOBAL_MODE: 'live'
+    }))
+
+    const resolution = resolveAiAutomationRolloutResolution(modeResolution, {
+      workflow: 'ops_digest',
+      rolloutState: 'controlled_live'
+    })
+
+    expect(resolution.finalRuntimeMode).toBe('live')
+  })
+
+  it('treats paused_after_review as a disabled runtime state', () => {
+    const modeResolution = resolveAiAutomationMode('triage', env({
+      AI_GLOBAL_MODE: 'live'
+    }))
+
+    const resolution = resolveAiAutomationRolloutResolution(modeResolution, {
+      workflow: 'triage',
+      rolloutState: 'paused_after_review'
+    })
+
+    expect(resolution.finalRuntimeMode).toBe('disabled')
   })
 })

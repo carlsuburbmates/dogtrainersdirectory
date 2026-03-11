@@ -34,6 +34,10 @@ This file defines policy-level API contracts and security boundaries only.
 - `PATCH /api/account/business/[businessId]`: must accept only the bounded profile-maintenance fields used by the business-owned profile surface (`businessName`, public contact fields, website, address, bio, pricing, primary and secondary service selections, age specialties, behaviour issues).
 - `PATCH /api/account/business/[businessId]`: must reject verification, ABN, publication, moderation, scaffold-review, featured, spotlight, billing, checkout, ranking, and other admin-only or monetisation fields rather than silently ignoring them.
 - `PATCH /api/account/business/[businessId]`: deterministic profile persistence remains the visible source of truth. Any `AA-706` listing-quality guidance attached to this route must stay shadow-only, audit-only, and non-outcome-changing for publication, verification, featured or spotlight state, monetisation, and ranking.
+- `GET /api/admin/ai-rollouts`: returns rollout resolution per automation workflow, including env ceiling, rollout state, final runtime mode, and rollout-readiness context for the operator surface.
+- `PATCH /api/admin/ai-rollouts/[workflow]`: is admin-only and must enforce canonical transition rules. It must not allow a workflow to exceed canonical ceilings or env ceilings.
+- `PATCH /api/admin/ai-rollouts/[workflow]`: every successful mutation must write both current control state and append-only event history with acting admin identity and reason.
+- `/api/admin/ai-rollouts/**`: is a supervision/control-plane surface only. It must not directly trigger owner-facing or business-facing live rollout beyond canonical approval boundaries.
 
 ## 4. Endpoint contract source
 - Full method lists are in `DOCS/SSOT/_generated/api.md`.

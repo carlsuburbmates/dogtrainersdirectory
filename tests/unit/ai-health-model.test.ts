@@ -5,6 +5,8 @@ import {
   summarizeModerationHealth,
   summarizeDigestHealth,
   summarizeOnboardingHealth,
+  summarizeScheduledShadowEvidence,
+  summarizeScaffoldReviewGuidanceHealth,
   summarizeTriageHealth,
   summarizeVerificationHealth,
   toAiPercentage
@@ -232,6 +234,40 @@ describe('ai-health model helpers', () => {
     expect(summary.note).toContain('No external action is executed from the digest by itself')
   })
 
+  it('requires seven clean scheduled shadow runs before rollout evidence is ready', () => {
+    const insufficient = summarizeScheduledShadowEvidence(
+      Array.from({ length: 6 }, (_, index) => ({
+        ai_mode: 'shadow',
+        created_at: `2026-03-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
+        ci_summary: {
+          aiAutomationAudit: {
+            resultState: 'result'
+          }
+        }
+      })),
+      7
+    )
+
+    expect(insufficient.ready).toBe(false)
+    expect(insufficient.observedRuns).toBe(6)
+
+    const ready = summarizeScheduledShadowEvidence(
+      Array.from({ length: 7 }, (_, index) => ({
+        ai_mode: 'shadow',
+        created_at: `2026-03-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
+        ci_summary: {
+          aiAutomationAudit: {
+            resultState: 'result'
+          }
+        }
+      })),
+      7
+    )
+
+    expect(ready.ready).toBe(true)
+    expect(ready.observedRuns).toBe(7)
+  })
+
   it('summarises onboarding shadow traces as non-outcome-changing business assistance', () => {
     const summary = summarizeOnboardingHealth([
       {
@@ -351,5 +387,29 @@ describe('ai-health model helpers', () => {
     expect(summary.note).toContain('Business listing-quality guidance is recorded as a business-facing shadow-only advisory trace')
     expect(summary.note).toContain('publication, verification, featured or spotlight state, billing, checkout, and ranking outcomes remain unchanged')
     expect(summary.note).toContain('Shadow traces did not replace the visible deterministic outcome')
+  })
+
+  it('summarises scaffold review guidance traces as operator-only shadow output', () => {
+    const summary = summarizeScaffoldReviewGuidanceHealth([
+      {
+        created_at: '2026-03-10T11:00:00.000Z',
+        metadata: {
+          operatorScaffoldReviewGuidance: {
+            aiAutomationAudit: {
+              resultState: 'result'
+            }
+          }
+        }
+      }
+    ])
+
+    expect(summary.counts).toEqual({
+      aiDecisions: 0,
+      deterministicDecisions: 1,
+      manualOverrides: 0
+    })
+    expect(summary.shadowTraceCount).toBe(1)
+    expect(summary.note).toContain('operator-only shadow trace')
+    expect(summary.note).toContain('visible scaffold queue')
   })
 })

@@ -2,388 +2,89 @@ import { supabaseAdmin } from '@/lib/supabase'
 import {
   describeModeSource,
   getAiAutomationOperatorControl,
-  getAiAutomationModeResolutions,
   getAiAutomationVisibility,
-  type AiAutomationModeResolution,
+  type AiAutomationRolloutResolution,
   type AiAutomationVisibility,
   type AiAutomationWorkflow
 } from '@/lib/ai-automation'
+import { getAiAutomationRuntimeResolutions } from '@/lib/ai-rollouts'
 import {
   summarizeBusinessListingQualityHealth,
-  normalizeDecisionSourceCounts,
-  summarizeOnboardingHealth,
-  summarizeModerationHealth,
   summarizeDigestHealth,
+  summarizeModerationHealth,
+  summarizeOnboardingHealth,
+  summarizeScheduledShadowEvidence,
+  summarizeScaffoldReviewGuidanceHealth,
   summarizeTriageHealth,
   summarizeVerificationHealth,
-  toAiPercentage
+  toAiPercentage,
+  type NormalizedDecisionCounts
 } from './model'
+import { RolloutControls } from './rollout-controls'
 
-// Simple components without shadcn/ui for compatibility
 type WithChildren = { children: React.ReactNode }
 type WithChildrenAndClassName = { children: React.ReactNode; className?: string }
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={className}>{children}</div>
+  return <div className={['rounded-xl border border-gray-200 bg-white shadow-sm', className].filter(Boolean).join(' ')}>{children}</div>
 }
+
 function CardHeader({ children, className }: WithChildrenAndClassName) {
-  return <div className={['border-b pb-2 mb-4', className].filter(Boolean).join(' ')}>{children}</div>
+  return <div className={['border-b border-gray-100 px-5 py-4', className].filter(Boolean).join(' ')}>{children}</div>
 }
+
 function CardTitle({ children, className }: WithChildrenAndClassName) {
-  return <h2 className={['text-lg font-semibold', className].filter(Boolean).join(' ')}>{children}</h2>
+  return <h2 className={['text-lg font-semibold text-gray-950', className].filter(Boolean).join(' ')}>{children}</h2>
 }
+
 function CardDescription({ children, className }: WithChildrenAndClassName) {
-  return <p className={['text-sm text-gray-600', className].filter(Boolean).join(' ')}>{children}</p>
+  return <p className={['mt-1 text-sm text-gray-600', className].filter(Boolean).join(' ')}>{children}</p>
 }
+
 function CardContent({ children, className }: WithChildrenAndClassName) {
-  return <div className={className}>{children}</div>
+  return <div className={['px-5 py-4', className].filter(Boolean).join(' ')}>{children}</div>
 }
 
-function Table({ children, className }: WithChildrenAndClassName) {
-  return <table className={className}>{children}</table>
-}
-function TableHeader({ children }: WithChildren) {
-  return <thead>{children}</thead>
-}
-function TableBody({ children }: WithChildren) {
-  return <tbody>{children}</tbody>
-}
-function TableRow({ children, className }: WithChildrenAndClassName) {
-  return <tr className={['border-b', className].filter(Boolean).join(' ')}>{children}</tr>
-}
-function TableHead({ children, className }: WithChildrenAndClassName) {
-  return <th className={['text-left py-3 px-4 font-medium', className].filter(Boolean).join(' ')}>{children}</th>
-}
-function TableCell({ children, className }: WithChildrenAndClassName) {
-  return <td className={['py-3 px-4', className].filter(Boolean).join(' ')}>{children}</td>
-}
-
-function Badge({ children, variant, className }: { children: React.ReactNode; variant?: string; className?: string }) {
-  const base = 'inline-flex px-2 py-1 text-xs rounded-full'
-  const variantMap: Record<string, string> = {
-    default: 'bg-blue-100 text-blue-800',
-    secondary: 'bg-gray-100 text-gray-800',
-    outline: 'border border-gray-300 text-gray-700',
-    destructive: 'bg-red-100 text-red-800'
+function Badge({
+  children,
+  tone = 'neutral'
+}: {
+  children: React.ReactNode
+  tone?: 'neutral' | 'info' | 'warning' | 'danger' | 'success'
+}) {
+  const tones: Record<string, string> = {
+    neutral: 'border-gray-300 bg-white text-gray-700',
+    info: 'border-blue-200 bg-blue-50 text-blue-800',
+    warning: 'border-amber-200 bg-amber-50 text-amber-800',
+    danger: 'border-red-200 bg-red-50 text-red-800',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800'
   }
-  return <span className={[base, variantMap[variant || 'default'], className].filter(Boolean).join(' ')}>{children}</span>
-}
 
-interface PipelineHealth {
-  workflow: AiAutomationWorkflow
-  pipeline: string
-  mode: string
-  overrideMode: string | null
-  controlSource: string
-  visibility: AiAutomationVisibility
-  lastSuccess: string | null
-  errors24h: number
-  aiDecisions: number
-  deterministicDecisions: number
-  manualOverrides: number
-  note?: string | null
-}
-
-async function getPipelineHealth(): Promise<PipelineHealth[]> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  const llmConfigured = Boolean(process.env.ZAI_API_KEY)
-  const resolutions = new Map(
-    getAiAutomationModeResolutions().map((resolution) => [resolution.workflow, resolution])
+  return (
+    <span className={['inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', tones[tone]].join(' ')}>
+      {children}
+    </span>
   )
+}
 
-  const countByDecisionSource = async (table: string) => {
-    const countFor = async (decisionSource: string) => {
-      const { count, error } = await supabaseAdmin
-        .from(table)
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', since)
-        .eq('decision_source', decisionSource)
-
-      return { count: count ?? 0, error }
-    }
-
-    const [llm, deterministic, manual, manualOverride] = await Promise.all([
-      countFor('llm'),
-      countFor('deterministic'),
-      countFor('manual'),
-      countFor('manual_override')
-    ])
-
-    const instrumented = !llm.error && !deterministic.error && !manual.error && !manualOverride.error
-    if (!instrumented) {
-      return {
-        instrumented: false,
-        counts: {
-          aiDecisions: 0,
-          deterministicDecisions: 0,
-          manualOverrides: 0
-        }
-      }
-    }
-
-    return {
-      instrumented: true,
-      counts: normalizeDecisionSourceCounts({
-        llm: llm.count,
-        deterministic: deterministic.count,
-        manual: manual.count,
-        manualOverride: manualOverride.count
-      })
-    }
+type WorkflowStatusCard = {
+  workflow: AiAutomationWorkflow
+  label: string
+  resolution: AiAutomationRolloutResolution
+  visibility: AiAutomationVisibility
+  lastTrace: string | null
+  counts: NormalizedDecisionCounts
+  shadowTraceCount: number
+  errors24h: number
+  disagreements24h: number
+  note: string
+  readiness: {
+    label: string
+    tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success'
+    note: string
+    observed: number
+    required: number
   }
-
-  const lastAiSuccessFor = async (table: string) => {
-    const { data, error } = await supabaseAdmin
-      .from(table)
-      .select('created_at')
-      .gte('created_at', since)
-      .eq('decision_source', 'llm')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (error) {
-      return { instrumented: false, lastSuccess: null as string | null }
-    }
-
-    return {
-      instrumented: true,
-      lastSuccess: (data?.created_at as string | undefined) ?? null
-    }
-  }
-
-  const lastActivityFor = async (table: string) => {
-    const { data, error } = await supabaseAdmin
-      .from(table)
-      .select('created_at')
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (error) {
-      return { instrumented: false, lastSuccess: null as string | null }
-    }
-
-    return {
-      instrumented: true,
-      lastSuccess: (data?.created_at as string | undefined) ?? null
-    }
-  }
-
-  const toHealthRow = (
-    workflow: AiAutomationWorkflow,
-    pipeline: string,
-    input: {
-      lastSuccess: string | null
-      aiDecisions?: number
-      deterministicDecisions?: number
-      manualOverrides?: number
-      errors24h?: number
-      note: string
-      auditConnected?: boolean
-    }
-  ): PipelineHealth => {
-    const resolution = resolutions.get(workflow) as AiAutomationModeResolution
-    return {
-      workflow,
-      pipeline,
-      mode: resolution.effectiveMode,
-      overrideMode: resolution.overrideMode,
-      controlSource: describeModeSource(resolution),
-      visibility: getAiAutomationVisibility(resolution, {
-        auditConnected: input.auditConnected,
-        llmConfigured
-      }),
-      lastSuccess: input.lastSuccess,
-      errors24h: input.errors24h ?? 0,
-      aiDecisions: input.aiDecisions ?? 0,
-      deterministicDecisions: input.deterministicDecisions ?? 0,
-      manualOverrides: input.manualOverrides ?? 0,
-      note: input.note
-    }
-  }
-
-  const healthData: PipelineHealth[] = []
-
-  const triageRows = await supabaseAdmin
-    .from('emergency_triage_logs')
-    .select('created_at, ai_mode, decision_source, classification, metadata')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-
-  if (triageRows.error) {
-    healthData.push(
-      toHealthRow('triage', 'Emergency Triage', {
-        lastSuccess: null,
-        note: 'Triage audit trace counts are not available yet.',
-        auditConnected: true
-      })
-    )
-  } else {
-    const triageSummary = summarizeTriageHealth(triageRows.data ?? [])
-    healthData.push(
-      toHealthRow('triage', 'Emergency Triage', {
-        lastSuccess: triageSummary.lastTrace,
-        aiDecisions: triageSummary.counts.aiDecisions,
-        deterministicDecisions: triageSummary.counts.deterministicDecisions,
-        manualOverrides: triageSummary.counts.manualOverrides,
-        errors24h: triageSummary.shadowErrorCount,
-        note: triageSummary.note,
-        auditConnected: true
-      })
-    )
-  }
-
-  const moderationRows = await supabaseAdmin
-    .from('ai_review_decisions')
-    .select('created_at, decision_source')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-  const moderationControl = getAiAutomationOperatorControl('moderation')
-  if (moderationRows.error) {
-    healthData.push(
-      toHealthRow('moderation', 'Review Moderation', {
-        lastSuccess: null,
-        note: 'Moderation audit traces are not available yet.',
-        auditConnected: true
-      })
-    )
-  } else {
-    const moderationSummary = summarizeModerationHealth(moderationRows.data ?? [])
-    healthData.push(
-      toHealthRow('moderation', 'Review Moderation', {
-        lastSuccess: moderationSummary.lastTrace,
-        aiDecisions: moderationSummary.counts.aiDecisions,
-        deterministicDecisions: moderationSummary.counts.deterministicDecisions,
-        manualOverrides: moderationSummary.counts.manualOverrides,
-        note: `${moderationSummary.note} Operator output: ${moderationControl?.outputLabel}. Rollback/disable: ${moderationControl?.rollbackLabel}`,
-        auditConnected: true
-      })
-    )
-  }
-
-  const verificationRows = await supabaseAdmin
-    .from('emergency_resource_verification_events')
-    .select('created_at, details')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-  const verificationControl = getAiAutomationOperatorControl('verification')
-  if (verificationRows.error) {
-    healthData.push(
-      toHealthRow('verification', 'Resource Verification', {
-        lastSuccess: null,
-        note: 'Verification audit traces are not available yet.',
-        auditConnected: true
-      })
-    )
-  } else {
-    const verificationSummary = summarizeVerificationHealth(verificationRows.data ?? [])
-    healthData.push(
-      toHealthRow('verification', 'Resource Verification', {
-        lastSuccess: verificationSummary.lastTrace,
-        aiDecisions: verificationSummary.counts.aiDecisions,
-        deterministicDecisions: verificationSummary.counts.deterministicDecisions,
-        manualOverrides: verificationSummary.counts.manualOverrides,
-        errors24h: verificationSummary.errorCount,
-        note: `${verificationSummary.note} Rollback/disable: ${verificationControl?.rollbackLabel}`,
-        auditConnected: true
-      })
-    )
-  }
-
-  const digestRows = await supabaseAdmin
-    .from('daily_ops_digests')
-    .select('created_at, ai_mode, decision_source, ci_summary')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-  const digestControl = getAiAutomationOperatorControl('ops_digest')
-  if (digestRows.error) {
-    healthData.push(
-      toHealthRow('ops_digest', 'Ops Digest', {
-        lastSuccess: null,
-        note: 'Ops digest audit traces are not available yet.',
-        auditConnected: true
-      })
-    )
-  } else {
-    const digestSummary = summarizeDigestHealth(digestRows.data ?? [])
-    healthData.push(
-      toHealthRow('ops_digest', 'Ops Digest', {
-        lastSuccess: digestSummary.lastTrace,
-        aiDecisions: digestSummary.counts.aiDecisions,
-        deterministicDecisions: digestSummary.counts.deterministicDecisions,
-        manualOverrides: digestSummary.counts.manualOverrides,
-        errors24h: digestSummary.errorCount,
-        note: `${digestSummary.note} Rollback/disable: ${digestControl?.rollbackLabel}`,
-        auditConnected: true
-      })
-    )
-  }
-
-  const onboardingRows = await supabaseAdmin
-    .from('latency_metrics')
-    .select('created_at, metadata')
-    .eq('area', 'onboarding_api')
-    .eq('route', '/api/onboarding')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-  if (onboardingRows.error) {
-    healthData.push(
-      toHealthRow('onboarding', 'Business Onboarding', {
-        lastSuccess: null,
-        note: 'Onboarding shadow audit traces are not available yet.',
-        auditConnected: true
-      })
-    )
-  } else {
-    const onboardingSummary = summarizeOnboardingHealth(onboardingRows.data ?? [])
-    healthData.push(
-      toHealthRow('onboarding', 'Business Onboarding', {
-        lastSuccess: onboardingSummary.lastTrace,
-        aiDecisions: onboardingSummary.counts.aiDecisions,
-        deterministicDecisions: onboardingSummary.counts.deterministicDecisions,
-        manualOverrides: onboardingSummary.counts.manualOverrides,
-        errors24h: onboardingSummary.errorCount,
-        note: onboardingSummary.note,
-        auditConnected: true
-      })
-    )
-  }
-
-  const businessListingRows = await supabaseAdmin
-    .from('latency_metrics')
-    .select('created_at, metadata')
-    .eq('area', 'business_profile_api')
-    .eq('route', '/api/account/business/[businessId]')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-  if (businessListingRows.error) {
-    healthData.push(
-      toHealthRow('business_listing_quality', 'Business Listing Quality', {
-        lastSuccess: null,
-        note: 'Business listing-quality shadow audit traces are not available yet.',
-        auditConnected: true
-      })
-    )
-  } else {
-    const businessListingSummary = summarizeBusinessListingQualityHealth(
-      businessListingRows.data ?? []
-    )
-    healthData.push(
-      toHealthRow('business_listing_quality', 'Business Listing Quality', {
-        lastSuccess: businessListingSummary.lastTrace,
-        aiDecisions: businessListingSummary.counts.aiDecisions,
-        deterministicDecisions: businessListingSummary.counts.deterministicDecisions,
-        manualOverrides: businessListingSummary.counts.manualOverrides,
-        errors24h: businessListingSummary.errorCount,
-        note: businessListingSummary.note,
-        auditConnected: true
-      })
-    )
-  }
-
-  return healthData
 }
 
 function formatTimeAgo(isoString: string | null): string {
@@ -400,163 +101,564 @@ function formatTimeAgo(isoString: string | null): string {
   return `${diffDays}d ago`
 }
 
-export default async function AIHealthPage() {
-  const healthData = await getPipelineHealth()
-  const workflowResolutions = getAiAutomationModeResolutions()
+function formatTimestamp(isoString: string | null): string {
+  if (!isoString) return 'Not reviewed yet'
+  return new Intl.DateTimeFormat('en-AU', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Australia/Melbourne'
+  }).format(new Date(isoString))
+}
+
+function toneForVisibility(state: AiAutomationVisibility['state']) {
+  switch (state) {
+    case 'connected':
+      return 'success'
+    case 'degraded':
+      return 'warning'
+    default:
+      return 'neutral'
+  }
+}
+
+function toneForMode(mode: string) {
+  switch (mode) {
+    case 'live':
+      return 'success'
+    case 'shadow':
+      return 'info'
+    default:
+      return 'neutral'
+  }
+}
+
+function toneForRolloutState(state: AiAutomationRolloutResolution['rolloutState']) {
+  switch (state) {
+    case 'controlled_live':
+      return 'success'
+    case 'shadow_live_ready':
+      return 'info'
+    case 'paused_after_review':
+    case 'disabled':
+      return 'warning'
+    case 'shadow_only':
+      return 'neutral'
+    default:
+      return 'neutral'
+  }
+}
+
+function buildReadiness(
+  resolution: AiAutomationRolloutResolution,
+  input: {
+    observed: number
+    required: number
+    hasErrors: boolean
+    ready: boolean
+    note: string
+  }
+): WorkflowStatusCard['readiness'] {
+  if (resolution.shadowCapped) {
+    return {
+      label: 'Shadow-capped by canon',
+      tone: 'neutral',
+      note: 'This workflow cannot move beyond shadow in Phase 12.',
+      observed: 0,
+      required: 0
+    }
+  }
+
+  if (!resolution.controlledLiveCandidate) {
+    return {
+      label: 'Later candidate',
+      tone: 'neutral',
+      note: 'This workflow is live-capable in canon but is not in the current controlled-live cycle.',
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  if (resolution.rolloutState === 'controlled_live') {
+    return {
+      label: 'Controlled live enabled',
+      tone: 'success',
+      note: 'Controlled live is active under operator supervision. Keep rollback guidance visible.',
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  if (resolution.rolloutState === 'paused_after_review') {
+    return {
+      label: 'Paused after review',
+      tone: 'warning',
+      note: 'A reviewed pause is active. Investigate before returning to shadow or live review.',
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  if (resolution.rolloutState === 'disabled') {
+    return {
+      label: 'Disabled',
+      tone: 'warning',
+      note: 'Rollout is disabled. Return to shadow before collecting more evidence.',
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  if (resolution.rolloutState === 'shadow_live_ready') {
+    return {
+      label: 'Ready for review',
+      tone: 'info',
+      note: 'Evidence threshold is met, but human approval is still required before any controlled-live move.',
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  if (input.hasErrors) {
+    return {
+      label: 'Not ready',
+      tone: 'danger',
+      note: input.note,
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  if (input.ready) {
+    return {
+      label: 'Evidence ready',
+      tone: 'info',
+      note: input.note,
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
+  return {
+    label: 'Collecting shadow evidence',
+    tone: 'neutral',
+    note: input.note,
+    observed: input.observed,
+    required: input.required
+  }
+}
+
+async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const llmConfigured = Boolean(process.env.ZAI_API_KEY)
+  const resolutions = new Map(
+    (await getAiAutomationRuntimeResolutions()).map((resolution) => [resolution.workflow, resolution])
+  )
+
+  const [
+    triageRows,
+    moderationRows,
+    verificationRows,
+    digestRows,
+    onboardingRows,
+    businessListingRows,
+    scaffoldRows
+  ] = await Promise.all([
+    supabaseAdmin
+      .from('emergency_triage_logs')
+      .select('created_at, ai_mode, decision_source, classification, metadata')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('ai_review_decisions')
+      .select('created_at, decision_source')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('emergency_resource_verification_events')
+      .select('created_at, details')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('daily_ops_digests')
+      .select('created_at, ai_mode, decision_source, ci_summary')
+      .order('created_at', { ascending: false })
+      .limit(14),
+    supabaseAdmin
+      .from('latency_metrics')
+      .select('created_at, metadata')
+      .eq('area', 'onboarding_api')
+      .eq('route', '/api/onboarding')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('latency_metrics')
+      .select('created_at, metadata')
+      .eq('area', 'business_profile_api')
+      .eq('route', '/api/account/business/[businessId]')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('latency_metrics')
+      .select('created_at, metadata')
+      .eq('area', 'admin_scaffolded_queue')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+  ])
+
+  const triageSummary = triageRows.error
+    ? null
+    : summarizeTriageHealth(triageRows.data ?? [])
+  const moderationSummary = moderationRows.error
+    ? null
+    : summarizeModerationHealth(moderationRows.data ?? [])
+  const verificationSummary = verificationRows.error
+    ? null
+    : summarizeVerificationHealth(verificationRows.data ?? [])
+  const digestSummary = digestRows.error
+    ? null
+    : summarizeDigestHealth(digestRows.data ?? [])
+  const onboardingSummary = onboardingRows.error
+    ? null
+    : summarizeOnboardingHealth(onboardingRows.data ?? [])
+  const businessListingSummary = businessListingRows.error
+    ? null
+    : summarizeBusinessListingQualityHealth(businessListingRows.data ?? [])
+  const scaffoldSummary = scaffoldRows.error
+    ? null
+    : summarizeScaffoldReviewGuidanceHealth(scaffoldRows.data ?? [])
+
+  const scheduledEvidence = digestRows.error
+    ? { observedRuns: 0, requiredRuns: 7, ready: false, note: 'Digest audit traces are not available yet.' }
+    : summarizeScheduledShadowEvidence(digestRows.data ?? [], 7)
+
+  const buildCard = (
+    workflow: AiAutomationWorkflow,
+    label: string,
+    input:
+      | {
+          counts: NormalizedDecisionCounts
+          shadowTraceCount: number
+          errors24h: number
+          disagreements24h?: number
+          lastTrace: string | null
+          note: string
+          readinessObserved?: number
+          readinessRequired?: number
+          readinessReady?: boolean
+          readinessNote?: string
+        }
+      | null
+  ): WorkflowStatusCard => {
+    const resolution = resolutions.get(workflow)
+    if (!resolution) {
+      throw new Error(`Missing runtime resolution for workflow ${workflow}`)
+    }
+
+    return {
+      workflow,
+      label,
+      resolution,
+      visibility: getAiAutomationVisibility(resolution, {
+        auditConnected: true,
+        llmConfigured
+      }),
+      lastTrace: input?.lastTrace ?? null,
+      counts:
+        input?.counts ?? {
+          aiDecisions: 0,
+          deterministicDecisions: 0,
+          manualOverrides: 0
+        },
+      shadowTraceCount: input?.shadowTraceCount ?? 0,
+      errors24h: input?.errors24h ?? 0,
+      disagreements24h: input?.disagreements24h ?? 0,
+      note: input?.note ?? 'Audit traces are not available yet.',
+      readiness: buildReadiness(resolution, {
+        observed: input?.readinessObserved ?? 0,
+        required: input?.readinessRequired ?? 0,
+        hasErrors: (input?.errors24h ?? 0) > 0,
+        ready: input?.readinessReady ?? false,
+        note: input?.readinessNote ?? 'No readiness evidence is available yet.'
+      })
+    }
+  }
+
+  return [
+    buildCard('triage', 'Emergency Triage', triageSummary
+      ? {
+          counts: triageSummary.counts,
+          shadowTraceCount:
+            triageSummary.shadowTraceCount + triageSummary.handoffShadowTraceCount,
+          errors24h: triageSummary.shadowErrorCount + triageSummary.handoffShadowErrorCount,
+          disagreements24h: triageSummary.shadowDisagreementCount,
+          lastTrace: triageSummary.lastTrace,
+          note: triageSummary.note,
+          readinessObserved: triageSummary.shadowTraceCount,
+          readinessRequired: 25,
+          readinessReady: triageSummary.shadowTraceCount >= 25,
+          readinessNote:
+            triageSummary.shadowTraceCount >= 25
+              ? 'Minimum request-driven shadow evidence is available. Human review is still required before any live move.'
+              : 'Need at least 25 recent shadow traces before triage can be reviewed for any future live change.'
+        }
+      : null),
+    buildCard('moderation', 'Review Moderation', moderationSummary
+      ? {
+          counts: moderationSummary.counts,
+          shadowTraceCount: moderationSummary.shadowTraceCount,
+          errors24h: moderationSummary.errorCount,
+          lastTrace: moderationSummary.lastTrace,
+          note: moderationSummary.note
+        }
+      : null),
+    buildCard('verification', 'Resource Verification', verificationSummary
+      ? {
+          counts: verificationSummary.counts,
+          shadowTraceCount: verificationSummary.shadowTraceCount,
+          errors24h: verificationSummary.errorCount,
+          lastTrace: verificationSummary.lastTrace,
+          note: verificationSummary.note
+        }
+      : null),
+    buildCard('ops_digest', 'Ops Digest', digestSummary
+      ? {
+          counts: digestSummary.counts,
+          shadowTraceCount: digestSummary.shadowTraceCount,
+          errors24h: digestSummary.errorCount,
+          lastTrace: digestSummary.lastTrace,
+          note: digestSummary.note,
+          readinessObserved: scheduledEvidence.observedRuns,
+          readinessRequired: scheduledEvidence.requiredRuns,
+          readinessReady: scheduledEvidence.ready,
+          readinessNote: scheduledEvidence.note
+        }
+      : null),
+    buildCard('onboarding', 'Business Onboarding', onboardingSummary
+      ? {
+          counts: onboardingSummary.counts,
+          shadowTraceCount: onboardingSummary.shadowTraceCount,
+          errors24h: onboardingSummary.errorCount,
+          lastTrace: onboardingSummary.lastTrace,
+          note: onboardingSummary.note
+        }
+      : null),
+    buildCard('business_listing_quality', 'Business Listing Quality', businessListingSummary
+      ? {
+          counts: businessListingSummary.counts,
+          shadowTraceCount: businessListingSummary.shadowTraceCount,
+          errors24h: businessListingSummary.errorCount,
+          lastTrace: businessListingSummary.lastTrace,
+          note: businessListingSummary.note
+        }
+      : null),
+    buildCard('scaffold_review_guidance', 'Scaffold Review Guidance', scaffoldSummary
+      ? {
+          counts: scaffoldSummary.counts,
+          shadowTraceCount: scaffoldSummary.shadowTraceCount,
+          errors24h: scaffoldSummary.errorCount,
+          lastTrace: scaffoldSummary.lastTrace,
+          note: scaffoldSummary.note
+        }
+      : null)
+  ]
+}
+
+export default async function AIHealthPage() {
+  let cards: WorkflowStatusCard[]
+  try {
+    cards = await buildWorkflowStatusCards()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+
+    return (
+      <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-bold text-gray-950">AI supervision</h1>
+          <p className="max-w-3xl text-sm text-gray-600">
+            The automation supervision surface is currently unavailable.
+          </p>
+        </header>
+        <Card>
+          <CardContent className="space-y-3">
+            <Badge tone="danger">Supervision unavailable</Badge>
+            <p className="text-sm text-gray-700">
+              Rollout state and audit summaries could not be loaded. Retry after checking service-role access and admin telemetry dependencies.
+            </p>
+            <p className="text-xs text-gray-500">{message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const summaryCounts = {
+    shadowCapped: cards.filter((card) => card.resolution.shadowCapped).length,
+    readyForReview: cards.filter((card) => card.resolution.rolloutState === 'shadow_live_ready').length,
+    controlledLive: cards.filter((card) => card.resolution.rolloutState === 'controlled_live').length,
+    paused: cards.filter((card) => card.resolution.rolloutState === 'paused_after_review').length
+  }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">AI Health Monitor</h1>
-        <p className="text-gray-600 mt-2">Last 24 hours of workflow traces, effective modes, and deterministic fallback visibility.</p>
-      </div>
+    <div className="container mx-auto space-y-6 px-4 py-6 sm:px-6">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-bold text-gray-950">AI supervision</h1>
+        <p className="max-w-3xl text-sm text-gray-600">
+          This surface shows the env ceiling, rollout state, and current runtime truth for each automation family.
+          Shadow traces remain non-visible outcomes unless a workflow is explicitly approved for controlled live use.
+        </p>
+      </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Pipeline Status (Last 24h)</CardTitle>
-          <CardDescription>Connected workflows show trace counts where instrumentation exists.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pipeline</TableHead>
-                <TableHead>Mode</TableHead>
-                <TableHead>Visibility</TableHead>
-                <TableHead>Last Trace</TableHead>
-                <TableHead>24h Errors</TableHead>
-                <TableHead>AI Decisions</TableHead>
-                <TableHead>Deterministic</TableHead>
-                <TableHead>Manual</TableHead>
-                <TableHead>AI %</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {healthData.map((row) => {
-                const aiPercentage = toAiPercentage(row.aiDecisions, row.deterministicDecisions, row.manualOverrides)
-                return (
-                  <TableRow key={row.pipeline}>
-                    <TableCell className="font-medium">{row.pipeline}</TableCell>
-                    <TableCell>
-                      <Badge variant={row.mode === 'live' ? 'default' : row.mode === 'shadow' ? 'secondary' : 'outline'}>
-                        {row.mode}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          row.visibility.state === 'degraded'
-                            ? 'destructive'
-                            : row.visibility.state === 'not_connected'
-                              ? 'outline'
-                              : 'secondary'
-                        }
-                      >
-                        {row.visibility.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">{formatTimeAgo(row.lastSuccess)}</TableCell>
-                    <TableCell>
-                      <Badge variant={row.errors24h > 0 ? 'destructive' : 'outline'}>{row.errors24h}</Badge>
-                    </TableCell>
-                    <TableCell>{row.aiDecisions}</TableCell>
-                    <TableCell>{row.deterministicDecisions}</TableCell>
-                    <TableCell>{row.manualOverrides}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${aiPercentage}%` }} />
-                        </div>
-                        <span className="text-sm text-gray-600">{aiPercentage}%</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-          <div className="mt-4 text-xs text-gray-500 space-y-1">
-            {healthData.filter((row) => row.note).map((row) => (
-              <div key={`${row.pipeline}-note`}>
-                <span className="font-medium">{row.pipeline}:</span> {row.note} {row.visibility.note}
-              </div>
-            ))}
-            <div>
-              <span className="font-medium">24h Errors:</span> Uses connected audit error counts where available. Other workflows remain 0 until instrumented.
-            </div>
+        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Shadow-capped</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-950">{summaryCounts.shadowCapped}</div>
+            <p className="mt-1 text-sm text-gray-600">Canon keeps these workflows below live in Phase 12.</p>
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Ready for review</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-950">{summaryCounts.readyForReview}</div>
+            <p className="mt-1 text-sm text-gray-600">Evidence threshold met, but still not approved for live use.</p>
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Controlled live</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-950">{summaryCounts.controlledLive}</div>
+            <p className="mt-1 text-sm text-gray-600">Only approved operator-controlled live workflows appear here.</p>
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Paused</div>
+            <div className="mt-2 text-2xl font-semibold text-gray-950">{summaryCounts.paused}</div>
+            <p className="mt-1 text-sm text-gray-600">Reviewed pauses take precedence over ordinary shadow collection.</p>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Mode Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Global Mode:</span>
-              <Badge>{process.env.AI_GLOBAL_MODE || 'live'}</Badge>
-            </div>
-            {workflowResolutions.map((resolution) => {
-              const visibility = getAiAutomationVisibility(resolution, {
-                auditConnected: true,
-                llmConfigured
-              })
+      <Card>
+        <CardHeader>
+          <CardTitle>Control model</CardTitle>
+          <CardDescription>
+            Dashboard-first supervision is the normal operator path. Env vars remain the hard ceiling, while rollout controls
+            stage, pause, or disable workflows inside that ceiling.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+            <div className="font-semibold text-gray-950">Low-noise supervision</div>
+            <p className="mt-2">
+              Review exceptions and rollout readiness here first. Use off-dashboard escalation only for critical failures or unsafe outcomes.
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+            <div className="font-semibold text-gray-950">Approval boundary</div>
+            <p className="mt-2">
+              Evidence sufficiency is necessary, not sufficient. Human review approval is still required before any controlled-live move.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-              return (
-                <div
-                  key={resolution.workflow}
-                  className="rounded-md border border-gray-200 px-3 py-2"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium">{resolution.label}</span>
-                    <Badge
-                      variant={
-                        resolution.effectiveMode === 'live'
-                          ? 'default'
-                          : resolution.effectiveMode === 'shadow'
-                            ? 'secondary'
-                            : 'outline'
-                      }
-                    >
-                      {resolution.effectiveMode}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {cards.map((card) => {
+          const aiPercentage = toAiPercentage(
+            card.counts.aiDecisions,
+            card.counts.deterministicDecisions,
+            card.counts.manualOverrides
+          )
+          const operatorControl = getAiAutomationOperatorControl(card.workflow)
+
+          return (
+            <Card key={card.workflow}>
+              <CardHeader>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>{card.label}</CardTitle>
+                    <CardDescription>{card.note}</CardDescription>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge tone={toneForMode(card.resolution.effectiveMode)}>
+                      Env {card.resolution.effectiveMode}
+                    </Badge>
+                    <Badge tone={toneForRolloutState(card.resolution.rolloutState)}>
+                      Rollout {card.resolution.rolloutState}
+                    </Badge>
+                    <Badge tone={toneForMode(card.resolution.finalRuntimeMode)}>
+                      Runtime {card.resolution.finalRuntimeMode}
                     </Badge>
                   </div>
-                  <div className="mt-2 space-y-1 text-xs text-gray-600">
-                    <div className="flex justify-between gap-3">
-                      <span>Override</span>
-                      <span>{resolution.overrideMode ?? '(using global)'}</span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Visibility</div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Badge tone={toneForVisibility(card.visibility.state)}>{card.visibility.label}</Badge>
+                      {card.resolution.shadowCapped ? <Badge>Shadow-only</Badge> : null}
+                      {card.resolution.liveCapableButShadowed ? <Badge tone="info">Live-capable but shadowed</Badge> : null}
                     </div>
-                    <div className="flex justify-between gap-3">
-                      <span>Control source</span>
-                      <span>{describeModeSource(resolution)}</span>
+                    <p className="mt-2 text-sm text-gray-600">{card.visibility.note}</p>
+                    <p className="mt-2 text-xs text-gray-500">Mode source: {describeModeSource(card.resolution)}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Review readiness</div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Badge tone={card.readiness.tone}>{card.readiness.label}</Badge>
+                      {card.readiness.required > 0 ? (
+                        <span className="text-xs text-gray-500">
+                          {card.readiness.observed}/{card.readiness.required}
+                        </span>
+                      ) : null}
                     </div>
-                    <div className="flex justify-between gap-3">
-                      <span>Visibility</span>
-                      <span>{visibility.label}</span>
-                    </div>
+                    <p className="mt-2 text-sm text-gray-600">{card.readiness.note}</p>
+                    <p className="mt-2 text-xs text-gray-500">Last review: {formatTimestamp(card.resolution.lastReviewedAt)}</p>
                   </div>
                 </div>
-              )
-            })}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-gray-600">Update env vars in Vercel and redeploy to change AI modes or trigger the kill switch.</p>
-            <div className="pt-2 space-y-1 text-xs">
-              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=disabled</code> - Programme-wide kill switch</div>
-              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=shadow</code> - Record traces without changing final public or moderation outcomes</div>
-              <div><code className="bg-gray-100 px-1 rounded">AI_GLOBAL_MODE=live</code> - Use the live workflow path where that workflow is already connected</div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Last trace</div>
+                    <div className="mt-2 text-sm font-medium text-gray-950">{formatTimeAgo(card.lastTrace)}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">24h errors</div>
+                    <div className="mt-2 text-sm font-medium text-gray-950">{card.errors24h}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Shadow traces</div>
+                    <div className="mt-2 text-sm font-medium text-gray-950">{card.shadowTraceCount}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Disagreements</div>
+                    <div className="mt-2 text-sm font-medium text-gray-950">{card.disagreements24h}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Decision mix</div>
+                    <div className="text-sm text-gray-600">{aiPercentage}% visible AI</div>
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-gray-200">
+                    <div className="h-2 rounded-full bg-blue-600" style={{ width: `${aiPercentage}%` }} />
+                  </div>
+                  <div className="mt-3 grid gap-2 text-sm text-gray-700 sm:grid-cols-3">
+                    <div>AI: {card.counts.aiDecisions}</div>
+                    <div>Deterministic: {card.counts.deterministicDecisions}</div>
+                    <div>Manual overrides: {card.counts.manualOverrides}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+                  <div className="font-semibold text-gray-950">Rollback and operator boundary</div>
+                  <p className="mt-2">{operatorControl?.approvalBoundaryLabel}</p>
+                  <p className="mt-2 text-gray-600">{operatorControl?.rollbackLabel}</p>
+                </div>
+
+                <RolloutControls resolution={card.resolution} />
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
