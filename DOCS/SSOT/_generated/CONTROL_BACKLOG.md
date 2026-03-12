@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-12
+**Last Updated:** 2026-03-13
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -77,7 +77,8 @@
 | AS-803 | Supervised Automation Operations | Extend `/admin/ai-health` into the supervised rollout surface | completed | frontend + backend + main-control | `WORKPLAN` `AS-803` | operator supervision shows truthful rollout state, readiness, and rollback guidance per workflow family |
 | AS-804 | Supervised Automation Operations | Add operator pause/disable and selective-enable controls | completed | backend + main-control | `WORKPLAN` `AS-804` | operators can pause or disable live-capable workflows safely and auditably without bypassing admin boundaries |
 | AS-805 | Supervised Automation Operations | Add rollout verification and first controlled-live execution support | completed | backend + main-control | `WORKPLAN` `AS-805` | focused verification exists and the first controlled-live candidate can be exercised through the new control model |
-| AC-901 | Controlled Live Proof And Burden Baseline | Prove `ops_digest` controlled-live readiness and rank operator burden | in_progress | main-control | `WORKPLAN` `AC-901` | defines the controlled-live proof checklist for `ops_digest` without auto-enabling it, and records a workflow-family burden ranking to guide the next workload-reduction phase |
+| AC-901 | Controlled Live Proof And Burden Baseline | Prove `ops_digest` controlled-live readiness and rank operator burden | completed | main-control | `WORKPLAN` `AC-901` | completes the first bounded controlled-live proof review, records the initial burden ranking, and does not auto-enable `ops_digest` when evidence is insufficient |
+| AC-902 | Controlled Live Proof And Burden Baseline | Capture `ops_digest` evidence and harden rollout-registry truthfulness | in_progress | backend + main-control | `WORKPLAN` `AC-902` | captures the real shadow evidence window and makes rollout-registry read failure explicit before any later controlled-live approval review |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -93,7 +94,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-901`.
+- Current active priority: `AC-902`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

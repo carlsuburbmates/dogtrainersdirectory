@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-12
+**Last Updated:** 2026-03-13
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -88,6 +88,7 @@
 | 2026-03-11 | D-178 | `AA-706` accepted as complete after SSOT refresh correction | the generated route and API inventories now match the implemented `/account/business/**` surface, so the first truthful business-owned post-onboarding management slice is coherent in code, tests, and canon | AI Automation Definition And Rollout is complete for the current planned slice and the roadmap returns to awaiting prioritisation |
 | 2026-03-11 | D-179 | Open `Phase 12 - Supervised Automation Operations` and accept `AS-801` | the current shadow-only automation slice is accepted, but DTD still needs one canonical supervised-rollout model before any new automation control-plane implementation begins | `AS-801` is complete, supervised rollout states and approval rules are canonical, and `AS-802` is now the active priority |
 | 2026-03-12 | D-180 | Open `Phase 13 - Controlled Live Proof And Burden Baseline` and set `AC-901` as the active priority | Phase 12 delivered the supervised rollout control plane, but the next step must be opened canonically before any review output is treated as accepted work | Phase 13 is open, `AC-901` is the single active priority, and this change does not automatically activate `ops_digest` |
+| 2026-03-13 | D-181 | Accept `AC-901` as a negative readiness review and open `AC-902` as the blocker-removal follow-up | `ops_digest` does not yet meet the controlled-live evidence threshold and rollout-registry read failures can still masquerade as implicit `shadow`, but the review itself is complete and the `/admin/ai-health` truthfulness fix is worth keeping | `AC-901` is complete with a `not ready` verdict, `AC-902` is now the single active priority, and no workflow is auto-enabled to live |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |

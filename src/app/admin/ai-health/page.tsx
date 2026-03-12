@@ -342,6 +342,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           disagreements24h?: number
           lastTrace: string | null
           note: string
+          auditConnected?: boolean
           readinessObserved?: number
           readinessRequired?: number
           readinessReady?: boolean
@@ -359,7 +360,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
       label,
       resolution,
       visibility: getAiAutomationVisibility(resolution, {
-        auditConnected: true,
+        auditConnected: input?.auditConnected ?? false,
         llmConfigured
       }),
       lastTrace: input?.lastTrace ?? null,
@@ -393,6 +394,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           disagreements24h: triageSummary.shadowDisagreementCount,
           lastTrace: triageSummary.lastTrace,
           note: triageSummary.note,
+          auditConnected: true,
           readinessObserved: triageSummary.shadowTraceCount,
           readinessRequired: 25,
           readinessReady: triageSummary.shadowTraceCount >= 25,
@@ -408,7 +410,8 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           shadowTraceCount: moderationSummary.shadowTraceCount,
           errors24h: moderationSummary.errorCount,
           lastTrace: moderationSummary.lastTrace,
-          note: moderationSummary.note
+          note: moderationSummary.note,
+          auditConnected: true
         }
       : null),
     buildCard('verification', 'Resource Verification', verificationSummary
@@ -417,7 +420,8 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           shadowTraceCount: verificationSummary.shadowTraceCount,
           errors24h: verificationSummary.errorCount,
           lastTrace: verificationSummary.lastTrace,
-          note: verificationSummary.note
+          note: verificationSummary.note,
+          auditConnected: true
         }
       : null),
     buildCard('ops_digest', 'Ops Digest', digestSummary
@@ -427,6 +431,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           errors24h: digestSummary.errorCount,
           lastTrace: digestSummary.lastTrace,
           note: digestSummary.note,
+          auditConnected: true,
           readinessObserved: scheduledEvidence.observedRuns,
           readinessRequired: scheduledEvidence.requiredRuns,
           readinessReady: scheduledEvidence.ready,
@@ -439,7 +444,8 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           shadowTraceCount: onboardingSummary.shadowTraceCount,
           errors24h: onboardingSummary.errorCount,
           lastTrace: onboardingSummary.lastTrace,
-          note: onboardingSummary.note
+          note: onboardingSummary.note,
+          auditConnected: true
         }
       : null),
     buildCard('business_listing_quality', 'Business Listing Quality', businessListingSummary
@@ -448,7 +454,8 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           shadowTraceCount: businessListingSummary.shadowTraceCount,
           errors24h: businessListingSummary.errorCount,
           lastTrace: businessListingSummary.lastTrace,
-          note: businessListingSummary.note
+          note: businessListingSummary.note,
+          auditConnected: true
         }
       : null),
     buildCard('scaffold_review_guidance', 'Scaffold Review Guidance', scaffoldSummary
@@ -457,7 +464,8 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           shadowTraceCount: scaffoldSummary.shadowTraceCount,
           errors24h: scaffoldSummary.errorCount,
           lastTrace: scaffoldSummary.lastTrace,
-          note: scaffoldSummary.note
+          note: scaffoldSummary.note,
+          auditConnected: true
         }
       : null)
   ]
