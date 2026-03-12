@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-11)
+## Current State (as of 2026-03-12)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -53,7 +53,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AA-706B` is now complete and the existing operator scaffold-review queue path has shadow-only guidance traces without changing queue, approval, publication, verification, featured/spotlight, billing, or ranking outcomes.
 - `AS-801` is now complete and the supervised automation rollout model is canonically defined before any new control-plane implementation work.
 - Supervised Automation Operations is complete for the current planned slice.
-- Current top priority: awaiting next prioritisation cycle.
+- Phase 13 - Controlled Live Proof And Burden Baseline is now open as the next governed delivery slice.
+- Current top priority: `AC-901`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -67,6 +68,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   10. Runtime Resilience
   11. AI Automation Definition And Rollout
   12. Supervised Automation Operations
+  13. Controlled Live Proof And Burden Baseline
 
 ## Completed Foundation Milestones
 
@@ -612,7 +614,23 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The first controlled-live candidate policy is executable through the new supervision/control model.
   - No owner-facing or business-facing workflow moves toward live use unless the supervision prerequisites are satisfied and canon explicitly permits it.
 
+### Phase 13 - Controlled Live Proof And Burden Baseline
+
+**Phase rule**
+- This phase is a controlled-live proof and planning baseline only.
+- It must not automatically activate any workflow family.
+- Any move of `ops_digest` toward `controlled_live` requires explicit operator review and acceptance under the supervised rollout rubric.
+
+**AC-901: Prove `ops_digest` controlled-live readiness and rank operator burden**
+- Primary purpose: establish controlled-live proof for `ops_digest` under the supervised rollout model without changing billing, publication, verification, moderation, ranking, or owner/business workflow outcomes.
+- Secondary output: produce a workflow-family operator-burden ranking to plan the next workload-reduction phase for a one-man operator doing weekly exception review.
+- Definition of done:
+  - The task defines the controlled-live proof checklist and evidence expectations for `ops_digest` without enabling it automatically.
+  - The task defines the operator-burden ranking rubric and records the initial ranked list of workflow families based on observed exception pressure and review effort.
+  - Roadmap and control state remain coherent: exactly one active priority and no premature completion state.
+
 ## Execution Log
+- 2026-03-12: Opened `Phase 13 - Controlled Live Proof And Burden Baseline` and set `AC-901` as the single active priority. This is a task-opening step only; it does not automatically activate `ops_digest` or widen any automation boundary.
 - 2026-03-11: `AS-802` to `AS-805` completed as one bounded Phase 12 control-plane slice. DTD now has schema-backed rollout controls and append-only rollout events, rollout-aware runtime resolution layered on top of the env ceiling, admin rollout control APIs, `/admin/ai-health` as the canonical supervision surface, bounded operator pause/disable/ready-for-review/controlled-live controls, and focused verification including admin browser coverage. `ops_digest` is the only controlled-live candidate supported by the implementation, and no owner-facing or business-facing workflow gained a live path. Supervised Automation Operations is now complete for the current planned slice and the roadmap returns to awaiting the next prioritisation cycle.
 - 2026-03-11: `AS-801` completed. AI Automation canon now distinguishes runtime mode from rollout state, defines the dashboard-first supervision model and approval/evidence rubric for controlled live use, and opens `Phase 12 - Supervised Automation Operations` with `AS-802` as the active priority. No implementation surfaces or approval boundaries were widened in this docs-only task.
 - 2026-03-11: `AA-706` accepted as complete after correction. The generated SSOT inventories now include `/account/business`, `/account/business/[businessId]`, and `PATCH /api/account/business/[businessId]`, so the implemented route/API surface is in sync with canon. The first truthful business-owned post-onboarding management slice is now complete, with deterministic profile maintenance and shadow-only listing-quality guidance on the owned save path. AI Automation Definition And Rollout is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.

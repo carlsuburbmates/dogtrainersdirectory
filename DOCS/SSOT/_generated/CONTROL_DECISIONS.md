@@ -2,7 +2,7 @@
 
 **Status:** Active log  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-12
 
 ## Decision log
 | Date | ID | Decision | Reason | Impact |
@@ -87,6 +87,7 @@
 | 2026-03-11 | D-177 | Revert premature `AA-706` completion state pending acceptance | the new `/account/business/**` route family and `PATCH /api/account/business/[businessId]` were implemented before the generated SSOT inventories were refreshed, so the slice was advanced in roadmap/control state too early | `AA-706` remains the single active priority until main-control acceptance, and generated route/API inventories now match the implemented surface |
 | 2026-03-11 | D-178 | `AA-706` accepted as complete after SSOT refresh correction | the generated route and API inventories now match the implemented `/account/business/**` surface, so the first truthful business-owned post-onboarding management slice is coherent in code, tests, and canon | AI Automation Definition And Rollout is complete for the current planned slice and the roadmap returns to awaiting prioritisation |
 | 2026-03-11 | D-179 | Open `Phase 12 - Supervised Automation Operations` and accept `AS-801` | the current shadow-only automation slice is accepted, but DTD still needs one canonical supervised-rollout model before any new automation control-plane implementation begins | `AS-801` is complete, supervised rollout states and approval rules are canonical, and `AS-802` is now the active priority |
+| 2026-03-12 | D-180 | Open `Phase 13 - Controlled Live Proof And Burden Baseline` and set `AC-901` as the active priority | Phase 12 delivered the supervised rollout control plane, but the next step must be opened canonically before any review output is treated as accepted work | Phase 13 is open, `AC-901` is the single active priority, and this change does not automatically activate `ops_digest` |
 
 ## Lane handoff log
 | Date | Lane | Task ID | Files | Verification | Result | Next |
