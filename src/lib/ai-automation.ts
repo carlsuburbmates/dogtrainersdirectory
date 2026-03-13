@@ -21,6 +21,14 @@ export type AiAutomationVisibilityState =
   | 'degraded'
   | 'not_connected'
 export type AiAutomationEvidenceMode = 'request_driven' | 'scheduled'
+export type AiAutomationRolloutRegistryStatus =
+  | 'available'
+  | 'not_configured'
+  | 'read_failed'
+export type AiAutomationRolloutStateSource =
+  | 'persisted_control'
+  | 'implicit_default'
+  | 'registry_unavailable'
 export type AiAutomationRolloutState =
   | 'disabled'
   | 'shadow'
@@ -188,6 +196,9 @@ export type AiAutomationModeResolution = {
 }
 
 export type AiAutomationRolloutResolution = AiAutomationModeResolution & {
+  rolloutRegistryStatus: AiAutomationRolloutRegistryStatus
+  rolloutRegistryNote: string | null
+  rolloutStateSource: AiAutomationRolloutStateSource
   implicitRolloutState: AiAutomationRolloutState
   configuredRolloutState: AiAutomationRolloutState | null
   rolloutState: AiAutomationRolloutState
@@ -215,6 +226,12 @@ export type AiAutomationOperatorControl = {
   outputLabel: string
   approvalBoundaryLabel: string
   rollbackLabel: string
+}
+
+export type AiAutomationRolloutStateSourceSummary = {
+  label: string
+  note: string
+  tone: 'neutral' | 'info' | 'warning' | 'success'
 }
 
 function isDecisionMode(value: string | undefined | null): value is DecisionMode {
@@ -307,10 +324,22 @@ function toMetadataRecord(
 
 export function resolveAiAutomationRolloutResolution(
   modeResolution: AiAutomationModeResolution,
-  control: AiAutomationRolloutControl | null | undefined
+  control: AiAutomationRolloutControl | null | undefined,
+  options: {
+    rolloutRegistryStatus?: AiAutomationRolloutRegistryStatus
+    rolloutRegistryNote?: string | null
+  } = {}
 ): AiAutomationRolloutResolution {
+  const rolloutRegistryStatus = options.rolloutRegistryStatus ?? 'available'
+  const rolloutRegistryNote = options.rolloutRegistryNote ?? null
   const implicitRolloutState = getImplicitAiAutomationRolloutState(modeResolution)
   const configuredRolloutState = control?.rolloutState ?? null
+  const rolloutStateSource: AiAutomationRolloutStateSource =
+    rolloutRegistryStatus === 'available'
+      ? control
+        ? 'persisted_control'
+        : 'implicit_default'
+      : 'registry_unavailable'
 
   let rolloutState = implicitRolloutState
 
@@ -338,6 +367,9 @@ export function resolveAiAutomationRolloutResolution(
 
   return {
     ...modeResolution,
+    rolloutRegistryStatus,
+    rolloutRegistryNote,
+    rolloutStateSource,
     implicitRolloutState,
     configuredRolloutState,
     rolloutState,
@@ -353,6 +385,40 @@ export function resolveAiAutomationRolloutResolution(
     metadata: toMetadataRecord(control?.metadata),
     createdAt: control?.createdAt ?? null,
     updatedAt: control?.updatedAt ?? null
+  }
+}
+
+export function getAiAutomationRolloutStateSourceSummary(
+  resolution: Pick<
+    AiAutomationRolloutResolution,
+    'rolloutRegistryStatus' | 'rolloutRegistryNote' | 'rolloutStateSource'
+  >
+): AiAutomationRolloutStateSourceSummary {
+  if (resolution.rolloutStateSource === 'persisted_control') {
+    return {
+      label: 'Persisted control',
+      note: 'Showing the current rollout control stored in the rollout registry.',
+      tone: 'success'
+    }
+  }
+
+  if (resolution.rolloutStateSource === 'implicit_default') {
+    return {
+      label: 'Implicit default',
+      note: 'No rollout control row is stored for this workflow. The supervision surface is showing the canonical default inside the env ceiling.',
+      tone: 'neutral'
+    }
+  }
+
+  return {
+    label:
+      resolution.rolloutRegistryStatus === 'not_configured'
+        ? 'Registry unavailable'
+        : 'Registry read failed',
+    note:
+      resolution.rolloutRegistryNote ??
+      'The rollout registry could not be read. The supervision surface is showing the implicit fallback state only.',
+    tone: 'warning'
   }
 }
 

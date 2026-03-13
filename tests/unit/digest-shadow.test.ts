@@ -20,7 +20,7 @@ vi.mock('@/lib/emergency', () => ({
   fetchDigestMetrics: mocks.fetchDigestMetrics
 }))
 
-import { getOrCreateDailyDigest } from '@/lib/digest'
+import { getOrCreateDailyDigest, runDailyDigest } from '@/lib/digest'
 
 describe('ops digest shadow mode', () => {
   beforeEach(() => {
@@ -86,5 +86,29 @@ describe('ops digest shadow mode', () => {
           'Shadow digest trace recorded while deterministic advisory remained visible.'
       }
     })
+  })
+
+  it('marks a digest run as non-reviewable when persistence is unavailable', async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = ''
+    mocks.fetchDigestMetrics.mockResolvedValue({
+      onboarding_today: 2,
+      pending_abn_manual: 1,
+      emergency_logs_today: 5,
+      emergency_accuracy_pct: 92,
+      emergency_pending_verifications: 3,
+      errors_last24h: 1
+    })
+    mocks.generateLLMResponse.mockResolvedValue({
+      provider: 'zai',
+      model: 'glm-4.6',
+      text: 'AI summary for operators.'
+    })
+
+    const result = await runDailyDigest(true)
+
+    expect(result.persisted).toBe(false)
+    expect(result.evidenceReviewable).toBe(false)
+    expect(result.runtimeMode).toBe('shadow')
+    expect(result.persistenceNote).toContain('does not count toward reviewable shadow evidence')
   })
 })

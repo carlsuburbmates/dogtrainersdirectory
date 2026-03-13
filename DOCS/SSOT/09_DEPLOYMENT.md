@@ -78,3 +78,5 @@ From `package.json` and CI:
 - `ai_automation_rollout_controls` and `ai_automation_rollout_events` are schema-backed control-plane tables and must be deployed via Supabase migration.
 - `/api/admin/ai-rollouts` relies on `SUPABASE_SERVICE_ROLE_KEY` for control-plane reads and writes.
 - No new public env vars are introduced for rollout state. Operator-facing control is database-backed and admin-authenticated.
+- Reviewable `ops_digest` shadow evidence also depends on `SUPABASE_SERVICE_ROLE_KEY`, because `/api/admin/ops-digest` must persist `daily_ops_digests` rows for later controlled-live review.
+- If service-role-backed persistence is unavailable, digest runs may still fall back locally for bounded operator visibility, but they must not be treated as qualifying review evidence.

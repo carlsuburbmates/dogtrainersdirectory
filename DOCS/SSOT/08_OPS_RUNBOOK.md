@@ -33,6 +33,15 @@ Canonical operator expectations:
 - Monetisation resync/overview: `/api/admin/monetization/*`
 - DLQ replay: `/api/admin/dlq/replay`
 
+### 3.1 Ops digest evidence collection
+- The canonical review-evidence path for `ops_digest` is the persisted `daily_ops_digests` table.
+- Reviewable shadow evidence is collected by:
+  - the scheduled `/api/admin/ops-digest` run, or
+  - a manual forced `POST /api/admin/ops-digest?force=true`
+- A digest run only counts toward controlled-live review when it is persisted in `daily_ops_digests` with `ai_mode='shadow'`.
+- Local-only or non-persisted fallback digests do not count toward the seven-run shadow evidence window.
+- If the service-role-backed persistence path is unavailable, the operator surface must say so explicitly rather than presenting the digest as reviewable evidence.
+
 ## 4. Known gaps / risks (from bundle)
 - **Resolved:** Admin auth enforcement is now consistent across `/admin/**` and `/api/admin/**` (see `10_SECURITY_AND_PRIVACY.md`).
 - No background worker framework is present; cron + request-driven work are primary.

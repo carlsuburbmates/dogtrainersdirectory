@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({
   controls: [] as Array<Record<string, unknown>>,
   upsertPayloads: [] as Array<Record<string, unknown>>,
-  eventPayloads: [] as Array<Record<string, unknown>>
+  eventPayloads: [] as Array<Record<string, unknown>>,
+  controlReadError: null as null | { message: string }
 }))
 
 vi.mock('@/lib/supabase', () => ({
@@ -11,7 +12,10 @@ vi.mock('@/lib/supabase', () => ({
     from: vi.fn((table: string) => {
       if (table === 'ai_automation_rollout_controls') {
         return {
-          select: vi.fn(async () => ({ data: state.controls, error: null })),
+          select: vi.fn(async () => ({
+            data: state.controlReadError ? null : state.controls,
+            error: state.controlReadError
+          })),
           upsert: vi.fn((payload: Record<string, unknown>) => {
             state.upsertPayloads.push(payload)
             return {
@@ -107,6 +111,7 @@ describe('ai rollout registry', () => {
     state.controls = []
     state.upsertPayloads = []
     state.eventPayloads = []
+    state.controlReadError = null
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-test'
   })
 
@@ -119,6 +124,35 @@ describe('ai rollout registry', () => {
     expect(resolution.implicitRolloutState).toBe('shadow')
     expect(resolution.rolloutState).toBe('shadow')
     expect(resolution.finalRuntimeMode).toBe('shadow')
+    expect(resolution.rolloutRegistryStatus).toBe('available')
+    expect(resolution.rolloutStateSource).toBe('implicit_default')
+  })
+
+  it('marks rollout registry as unavailable when service-role access is not configured', async () => {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    const resolution = await getAiAutomationRuntimeResolution(
+      'ops_digest',
+      { AI_GLOBAL_MODE: 'live' } as unknown as NodeJS.ProcessEnv
+    )
+
+    expect(resolution.rolloutState).toBe('shadow')
+    expect(resolution.rolloutRegistryStatus).toBe('not_configured')
+    expect(resolution.rolloutStateSource).toBe('registry_unavailable')
+    expect(resolution.rolloutRegistryNote).toContain('SUPABASE_SERVICE_ROLE_KEY')
+  })
+
+  it('marks rollout registry as unavailable when the control read fails', async () => {
+    state.controlReadError = { message: 'read failed' }
+
+    const resolution = await getAiAutomationRuntimeResolution(
+      'ops_digest',
+      env({ AI_GLOBAL_MODE: 'live' })
+    )
+
+    expect(resolution.rolloutState).toBe('shadow')
+    expect(resolution.rolloutRegistryStatus).toBe('read_failed')
+    expect(resolution.rolloutStateSource).toBe('registry_unavailable')
   })
 
   it('blocks shadow-capped workflows from moving to shadow_live_ready', async () => {

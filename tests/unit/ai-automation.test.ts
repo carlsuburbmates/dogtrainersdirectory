@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildAiAutomationAuditEvent,
+  getAiAutomationRolloutStateSourceSummary,
   getAiAutomationVisibility,
   getImplicitAiAutomationRolloutState,
   resolveAiAutomationMode,
@@ -148,5 +149,25 @@ describe('ai automation substrate', () => {
     })
 
     expect(resolution.finalRuntimeMode).toBe('disabled')
+  })
+
+  it('describes registry-unavailable rollout state separately from the implicit fallback', () => {
+    const modeResolution = resolveAiAutomationMode('ops_digest', env({
+      AI_GLOBAL_MODE: 'live'
+    }))
+
+    const resolution = resolveAiAutomationRolloutResolution(modeResolution, null, {
+      rolloutRegistryStatus: 'not_configured',
+      rolloutRegistryNote:
+        'SUPABASE_SERVICE_ROLE_KEY is not configured, so persisted rollout control state cannot be read. Showing the implicit fallback state only.'
+    })
+
+    const summary = getAiAutomationRolloutStateSourceSummary(resolution)
+
+    expect(summary).toMatchObject({
+      label: 'Registry unavailable',
+      tone: 'warning'
+    })
+    expect(summary.note).toContain('implicit fallback state only')
   })
 })

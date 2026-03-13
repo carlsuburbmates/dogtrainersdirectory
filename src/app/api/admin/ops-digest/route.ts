@@ -1,18 +1,36 @@
 import { NextResponse } from 'next/server'
-import { getOrCreateDailyDigest } from '@/lib/digest'
+import { runDailyDigest } from '@/lib/digest'
 
 export async function POST(request: Request) {
   try {
     // Check if force flag is set
     const url = new URL(request.url)
     const force = url.searchParams.get('force') === 'true'
-    
+
     // Generate daily digest
-    const digest = await getOrCreateDailyDigest(force)
-    
+    const result = await runDailyDigest(force)
+
+    if (!result.persisted) {
+      return NextResponse.json(
+        {
+          error: 'Ops digest evidence is not reviewable in this environment',
+          digest: result.digest,
+          runtimeMode: result.runtimeMode,
+          evidenceReviewable: result.evidenceReviewable,
+          persistenceNote: result.persistenceNote,
+          usedCachedDigest: result.usedCachedDigest
+        },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
-      digest: digest
+      digest: result.digest,
+      runtimeMode: result.runtimeMode,
+      evidenceReviewable: result.evidenceReviewable,
+      persistenceNote: result.persistenceNote,
+      usedCachedDigest: result.usedCachedDigest
     })
   } catch (error: any) {
     return NextResponse.json(

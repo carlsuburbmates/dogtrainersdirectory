@@ -7,6 +7,7 @@ import {
   resolveAiAutomationMode,
   resolveAiAutomationRolloutResolution,
   type AiAutomationRolloutControl,
+  type AiAutomationRolloutRegistryStatus,
   type AiAutomationRolloutResolution,
   type AiAutomationRolloutState,
   type AiAutomationWorkflow
@@ -36,6 +37,12 @@ type RolloutEventRow = {
   acted_by_user_id: string
   metadata: Record<string, unknown> | null
   created_at: string
+}
+
+type RolloutRegistryReadResult = {
+  controls: Map<AiAutomationWorkflow, AiAutomationRolloutControl>
+  status: AiAutomationRolloutRegistryStatus
+  note: string | null
 }
 
 export type AiAutomationRolloutMutationInput = {
@@ -80,9 +87,14 @@ function toRolloutControl(row: RolloutControlRow): AiAutomationRolloutControl | 
   }
 }
 
-async function fetchControlRows(): Promise<Map<AiAutomationWorkflow, AiAutomationRolloutControl>> {
+async function fetchControlRows(): Promise<RolloutRegistryReadResult> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return new Map()
+    return {
+      controls: new Map(),
+      status: 'not_configured',
+      note:
+        'SUPABASE_SERVICE_ROLE_KEY is not configured, so persisted rollout control state cannot be read. Showing the implicit fallback state only.'
+    }
   }
 
   try {
@@ -104,12 +116,21 @@ async function fetchControlRows(): Promise<Map<AiAutomationWorkflow, AiAutomatio
       }
     }
 
-    return controls
+    return {
+      controls,
+      status: 'available',
+      note: null
+    }
   } catch (error) {
     if (process.env.NODE_ENV !== 'test') {
       console.warn('Failed to load ai automation rollout controls', error)
     }
-    return new Map()
+    return {
+      controls: new Map(),
+      status: 'read_failed',
+      note:
+        'The rollout registry could not be read. Showing the implicit fallback state only until registry access is restored.'
+    }
   }
 }
 
@@ -118,18 +139,29 @@ export async function getAiAutomationRuntimeResolution(
   env: NodeJS.ProcessEnv = process.env
 ): Promise<AiAutomationRolloutResolution> {
   const modeResolution = resolveAiAutomationMode(workflow, env)
-  const controls = await fetchControlRows()
-  return resolveAiAutomationRolloutResolution(modeResolution, controls.get(workflow) ?? null)
+  const registry = await fetchControlRows()
+  return resolveAiAutomationRolloutResolution(
+    modeResolution,
+    registry.controls.get(workflow) ?? null,
+    {
+      rolloutRegistryStatus: registry.status,
+      rolloutRegistryNote: registry.note
+    }
+  )
 }
 
 export async function getAiAutomationRuntimeResolutions(
   env: NodeJS.ProcessEnv = process.env
 ): Promise<AiAutomationRolloutResolution[]> {
-  const controls = await fetchControlRows()
+  const registry = await fetchControlRows()
   return getAiAutomationModeResolutions(env).map((modeResolution) =>
     resolveAiAutomationRolloutResolution(
       modeResolution,
-      controls.get(modeResolution.workflow) ?? null
+      registry.controls.get(modeResolution.workflow) ?? null,
+      {
+        rolloutRegistryStatus: registry.status,
+        rolloutRegistryNote: registry.note
+      }
     )
   )
 }
@@ -326,11 +358,15 @@ export async function updateAiAutomationRolloutState(input: {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for rollout control writes')
   }
 
-  const controls = await fetchControlRows()
+  const registry = await fetchControlRows()
   const modeResolution = resolveAiAutomationMode(input.workflow, input.env)
   const currentResolution = resolveAiAutomationRolloutResolution(
     modeResolution,
-    controls.get(input.workflow) ?? null
+    registry.controls.get(input.workflow) ?? null,
+    {
+      rolloutRegistryStatus: registry.status,
+      rolloutRegistryNote: registry.note
+    }
   )
   const validation = await validateTransition(currentResolution, input.mutation)
 
@@ -401,7 +437,10 @@ export async function updateAiAutomationRolloutState(input: {
     throw eventError
   }
 
-  const resolution = resolveAiAutomationRolloutResolution(modeResolution, control)
+  const resolution = resolveAiAutomationRolloutResolution(modeResolution, control, {
+    rolloutRegistryStatus: 'available',
+    rolloutRegistryNote: null
+  })
 
   return {
     control,

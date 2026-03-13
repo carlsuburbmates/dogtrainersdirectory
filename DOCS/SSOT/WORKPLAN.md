@@ -55,7 +55,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Supervised Automation Operations is complete for the current planned slice.
 - Phase 13 - Controlled Live Proof And Burden Baseline is now open as the next governed delivery slice.
 - `AC-901` is now complete as a controlled-live proof review: `ops_digest` is not yet ready for bounded live approval because there is no qualifying shadow evidence window and rollout-registry truthfulness still needs hardening.
-- Current top priority: `AC-902`.
+- `AC-902` is now complete and rollout-registry read failure plus non-reviewable `ops_digest` evidence paths are surfaced truthfully instead of collapsing into ordinary implicit `shadow` state.
+- Current top priority: `AC-903`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -638,7 +639,16 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `/admin/ai-health` surfaces rollout-registry read failure explicitly instead of presenting an ordinary implicit `shadow` state.
   - No workflow is automatically promoted to `controlled_live` in this task.
 
+**AC-903: Collect `ops_digest` shadow evidence and reopen live-readiness review**
+- Purpose: collect the real persisted `ops_digest` shadow evidence window required for a later bounded controlled-live approval decision.
+- Definition of done:
+  - At least `7` consecutive persisted `daily_ops_digests` shadow runs exist in a service-role-backed environment.
+  - `/admin/ai-health` reflects persisted rollout state rather than a registry-unavailable fallback during evidence review.
+  - The evidence window is summarised clearly enough for a renewed explicit main-control approval or rejection decision.
+  - `ops_digest` is not automatically activated to `controlled_live` in this task.
+
 ## Execution Log
+- 2026-03-13: `AC-902` completed by removing the two truthfulness blockers from `AC-901`. Rollout-registry read failure is now surfaced explicitly in runtime resolution and `/admin/ai-health`, non-persisted digest fallback runs no longer masquerade as reviewable evidence, and `POST /api/admin/ops-digest` now distinguishes persisted reviewable runs from non-reviewable fallback output. `AC-903` is now the active priority to collect the real seven-run `ops_digest` shadow evidence window before any later bounded live-readiness review.
 - 2026-03-13: `AC-901` completed as a controlled-live proof review. The verdict is `not ready`: accessible `daily_ops_digests` evidence is `0/7` required consecutive shadow runs, so `ops_digest` cannot move toward bounded live approval yet. The review also produced the first workflow-family operator-burden ranking and a narrow truthfulness fix on `/admin/ai-health` so workflow audit connectivity no longer renders as connected when a per-workflow audit query fails. `AC-902` is now the active priority to capture real digest evidence and harden rollout-registry truthfulness before any later live-approval review.
 - 2026-03-12: Opened `Phase 13 - Controlled Live Proof And Burden Baseline` and set `AC-901` as the single active priority. This is a task-opening step only; it does not automatically activate `ops_digest` or widen any automation boundary.
 - 2026-03-11: `AS-802` to `AS-805` completed as one bounded Phase 12 control-plane slice. DTD now has schema-backed rollout controls and append-only rollout events, rollout-aware runtime resolution layered on top of the env ceiling, admin rollout control APIs, `/admin/ai-health` as the canonical supervision surface, bounded operator pause/disable/ready-for-review/controlled-live controls, and focused verification including admin browser coverage. `ops_digest` is the only controlled-live candidate supported by the implementation, and no owner-facing or business-facing workflow gained a live path. Supervised Automation Operations is now complete for the current planned slice and the roadmap returns to awaiting the next prioritisation cycle.

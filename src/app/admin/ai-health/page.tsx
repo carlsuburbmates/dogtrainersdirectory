@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import {
   describeModeSource,
   getAiAutomationOperatorControl,
+  getAiAutomationRolloutStateSourceSummary,
   getAiAutomationVisibility,
   type AiAutomationRolloutResolution,
   type AiAutomationVisibility,
@@ -168,6 +169,18 @@ function buildReadiness(
     }
   }
 
+  if (resolution.rolloutStateSource === 'registry_unavailable') {
+    return {
+      label: 'Registry unavailable',
+      tone: 'warning',
+      note:
+        resolution.rolloutRegistryNote ??
+        'Persisted rollout control state could not be read. The supervision surface is showing the implicit fallback state only.',
+      observed: input.observed,
+      required: input.required
+    }
+  }
+
   if (!resolution.controlledLiveCandidate) {
     return {
       label: 'Later candidate',
@@ -330,6 +343,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
   const scheduledEvidence = digestRows.error
     ? { observedRuns: 0, requiredRuns: 7, ready: false, note: 'Digest audit traces are not available yet.' }
     : summarizeScheduledShadowEvidence(digestRows.data ?? [], 7)
+  const digestEvidenceNote = `${scheduledEvidence.note} Reviewable evidence comes from persisted /api/admin/ops-digest runs in a service-role-backed environment.`
 
   const buildCard = (
     workflow: AiAutomationWorkflow,
@@ -435,7 +449,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
           readinessObserved: scheduledEvidence.observedRuns,
           readinessRequired: scheduledEvidence.requiredRuns,
           readinessReady: scheduledEvidence.ready,
-          readinessNote: scheduledEvidence.note
+          readinessNote: digestEvidenceNote
         }
       : null),
     buildCard('onboarding', 'Business Onboarding', onboardingSummary
@@ -503,7 +517,8 @@ export default async function AIHealthPage() {
     shadowCapped: cards.filter((card) => card.resolution.shadowCapped).length,
     readyForReview: cards.filter((card) => card.resolution.rolloutState === 'shadow_live_ready').length,
     controlledLive: cards.filter((card) => card.resolution.rolloutState === 'controlled_live').length,
-    paused: cards.filter((card) => card.resolution.rolloutState === 'paused_after_review').length
+    paused: cards.filter((card) => card.resolution.rolloutState === 'paused_after_review').length,
+    registryUnavailable: cards.filter((card) => card.resolution.rolloutStateSource === 'registry_unavailable').length
   }
 
   return (
@@ -541,6 +556,18 @@ export default async function AIHealthPage() {
         </CardContent>
       </Card>
 
+      {summaryCounts.registryUnavailable > 0 ? (
+        <Card>
+          <CardContent className="space-y-2">
+            <Badge tone="warning">Rollout registry unavailable</Badge>
+            <p className="text-sm text-gray-700">
+              One or more workflow cards are showing the implicit fallback state only because the rollout registry could not be read.
+              Do not treat those cards as confirmation of the persisted rollout control state until registry access is restored.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Control model</CardTitle>
@@ -573,6 +600,7 @@ export default async function AIHealthPage() {
             card.counts.manualOverrides
           )
           const operatorControl = getAiAutomationOperatorControl(card.workflow)
+          const rolloutSource = getAiAutomationRolloutStateSourceSummary(card.resolution)
 
           return (
             <Card key={card.workflow}>
@@ -603,8 +631,10 @@ export default async function AIHealthPage() {
                       <Badge tone={toneForVisibility(card.visibility.state)}>{card.visibility.label}</Badge>
                       {card.resolution.shadowCapped ? <Badge>Shadow-only</Badge> : null}
                       {card.resolution.liveCapableButShadowed ? <Badge tone="info">Live-capable but shadowed</Badge> : null}
+                      <Badge tone={rolloutSource.tone}>{rolloutSource.label}</Badge>
                     </div>
                     <p className="mt-2 text-sm text-gray-600">{card.visibility.note}</p>
+                    <p className="mt-2 text-sm text-gray-600">{rolloutSource.note}</p>
                     <p className="mt-2 text-xs text-gray-500">Mode source: {describeModeSource(card.resolution)}</p>
                   </div>
                   <div className="rounded-lg border border-gray-200 p-4">

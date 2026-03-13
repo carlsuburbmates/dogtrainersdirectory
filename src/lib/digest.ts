@@ -5,6 +5,7 @@ import {
 import { getAiAutomationRuntimeResolution } from './ai-rollouts'
 import { fetchDigestMetrics, DailyDigestMetrics } from './emergency'
 import { generateLLMResponse } from './llm'
+import type { DecisionMode } from './ai-types'
 
 export type DailyDigestRecord = {
   id: number
@@ -13,7 +14,17 @@ export type DailyDigestRecord = {
   metrics: DailyDigestMetrics
   model?: string | null
   generated_by?: string | null
+  ai_mode?: DecisionMode | null
   created_at: string
+}
+
+export type DailyDigestRunResult = {
+  digest: DailyDigestRecord
+  runtimeMode: DecisionMode
+  persisted: boolean
+  evidenceReviewable: boolean
+  usedCachedDigest: boolean
+  persistenceNote: string
 }
 
 const DIGEST_PROMPT_VERSION = 'ops-digest-v1'
@@ -61,15 +72,32 @@ function buildDeterministicDigest(metrics: DailyDigestMetrics) {
   ].join(' ')
 }
 
-export async function getOrCreateDailyDigest(force = false): Promise<DailyDigestRecord> {
+export async function runDailyDigest(force = false): Promise<DailyDigestRunResult> {
   const today = new Date().toISOString().slice(0, 10)
-  if (!force) {
-    const { data } = await supabaseAdmin
-      .from('daily_ops_digests')
-      .select('id, digest_date, summary, metrics, model, generated_by, created_at')
-      .eq('digest_date', today)
-      .maybeSingle()
-    if (data) return data as DailyDigestRecord
+  if (!force && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const { data } = await supabaseAdmin
+        .from('daily_ops_digests')
+        .select('id, digest_date, summary, metrics, model, generated_by, ai_mode, created_at')
+        .eq('digest_date', today)
+        .maybeSingle()
+      if (data) {
+        const digest = data as DailyDigestRecord
+        return {
+          digest,
+          runtimeMode: digest.ai_mode ?? 'disabled',
+          persisted: true,
+          evidenceReviewable: digest.ai_mode === 'shadow',
+          usedCachedDigest: true,
+          persistenceNote:
+            digest.ai_mode === 'shadow'
+              ? 'Showing a persisted shadow digest row from daily_ops_digests.'
+              : 'Showing a persisted digest row, but it does not count toward shadow-evidence review because it was not stored in shadow mode.'
+        }
+      }
+    } catch (error) {
+      console.warn('runDailyDigest: failed to load existing persisted digest, continuing with a fresh run', error)
+    }
   }
 
   const metrics = await fetchDigestMetrics()
@@ -178,7 +206,23 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
         .select('id, digest_date, summary, metrics, model, generated_by, created_at')
         .single()
 
-      if (!error && data) return data as DailyDigestRecord
+      if (!error && data) {
+        const digest = data as DailyDigestRecord
+        return {
+          digest: {
+            ...digest,
+            ai_mode: runtimeMode
+          },
+          runtimeMode,
+          persisted: true,
+          evidenceReviewable: runtimeMode === 'shadow',
+          usedCachedDigest: false,
+          persistenceNote:
+            runtimeMode === 'shadow'
+              ? 'This run persisted a shadow digest row in daily_ops_digests and counts toward the seven-run evidence window.'
+              : 'This run persisted a digest row, but it does not count toward shadow-evidence review because runtime mode was not shadow.'
+        }
+      }
       // otherwise fallthrough to the in-memory return
       console.warn('getOrCreateDailyDigest: upsert failed, returning fallback digest (db error)', error)
     } else {
@@ -190,12 +234,27 @@ export async function getOrCreateDailyDigest(force = false): Promise<DailyDigest
 
   // If we couldn't persist, return a deterministic in-memory digest record (not persisted)
   return {
-    id: -1,
-    digest_date: today,
-    summary: visibleSummary,
-    metrics,
-    model: aiModel || 'fallback',
-    generated_by: aiProvider || 'deterministic',
-    created_at: new Date().toISOString()
+    digest: {
+      id: -1,
+      digest_date: today,
+      summary: visibleSummary,
+      metrics,
+      model: aiModel || 'fallback',
+      generated_by: aiProvider || 'deterministic',
+      ai_mode: runtimeMode,
+      created_at: new Date().toISOString()
+    },
+    runtimeMode,
+    persisted: false,
+    evidenceReviewable: false,
+    usedCachedDigest: false,
+    persistenceNote: process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? 'The digest could not be persisted, so this run does not count toward reviewable shadow evidence.'
+      : 'SUPABASE_SERVICE_ROLE_KEY is not configured, so this digest run is local-only and does not count toward reviewable shadow evidence.'
   }
+}
+
+export async function getOrCreateDailyDigest(force = false): Promise<DailyDigestRecord> {
+  const result = await runDailyDigest(force)
+  return result.digest
 }
