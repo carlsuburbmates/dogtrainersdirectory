@@ -79,7 +79,8 @@
 | AS-805 | Supervised Automation Operations | Add rollout verification and first controlled-live execution support | completed | backend + main-control | `WORKPLAN` `AS-805` | focused verification exists and the first controlled-live candidate can be exercised through the new control model |
 | AC-901 | Controlled Live Proof And Burden Baseline | Prove `ops_digest` controlled-live readiness and rank operator burden | completed | main-control | `WORKPLAN` `AC-901` | completes the first bounded controlled-live proof review, records the initial burden ranking, and does not auto-enable `ops_digest` when evidence is insufficient |
 | AC-902 | Controlled Live Proof And Burden Baseline | Capture `ops_digest` evidence and harden rollout-registry truthfulness | completed | backend + main-control | `WORKPLAN` `AC-902` | removes rollout-registry truthfulness blockers and makes non-reviewable digest fallback output explicit instead of counting it as evidence |
-| AC-903 | Controlled Live Proof And Burden Baseline | Collect `ops_digest` shadow evidence and reopen live-readiness review | in_progress | backend + main-control | `WORKPLAN` `AC-903` | captures the seven-run persisted shadow evidence window and prepares a renewed bounded readiness review without activating `ops_digest` |
+| AC-903 | Controlled Live Proof And Burden Baseline | Collect `ops_digest` shadow evidence and reopen live-readiness review | completed | backend + main-control | `WORKPLAN` `AC-903` | validly reports the service-role-backed evidence blocker when the local checkout cannot collect qualifying persisted shadow runs |
+| AC-903B | Controlled Live Proof And Burden Baseline | Run service-role-backed digest evidence collection and reopen readiness review | in_progress | backend + main-control | `WORKPLAN` `AC-903B` | collects the seven-run persisted shadow evidence window in a reviewable environment and reopens the bounded `ops_digest` readiness decision without activating it |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -95,7 +96,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-903`.
+- Current active priority: `AC-903B`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

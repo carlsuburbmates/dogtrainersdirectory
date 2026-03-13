@@ -56,7 +56,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Phase 13 - Controlled Live Proof And Burden Baseline is now open as the next governed delivery slice.
 - `AC-901` is now complete as a controlled-live proof review: `ops_digest` is not yet ready for bounded live approval because there is no qualifying shadow evidence window and rollout-registry truthfulness still needs hardening.
 - `AC-902` is now complete and rollout-registry read failure plus non-reviewable `ops_digest` evidence paths are surfaced truthfully instead of collapsing into ordinary implicit `shadow` state.
-- Current top priority: `AC-903`.
+- `AC-903` is now complete as a blocked operational evidence-collection step: this local checkout cannot collect qualifying persisted `ops_digest` shadow evidence because `SUPABASE_SERVICE_ROLE_KEY` is not configured.
+- Current top priority: `AC-903B`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -647,7 +648,15 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The evidence window is summarised clearly enough for a renewed explicit main-control approval or rejection decision.
   - `ops_digest` is not automatically activated to `controlled_live` in this task.
 
+**AC-903B: Run service-role-backed digest evidence collection and reopen readiness review**
+- Purpose: execute the real service-role-backed `ops_digest` shadow evidence path and then reopen the bounded readiness review with a qualifying evidence window.
+- Definition of done:
+  - A service-role-backed environment executes the real `POST /api/admin/ops-digest?force=true` path enough times to produce at least `7` consecutive persisted `daily_ops_digests` rows with `ai_mode='shadow'`.
+  - Persisted rollout-control state is reviewable during the evidence window, not merely a registry-unavailable fallback.
+  - The renewed readiness review packet clearly states whether `ops_digest` is now ready or still blocked, without activating it automatically.
+
 ## Execution Log
+- 2026-03-13: `AC-903` completed as a blocked operational evidence-collection step. The local checkout remained truthful and bounded, but it cannot collect qualifying `ops_digest` evidence because `SUPABASE_SERVICE_ROLE_KEY` is not configured, so forced digest runs remain non-persisted and non-reviewable. `AC-903B` is now the active priority to run the evidence path in a service-role-backed environment and then reopen the bounded readiness review.
 - 2026-03-13: `AC-902` completed by removing the two truthfulness blockers from `AC-901`. Rollout-registry read failure is now surfaced explicitly in runtime resolution and `/admin/ai-health`, non-persisted digest fallback runs no longer masquerade as reviewable evidence, and `POST /api/admin/ops-digest` now distinguishes persisted reviewable runs from non-reviewable fallback output. `AC-903` is now the active priority to collect the real seven-run `ops_digest` shadow evidence window before any later bounded live-readiness review.
 - 2026-03-13: `AC-901` completed as a controlled-live proof review. The verdict is `not ready`: accessible `daily_ops_digests` evidence is `0/7` required consecutive shadow runs, so `ops_digest` cannot move toward bounded live approval yet. The review also produced the first workflow-family operator-burden ranking and a narrow truthfulness fix on `/admin/ai-health` so workflow audit connectivity no longer renders as connected when a per-workflow audit query fails. `AC-902` is now the active priority to capture real digest evidence and harden rollout-registry truthfulness before any later live-approval review.
 - 2026-03-12: Opened `Phase 13 - Controlled Live Proof And Burden Baseline` and set `AC-901` as the single active priority. This is a task-opening step only; it does not automatically activate `ops_digest` or widen any automation boundary.
