@@ -1,8 +1,8 @@
 # API Contracts - Boundaries and Invariants
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.6
-**Last Updated:** 2026-03-10
+**Version:** v1.7
+**Last Updated:** 2026-03-17
 
 ## 1. Inventory source
 Implementation-discovered API inventory is generated and versioned at:
@@ -39,6 +39,7 @@ This file defines policy-level API contracts and security boundaries only.
 - `PATCH /api/admin/ai-rollouts/[workflow]`: every successful mutation must write both current control state and append-only event history with acting admin identity and reason.
 - `/api/admin/ai-rollouts/**`: is a supervision/control-plane surface only. It must not directly trigger owner-facing or business-facing live rollout beyond canonical approval boundaries.
 - `POST /api/admin/ops-digest`: must distinguish a persisted, reviewable digest run from a non-persisted fallback run. It must not present a local-only or non-persisted digest as qualifying shadow evidence for controlled-live review.
+- `POST /api/admin/ops-digest`: must distinguish a newly persisted reviewable run from a cached re-read of an existing digest row. Cached reads may return reviewable evidence state, but they must not be presented as new qualifying evidence.
 
 ## 4. Endpoint contract source
 - Full method lists are in `DOCS/SSOT/_generated/api.md`.

@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-17
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -80,7 +80,9 @@
 | AC-901 | Controlled Live Proof And Burden Baseline | Prove `ops_digest` controlled-live readiness and rank operator burden | completed | main-control | `WORKPLAN` `AC-901` | completes the first bounded controlled-live proof review, records the initial burden ranking, and does not auto-enable `ops_digest` when evidence is insufficient |
 | AC-902 | Controlled Live Proof And Burden Baseline | Capture `ops_digest` evidence and harden rollout-registry truthfulness | completed | backend + main-control | `WORKPLAN` `AC-902` | removes rollout-registry truthfulness blockers and makes non-reviewable digest fallback output explicit instead of counting it as evidence |
 | AC-903 | Controlled Live Proof And Burden Baseline | Collect `ops_digest` shadow evidence and reopen live-readiness review | completed | backend + main-control | `WORKPLAN` `AC-903` | validly reports the service-role-backed evidence blocker when the local checkout cannot collect qualifying persisted shadow runs |
-| AC-903B | Controlled Live Proof And Burden Baseline | Run service-role-backed digest evidence collection and reopen readiness review | in_progress | backend + main-control | `WORKPLAN` `AC-903B` | collects the seven-run persisted shadow evidence window in a reviewable environment and reopens the bounded `ops_digest` readiness decision without activating it |
+| AC-903B | Controlled Live Proof And Burden Baseline | Run service-role-backed digest evidence collection and reopen readiness review | completed | backend + main-control | `WORKPLAN` `AC-903B` | collects the seven-run distinct persisted shadow evidence window in a reviewable environment and confirms rollout visibility stays truthful during collection |
+| AC-904 | Controlled Live Proof And Burden Baseline | Refine `ops_digest` evidence from calendar days to distinct reviewable runs | completed | backend + main-control | `WORKPLAN` `AC-904` | removes the calendar-day bottleneck without lowering the evidence bar, keeps cached reads from looking like new evidence, and preserves bounded non-live proof rules |
+| AC-905 | Controlled Live Proof And Burden Baseline | Renew `ops_digest` readiness review against the completed evidence window | in_progress | main-control | `WORKPLAN` `AC-905` | evaluates the completed qualifying evidence window and concludes ready or not ready without auto-activating `ops_digest` |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -96,7 +98,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-903B`.
+- Current active priority: `AC-905`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

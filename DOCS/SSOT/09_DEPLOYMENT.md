@@ -1,8 +1,8 @@
 # Deployment - Vercel, Cron, Environments
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.2
-**Last Updated:** 2026-03-05
+**Version:** v1.3
+**Last Updated:** 2026-03-17
 
 ## 1. Hosting
 - Deploy on Vercel using Next.js build.
@@ -79,4 +79,5 @@ From `package.json` and CI:
 - `/api/admin/ai-rollouts` relies on `SUPABASE_SERVICE_ROLE_KEY` for control-plane reads and writes.
 - No new public env vars are introduced for rollout state. Operator-facing control is database-backed and admin-authenticated.
 - Reviewable `ops_digest` shadow evidence also depends on `SUPABASE_SERVICE_ROLE_KEY`, because `/api/admin/ops-digest` must persist `daily_ops_digests` rows for later controlled-live review.
+- `ops_digest` review evidence is counted as `7` distinct persisted shadow rows, not `7` calendar days. Forced review runs may therefore create multiple qualifying rows for the same `digest_date` when each run is separately persisted.
 - If service-role-backed persistence is unavailable, digest runs may still fall back locally for bounded operator visibility, but they must not be treated as qualifying review evidence.

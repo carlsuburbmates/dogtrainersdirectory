@@ -343,7 +343,7 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
   const scheduledEvidence = digestRows.error
     ? { observedRuns: 0, requiredRuns: 7, ready: false, note: 'Digest audit traces are not available yet.' }
     : summarizeScheduledShadowEvidence(digestRows.data ?? [], 7)
-  const digestEvidenceNote = `${scheduledEvidence.note} Reviewable evidence comes from persisted /api/admin/ops-digest runs in a service-role-backed environment.`
+  const digestEvidenceNote = `${scheduledEvidence.note} Reviewable evidence comes from distinct persisted /api/admin/ops-digest runs in a service-role-backed environment. Cached reads do not count as new evidence.`
 
   const buildCard = (
     workflow: AiAutomationWorkflow,

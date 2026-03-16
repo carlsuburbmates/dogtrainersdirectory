@@ -23,6 +23,7 @@ export type DailyDigestRunResult = {
   runtimeMode: DecisionMode
   persisted: boolean
   evidenceReviewable: boolean
+  countsAsNewEvidence: boolean
   usedCachedDigest: boolean
   persistenceNote: string
 }
@@ -74,12 +75,15 @@ function buildDeterministicDigest(metrics: DailyDigestMetrics) {
 
 export async function runDailyDigest(force = false): Promise<DailyDigestRunResult> {
   const today = new Date().toISOString().slice(0, 10)
+  const executionSource = force ? 'manual_force' : 'scheduled'
   if (!force && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const { data } = await supabaseAdmin
         .from('daily_ops_digests')
         .select('id, digest_date, summary, metrics, model, generated_by, ai_mode, created_at')
         .eq('digest_date', today)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
       if (data) {
         const digest = data as DailyDigestRecord
@@ -88,10 +92,11 @@ export async function runDailyDigest(force = false): Promise<DailyDigestRunResul
           runtimeMode: digest.ai_mode ?? 'disabled',
           persisted: true,
           evidenceReviewable: digest.ai_mode === 'shadow',
+          countsAsNewEvidence: false,
           usedCachedDigest: true,
           persistenceNote:
             digest.ai_mode === 'shadow'
-              ? 'Showing a persisted shadow digest row from daily_ops_digests.'
+              ? 'Showing the latest persisted shadow digest row for this digest date. Cached reads do not count as new reviewable evidence.'
               : 'Showing a persisted digest row, but it does not count toward shadow-evidence review because it was not stored in shadow mode.'
         }
       }
@@ -151,7 +156,7 @@ export async function runDailyDigest(force = false): Promise<DailyDigestRunResul
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { data, error } = await supabaseAdmin
         .from('daily_ops_digests')
-        .upsert({
+        .insert({
           digest_date: today,
           summary: visibleSummary,
           metrics,
@@ -177,9 +182,7 @@ export async function runDailyDigest(force = false): Promise<DailyDigestRunResul
                   ? 'Shadow digest trace recorded while deterministic advisory remained visible.'
                   : 'Ops digest advisory stored.',
               errorMessage: auditErrorMessage,
-              resultingRecordReferences: [
-                { table: 'daily_ops_digests', field: 'digest_date', id: today }
-              ]
+              notes: [`digest_execution_source=${executionSource}`]
             },
             {
               shadowCandidate: shadowCandidate
@@ -187,6 +190,9 @@ export async function runDailyDigest(force = false): Promise<DailyDigestRunResul
                     summary: shadowCandidate
                   }
                 : undefined,
+              executionContext: {
+                source: executionSource
+              },
               operatorVisibleState: {
                 outputType:
                   runtimeMode === 'shadow'
@@ -216,15 +222,16 @@ export async function runDailyDigest(force = false): Promise<DailyDigestRunResul
           runtimeMode,
           persisted: true,
           evidenceReviewable: runtimeMode === 'shadow',
+          countsAsNewEvidence: runtimeMode === 'shadow',
           usedCachedDigest: false,
           persistenceNote:
             runtimeMode === 'shadow'
-              ? 'This run persisted a shadow digest row in daily_ops_digests and counts toward the seven-run evidence window.'
+              ? 'This run persisted a distinct shadow digest row in daily_ops_digests and counts as one reviewable run toward the seven-run evidence window.'
               : 'This run persisted a digest row, but it does not count toward shadow-evidence review because runtime mode was not shadow.'
         }
       }
       // otherwise fallthrough to the in-memory return
-      console.warn('getOrCreateDailyDigest: upsert failed, returning fallback digest (db error)', error)
+      console.warn('getOrCreateDailyDigest: insert failed, returning fallback digest (db error)', error)
     } else {
       console.warn('getOrCreateDailyDigest: SUPABASE_SERVICE_ROLE_KEY not present, skipping db write')
     }
@@ -247,6 +254,7 @@ export async function runDailyDigest(force = false): Promise<DailyDigestRunResul
     runtimeMode,
     persisted: false,
     evidenceReviewable: false,
+    countsAsNewEvidence: false,
     usedCachedDigest: false,
     persistenceNote: process.env.SUPABASE_SERVICE_ROLE_KEY
       ? 'The digest could not be persisted, so this run does not count toward reviewable shadow evidence.'

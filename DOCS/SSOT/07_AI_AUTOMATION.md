@@ -1,8 +1,8 @@
 # AI Automation - Programme Scope, Modes, Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v2.2
-**Last Updated:** 2026-03-11
+**Version:** v2.3
+**Last Updated:** 2026-03-17
 
 ## 1. Purpose
 This document defines the canonical AI Automation programme for DTD.
@@ -229,7 +229,8 @@ Before a workflow can move from `shadow` or `shadow_live_ready` toward `controll
 
 Minimum evidence threshold:
 - request-driven workflows require at least `25` recent shadow traces spanning ordinary cases plus degraded or fallback conditions
-- scheduled or low-frequency workflows require at least `7` consecutive shadow runs with no unresolved critical failure
+- scheduled or low-frequency workflows require at least `7` distinct reviewable shadow runs with no unresolved critical failure
+- distinct reviewable scheduled runs do not need to span `7` calendar days when the workflow is operator-facing, non-outcome-changing, and each run is separately persisted and reconstructable
 - the evidence window must include recent disagreement, failure, and fallback review rather than only successful samples
 
 Mandatory review contents:
@@ -358,6 +359,7 @@ Before `ops_digest` may move to `controlled_live`, DTD must first have:
 - truthful rollout-state reporting on `/admin/ai-health`
 - operator pause or disable controls
 - focused verification proving the workflow can be enabled and rolled back cleanly
+- a reviewable shadow evidence window of at least `7` distinct persisted `ops_digest` runs, each reconstructable as a separate run even when multiple runs share the same `digest_date`
 
 No owner-facing or business-facing workflow should move toward live use until those prerequisites exist and the relevant workflow family meets the evidence and approval rubric above.
 

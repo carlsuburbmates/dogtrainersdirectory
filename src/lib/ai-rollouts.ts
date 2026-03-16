@@ -344,7 +344,7 @@ async function hasOpsDigestShadowEvidence(requiredRuns = 7): Promise<{
 
   return {
     ok: false,
-    error: `ops_digest requires ${requiredRuns} consecutive shadow runs without critical errors before it can be marked ready for review`
+    error: `ops_digest requires ${requiredRuns} distinct reviewable shadow runs without critical errors before it can be marked ready for review`
   }
 }
 

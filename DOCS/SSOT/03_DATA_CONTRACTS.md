@@ -1,7 +1,7 @@
 # Data Contracts — Tables, Enums, RPCs
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1  
+**Version:** v1.2  
 
 ## 1. Canonical tables (implementation-aligned)
 This list is aligned to the current implementation (code + migrations), not just the input bundle.
@@ -104,3 +104,4 @@ This list is aligned to the current implementation (code + migrations), not just
 - Emergency verification state is stored on `businesses` for emergency resource listings.
 - `ai_automation_rollout_controls` is the canonical current-state registry for workflow rollout status. It must not be replaced by `ops_overrides` or inferred solely from env vars.
 - `ai_automation_rollout_events` is append-only rollout audit history. Each mutation must record workflow, state transition, reason, and acting admin identity.
+- `daily_ops_digests` stores distinct persisted digest runs. `digest_date` groups runs by UTC digest date but is not the unique identity for review evidence; row `id` and `created_at` distinguish separately reviewable runs.

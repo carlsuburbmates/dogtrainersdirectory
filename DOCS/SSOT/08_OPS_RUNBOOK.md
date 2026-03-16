@@ -1,8 +1,8 @@
 # Ops Runbook — Post-launch Operations (Reality)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1
-**Last Updated:** 2026-03-11
+**Version:** v1.2
+**Last Updated:** 2026-03-17
 
 ## 1. Operating model (canonical)
 Ops is **pull-based**:
@@ -39,6 +39,9 @@ Canonical operator expectations:
   - the scheduled `/api/admin/ops-digest` run, or
   - a manual forced `POST /api/admin/ops-digest?force=true`
 - A digest run only counts toward controlled-live review when it is persisted in `daily_ops_digests` with `ai_mode='shadow'`.
+- The evidence threshold is `7` distinct reviewable shadow runs, not `7` calendar days.
+- Multiple qualifying `ops_digest` runs may share the same `digest_date` when they are forced review runs, but each counted run must be separately persisted and reconstructable by row `id` and `created_at`.
+- A cached re-read of an existing digest row does not count as a new reviewable run.
 - Local-only or non-persisted fallback digests do not count toward the seven-run shadow evidence window.
 - If the service-role-backed persistence path is unavailable, the operator surface must say so explicitly rather than presenting the digest as reviewable evidence.
 

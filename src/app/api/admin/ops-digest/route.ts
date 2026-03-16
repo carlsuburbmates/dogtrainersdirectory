@@ -17,6 +17,7 @@ export async function POST(request: Request) {
           digest: result.digest,
           runtimeMode: result.runtimeMode,
           evidenceReviewable: result.evidenceReviewable,
+          countsAsNewEvidence: result.countsAsNewEvidence,
           persistenceNote: result.persistenceNote,
           usedCachedDigest: result.usedCachedDigest
         },
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
       digest: result.digest,
       runtimeMode: result.runtimeMode,
       evidenceReviewable: result.evidenceReviewable,
+      countsAsNewEvidence: result.countsAsNewEvidence,
       persistenceNote: result.persistenceNote,
       usedCachedDigest: result.usedCachedDigest
     })

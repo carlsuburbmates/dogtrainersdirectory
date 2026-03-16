@@ -493,7 +493,7 @@ export function summarizeScheduledShadowEvidence(
         observedRuns,
         requiredRuns,
         ready: true,
-        note: 'Minimum scheduled shadow evidence is available. Human review is still required before any live move.'
+        note: 'Minimum scheduled shadow evidence is available from distinct reviewable runs. Human review is still required before any live move.'
       }
     }
   }
@@ -502,7 +502,7 @@ export function summarizeScheduledShadowEvidence(
     observedRuns,
     requiredRuns,
     ready: false,
-    note: `Need ${requiredRuns} consecutive shadow runs without critical errors before live review can start.`
+    note: `Need ${requiredRuns} distinct reviewable shadow runs without critical errors before live review can start.`
   }
 }
 
