@@ -60,7 +60,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-903B` is now complete: the service-role-backed digest path produced the full qualifying `ops_digest` shadow evidence window and rollout visibility remained truthful during collection.
 - `AC-904` completed by refining the `ops_digest` evidence model so controlled-live proof depends on `7` distinct reviewable shadow runs rather than `7` separate calendar days, while keeping the proof bounded and reconstructable.
 - `AC-905` is now complete: `ops_digest` is ready for bounded controlled-live approval because the qualifying reviewable shadow evidence window is complete, rollout visibility is truthful, and rollback controls remain explicit, but the current proof window validates deterministic fallback safety rather than successful upstream LLM output quality.
-- Current top priority: `AC-906`.
+- `AC-906` is now complete: `ops_digest` has an explicit persisted rollout state of `shadow_live_ready`, with a named review owner and approval reason, while `finalRuntimeMode` remains `shadow`.
+- Current top priority: `AC-907`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -687,7 +688,18 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The control record states clearly that the approval is based on bounded deterministic fallback safety and control-plane correctness, not successful upstream LLM output quality.
   - `ops_digest` is not activated to `controlled_live` in this task.
 
+**AC-907: Make the first controlled-live promotion decision for `ops_digest`**
+- Purpose: perform the explicit main-control accept/reject decision on whether `ops_digest` should move from `shadow_live_ready` to `controlled_live`.
+- Definition of done:
+  - The decision explicitly concludes one of:
+    - approve a first bounded `controlled_live` promotion, or
+    - reject/defer promotion, with the exact reason recorded.
+  - The decision weighs the already-accepted caveat that current proof covers deterministic fallback safety and control-plane correctness, but not successful upstream LLM digest quality.
+  - No rollout-state change is performed in this task; any approved promotion is executed by a separate later task.
+  - Roadmap and control state remain coherent with exactly one active priority.
+
 ## Execution Log
+- 2026-03-17: `AC-906` completed by writing an explicit persisted rollout state of `shadow_live_ready` for `ops_digest`, with `review_owner='main-control'`, append-only rollout event history, and truthful runtime resolution (`rolloutStateSource=persisted_control`, `rolloutState=shadow_live_ready`, `finalRuntimeMode=shadow`). The deterministic-fallback caveat remains unchanged. `AC-907` is now the active priority for the first explicit promotion decision.
 - 2026-03-17: `AC-905` completed as a renewed bounded readiness review. `ops_digest` is now `ready for controlled-live approval` because the distinct-run evidence threshold is met, rollout visibility remains truthful, and rollback/disable controls stay explicit and bounded. The review also recorded one material caveat: the qualifying evidence window proves deterministic fallback safety and control-plane correctness, but it does not prove successful upstream LLM digest quality because all reviewed runs fell back after upstream `404`. `AC-906` is now the active priority to record the explicit `shadow_live_ready` approval without auto-promoting to `controlled_live`.
 - 2026-03-17: `AC-903B` completed after the service-role-backed digest path produced `7` distinct persisted `daily_ops_digests` shadow rows and rollout visibility remained truthful (`rolloutRegistryStatus=available`, `finalRuntimeMode=shadow`) during evidence collection. `AC-905` is now the active priority to renew the bounded readiness review without auto-activating `ops_digest`.
 - 2026-03-17: `AC-904` completed by changing the `ops_digest` proof model from `7` calendar-day shadow rows to `7` distinct persisted reviewable shadow runs. `daily_ops_digests` now supports multiple separately reconstructable runs for the same `digest_date`, and cached digest reads no longer present themselves as new evidence.
