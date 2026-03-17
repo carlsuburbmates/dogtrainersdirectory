@@ -58,8 +58,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-902` is now complete and rollout-registry read failure plus non-reviewable `ops_digest` evidence paths are surfaced truthfully instead of collapsing into ordinary implicit `shadow` state.
 - `AC-903` is now complete as a blocked operational evidence-collection step: this local checkout cannot collect qualifying persisted `ops_digest` shadow evidence because `SUPABASE_SERVICE_ROLE_KEY` is not configured.
 - `AC-903B` is now complete: the service-role-backed digest path produced the full qualifying `ops_digest` shadow evidence window and rollout visibility remained truthful during collection.
-- `AC-904` refines the `ops_digest` evidence model so controlled-live proof depends on `7` distinct reviewable shadow runs rather than `7` separate calendar days, while keeping the proof bounded and reconstructable.
-- Current top priority: `AC-905`.
+- `AC-904` completed by refining the `ops_digest` evidence model so controlled-live proof depends on `7` distinct reviewable shadow runs rather than `7` separate calendar days, while keeping the proof bounded and reconstructable.
+- `AC-905` is now complete: `ops_digest` is ready for bounded controlled-live approval because the qualifying reviewable shadow evidence window is complete, rollout visibility is truthful, and rollback controls remain explicit, but the current proof window validates deterministic fallback safety rather than successful upstream LLM output quality.
+- Current top priority: `AC-906`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -678,7 +679,16 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The review confirms rollout visibility, rollback guidance, and approval boundaries still hold under the completed evidence window.
   - `ops_digest` is not automatically activated to `controlled_live` in this task.
 
+**AC-906: Mark `ops_digest` ready for first controlled-live promotion decision**
+- Purpose: record the explicit main-control approval that `ops_digest` may move from implicit `shadow` to explicit `shadow_live_ready`, while still keeping the first `controlled_live` promotion as a separate later decision.
+- Definition of done:
+  - Rollout registry state for `ops_digest` moves from implicit default `shadow` to explicit `shadow_live_ready` with a named review owner and approval reason.
+  - `/admin/ai-health` and rollout events reflect the explicit ready-for-review state truthfully.
+  - The control record states clearly that the approval is based on bounded deterministic fallback safety and control-plane correctness, not successful upstream LLM output quality.
+  - `ops_digest` is not activated to `controlled_live` in this task.
+
 ## Execution Log
+- 2026-03-17: `AC-905` completed as a renewed bounded readiness review. `ops_digest` is now `ready for controlled-live approval` because the distinct-run evidence threshold is met, rollout visibility remains truthful, and rollback/disable controls stay explicit and bounded. The review also recorded one material caveat: the qualifying evidence window proves deterministic fallback safety and control-plane correctness, but it does not prove successful upstream LLM digest quality because all reviewed runs fell back after upstream `404`. `AC-906` is now the active priority to record the explicit `shadow_live_ready` approval without auto-promoting to `controlled_live`.
 - 2026-03-17: `AC-903B` completed after the service-role-backed digest path produced `7` distinct persisted `daily_ops_digests` shadow rows and rollout visibility remained truthful (`rolloutRegistryStatus=available`, `finalRuntimeMode=shadow`) during evidence collection. `AC-905` is now the active priority to renew the bounded readiness review without auto-activating `ops_digest`.
 - 2026-03-17: `AC-904` completed by changing the `ops_digest` proof model from `7` calendar-day shadow rows to `7` distinct persisted reviewable shadow runs. `daily_ops_digests` now supports multiple separately reconstructable runs for the same `digest_date`, and cached digest reads no longer present themselves as new evidence.
 - 2026-03-13: `AC-903` completed as a blocked operational evidence-collection step. The local checkout remained truthful and bounded, but it cannot collect qualifying `ops_digest` evidence because `SUPABASE_SERVICE_ROLE_KEY` is not configured, so forced digest runs remain non-persisted and non-reviewable. `AC-903B` is now the active priority to run the evidence path in a service-role-backed environment and then reopen the bounded readiness review.
