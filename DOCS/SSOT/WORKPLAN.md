@@ -61,7 +61,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-904` completed by refining the `ops_digest` evidence model so controlled-live proof depends on `7` distinct reviewable shadow runs rather than `7` separate calendar days, while keeping the proof bounded and reconstructable.
 - `AC-905` is now complete: `ops_digest` is ready for bounded controlled-live approval because the qualifying reviewable shadow evidence window is complete, rollout visibility is truthful, and rollback controls remain explicit, but the current proof window validates deterministic fallback safety rather than successful upstream LLM output quality.
 - `AC-906` is now complete: `ops_digest` has an explicit persisted rollout state of `shadow_live_ready`, with a named review owner and approval reason, while `finalRuntimeMode` remains `shadow`.
-- Current top priority: `AC-907`.
+- `AC-907` is now complete: the first `controlled_live` promotion decision is deferred because approving live use now would pre-authorise upstream AI output that still has no successful shadow proof; all qualifying evidence rows remain `generated_by='deterministic'`.
+- Current top priority: `AC-908`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -698,7 +699,19 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No rollout-state change is performed in this task; any approved promotion is executed by a separate later task.
   - Roadmap and control state remain coherent with exactly one active priority.
 
+**AC-908: Restore `ops_digest` upstream LLM path and collect successful-output shadow proof**
+- Purpose: remove the remaining blocker identified by `AC-907` by restoring successful upstream LLM output for `ops_digest` and capturing a bounded review packet that proves live AI output quality separately from deterministic fallback safety.
+- Definition of done:
+  - The current upstream `404` root cause for `ops_digest` is identified and fixed, or another exact blocker is reported truthfully.
+  - At least `3` distinct persisted reviewable `ops_digest` shadow runs complete with successful upstream LLM output, clearly distinguishable from deterministic fallback rows.
+  - The renewed shadow evidence packet explains the difference between:
+    - successful upstream LLM digest rows
+    - deterministic fallback rows
+    - cached re-reads
+  - `ops_digest` remains below `controlled_live` in this task.
+
 ## Execution Log
+- 2026-03-18: `AC-907` completed as a defer decision, not an approval. Main-control rejected the first `controlled_live` promotion for `ops_digest` at this time because every qualifying shadow row remains `generated_by='deterministic'`, so approving `controlled_live` now would silently pre-authorise upstream AI output that still has no successful shadow proof. `AC-908` is now the active priority to restore the upstream LLM path and collect successful-output shadow evidence before any later promotion decision.
 - 2026-03-17: `AC-906` completed by writing an explicit persisted rollout state of `shadow_live_ready` for `ops_digest`, with `review_owner='main-control'`, append-only rollout event history, and truthful runtime resolution (`rolloutStateSource=persisted_control`, `rolloutState=shadow_live_ready`, `finalRuntimeMode=shadow`). The deterministic-fallback caveat remains unchanged. `AC-907` is now the active priority for the first explicit promotion decision.
 - 2026-03-17: `AC-905` completed as a renewed bounded readiness review. `ops_digest` is now `ready for controlled-live approval` because the distinct-run evidence threshold is met, rollout visibility remains truthful, and rollback/disable controls stay explicit and bounded. The review also recorded one material caveat: the qualifying evidence window proves deterministic fallback safety and control-plane correctness, but it does not prove successful upstream LLM digest quality because all reviewed runs fell back after upstream `404`. `AC-906` is now the active priority to record the explicit `shadow_live_ready` approval without auto-promoting to `controlled_live`.
 - 2026-03-17: `AC-903B` completed after the service-role-backed digest path produced `7` distinct persisted `daily_ops_digests` shadow rows and rollout visibility remained truthful (`rolloutRegistryStatus=available`, `finalRuntimeMode=shadow`) during evidence collection. `AC-905` is now the active priority to renew the bounded readiness review without auto-activating `ops_digest`.

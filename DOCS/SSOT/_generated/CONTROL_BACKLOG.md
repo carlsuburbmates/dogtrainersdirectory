@@ -84,7 +84,8 @@
 | AC-904 | Controlled Live Proof And Burden Baseline | Refine `ops_digest` evidence from calendar days to distinct reviewable runs | completed | backend + main-control | `WORKPLAN` `AC-904` | removes the calendar-day bottleneck without lowering the evidence bar, keeps cached reads from looking like new evidence, and preserves bounded non-live proof rules |
 | AC-905 | Controlled Live Proof And Burden Baseline | Renew `ops_digest` readiness review against the completed evidence window | completed | main-control | `WORKPLAN` `AC-905` | confirms `ops_digest` is ready for bounded controlled-live approval under the distinct-run proof model, while recording that the current proof window validates deterministic fallback safety rather than successful upstream LLM output quality |
 | AC-906 | Controlled Live Proof And Burden Baseline | Mark `ops_digest` ready for first controlled-live promotion decision | completed | backend + main-control | `WORKPLAN` `AC-906` | writes the explicit `shadow_live_ready` rollout state, owner, and approval reason without promoting `ops_digest` to `controlled_live` |
-| AC-907 | Controlled Live Proof And Burden Baseline | Make the first controlled-live promotion decision for `ops_digest` | in_progress | main-control | `WORKPLAN` `AC-907` | records the explicit accept/reject decision on whether `ops_digest` should move from `shadow_live_ready` to `controlled_live`, without performing the state change in the decision task itself |
+| AC-907 | Controlled Live Proof And Burden Baseline | Make the first controlled-live promotion decision for `ops_digest` | completed | main-control | `WORKPLAN` `AC-907` | records the explicit reject/defer decision: `ops_digest` stays below `controlled_live` until successful upstream LLM shadow output is proven, because current qualifying evidence is deterministic fallback only |
+| AC-908 | Controlled Live Proof And Burden Baseline | Restore `ops_digest` upstream LLM path and collect successful-output shadow proof | in_progress | backend + main-control | `WORKPLAN` `AC-908` | removes the remaining blocker by restoring successful upstream LLM digest output and collecting a bounded successful-output shadow packet before any later promotion decision |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -100,7 +101,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-907`.
+- Current active priority: `AC-908`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
