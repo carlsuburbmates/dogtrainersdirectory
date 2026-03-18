@@ -1,6 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import {
+  compareReviewLoopPriority,
+  getReviewLoopPresentation,
+  summariseReviewLoop,
+} from './review-loop'
 
 interface Review {
   id: number
@@ -152,6 +157,8 @@ export default function AdminReviewsPage() {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating)
   }
 
+  const loopSummary = summariseReviewLoop(reviews)
+
   // Filter and paginate reviews
   const filteredReviews = reviews.filter(review => {
     if (searchTerm) {
@@ -164,7 +171,9 @@ export default function AdminReviewsPage() {
       )
     }
     return true
-  })
+  }).sort(compareReviewLoopPriority)
+
+  const filteredSummary = summariseReviewLoop(filteredReviews)
 
   const totalPages = Math.ceil(filteredReviews.length / itemsPerPage)
   const paginatedReviews = filteredReviews.slice(
@@ -181,7 +190,35 @@ export default function AdminReviewsPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Moderation</h1>
-        <p className="text-gray-600">Manage and moderate user reviews for trainer profiles</p>
+        <p className="text-gray-600">
+          Work through one bounded weekly moderation loop. Draft recommendations stay advisory until you approve or reject a review explicitly.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold text-gray-900">Weekly moderation loop</h2>
+          <p className="text-sm text-gray-600">
+            Use the draft context where it exists, then clear the pending queue in operator order without changing final review state automatically.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-5">
+          {[
+            { label: 'Pending now', value: loopSummary.pendingTotal },
+            { label: 'Reject-ready drafts', value: loopSummary.draftRejectCount },
+            { label: 'Approve-ready drafts', value: loopSummary.draftApproveCount },
+            { label: 'Shadow reviews', value: loopSummary.shadowCount },
+            { label: 'Manual checks', value: loopSummary.manualCount },
+          ].map((item) => (
+            <div key={item.label} className="rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="text-xs uppercase tracking-wide text-gray-500">{item.label}</div>
+              <div className="mt-1 text-2xl font-semibold text-gray-900">{item.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          {loopSummary.summary}
+        </div>
       </div>
 
       {/* Filters Section */}
@@ -251,6 +288,11 @@ export default function AdminReviewsPage() {
             {loading ? 'Loading...' : '🔄 Refresh'}
           </button>
         </div>
+        {!loading && filteredReviews.length > 0 && (
+          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {filteredSummary.summary}
+          </div>
+        )}
       </div>
 
       {/* Error Display */}
@@ -289,13 +331,19 @@ export default function AdminReviewsPage() {
 
       {!loading && paginatedReviews.length > 0 && (
         <div className="space-y-4">
-          {paginatedReviews.map((review) => (
+          {paginatedReviews.map((review) => {
+            const loopPresentation = getReviewLoopPresentation(review)
+
+            return (
             <div key={review.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">{review.reviewer_name}</h3>
                     {getStatusBadge(review)}
+                    <span className={`px-2 py-1 text-xs font-medium rounded border ${loopPresentation.stageClassName}`}>
+                      {loopPresentation.stageLabel}
+                    </span>
                     {getAIDecisionBadge(review)}
                     {getApprovalBadge(review)}
                   </div>
@@ -339,6 +387,17 @@ export default function AdminReviewsPage() {
                         ? 'Shadow evaluation only. The visible review state did not change.'
                         : 'Draft recommendation only. Final approval or rejection still requires an operator action.'}
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {!review.is_approved && !review.is_rejected && (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+                  <div className="space-y-1 text-sm text-amber-900">
+                    <p>
+                      <span className="font-semibold">Next safe action:</span> {loopPresentation.nextAction}
+                    </p>
+                    <p className="text-xs text-amber-800">{loopPresentation.operatorNote}</p>
                   </div>
                 </div>
               )}
@@ -407,7 +466,7 @@ export default function AdminReviewsPage() {
                 </div>
               )}
             </div>
-          ))}
+          )})}
         </div>
       )}
 

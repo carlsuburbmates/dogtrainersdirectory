@@ -74,7 +74,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Controlled Live Proof And Burden Baseline is complete for the current planned slice.
 - Phase 14 - Operator Burden Reduction is now open as the next governed delivery slice.
 - `AO-912` is now complete: `/admin` now presents one bounded weekly verification and ABN exception loop with explicit next-safe-action guidance, while final ABN and verification outcomes remain operator-approved.
-- Current top priority: `AO-911`.
+- `AO-911` is now complete: `/admin/reviews` now runs as an ordered weekly moderation loop with explicit next-safe-action guidance, while draft, shadow, and final moderation states remain visibly distinct and operator-approved.
+- Current top priority: `AO-913`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -826,7 +827,16 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The loop makes the next safe moderation action explicit enough for the weekly exception-review cadence.
   - `/admin/ai-health` and related audit traces continue to report draft-versus-approved state truthfully, including pause/disable visibility.
 
+**AO-913: Surface scaffold-review guidance at decision time while keeping approval operator-owned**
+- Purpose: reduce scaffold-review burden by showing bounded assistive guidance at the point of decision while keeping approval and rejection as explicit operator actions.
+- Definition of done:
+  - Scaffold-review guidance is visible at decision time on the existing operator surface rather than buried in background traces alone.
+  - Guidance remains assistive only; scaffold approval or rejection still requires explicit operator action.
+  - Audit traces and `/admin/ai-health` remain truthful about advisory output versus final operator-approved action.
+  - No business-facing, publication, verification, monetisation, or ranking boundary is widened in this task.
+
 ## Execution Log
+- 2026-03-19: `AO-911` completed by turning `/admin/reviews` into an explicit weekly moderation loop with ordered queue priority, visible stage labels (`Reject-ready draft`, `Approve-ready draft`, `Shadow review`, `Manual check`, `Completed`), and per-item `Next safe action` guidance derived from the existing moderation recommendation metadata. Final moderation outcomes remain explicit operator actions through the existing admin route, `/admin/ai-health` truth semantics were unchanged, and `AO-913` is now the active priority so scaffold-review burden is reduced next without breaking the agreed Phase 14 order.
 - 2026-03-19: `AO-912` completed by compressing the existing ABN manual review queue, verification exceptions, and recent ABN fallback context into one bounded `Verification & ABN Weekly Loop` on `/admin`, backed by a unified `/api/admin/queues` payload with deterministic next-safe-action guidance. No verification, ABN trust, admin-access, publication, ranking, billing, moderation, or business-owned profile state was auto-changed, and the Tier-1 API/runbook text now matches the loop. `AO-911` is now the active priority so review moderation burden is reduced next without breaking the agreed Phase 14 ordering.
 - 2026-03-18: `AC-915` completed as the steady-state live review decision for `ops_digest`. Main-control keeps `ops_digest` in bounded `controlled_live` because the first and resumed live observation packets both showed truthful live LLM output, truthful cached re-read behaviour, and a proven pause path without any approval-boundary breach. The low-activity output caveat remains explicit, and the operator-facing note that `emergency_accuracy_pct=0` warrants investigation remains review material rather than a contract breach. Phase 13 is now complete for the current planned slice, and `AO-912` is the next active priority to reduce weekly verification and ABN exception burden.
 - 2026-03-18: `AC-914` completed as the resumed bounded live observation window for `ops_digest`. The packet captured a truthful persisted live LLM digest row (`id=32`, `ai_mode='live'`, `generated_by='zai'`, `decision_source='llm'`), preserved cached re-read truth on the same row, and left the workflow live without any new rollout-state mutation. The low-activity output caveat remains explicit, including the operator-facing note that emergency classifier accuracy at `0%` warrants review but is not itself a contract breach. `AC-915` is now the active priority to decide the steady-state rollout posture for `ops_digest`.
