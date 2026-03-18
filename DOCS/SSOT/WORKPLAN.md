@@ -67,11 +67,13 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-910` is now complete: `ops_digest` has been explicitly promoted from `shadow_live_ready` to `controlled_live`, with persisted approval metadata, append-only rollout-event history, and truthful live runtime resolution.
 - `AC-911` is now complete: the first bounded live observation window succeeded, captured a truthful live LLM digest row, verified cached re-read semantics, and ended in `paused_after_review` after the planned primary rollback drill.
 - `AC-912` is now complete: main-control accepted the first live observation packet and approved a later explicit resume-to-`controlled_live` execution task, while keeping the low-activity output caveat explicit.
-- `AC-913` is reopened after the blocked execution outcome: the contract gap that rejected `paused_after_review -> controlled_live` is now closed, so the canonical resume write can be rerun cleanly.
 - `AC-913A` is now complete: the canonical rollout transition contract now allows the reviewed `ops_digest` resume from `paused_after_review` to `controlled_live` without creating a generic paused-to-live loophole.
 - `AC-913` is now complete: `ops_digest` has been explicitly resumed from `paused_after_review` to `controlled_live`, with persisted approval metadata, append-only event history, and truthful live runtime resolution.
 - `AC-914` is now complete: the resumed bounded live observation window produced a truthful persisted live LLM digest row, preserved cached re-read truth, and left `ops_digest` live without any new rollout-state mutation.
-- Current top priority: `AC-915`.
+- `AC-915` is now complete: main-control keeps `ops_digest` in bounded `controlled_live` because both live observation packets remained truthful, bounded, and reversible, while the low-activity output caveat stays explicit.
+- Controlled Live Proof And Burden Baseline is complete for the current planned slice.
+- Phase 14 - Operator Burden Reduction is now open as the next governed delivery slice.
+- Current top priority: `AO-912`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -86,6 +88,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   11. AI Automation Definition And Rollout
   12. Supervised Automation Operations
   13. Controlled Live Proof And Burden Baseline
+  14. Operator Burden Reduction
 
 ## Completed Foundation Milestones
 
@@ -799,7 +802,23 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The low-activity output caveat remains explicit in the decision record.
   - No rollout-state mutation is performed in this review task itself.
 
+### Phase 14 - Operator Burden Reduction
+
+**Phase rule**
+- This phase reduces weekly operator exception burden without widening owner, business, moderation, verification, ranking, billing, or publication automation authority.
+- Any AI contribution in this phase remains bounded to advisory or internal-draft operator support unless a later SSOT task explicitly widens that boundary.
+- Admin truth surfaces must stay explicit about whether output is advisory, drafted, approved, paused, disabled, or live.
+
+**AO-912: Compress verification and ABN exception burden into one bounded operator loop**
+- Purpose: reduce weekly operator effort on verification and ABN-support exceptions by surfacing one bounded admin loop with clear next-safe-action guidance while keeping final verification state operator-approved.
+- Definition of done:
+  - Verification and ABN-support exceptions are surfaced in one coherent operator loop rather than fragmented admin checks.
+  - Any AI assistance remains advisory or internal draft only; no verification, ABN trust, or admin-access state is auto-changed.
+  - The loop makes per-record next-safe action explicit enough for a one-man weekly exception review cadence.
+  - `/admin/ai-health` and related audit traces continue to report the workflow truthfully, including advisory-vs-approved state and pause/disable visibility.
+
 ## Execution Log
+- 2026-03-18: `AC-915` completed as the steady-state live review decision for `ops_digest`. Main-control keeps `ops_digest` in bounded `controlled_live` because the first and resumed live observation packets both showed truthful live LLM output, truthful cached re-read behaviour, and a proven pause path without any approval-boundary breach. The low-activity output caveat remains explicit, and the operator-facing note that `emergency_accuracy_pct=0` warrants investigation remains review material rather than a contract breach. Phase 13 is now complete for the current planned slice, and `AO-912` is the next active priority to reduce weekly verification and ABN exception burden.
 - 2026-03-18: `AC-914` completed as the resumed bounded live observation window for `ops_digest`. The packet captured a truthful persisted live LLM digest row (`id=32`, `ai_mode='live'`, `generated_by='zai'`, `decision_source='llm'`), preserved cached re-read truth on the same row, and left the workflow live without any new rollout-state mutation. The low-activity output caveat remains explicit, including the operator-facing note that emergency classifier accuracy at `0%` warrants review but is not itself a contract breach. `AC-915` is now the active priority to decide the steady-state rollout posture for `ops_digest`.
 - 2026-03-18: `AC-913` completed by rerunning the canonical resume write after `AC-913A` aligned the rollout transition contract. `ops_digest` moved from `paused_after_review` back to `controlled_live`, the resume event history is append-only and reconstructable, and runtime truth is now live again with the low-activity caveat preserved in control metadata. `AC-914` is now the active priority to observe the resumed bounded live window before any later keep-live review.
 - 2026-03-18: `AC-913A` completed by narrowing the rollout transition contract so `ops_digest` may resume from `paused_after_review` back to bounded `controlled_live` through the canonical mutation path, while preserving the existing approval, audit, and append-only event requirements. The fix remains scoped to the current `ops_digest` cycle, runtime/admin truth stayed coherent, and `AC-913` is now the active priority again for the actual resume write.

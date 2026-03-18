@@ -93,7 +93,8 @@
 | AC-913A | Controlled Live Proof And Burden Baseline | Add the canonical paused-review resume path for `ops_digest` | completed | backend + main-control | `WORKPLAN` `AC-913A` | closes the rollout transition contract gap so an approved `paused_after_review -> controlled_live` resume can be executed through the canonical mutation path |
 | AC-913 | Controlled Live Proof And Burden Baseline | Resume `ops_digest` from `paused_after_review` to bounded `controlled_live` | completed | backend + main-control | `WORKPLAN` `AC-913` | reruns the canonical resume write for `ops_digest`, restores truthful bounded live runtime state, and preserves the low-activity caveat in control and event metadata |
 | AC-914 | Controlled Live Proof And Burden Baseline | Observe the resumed bounded `controlled_live` window for `ops_digest` | completed | backend + main-control | `WORKPLAN` `AC-914` | captures the next bounded live observation packet after the approved resume, verifies live-path truthfulness, and leaves the later keep-live review separate |
-| AC-915 | Controlled Live Proof And Burden Baseline | Review the resumed live observation packet and decide the steady-state rollout posture for `ops_digest` | in_progress | main-control | `WORKPLAN` `AC-915` | reviews the resumed-live packet and explicitly decides whether `ops_digest` stays in `controlled_live`, returns to `paused_after_review`, or moves back below live |
+| AC-915 | Controlled Live Proof And Burden Baseline | Review the resumed live observation packet and decide the steady-state rollout posture for `ops_digest` | completed | main-control | `WORKPLAN` `AC-915` | keeps `ops_digest` in bounded `controlled_live` because the resumed-live packet remained truthful, bounded, and reversible, while preserving the low-activity caveat in the steady-state decision record |
+| AO-912 | Operator Burden Reduction | Compress verification and ABN exception burden into one bounded operator loop | in_progress | backend + frontend + main-control | `WORKPLAN` `AO-912` | reduces weekly operator effort by surfacing one coherent verification and ABN-support loop with bounded advisory/draft assistance and no automatic verification-state change |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -105,11 +106,13 @@
 - Runtime Resilience is complete.
 - AI Automation Definition And Rollout is complete for the current planned slice.
 - Supervised Automation Operations is complete for the current planned slice.
+- Controlled Live Proof And Burden Baseline is complete for the current planned slice.
+- Phase 14 - Operator Burden Reduction is now open as the next governed delivery slice.
 - `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-915`.
+- Current active priority: `AO-912`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
