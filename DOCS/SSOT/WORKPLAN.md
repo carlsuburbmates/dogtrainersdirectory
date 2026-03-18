@@ -69,7 +69,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-912` is now complete: main-control accepted the first live observation packet and approved a later explicit resume-to-`controlled_live` execution task, while keeping the low-activity output caveat explicit.
 - `AC-913` is reopened after the blocked execution outcome: the contract gap that rejected `paused_after_review -> controlled_live` is now closed, so the canonical resume write can be rerun cleanly.
 - `AC-913A` is now complete: the canonical rollout transition contract now allows the reviewed `ops_digest` resume from `paused_after_review` to `controlled_live` without creating a generic paused-to-live loophole.
-- Current top priority: `AC-913`.
+- `AC-913` is now complete: `ops_digest` has been explicitly resumed from `paused_after_review` to `controlled_live`, with persisted approval metadata, append-only event history, and truthful live runtime resolution.
+- Current top priority: `AC-914`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -777,7 +778,17 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No one-off DB write path or boundary bypass is introduced.
   - `AC-913` can be rerun cleanly through the canonical mutation path after this task.
 
+**AC-914: Observe the resumed bounded `controlled_live` window for `ops_digest`**
+- Purpose: capture the next bounded live observation packet for `ops_digest` after the approved resume in `AC-913`, so continued live use is validated beyond the earlier rollback-drill window.
+- Definition of done:
+  - One bounded resumed-live digest run is captured with truthful runtime, rollout, and persistence evidence.
+  - Cached re-read truth remains preserved for the resumed live row.
+  - The observation records whether the resumed live cycle still behaves safely and advisories remain bounded to the operator surface.
+  - The low-activity output caveat remains explicit in the packet.
+  - No keep-live vs pause-after-review decision is made in this task; that remains a separate later review.
+
 ## Execution Log
+- 2026-03-18: `AC-913` completed by rerunning the canonical resume write after `AC-913A` aligned the rollout transition contract. `ops_digest` moved from `paused_after_review` back to `controlled_live`, the resume event history is append-only and reconstructable, and runtime truth is now live again with the low-activity caveat preserved in control metadata. `AC-914` is now the active priority to observe the resumed bounded live window before any later keep-live review.
 - 2026-03-18: `AC-913A` completed by narrowing the rollout transition contract so `ops_digest` may resume from `paused_after_review` back to bounded `controlled_live` through the canonical mutation path, while preserving the existing approval, audit, and append-only event requirements. The fix remains scoped to the current `ops_digest` cycle, runtime/admin truth stayed coherent, and `AC-913` is now the active priority again for the actual resume write.
 - 2026-03-18: `AC-913` completed as a blocked execution attempt. The requested resume from `paused_after_review` to `controlled_live` was rejected by the canonical mutation contract with `409` because `src/lib/ai-rollouts.ts` currently only permits `controlled_live` when the existing rollout state is `shadow_live_ready`. No rollout state changed, runtime truth remained explicit (`rolloutState='paused_after_review'`, `finalRuntimeMode='disabled'`), and `AC-913A` is now the active priority to close this contract gap before any later resume attempt.
 - 2026-03-18: `AC-912` completed as the post-observation review decision. Main-control accepted the `AC-911` packet because it proved truthful live output, truthful cached re-read behaviour, a successful primary rollback drill, and bounded disabled behaviour after pause. The remaining low-activity output caveat is still material, but it is not a blocker for continued bounded live use given the operator-only advisory scope and the proven pause path. `AC-913` is now the active priority to execute the explicit resume from `paused_after_review` back to `controlled_live`.

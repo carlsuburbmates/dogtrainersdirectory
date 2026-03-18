@@ -91,7 +91,8 @@
 | AC-911 | Controlled Live Proof And Burden Baseline | Observe the first bounded `controlled_live` window for `ops_digest` | completed | backend + main-control | `WORKPLAN` `AC-911` | captures the first live observation packet, verifies live-path truthfulness and rollback via pause, and leaves the post-observation state decision as a separate task |
 | AC-912 | Controlled Live Proof And Burden Baseline | Review the first live observation packet and decide the post-observation rollout state | completed | main-control | `WORKPLAN` `AC-912` | accepts the first live observation packet and approves a later explicit resume-to-`controlled_live` execution task, while keeping the low-activity caveat explicit |
 | AC-913A | Controlled Live Proof And Burden Baseline | Add the canonical paused-review resume path for `ops_digest` | completed | backend + main-control | `WORKPLAN` `AC-913A` | closes the rollout transition contract gap so an approved `paused_after_review -> controlled_live` resume can be executed through the canonical mutation path |
-| AC-913 | Controlled Live Proof And Burden Baseline | Resume `ops_digest` from `paused_after_review` to bounded `controlled_live` | in_progress | backend + main-control | `WORKPLAN` `AC-913` | rerun the now-unblocked canonical resume write for `ops_digest` after `AC-913A` aligned the transition contract |
+| AC-913 | Controlled Live Proof And Burden Baseline | Resume `ops_digest` from `paused_after_review` to bounded `controlled_live` | completed | backend + main-control | `WORKPLAN` `AC-913` | reruns the canonical resume write for `ops_digest`, restores truthful bounded live runtime state, and preserves the low-activity caveat in control and event metadata |
+| AC-914 | Controlled Live Proof And Burden Baseline | Observe the resumed bounded `controlled_live` window for `ops_digest` | in_progress | backend + main-control | `WORKPLAN` `AC-914` | captures the next bounded live observation packet after the approved resume, verifies live-path truthfulness, and leaves the later keep-live review separate |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -107,7 +108,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-913`.
+- Current active priority: `AC-914`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
