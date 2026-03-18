@@ -66,7 +66,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-909` is now complete: the first bounded promotion gate is approved because `ops_digest` now has both fallback-safe proof and successful upstream shadow proof, although the successful-output packet still comes from low-activity snapshots and that caveat must remain visible during live observation.
 - `AC-910` is now complete: `ops_digest` has been explicitly promoted from `shadow_live_ready` to `controlled_live`, with persisted approval metadata, append-only rollout-event history, and truthful live runtime resolution.
 - `AC-911` is now complete: the first bounded live observation window succeeded, captured a truthful live LLM digest row, verified cached re-read semantics, and ended in `paused_after_review` after the planned primary rollback drill.
-- Current top priority: `AC-912`.
+- `AC-912` is now complete: main-control accepted the first live observation packet and approved a later explicit resume-to-`controlled_live` execution task, while keeping the low-activity output caveat explicit.
+- Current top priority: `AC-913`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -756,7 +757,17 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The low-activity output caveat remains explicit in the decision record.
   - No direct rollout-state mutation is performed in this review task itself.
 
+**AC-913: Resume `ops_digest` from `paused_after_review` to bounded `controlled_live`**
+- Purpose: perform the explicit post-review resume write for `ops_digest` after the approved `AC-912` decision, without widening any other workflow.
+- Definition of done:
+  - The persisted rollout-control state for `ops_digest` changes from `paused_after_review` to `controlled_live`.
+  - Append-only rollout-event history records the resume action with named approver and reason.
+  - Runtime resolution and `/admin/ai-health` again reflect `controlled_live` truthfully.
+  - The recorded resume reason carries forward the low-activity output caveat and the requirement for continued bounded observation.
+  - No other workflow family is changed in this task.
+
 ## Execution Log
+- 2026-03-18: `AC-912` completed as the post-observation review decision. Main-control accepted the `AC-911` packet because it proved truthful live output, truthful cached re-read behaviour, a successful primary rollback drill, and bounded disabled behaviour after pause. The remaining low-activity output caveat is still material, but it is not a blocker for continued bounded live use given the operator-only advisory scope and the proven pause path. `AC-913` is now the active priority to execute the explicit resume from `paused_after_review` back to `controlled_live`.
 - 2026-03-18: `AC-911` completed as the first bounded live observation window for `ops_digest`. The packet captured a truthful live LLM digest row (`id=30`, `ai_mode='live'`, `generated_by='zai'`, `decision_source='llm'`), confirmed cached re-read truth on the same row, and then executed the planned primary rollback drill to `paused_after_review`. The post-pause forced run remained truthful and bounded (`id=31`, `ai_mode='disabled'`, deterministic advisory output, no masquerading as successful AI output). `AC-912` is now the active priority to review this observation packet and decide the post-observation rollout state.
 - 2026-03-18: `AC-910` completed by writing the explicit rollout transition for `ops_digest` from `shadow_live_ready` to `controlled_live` through the canonical rollout-control mutation path. Persisted control metadata now records `approved_by='main-control'`, the `AC-909` approval basis, and the remaining low-activity caveat; runtime resolution is truthful (`rolloutStateSource=persisted_control`, `rolloutState=controlled_live`, `finalRuntimeMode=live`). `AC-911` is now the active priority to observe the first bounded live window before any keep-live or pause decision.
 - 2026-03-18: `AC-909` completed as an approval decision. Main-control accepted the first bounded promotion gate for `ops_digest` because the workflow now has both the earlier fallback-safe proof and multiple successful upstream shadow rows (`generated_by='zai'`) with truthful cached re-read semantics. One residual caveat remains: the successful-output packet comes from low-activity snapshots, so the first live observation window must continue to watch output usefulness and operator trust closely. `AC-910` is now the active priority to write the first explicit `controlled_live` promotion.
