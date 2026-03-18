@@ -65,7 +65,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-908` is now complete: the upstream `ops_digest` LLM path is restored, successful upstream shadow rows now exist (`generated_by='zai'`), and cached re-read semantics remain truthful.
 - `AC-909` is now complete: the first bounded promotion gate is approved because `ops_digest` now has both fallback-safe proof and successful upstream shadow proof, although the successful-output packet still comes from low-activity snapshots and that caveat must remain visible during live observation.
 - `AC-910` is now complete: `ops_digest` has been explicitly promoted from `shadow_live_ready` to `controlled_live`, with persisted approval metadata, append-only rollout-event history, and truthful live runtime resolution.
-- Current top priority: `AC-911`.
+- `AC-911` is now complete: the first bounded live observation window succeeded, captured a truthful live LLM digest row, verified cached re-read semantics, and ended in `paused_after_review` after the planned primary rollback drill.
+- Current top priority: `AC-912`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -744,7 +745,19 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The low-activity output caveat remains visible throughout the observation window.
   - No judgement about keeping or pausing live use is made in this task; that remains a separate decision step.
 
+**AC-912: Review the first live observation packet and decide the post-observation rollout state**
+- Purpose: review the `AC-911` packet and decide whether `ops_digest` should remain paused, return to `shadow`, or move toward a later explicit resume-to-`controlled_live` write.
+- Definition of done:
+  - Main-control reviews the full `AC-911` packet, including the live row proof, cached re-read truth, rollback drill, and post-pause behaviour.
+  - The review explicitly concludes one of:
+    - keep `paused_after_review`,
+    - return `ops_digest` to `shadow`,
+    - or approve a later explicit resume-to-`controlled_live` execution task.
+  - The low-activity output caveat remains explicit in the decision record.
+  - No direct rollout-state mutation is performed in this review task itself.
+
 ## Execution Log
+- 2026-03-18: `AC-911` completed as the first bounded live observation window for `ops_digest`. The packet captured a truthful live LLM digest row (`id=30`, `ai_mode='live'`, `generated_by='zai'`, `decision_source='llm'`), confirmed cached re-read truth on the same row, and then executed the planned primary rollback drill to `paused_after_review`. The post-pause forced run remained truthful and bounded (`id=31`, `ai_mode='disabled'`, deterministic advisory output, no masquerading as successful AI output). `AC-912` is now the active priority to review this observation packet and decide the post-observation rollout state.
 - 2026-03-18: `AC-910` completed by writing the explicit rollout transition for `ops_digest` from `shadow_live_ready` to `controlled_live` through the canonical rollout-control mutation path. Persisted control metadata now records `approved_by='main-control'`, the `AC-909` approval basis, and the remaining low-activity caveat; runtime resolution is truthful (`rolloutStateSource=persisted_control`, `rolloutState=controlled_live`, `finalRuntimeMode=live`). `AC-911` is now the active priority to observe the first bounded live window before any keep-live or pause decision.
 - 2026-03-18: `AC-909` completed as an approval decision. Main-control accepted the first bounded promotion gate for `ops_digest` because the workflow now has both the earlier fallback-safe proof and multiple successful upstream shadow rows (`generated_by='zai'`) with truthful cached re-read semantics. One residual caveat remains: the successful-output packet comes from low-activity snapshots, so the first live observation window must continue to watch output usefulness and operator trust closely. `AC-910` is now the active priority to write the first explicit `controlled_live` promotion.
 - 2026-03-18: `AC-908` completed by fixing the Z.AI request path in `src/lib/llm.ts`, preserving deterministic fallback behaviour, and collecting multiple successful persisted `ops_digest` shadow rows with `generated_by='zai'`. The blocker from `AC-907` is now removed at the implementation/evidence layer, and `AC-909` is now the active priority to decide the first promotion gate.
