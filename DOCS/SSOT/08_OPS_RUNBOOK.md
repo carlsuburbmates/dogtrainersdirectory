@@ -1,8 +1,8 @@
 # Ops Runbook — Post-launch Operations (Reality)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.2
-**Last Updated:** 2026-03-17
+**Version:** v1.3
+**Last Updated:** 2026-03-19
 
 ## 1. Operating model (canonical)
 Ops is **pull-based**:
@@ -26,6 +26,12 @@ Canonical operator expectations:
 - `/admin/errors` — error monitoring
 - `/admin/reviews` — moderation queues
 - `/admin/triage` — triage monitoring
+
+### 2.1 Weekly verification and ABN loop
+- The canonical weekly exception pass for verification and ABN-support work now starts on `/admin`.
+- Verification exceptions and ABN manual reviews should be worked from one bounded operator loop rather than separate ad hoc checks across the queue, fallback telemetry, and verification traces.
+- The loop may surface deterministic next-safe-action guidance and recent fallback context, but final ABN approval or rejection and any verification-state change still require the explicit operator action.
+- A degraded or missing guidance trace must not block the queue from loading; operators should still be able to clear the available exception items.
 
 ## 3. Key admin API capabilities (examples)
 - Moderation run loop: `/api/admin/moderation/run` (cron daily at 01:00 AEST/AEDT on the current Vercel Hobby-compatible schedule)

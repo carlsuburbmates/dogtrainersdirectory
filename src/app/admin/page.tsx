@@ -5,6 +5,25 @@ import { EnhancedAdminDashboard } from './enhanced-dashboard'
 import { QueueCard } from './queue-card'
 
 type QueuePayload = {
+  verification_abn_loop: Array<{
+    id: number | string
+    title: string
+    meta: string
+    body: string
+    kindLabel: string
+    nextAction: string
+    action?: 'review'
+  }>
+  verification_abn_summary: {
+    totalItems: number
+    abnManualReviewCount: number
+    resourceVerificationCount: number
+    fallbackCount: number
+    verificationCount: number
+    fallbackRate: number
+    windowHours: number
+    note: string
+  }
   emergency_verifications: Array<{
     id: number
     name: string
@@ -43,6 +62,7 @@ type QueuePayload = {
     is_active: boolean
     featured_until: string | null
   }>
+  aiEnabled?: boolean
 }
 
 type ScaffoldedItem = {
@@ -50,14 +70,6 @@ type ScaffoldedItem = {
   name: string
   verification_status: string
   bio?: string
-}
-
-type FallbackStats = {
-  fallbackCount: number
-  verificationCount: number
-  rate: number
-  windowHours: number
-  events: Array<{ business_id: number | null; reason: string; created_at: string }>
 }
 
 type ScaffoldedResponse = {
@@ -68,6 +80,17 @@ type ScaffoldedResponse = {
 }
 
 const EMPTY_QUEUE_PAYLOAD: QueuePayload = {
+  verification_abn_loop: [],
+  verification_abn_summary: {
+    totalItems: 0,
+    abnManualReviewCount: 0,
+    resourceVerificationCount: 0,
+    fallbackCount: 0,
+    verificationCount: 0,
+    fallbackRate: 0,
+    windowHours: 7 * 24,
+    note: 'The weekly verification and ABN exception loop is clear.'
+  },
   emergency_verifications: [],
   reviews: [],
   abn_verifications: [],
@@ -79,8 +102,6 @@ const READABLE_ERRORS = {
     'Queue data is temporarily unavailable. Please refresh shortly.',
   scaffolded:
     'Scaffolded listings are temporarily unavailable. Please refresh shortly.',
-  fallback:
-    'ABN fallback telemetry is temporarily unavailable. Please refresh shortly.',
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -109,8 +130,6 @@ export default function AdminQueuesPage() {
   const [queuesError, setQueuesError] = useState<string | null>(null)
   const [scaffolded, setScaffolded] = useState<ScaffoldedItem[]>([])
   const [scaffoldedError, setScaffoldedError] = useState<string | null>(null)
-  const [fallbackStats, setFallbackStats] = useState<FallbackStats | null>(null)
-  const [fallbackStatsError, setFallbackStatsError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -119,11 +138,10 @@ export default function AdminQueuesPage() {
     const load = async () => {
       setIsLoading(true)
 
-      const [queueResult, scaffoldedResult, fallbackResult] =
+      const [queueResult, scaffoldedResult] =
         await Promise.allSettled([
           fetchJson<QueuePayload>('/api/admin/queues'),
           fetchJson<ScaffoldedResponse>('/api/admin/scaffolded'),
-          fetchJson<FallbackStats>('/api/admin/abn/fallback-stats'),
         ])
 
       if (isCancelled) return
@@ -152,15 +170,6 @@ export default function AdminQueuesPage() {
         setScaffoldedError(READABLE_ERRORS.scaffolded)
       }
 
-      if (fallbackResult.status === 'fulfilled') {
-        setFallbackStats(fallbackResult.value || null)
-        setFallbackStatsError(null)
-      } else {
-        console.error(fallbackResult.reason)
-        setFallbackStats(null)
-        setFallbackStatsError(READABLE_ERRORS.fallback)
-      }
-
       setIsLoading(false)
     }
 
@@ -171,9 +180,7 @@ export default function AdminQueuesPage() {
     }
   }, [])
 
-  const hasLoadError = Boolean(
-    queuesError || scaffoldedError || fallbackStatsError
-  )
+  const hasLoadError = Boolean(queuesError || scaffoldedError)
 
   return (
     <>
@@ -197,10 +204,9 @@ export default function AdminQueuesPage() {
           <div className="space-y-8">
             <div className="rounded-lg border border-gray-200 bg-white px-5 py-4">
               <div className="text-sm font-semibold text-gray-700">Operator task summary</div>
-              <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
-                {[
-                  { label: 'Emergency', count: queues.emergency_verifications.length },
-                  { label: 'ABN', count: queues.abn_verifications.length },
+              <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {[
+                  { label: 'Verif loop', count: queues.verification_abn_summary.totalItems },
                   { label: 'Reviews', count: queues.reviews.length },
                   { label: 'Flagged', count: queues.flagged_businesses.length },
                   { label: 'Scaffolded', count: scaffolded.length }
@@ -228,77 +234,11 @@ export default function AdminQueuesPage() {
                 {queuesError}
               </div>
             )}
-            {fallbackStatsError && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                {fallbackStatsError}
-              </div>
-            )}
-            {fallbackStats && (
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-                <p className="text-sm font-semibold text-blue-900">ABN fallback rate (last {fallbackStats.windowHours}h)</p>
-                <p className="text-2xl font-bold text-blue-700">
-                  {(fallbackStats.rate * 100).toFixed(1)}%
-                  <span className="ml-2 text-sm text-blue-900">
-                    ({fallbackStats.fallbackCount}/{fallbackStats.verificationCount || 1})
-                  </span>
-                </p>
-                <p className="text-xs text-blue-900">Monitoring fallback pipeline closes telemetry gap #3.</p>
-                {fallbackStats.events?.length > 0 && (
-                  <ul className="mt-2 text-xs text-blue-900">
-                    {fallbackStats.events.slice(0, 3).map((evt, idx) => (
-                      <li key={`${evt.business_id ?? 'na'}-${idx}`}>
-                        {new Date(evt.created_at).toLocaleTimeString()} – {evt.reason}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
             <QueueCard
-              title="Emergency Verification"
-              items={queues.emergency_verifications.map((item) => {
-                const suburbs = Array.isArray(item.suburbs)
-                  ? item.suburbs[0]
-                  : item.suburbs
-                const council =
-                  Array.isArray(suburbs?.councils)
-                    ? suburbs?.councils[0]?.name
-                    : suburbs?.councils?.name
-                const meta = [
-                  item.resource_type,
-                  suburbs?.name ? `${suburbs.name}${suburbs.postcode ? ` (${suburbs.postcode})` : ''}` : null,
-                  council ? `Council: ${council}` : null
-                ]
-                  .filter(Boolean)
-                  .join(' • ')
-                const bodyParts = [
-                  item.emergency_phone ? `Phone: ${item.emergency_phone}` : null,
-                  item.emergency_hours ? `Hours: ${item.emergency_hours}` : null,
-                  item.emergency_verification_notes ? `Notes: ${item.emergency_verification_notes}` : null
-                ].filter(Boolean)
-                return {
-                  id: item.id,
-                  title: item.name,
-                  meta: meta || 'Emergency resource review',
-                  body: bodyParts.length > 0 ? bodyParts.join(' | ') : 'Review required'
-                }
-              })}
-            />
-            <QueueCard title="Pending Reviews" items={queues.reviews.map((item) => ({
-              id: item.id,
-              title: item.title,
-              meta: `Rating ${item.rating} • Business ${item.business_id}`,
-              body: item.content || 'No message provided'
-            }))} />
-            <QueueCard
-              title="ABN Manual Reviews"
-              items={queues.abn_verifications.map((item) => ({
-                id: item.id,
-                title: item.abn,
-                meta: `Business ${item.business_id} • Score ${item.similarity_score}`,
-                body: `Status: ${item.status}`,
-                action: 'review'
-              }))}
+              title="Verification & ABN Weekly Loop"
+              description="One bounded weekly exception pass for resource verification and ABN manual reviews. Guidance stays advisory; final verification and ABN outcomes still require explicit operator action."
+              summary={`${queues.verification_abn_summary.note} ${queues.verification_abn_summary.verificationCount > 0 ? `ABN fallback rate ${(queues.verification_abn_summary.fallbackRate * 100).toFixed(1)}% (${queues.verification_abn_summary.fallbackCount}/${queues.verification_abn_summary.verificationCount}) over the last ${queues.verification_abn_summary.windowHours}h.` : ''}`.trim()}
+              items={queues.verification_abn_loop}
               onReview={async (id, action) => {
                 const res = await fetch(`/api/admin/abn/${id}`, {
                   method: 'POST',
@@ -310,6 +250,12 @@ export default function AdminQueuesPage() {
                 }
               }}
             />
+            <QueueCard title="Pending Reviews" items={queues.reviews.map((item) => ({
+              id: item.id,
+              title: item.title,
+              meta: `Rating ${item.rating} • Business ${item.business_id}`,
+              body: item.content || 'No message provided'
+            }))} />
             <QueueCard title="Flagged Profiles" items={queues.flagged_businesses.map((item) => ({
               id: item.id,
               title: item.name,
