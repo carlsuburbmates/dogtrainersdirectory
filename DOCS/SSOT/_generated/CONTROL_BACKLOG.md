@@ -87,7 +87,8 @@
 | AC-907 | Controlled Live Proof And Burden Baseline | Make the first controlled-live promotion decision for `ops_digest` | completed | main-control | `WORKPLAN` `AC-907` | records the explicit reject/defer decision: `ops_digest` stays below `controlled_live` until successful upstream LLM shadow output is proven, because current qualifying evidence is deterministic fallback only |
 | AC-908 | Controlled Live Proof And Burden Baseline | Restore `ops_digest` upstream LLM path and collect successful-output shadow proof | completed | backend + main-control | `WORKPLAN` `AC-908` | fixes the upstream LLM request path, preserves fallback truth, and collects successful persisted shadow rows that remove the implementation-side blocker from `AC-907` |
 | AC-909 | Controlled Live Proof And Burden Baseline | Review successful-output shadow proof and decide the first promotion gate | completed | main-control | `WORKPLAN` `AC-909` | approves the first bounded promotion gate because successful upstream shadow rows now exist in addition to the earlier fallback-safe proof, while carrying forward the low-activity caveat into the later observation window |
-| AC-910 | Controlled Live Proof And Burden Baseline | Promote `ops_digest` from `shadow_live_ready` to `controlled_live` | in_progress | backend + main-control | `WORKPLAN` `AC-910` | performs the first explicit bounded rollout-state promotion for `ops_digest`, records the approval reason and caveat, and leaves later observation as a separate task |
+| AC-910 | Controlled Live Proof And Burden Baseline | Promote `ops_digest` from `shadow_live_ready` to `controlled_live` | completed | backend + main-control | `WORKPLAN` `AC-910` | writes the first bounded `controlled_live` promotion for `ops_digest`, persists approver and caveat metadata, and leaves the live observation window as a separate task |
+| AC-911 | Controlled Live Proof And Burden Baseline | Observe the first bounded `controlled_live` window for `ops_digest` | in_progress | backend + main-control | `WORKPLAN` `AC-911` | captures the first live observation packet, verifies live-path truthfulness and rollback via pause, and keeps the later keep-live or pause decision separate |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -103,7 +104,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AC-910`.
+- Current active priority: `AC-911`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
