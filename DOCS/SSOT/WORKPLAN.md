@@ -63,7 +63,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-906` is now complete: `ops_digest` has an explicit persisted rollout state of `shadow_live_ready`, with a named review owner and approval reason, while `finalRuntimeMode` remains `shadow`.
 - `AC-907` is now complete: the first `controlled_live` promotion decision is deferred because approving live use now would pre-authorise upstream AI output that still has no successful shadow proof; all qualifying evidence rows remain `generated_by='deterministic'`.
 - `AC-908` is now complete: the upstream `ops_digest` LLM path is restored, successful upstream shadow rows now exist (`generated_by='zai'`), and cached re-read semantics remain truthful.
-- Current top priority: `AC-909`.
+- `AC-909` is now complete: the first bounded promotion gate is approved because `ops_digest` now has both fallback-safe proof and successful upstream shadow proof, although the successful-output packet still comes from low-activity snapshots and that caveat must remain visible during live observation.
+- Current top priority: `AC-910`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -723,7 +724,17 @@ Anything not listed here is **not worked on** (to prevent drift).
   - The review records any residual quality caveat that should remain visible during a later observation window.
   - No rollout-state change is performed in this task.
 
+**AC-910: Promote `ops_digest` from `shadow_live_ready` to `controlled_live`**
+- Purpose: perform the first explicit bounded rollout-state promotion for `ops_digest` after the approved promotion gate in `AC-909`.
+- Definition of done:
+  - The persisted rollout-control state for `ops_digest` changes from `shadow_live_ready` to `controlled_live`.
+  - Append-only rollout-event history records the promotion with named approver and reason.
+  - Runtime resolution and `/admin/ai-health` reflect `controlled_live` truthfully.
+  - The recorded promotion reason includes the remaining low-activity caveat so the first observation window stays focused.
+  - No other workflow family is promoted or widened in this task.
+
 ## Execution Log
+- 2026-03-18: `AC-909` completed as an approval decision. Main-control accepted the first bounded promotion gate for `ops_digest` because the workflow now has both the earlier fallback-safe proof and multiple successful upstream shadow rows (`generated_by='zai'`) with truthful cached re-read semantics. One residual caveat remains: the successful-output packet comes from low-activity snapshots, so the first live observation window must continue to watch output usefulness and operator trust closely. `AC-910` is now the active priority to write the first explicit `controlled_live` promotion.
 - 2026-03-18: `AC-908` completed by fixing the Z.AI request path in `src/lib/llm.ts`, preserving deterministic fallback behaviour, and collecting multiple successful persisted `ops_digest` shadow rows with `generated_by='zai'`. The blocker from `AC-907` is now removed at the implementation/evidence layer, and `AC-909` is now the active priority to decide the first promotion gate.
 - 2026-03-18: `AC-907` completed as a defer decision, not an approval. Main-control rejected the first `controlled_live` promotion for `ops_digest` at this time because every qualifying shadow row remains `generated_by='deterministic'`, so approving `controlled_live` now would silently pre-authorise upstream AI output that still has no successful shadow proof. `AC-908` is now the active priority to restore the upstream LLM path and collect successful-output shadow evidence before any later promotion decision.
 - 2026-03-17: `AC-906` completed by writing an explicit persisted rollout state of `shadow_live_ready` for `ops_digest`, with `review_owner='main-control'`, append-only rollout event history, and truthful runtime resolution (`rolloutStateSource=persisted_control`, `rolloutState=shadow_live_ready`, `finalRuntimeMode=shadow`). The deterministic-fallback caveat remains unchanged. `AC-907` is now the active priority for the first explicit promotion decision.
