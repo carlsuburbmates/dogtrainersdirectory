@@ -216,6 +216,7 @@ Interpretation rules:
 - a workflow with effective mode `shadow` may still be `shadow_live_ready` if canon permits eventual live use and the evidence threshold is met
 - a workflow with a canonical class ceiling or actor boundary that forbids live operation must be represented as `shadow_only`
 - `paused_after_review` is a canonical supervision state, not a synonym for environment drift; the workflow should then run with effective mode `disabled` unless a narrower documented fallback is explicitly allowed
+- for the current bounded `ops_digest` cycle, an explicitly reviewed `paused_after_review` state may resume to `controlled_live` through the canonical rollout-control path after a separate approval decision; this does not create a general paused-to-live shortcut for other workflows
 
 ### 5.5 Supervised rollout requirements
 DTD must not treat shadow traces as sufficient proof of safe live operation without explicit supervised review.

@@ -67,8 +67,9 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-910` is now complete: `ops_digest` has been explicitly promoted from `shadow_live_ready` to `controlled_live`, with persisted approval metadata, append-only rollout-event history, and truthful live runtime resolution.
 - `AC-911` is now complete: the first bounded live observation window succeeded, captured a truthful live LLM digest row, verified cached re-read semantics, and ended in `paused_after_review` after the planned primary rollback drill.
 - `AC-912` is now complete: main-control accepted the first live observation packet and approved a later explicit resume-to-`controlled_live` execution task, while keeping the low-activity output caveat explicit.
-- `AC-913` is now complete as a blocked execution outcome: the canonical rollout mutation contract currently rejects `paused_after_review -> controlled_live` with `409` because `controlled_live` is only allowed from `shadow_live_ready`.
-- Current top priority: `AC-913A`.
+- `AC-913` is reopened after the blocked execution outcome: the contract gap that rejected `paused_after_review -> controlled_live` is now closed, so the canonical resume write can be rerun cleanly.
+- `AC-913A` is now complete: the canonical rollout transition contract now allows the reviewed `ops_digest` resume from `paused_after_review` to `controlled_live` without creating a generic paused-to-live loophole.
+- Current top priority: `AC-913`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -777,6 +778,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - `AC-913` can be rerun cleanly through the canonical mutation path after this task.
 
 ## Execution Log
+- 2026-03-18: `AC-913A` completed by narrowing the rollout transition contract so `ops_digest` may resume from `paused_after_review` back to bounded `controlled_live` through the canonical mutation path, while preserving the existing approval, audit, and append-only event requirements. The fix remains scoped to the current `ops_digest` cycle, runtime/admin truth stayed coherent, and `AC-913` is now the active priority again for the actual resume write.
 - 2026-03-18: `AC-913` completed as a blocked execution attempt. The requested resume from `paused_after_review` to `controlled_live` was rejected by the canonical mutation contract with `409` because `src/lib/ai-rollouts.ts` currently only permits `controlled_live` when the existing rollout state is `shadow_live_ready`. No rollout state changed, runtime truth remained explicit (`rolloutState='paused_after_review'`, `finalRuntimeMode='disabled'`), and `AC-913A` is now the active priority to close this contract gap before any later resume attempt.
 - 2026-03-18: `AC-912` completed as the post-observation review decision. Main-control accepted the `AC-911` packet because it proved truthful live output, truthful cached re-read behaviour, a successful primary rollback drill, and bounded disabled behaviour after pause. The remaining low-activity output caveat is still material, but it is not a blocker for continued bounded live use given the operator-only advisory scope and the proven pause path. `AC-913` is now the active priority to execute the explicit resume from `paused_after_review` back to `controlled_live`.
 - 2026-03-18: `AC-911` completed as the first bounded live observation window for `ops_digest`. The packet captured a truthful live LLM digest row (`id=30`, `ai_mode='live'`, `generated_by='zai'`, `decision_source='llm'`), confirmed cached re-read truth on the same row, and then executed the planned primary rollback drill to `paused_after_review`. The post-pause forced run remained truthful and bounded (`id=31`, `ai_mode='disabled'`, deterministic advisory output, no masquerading as successful AI output). `AC-912` is now the active priority to review this observation packet and decide the post-observation rollout state.

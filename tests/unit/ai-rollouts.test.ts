@@ -206,6 +206,49 @@ describe('ai rollout registry', () => {
     })
   })
 
+  it('allows ops_digest to resume from paused_after_review back to controlled_live', async () => {
+    state.controls = [
+      {
+        workflow: 'ops_digest',
+        rollout_state: 'paused_after_review',
+        reason: 'Paused after rollback drill',
+        review_owner: 'main-control',
+        approved_by: null,
+        updated_by_user_id: 'admin-1',
+        last_reviewed_at: '2026-03-18T00:00:00.000Z',
+        metadata: {
+          rollbackDrill: true
+        },
+        created_at: '2026-03-17T00:00:00.000Z',
+        updated_at: '2026-03-18T00:00:00.000Z'
+      }
+    ]
+
+    const result = await updateAiAutomationRolloutState({
+      workflow: 'ops_digest',
+      mutation: {
+        targetState: 'controlled_live',
+        reason: 'Resume approved after bounded review',
+        reviewOwner: 'main-control'
+      },
+      actingAdminUserId: 'admin-42',
+      env: env({ AI_GLOBAL_MODE: 'live', DIGEST_AI_MODE: 'live' })
+    })
+
+    expect(result.control.rolloutState).toBe('controlled_live')
+    expect(result.control.approvedBy).toBe('admin-42')
+    expect(result.resolution.rolloutState).toBe('controlled_live')
+    expect(result.resolution.finalRuntimeMode).toBe('live')
+    expect(state.eventPayloads[0]).toMatchObject({
+      workflow: 'ops_digest',
+      from_rollout_state: 'paused_after_review',
+      to_rollout_state: 'controlled_live',
+      approved_by: 'admin-42',
+      acted_by_user_id: 'admin-42',
+      review_owner: 'main-control'
+    })
+  })
+
   it('records acting admin identity on a successful rollout mutation', async () => {
     const result = await updateAiAutomationRolloutState({
       workflow: 'ops_digest',

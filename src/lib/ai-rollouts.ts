@@ -274,11 +274,15 @@ async function validateTransition(
       }
     }
 
-    if (resolution.rolloutState !== 'shadow_live_ready') {
+    if (
+      resolution.rolloutState !== 'shadow_live_ready' &&
+      resolution.rolloutState !== 'paused_after_review'
+    ) {
       return {
         ok: false,
         status: 409,
-        error: 'controlled_live requires the workflow to be marked ready for review first'
+        error:
+          'controlled_live requires the workflow to be marked ready for review or resumed from paused_after_review first'
       }
     }
 

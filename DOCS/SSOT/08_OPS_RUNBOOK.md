@@ -44,6 +44,7 @@ Canonical operator expectations:
 - A cached re-read of an existing digest row does not count as a new reviewable run.
 - Local-only or non-persisted fallback digests do not count toward the seven-run shadow evidence window.
 - If the service-role-backed persistence path is unavailable, the operator surface must say so explicitly rather than presenting the digest as reviewable evidence.
+- For the current bounded `ops_digest` live cycle, a reviewed pause may later resume to `controlled_live` only through the canonical rollout-control mutation path after a separate approval decision. Operators must not treat `paused_after_review` as an informal toggle back to live.
 
 ## 4. Known gaps / risks (from bundle)
 - **Resolved:** Admin auth enforcement is now consistent across `/admin/**` and `/api/admin/**` (see `10_SECURITY_AND_PRIVACY.md`).
