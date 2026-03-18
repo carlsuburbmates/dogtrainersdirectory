@@ -62,7 +62,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AC-905` is now complete: `ops_digest` is ready for bounded controlled-live approval because the qualifying reviewable shadow evidence window is complete, rollout visibility is truthful, and rollback controls remain explicit, but the current proof window validates deterministic fallback safety rather than successful upstream LLM output quality.
 - `AC-906` is now complete: `ops_digest` has an explicit persisted rollout state of `shadow_live_ready`, with a named review owner and approval reason, while `finalRuntimeMode` remains `shadow`.
 - `AC-907` is now complete: the first `controlled_live` promotion decision is deferred because approving live use now would pre-authorise upstream AI output that still has no successful shadow proof; all qualifying evidence rows remain `generated_by='deterministic'`.
-- Current top priority: `AC-908`.
+- `AC-908` is now complete: the upstream `ops_digest` LLM path is restored, successful upstream shadow rows now exist (`generated_by='zai'`), and cached re-read semantics remain truthful.
+- Current top priority: `AC-909`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -710,7 +711,20 @@ Anything not listed here is **not worked on** (to prevent drift).
     - cached re-reads
   - `ops_digest` remains below `controlled_live` in this task.
 
+**AC-909: Review successful-output shadow proof and decide the first promotion gate**
+- Purpose: reassess `ops_digest` now that successful upstream LLM shadow rows exist, and decide whether the blocker from `AC-907` is removed.
+- Definition of done:
+  - The review explicitly concludes one of:
+    - approve the first bounded `controlled_live` promotion, or
+    - defer again, with the exact blocker recorded.
+  - The review uses both:
+    - the fallback-safe proof already accepted in `AC-905`
+    - the successful upstream shadow-output proof captured in `AC-908`
+  - The review records any residual quality caveat that should remain visible during a later observation window.
+  - No rollout-state change is performed in this task.
+
 ## Execution Log
+- 2026-03-18: `AC-908` completed by fixing the Z.AI request path in `src/lib/llm.ts`, preserving deterministic fallback behaviour, and collecting multiple successful persisted `ops_digest` shadow rows with `generated_by='zai'`. The blocker from `AC-907` is now removed at the implementation/evidence layer, and `AC-909` is now the active priority to decide the first promotion gate.
 - 2026-03-18: `AC-907` completed as a defer decision, not an approval. Main-control rejected the first `controlled_live` promotion for `ops_digest` at this time because every qualifying shadow row remains `generated_by='deterministic'`, so approving `controlled_live` now would silently pre-authorise upstream AI output that still has no successful shadow proof. `AC-908` is now the active priority to restore the upstream LLM path and collect successful-output shadow evidence before any later promotion decision.
 - 2026-03-17: `AC-906` completed by writing an explicit persisted rollout state of `shadow_live_ready` for `ops_digest`, with `review_owner='main-control'`, append-only rollout event history, and truthful runtime resolution (`rolloutStateSource=persisted_control`, `rolloutState=shadow_live_ready`, `finalRuntimeMode=shadow`). The deterministic-fallback caveat remains unchanged. `AC-907` is now the active priority for the first explicit promotion decision.
 - 2026-03-17: `AC-905` completed as a renewed bounded readiness review. `ops_digest` is now `ready for controlled-live approval` because the distinct-run evidence threshold is met, rollout visibility remains truthful, and rollback/disable controls stay explicit and bounded. The review also recorded one material caveat: the qualifying evidence window proves deterministic fallback safety and control-plane correctness, but it does not prove successful upstream LLM digest quality because all reviewed runs fell back after upstream `404`. `AC-906` is now the active priority to record the explicit `shadow_live_ready` approval without auto-promoting to `controlled_live`.

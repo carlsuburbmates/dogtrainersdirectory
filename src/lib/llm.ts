@@ -14,7 +14,7 @@ type LlmRequest = {
   temperature?: number
 }
 
-const DEFAULT_BASE_URL = 'https://api.z.ai/v1/chat/completions'
+const DEFAULT_BASE_URL = 'https://api.z.ai/api/paas/v4'
 const DEFAULT_MODEL = 'glm-4.6'
 const RATE_LIMIT_DELAY_MS = 1000
 
@@ -26,6 +26,16 @@ const buildFallback = (model: string, reason: string): LlmResponse => ({
   provider: 'deterministic'
 })
 
+function resolveZaiChatCompletionsUrl(baseUrl: string): string {
+  const trimmedBaseUrl = baseUrl.trim().replace(/\/+$/, '')
+
+  if (trimmedBaseUrl.endsWith('/chat/completions')) {
+    return trimmedBaseUrl
+  }
+
+  return `${trimmedBaseUrl}/chat/completions`
+}
+
 export async function generateLLMResponse({
   systemPrompt,
   userPrompt,
@@ -35,7 +45,8 @@ export async function generateLLMResponse({
 }: LlmRequest): Promise<LlmResponse> {
   const provider = process.env.LLM_PROVIDER || 'zai'
   const apiKey = process.env.ZAI_API_KEY
-  const baseUrl = process.env.ZAI_BASE_URL || DEFAULT_BASE_URL
+  const configuredBaseUrl = process.env.ZAI_BASE_URL || DEFAULT_BASE_URL
+  const baseUrl = resolveZaiChatCompletionsUrl(configuredBaseUrl)
   const resolvedModel = model || process.env.LLM_DEFAULT_MODEL || DEFAULT_MODEL
 
   if (!apiKey) {
@@ -46,6 +57,23 @@ export async function generateLLMResponse({
     ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
     { role: 'user', content: userPrompt }
   ]
+  const requestBody =
+    provider === 'zai'
+      ? {
+          model: resolvedModel,
+          messages,
+          thinking: {
+            type: 'disabled'
+          },
+          temperature,
+          max_tokens: maxTokens
+        }
+      : {
+          model: resolvedModel,
+          messages,
+          temperature,
+          max_tokens: maxTokens
+        }
 
   try {
     await sleep(RATE_LIMIT_DELAY_MS)
@@ -55,12 +83,7 @@ export async function generateLLMResponse({
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`
       },
-      body: JSON.stringify({
-        model: resolvedModel,
-        messages,
-        temperature,
-        max_tokens: maxTokens
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!response.ok) {
@@ -85,6 +108,10 @@ export async function generateLLMResponse({
     console.error('LLM request failed:', error)
     return buildFallback(resolvedModel, 'request failed')
   }
+}
+
+export const __testing = {
+  resolveZaiChatCompletionsUrl
 }
 
 export async function generateLLMResponseWithRetry(
