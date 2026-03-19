@@ -33,6 +33,14 @@ Canonical operator expectations:
 - The loop may surface deterministic next-safe-action guidance and recent fallback context, but final ABN approval or rejection and any verification-state change still require the explicit operator action.
 - A degraded or missing guidance trace must not block the queue from loading; operators should still be able to clear the available exception items.
 
+### 2.2 Scaffold-review guidance at decision time
+- The scaffolded listing queue on `/admin` may surface the existing shadow-only scaffold-review guidance candidate directly on each operator decision card.
+- The operator should use that checklist and next-safe-action guidance to clear the weekly scaffold-review pass with lower switching cost.
+- The guidance remains assistive only:
+  - approval and rejection still happen only through the explicit scaffold-review operator action
+  - the surfaced guidance does not by itself change publication, verification, featured/spotlight, billing, or ranking state
+- If the shadow guidance trace is missing or degraded, the scaffold queue must still load and remain actionable through the deterministic operator path.
+
 ## 3. Key admin API capabilities (examples)
 - Moderation run loop: `/api/admin/moderation/run` (cron daily at 01:00 AEST/AEDT on the current Vercel Hobby-compatible schedule)
 - Ops digest: `/api/admin/ops-digest` (daily)

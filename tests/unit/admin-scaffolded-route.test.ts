@@ -115,7 +115,17 @@ describe('admin scaffolded route', () => {
     expect(response.status).toBe(200)
     expect(payload).toEqual({
       success: true,
-      scaffolded,
+      scaffolded: [
+        {
+          ...scaffolded[0],
+          guidance_checks: [
+            'Bio is missing. Confirm service scope, experience, and any credentials before approving.'
+          ],
+          next_action:
+            'Check the business website or source record for services, locality, and trust signals before approving. Keep it pending if the listing is still too thin.',
+          guidance_source: 'shadow_trace',
+        },
+      ],
     })
 
     expect(mocks.recordLatencyMetric).toHaveBeenCalledTimes(1)
@@ -154,6 +164,43 @@ describe('admin scaffolded route', () => {
         },
       },
     })
+  })
+
+  it('surfaces placeholder risk guidance without changing approval ownership', async () => {
+    const scaffolded = [
+      {
+        id: 77,
+        name: 'Demo Trainer Listing',
+        verification_status: 'manual_review',
+        is_scaffolded: true,
+        bio: 'Short bio',
+      },
+    ]
+
+    const query = {
+      eq: vi.fn(),
+      order: vi.fn().mockResolvedValue({
+        data: scaffolded,
+        error: null,
+      }),
+    }
+    query.eq.mockReturnValueOnce(query)
+    query.eq.mockReturnValueOnce(query)
+
+    const select = vi.fn().mockReturnValue(query)
+    mocks.from.mockReturnValue({ select })
+
+    const response = await GET()
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload.scaffolded[0]).toMatchObject({
+      id: 77,
+      guidance_source: 'shadow_trace',
+    })
+    expect(payload.scaffolded[0].guidance_checks[0]).toContain('Bio is very short')
+    expect(payload.scaffolded[0].guidance_checks[1]).toContain('placeholder')
+    expect(payload.scaffolded[0].next_action).toContain('Reject it or keep it pending')
   })
 
   it('keeps scaffold approval writes deterministic and unchanged', async () => {

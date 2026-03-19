@@ -36,4 +36,35 @@ describe('QueueCard', () => {
     expect(html).toContain('Approve')
     expect(html).toContain('Reject')
   })
+
+  it('renders advisory notes and checklist guidance when provided', () => {
+    const html = renderToStaticMarkup(
+      <QueueCard
+        title="Scaffolded Listings"
+        description="Assistive scaffold-review guidance shown at decision time."
+        items={[
+          {
+            id: 44,
+            title: 'Demo Trainer Listing',
+            meta: 'Status manual_review',
+            body: 'Scaffolded listing with limited source content.',
+            kindLabel: 'Shadow guidance',
+            advisoryNote:
+              'Shadow guidance only. Approval or rejection still requires your explicit operator action.',
+            checks: [
+              'Bio is very short. Confirm services offered, locality, and contact expectations before approving.',
+              'Business name looks like a placeholder. Confirm this is not a test or spam record.',
+            ],
+            nextAction:
+              'Confirm the listing is a real business first. Reject it or keep it pending if the record still looks like a placeholder or spam.',
+            action: 'review',
+          },
+        ]}
+      />
+    )
+
+    expect(html).toContain('Shadow guidance only')
+    expect(html).toContain('Business name looks like a placeholder')
+    expect(html).toContain('Confirm the listing is a real business first')
+  })
 })

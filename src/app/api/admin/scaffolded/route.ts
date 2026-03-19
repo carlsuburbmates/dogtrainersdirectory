@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import {
+  buildOperatorScaffoldReviewGuidanceCandidate,
+  buildOperatorScaffoldReviewGuidanceForListing,
   recordOperatorScaffoldReviewGuidanceShadowTrace,
   type ScaffoldReviewQueueItem
 } from '@/lib/operatorScaffoldReviewGuidanceShadow'
@@ -13,6 +15,9 @@ type ScaffoldedListing = {
   verification_status: string
   is_scaffolded: boolean
   bio: string | null
+  guidance_checks?: string[]
+  next_action?: string
+  guidance_source?: 'shadow_trace'
 }
 
 function scaffoldedErrorResponse(
@@ -55,15 +60,31 @@ export async function GET() {
       )
     }
 
+    const scaffoldedQueue = (data || []) as unknown as ScaffoldReviewQueueItem[]
+    const guidanceCandidate = buildOperatorScaffoldReviewGuidanceCandidate(scaffoldedQueue)
+    const guidanceByBusinessId = new Map(
+      (guidanceCandidate?.sample || []).map((sample) => [sample.businessId, sample.checks])
+    )
+
     await recordOperatorScaffoldReviewGuidanceShadowTrace({
       route: '/api/admin/scaffolded',
       durationMs: Date.now() - started,
-      scaffoldedQueue: (data || []) as unknown as ScaffoldReviewQueueItem[]
+      scaffoldedQueue
     })
 
     return NextResponse.json({
       success: true,
-      scaffolded: (data || []) as ScaffoldedListing[],
+      scaffolded: scaffoldedQueue.map((listing) => {
+        const fallbackGuidance = buildOperatorScaffoldReviewGuidanceForListing(listing)
+        const checks = guidanceByBusinessId.get(listing.id) || fallbackGuidance.checks
+
+        return {
+          ...listing,
+          guidance_checks: checks,
+          next_action: fallbackGuidance.nextAction,
+          guidance_source: 'shadow_trace',
+        } satisfies ScaffoldedListing
+      }),
     })
   } catch (error: any) {
     console.error('Scaffolded GET failed', error)

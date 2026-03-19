@@ -96,7 +96,8 @@
 | AC-915 | Controlled Live Proof And Burden Baseline | Review the resumed live observation packet and decide the steady-state rollout posture for `ops_digest` | completed | main-control | `WORKPLAN` `AC-915` | keeps `ops_digest` in bounded `controlled_live` because the resumed-live packet remained truthful, bounded, and reversible, while preserving the low-activity caveat in the steady-state decision record |
 | AO-912 | Operator Burden Reduction | Compress verification and ABN exception burden into one bounded operator loop | completed | backend + frontend + main-control | `WORKPLAN` `AO-912` | unifies ABN manual reviews, verification exceptions, and recent fallback context into one bounded weekly operator loop with explicit next-safe-action guidance and no automatic protected-state change |
 | AO-911 | Operator Burden Reduction | Make review moderation weekly exception review actionable | completed | backend + frontend + main-control | `WORKPLAN` `AO-911` | turns `/admin/reviews` into an ordered weekly moderation loop with explicit next-safe-action guidance while keeping draft, shadow, and final moderation states visibly distinct and operator-approved |
-| AO-913 | Operator Burden Reduction | Surface scaffold-review guidance at decision time while keeping approval operator-owned | in_progress | backend + frontend + main-control | `WORKPLAN` `AO-913` | reduces scaffold-review burden by surfacing assistive guidance on the existing operator decision surface while keeping approval and rejection explicit operator actions |
+| AO-913 | Operator Burden Reduction | Surface scaffold-review guidance at decision time while keeping approval operator-owned | completed | backend + frontend + main-control | `WORKPLAN` `AO-913` | surfaces scaffold-review shadow guidance directly on the existing operator decision surface with checklist and next-safe-action context while keeping approval and rejection explicit operator actions |
+| AO-914 | Operator Burden Reduction | Re-align admin to exceptions-first and reduce dashboard noise | in_progress | backend + frontend + main-control | `WORKPLAN` `AO-914` | reduces weekly operator scanning burden by making `/admin` prioritise actionable exception loops and direct links to the resolving queue or action without widening protected state changes |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -114,7 +115,7 @@
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AO-913`.
+- Current active priority: `AO-914`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts

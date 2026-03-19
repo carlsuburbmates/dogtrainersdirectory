@@ -70,6 +70,9 @@ type ScaffoldedItem = {
   name: string
   verification_status: string
   bio?: string
+  guidance_checks?: string[]
+  next_action?: string
+  guidance_source?: 'shadow_trace'
 }
 
 type ScaffoldedResponse = {
@@ -267,20 +270,39 @@ export default function AdminQueuesPage() {
                 {scaffoldedError}
               </div>
             )}
-            <QueueCard title="Scaffolded Listings" items={scaffolded.map((item) => ({
-              id: item.id,
-              title: item.name,
-              meta: `Status ${item.verification_status}`,
-              body: item.bio || 'Scaffolded listing',
-              action: 'review'
-            }))} onReview={async (id, action) => {
+            <QueueCard
+              title="Scaffolded Listings"
+              description="Use the recorded scaffold-review guidance at the point of decision. Guidance is assistive only; final approval or rejection still requires an explicit operator action."
+              summary={
+                scaffolded.length > 0
+                  ? `Start with the listings that still look incomplete or placeholder-like, then clear the remainder. Shadow guidance stays visible here, but it does not change publication or verification state by itself.`
+                  : undefined
+              }
+              items={scaffolded.map((item) => ({
+                id: item.id,
+                title: item.name,
+                meta: `Status ${item.verification_status}`,
+                body: item.bio || 'Scaffolded listing with limited source content.',
+                kindLabel: item.guidance_source === 'shadow_trace' ? 'Shadow guidance' : undefined,
+                advisoryNote:
+                  item.guidance_source === 'shadow_trace'
+                    ? 'Shadow guidance only. Approval or rejection still requires your explicit operator action.'
+                    : undefined,
+                checks: item.guidance_checks,
+                nextAction:
+                  item.next_action ||
+                  'Review the scaffolded listing details, then approve only if the business looks real, complete, and safe to publish.',
+                action: 'review'
+              }))}
+              onReview={async (id, action) => {
               await fetch('/api/admin/scaffolded', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, action })
               })
               window.location.reload()
-            }} />
+              }}
+            />
           </div>
         )}
       </section>

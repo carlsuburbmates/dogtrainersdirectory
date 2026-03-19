@@ -10,6 +10,8 @@ type QueueCardProps = {
     meta: string
     body: string
     kindLabel?: string
+    advisoryNote?: string
+    checks?: string[]
     nextAction?: string
     action?: 'review'
   }[]
@@ -43,6 +45,18 @@ export function QueueCard({ title, description, summary, items, onReview }: Queu
             </div>
             <p className="text-xs text-gray-500 uppercase">{item.meta}</p>
             <p className="text-sm text-gray-600">{item.body}</p>
+            {item.advisoryNote ? (
+              <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+                {item.advisoryNote}
+              </div>
+            ) : null}
+            {item.checks && item.checks.length > 0 ? (
+              <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
+                {item.checks.map((check) => (
+                  <li key={check}>{check}</li>
+                ))}
+              </ul>
+            ) : null}
             {item.nextAction ? (
               <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                 <span className="font-semibold">Next safe action:</span> {item.nextAction}

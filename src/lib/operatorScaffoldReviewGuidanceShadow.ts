@@ -19,7 +19,12 @@ export type OperatorScaffoldReviewGuidanceCandidate = {
   }>
 }
 
-type OperatorScaffoldReviewGuidanceShadowTrace = {
+export type OperatorScaffoldReviewGuidanceForListing = {
+  checks: string[]
+  nextAction: string
+}
+
+export type OperatorScaffoldReviewGuidanceShadowTrace = {
   aiAutomationAudit: Record<string, unknown>
   advisoryCandidate?: OperatorScaffoldReviewGuidanceCandidate
   visibleOutcome: {
@@ -34,7 +39,7 @@ type OperatorScaffoldReviewGuidanceShadowTrace = {
   }
 }
 
-function buildChecksForListing(listing: Pick<ScaffoldReviewQueueItem, 'name' | 'bio'>): string[] {
+export function buildChecksForListing(listing: Pick<ScaffoldReviewQueueItem, 'name' | 'bio'>): string[] {
   const checks: string[] = []
   const bio = listing.bio?.trim() ?? ''
 
@@ -56,6 +61,24 @@ function buildChecksForListing(listing: Pick<ScaffoldReviewQueueItem, 'name' | '
   return checks.slice(0, 3)
 }
 
+export function buildOperatorScaffoldReviewGuidanceForListing(
+  listing: Pick<ScaffoldReviewQueueItem, 'name' | 'bio'>
+): OperatorScaffoldReviewGuidanceForListing {
+  const checks = buildChecksForListing(listing)
+  const combined = checks.join(' ').toLowerCase()
+
+  const nextAction = combined.includes('placeholder') || combined.includes('test or spam')
+    ? 'Confirm the listing is a real business first. Reject it or keep it pending if the record still looks like a placeholder or spam.'
+    : combined.includes('bio is missing') || combined.includes('bio is very short')
+      ? 'Check the business website or source record for services, locality, and trust signals before approving. Keep it pending if the listing is still too thin.'
+      : 'Use the guidance checks below, then approve only if the scaffolded listing looks real, complete, and safe to publish.'
+
+  return {
+    checks,
+    nextAction,
+  }
+}
+
 export function buildOperatorScaffoldReviewGuidanceCandidate(
   queue: ScaffoldReviewQueueItem[]
 ): OperatorScaffoldReviewGuidanceCandidate | null {
@@ -63,7 +86,7 @@ export function buildOperatorScaffoldReviewGuidanceCandidate(
 
   const sample = queue.slice(0, 5).map((listing) => ({
     businessId: listing.id,
-    checks: buildChecksForListing({ name: listing.name, bio: listing.bio })
+    checks: buildOperatorScaffoldReviewGuidanceForListing({ name: listing.name, bio: listing.bio }).checks
   }))
 
   return {
