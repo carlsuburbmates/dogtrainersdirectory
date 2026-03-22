@@ -4,6 +4,8 @@ type QueueCardProps = {
   title: string
   description?: string
   summary?: string
+  resolveHref?: string
+  resolveLabel?: string
   items: {
     id: number | string
     title: string
@@ -18,12 +20,30 @@ type QueueCardProps = {
   onReview?: (id: number, action: 'approve' | 'reject') => Promise<void>
 }
 
-export function QueueCard({ title, description, summary, items, onReview }: QueueCardProps) {
+export function QueueCard({
+  title,
+  description,
+  summary,
+  resolveHref,
+  resolveLabel = 'Open',
+  items,
+  onReview,
+}: QueueCardProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold">{title}</h2>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold">{title}</h2>
         {description ? <p className="text-sm text-gray-600">{description}</p> : null}
+        </div>
+        {resolveHref ? (
+          <a
+            href={resolveHref}
+            className="btn-secondary whitespace-nowrap"
+          >
+            {resolveLabel}
+          </a>
+        ) : null}
       </div>
       {summary ? (
         <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900">

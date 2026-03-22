@@ -76,7 +76,10 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AO-912` is now complete: `/admin` now presents one bounded weekly verification and ABN exception loop with explicit next-safe-action guidance, while final ABN and verification outcomes remain operator-approved.
 - `AO-911` is now complete: `/admin/reviews` now runs as an ordered weekly moderation loop with explicit next-safe-action guidance, while draft, shadow, and final moderation states remain visibly distinct and operator-approved.
 - `AO-913` is now complete: scaffold-review guidance is now surfaced on the operator decision surface with bounded checklist and next-safe-action guidance, while approval and rejection remain explicit operator actions.
-- Current top priority: `AO-914`.
+- `AO-914` is now complete: `/admin` now starts from one exceptions-first weekly action strip, links directly to the resolving queue or action, and keeps lower-priority diagnostics available without letting them dominate the operator pass.
+- Phase 14 - Operator Burden Reduction is complete for the current planned slice.
+- Phase 15 - Owner Low-Touch Guidance is now open as the next governed delivery slice.
+- Current top priority: `OW-921`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -844,7 +847,23 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Any AI contribution remains advisory or internal draft only; no protected operator, business, publication, verification, ranking, billing, or moderation state is auto-changed.
   - `/admin/ai-health` and related audit traces remain truthful about degraded, paused, disabled, advisory, draft, and live states.
 
+### Phase 15 - Owner Low-Touch Guidance
+
+**Phase rule**
+- This phase reduces owner friction on the existing deterministic journey without widening live automation authority for owner-facing workflows.
+- Any AI contribution in this phase must stay bounded below `live` until deployment SSOT adds the dedicated owner-workflow override required by `DOCS/SSOT/07_AI_AUTOMATION.md`.
+- Owner-visible guidance must not silently rewrite search intent, bypass emergency escalation, trigger contact actions, or change ranking.
+
+**OW-921: Complete deterministic what-happens-next triage-to-search framing without changing ranking**
+- Purpose: make the owner triage-to-search handoff easier to understand and act on while keeping the deterministic route, params, and search ordering canonical.
+- Definition of done:
+  - The existing `/triage -> /search` handoff explains the next safe owner action clearly on the current journey without changing visible route truth.
+  - Any AI contribution remains advisory or shadow-safe only; it does not silently rewrite search intent, alter emergency escalation, or change ranking.
+  - No contact, submit, save, or search-changing outcome happens without explicit owner confirmation.
+  - `/admin/ai-health` and related audit traces remain truthful about the owner workflow ceiling, kill-switch state, and advisory-versus-visible output.
+
 ## Execution Log
+- 2026-03-23: `AO-914` completed by re-aligning `/admin` around one exceptions-first weekly action strip that orders the operator pass, links directly to the resolving queue or action, removes duplicated moderation content from the landing page, and demotes the noisy `EnhancedAdminDashboard` into a lower-priority diagnostics `<details>` block. No protected operator, moderation, verification, publication, ranking, billing, or business-owned state was auto-changed. Phase 14 is now complete for the current planned slice, and `OW-921` is now the active priority to improve the owner triage-to-search handoff without changing ranking or route truth.
 - 2026-03-19: `AO-913` completed by surfacing the existing scaffold-review shadow guidance directly on the operator decision surface instead of leaving it buried in background traces. `/api/admin/scaffolded` now returns advisory checklist and `next_action` fields derived from the existing shadow-guidance model, and the scaffolded queue on `/admin` renders that bounded assistive context alongside the existing explicit approve/reject controls. No scaffolded listing was auto-approved or auto-rejected, no publication, verification, featured, billing, or ranking boundary was widened, and `AO-914` is now the active priority to reduce dashboard noise by re-aligning `/admin` around exceptions-first operator flows.
 - 2026-03-19: `AO-911` completed by turning `/admin/reviews` into an explicit weekly moderation loop with ordered queue priority, visible stage labels (`Reject-ready draft`, `Approve-ready draft`, `Shadow review`, `Manual check`, `Completed`), and per-item `Next safe action` guidance derived from the existing moderation recommendation metadata. Final moderation outcomes remain explicit operator actions through the existing admin route, `/admin/ai-health` truth semantics were unchanged, and `AO-913` is now the active priority so scaffold-review burden is reduced next without breaking the agreed Phase 14 order.
 - 2026-03-19: `AO-912` completed by compressing the existing ABN manual review queue, verification exceptions, and recent ABN fallback context into one bounded `Verification & ABN Weekly Loop` on `/admin`, backed by a unified `/api/admin/queues` payload with deterministic next-safe-action guidance. No verification, ABN trust, admin-access, publication, ranking, billing, moderation, or business-owned profile state was auto-changed, and the Tier-1 API/runbook text now matches the loop. `AO-911` is now the active priority so review moderation burden is reduced next without breaking the agreed Phase 14 ordering.

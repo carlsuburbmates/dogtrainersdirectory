@@ -97,7 +97,8 @@
 | AO-912 | Operator Burden Reduction | Compress verification and ABN exception burden into one bounded operator loop | completed | backend + frontend + main-control | `WORKPLAN` `AO-912` | unifies ABN manual reviews, verification exceptions, and recent fallback context into one bounded weekly operator loop with explicit next-safe-action guidance and no automatic protected-state change |
 | AO-911 | Operator Burden Reduction | Make review moderation weekly exception review actionable | completed | backend + frontend + main-control | `WORKPLAN` `AO-911` | turns `/admin/reviews` into an ordered weekly moderation loop with explicit next-safe-action guidance while keeping draft, shadow, and final moderation states visibly distinct and operator-approved |
 | AO-913 | Operator Burden Reduction | Surface scaffold-review guidance at decision time while keeping approval operator-owned | completed | backend + frontend + main-control | `WORKPLAN` `AO-913` | surfaces scaffold-review shadow guidance directly on the existing operator decision surface with checklist and next-safe-action context while keeping approval and rejection explicit operator actions |
-| AO-914 | Operator Burden Reduction | Re-align admin to exceptions-first and reduce dashboard noise | in_progress | backend + frontend + main-control | `WORKPLAN` `AO-914` | reduces weekly operator scanning burden by making `/admin` prioritise actionable exception loops and direct links to the resolving queue or action without widening protected state changes |
+| AO-914 | Operator Burden Reduction | Re-align admin to exceptions-first and reduce dashboard noise | completed | backend + frontend + main-control | `WORKPLAN` `AO-914` | reorders `/admin` around one exceptions-first weekly action strip, removes duplicated moderation content from the landing page, and demotes lower-priority diagnostics without widening protected state changes |
+| OW-921 | Owner Low-Touch Guidance | Complete deterministic what-happens-next triage-to-search framing without changing ranking | in_progress | frontend + backend + main-control | `WORKPLAN` `OW-921` | improves owner triage-to-search framing on the existing deterministic journey while keeping route truth, ranking, emergency escalation, and owner confirmation boundaries intact |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -110,12 +111,13 @@
 - AI Automation Definition And Rollout is complete for the current planned slice.
 - Supervised Automation Operations is complete for the current planned slice.
 - Controlled Live Proof And Burden Baseline is complete for the current planned slice.
-- Phase 14 - Operator Burden Reduction is now open as the next governed delivery slice.
+- Phase 14 - Operator Burden Reduction is complete for the current planned slice.
+- Phase 15 - Owner Low-Touch Guidance is now open as the next governed delivery slice.
 - `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `AO-914`.
+- Current active priority: `OW-921`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
