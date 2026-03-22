@@ -1,5 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import {
+  buildTrainerFitGuidance,
+  buildTrainerProfileSearchParams,
+  getOwnerSearchContext
+} from '@/lib/ownerGuidance'
 import { supabaseAdmin } from '@/lib/supabase'
 import ContactForm from './ContactForm'
 import { Badge, Card, Chip, Divider, StateCard } from '@/components/ui/primitives'
@@ -99,6 +104,17 @@ export default async function TrainerPage({
   const resolvedSearchParams = await Promise.resolve(searchParams as any)
   const flowSource =
     typeof resolvedSearchParams?.flow_source === 'string' ? resolvedSearchParams.flow_source : null
+  const profileSearchParams = new URLSearchParams()
+  Object.entries(resolvedSearchParams || {}).forEach(([key, value]) => {
+    if (typeof value === 'string') {
+      profileSearchParams.set(key, value)
+    }
+  })
+  const searchContext = getOwnerSearchContext(profileSearchParams)
+  const backToSearchParams = buildTrainerProfileSearchParams(profileSearchParams)
+  const backToSearchHref = backToSearchParams.toString()
+    ? `/search?${backToSearchParams.toString()}`
+    : '/search'
   const id = Number(resolvedParams.id)
 
   if (isNaN(id)) {
@@ -149,7 +165,7 @@ export default async function TrainerPage({
             actions={
               <>
                 <Link
-                  href={flowSource ? `/search?flow_source=${encodeURIComponent(flowSource)}` : '/search'}
+                  href={backToSearchHref}
                   className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                 >
                   Back to search
@@ -258,6 +274,15 @@ export default async function TrainerPage({
     })
   }
   const primaryContactAction = directContactActions[0] ?? null
+  const trainerGuidance = buildTrainerFitGuidance(searchContext, {
+    services: trainer.services,
+    ageSpecialties: trainer.age_specialties,
+    behaviorIssues: trainer.behavior_issues,
+    pricing: trainer.pricing,
+    reviewCount,
+    abnVerified: trainer.abn_verified,
+    contactMethodCount
+  })
   const listedFitSignals =
     (trainer.services?.length || 0) +
     (trainer.behavior_issues?.length || 0) +
@@ -338,7 +363,7 @@ export default async function TrainerPage({
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
           <div className="mb-5 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
             <Link
-              href={flowSource ? `/search?flow_source=${encodeURIComponent(flowSource)}` : '/search'}
+              href={backToSearchHref}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200 transition-colors hover:bg-white/10"
             >
               Back to search
@@ -411,6 +436,46 @@ export default async function TrainerPage({
             </div>
 
             <div className="space-y-4">
+              <Card tone="muted" className="rounded-[2rem] border-white/10 bg-white/5 text-white backdrop-blur shadow-none">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
+                  Fit check for this profile
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">
+                  Use the shortlist context and the listed profile details below to confirm whether
+                  this trainer still looks right before you contact them.
+                </p>
+                <div className="mt-4 grid gap-3 text-sm leading-6 text-slate-200">
+                  <Card
+                    tone="muted"
+                    padding="sm"
+                    className="border-white/10 bg-white/5 text-slate-200 shadow-none"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                      Already reflected
+                    </p>
+                    <ul className="mt-2 list-disc space-y-2 pl-5">
+                      {trainerGuidance.reflected.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </Card>
+                  <Card
+                    tone="muted"
+                    padding="sm"
+                    className="border-white/10 bg-white/5 text-slate-200 shadow-none"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                      Still confirm
+                    </p>
+                    <ul className="mt-2 list-disc space-y-2 pl-5">
+                      {trainerGuidance.confirmNext.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </Card>
+                </div>
+              </Card>
+
               <Card tone="muted" className="rounded-[2rem] border-white/10 bg-white/5 text-white backdrop-blur shadow-none">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
                   Ready to contact?

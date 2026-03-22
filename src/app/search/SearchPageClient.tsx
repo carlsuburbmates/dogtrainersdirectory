@@ -25,6 +25,11 @@ import {
 } from '@/lib/constants/taxonomies'
 import { parseCanonicalSuburbId } from '@/lib/triageLocation'
 import {
+  buildOwnerSearchExplanation,
+  buildTrainerProfileSearchParams,
+  getOwnerSearchContext
+} from '@/lib/ownerGuidance'
+import {
   getSearchDiscoveryLinks,
   getSearchLandingContent
 } from './landing'
@@ -377,25 +382,49 @@ export default function SearchPage() {
   }
 
   const activeFilterCount = getActiveFilterCount(filters, selectedSuburb)
-  const landingParams = new URLSearchParams(searchParams.toString())
+  const landingParams = new URLSearchParams()
+  if (filters.query) {
+    landingParams.set('q', filters.query)
+  }
+  if (flowSource) {
+    landingParams.set('flow_source', flowSource)
+  }
   if (canonicalSuburbId !== null) {
     landingParams.set('suburbId', String(canonicalSuburbId))
-    if (selectedSuburb) {
-      landingParams.set('suburbName', selectedSuburb.name)
-      landingParams.set('postcode', selectedSuburb.postcode)
-      landingParams.set('lat', String(selectedSuburb.latitude))
-      landingParams.set('lng', String(selectedSuburb.longitude))
-      landingParams.set('councilId', String(selectedSuburb.council_id))
-    } else {
-      landingParams.delete('suburbName')
-      landingParams.delete('postcode')
-      landingParams.delete('lat')
-      landingParams.delete('lng')
-      landingParams.delete('councilId')
-    }
+  }
+  if (selectedSuburb) {
+    landingParams.set('suburbName', selectedSuburb.name)
+    landingParams.set('postcode', selectedSuburb.postcode)
+    landingParams.set('lat', String(selectedSuburb.latitude))
+    landingParams.set('lng', String(selectedSuburb.longitude))
+    landingParams.set('councilId', String(selectedSuburb.council_id))
+  } else if (filters.lat && filters.lng) {
+    landingParams.set('lat', filters.lat)
+    landingParams.set('lng', filters.lng)
+  }
+  if (filters.distance !== 'any') {
+    landingParams.set('distance', filters.distance)
+  }
+  if (filters.age_specialties.length > 0) {
+    landingParams.set('age_specialties', filters.age_specialties.join(','))
+  }
+  if (filters.behavior_issues.length > 0) {
+    landingParams.set('behavior_issues', filters.behavior_issues.join(','))
+  }
+  if (filters.service_type) {
+    landingParams.set('service_type', filters.service_type)
+  }
+  if (filters.verified_only) {
+    landingParams.set('verified_only', 'true')
+  }
+  if (filters.rescue_only) {
+    landingParams.set('rescue_only', 'true')
   }
   const landingContent = getSearchLandingContent(landingParams)
+  const ownerSearchContext = getOwnerSearchContext(landingParams)
+  const ownerSearchExplanation = buildOwnerSearchExplanation(ownerSearchContext)
   const discoveryLinks = getSearchDiscoveryLinks(landingParams)
+  const trainerProfileParams = buildTrainerProfileSearchParams(landingParams)
   const isTriageFlow = flowSource === 'triage'
   const activeServiceLabel = serviceTypeSet.has(filters.service_type)
     ? SERVICE_TYPE_LABELS[filters.service_type as keyof typeof SERVICE_TYPE_LABELS]
@@ -518,6 +547,28 @@ export default function SearchPage() {
                   triage without changing the usual search order.
                 </p>
               ) : null}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Card tone="info" padding="sm" className="rounded-2xl shadow-none">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    Already reflected
+                  </p>
+                  <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+                    {ownerSearchExplanation.reflected.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </Card>
+                <Card tone="muted" padding="sm" className="rounded-2xl shadow-none">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Still confirm
+                  </p>
+                  <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-600">
+                    {ownerSearchExplanation.confirmNext.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </Card>
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {discoveryLinks.map((link) => (
                   <Link
@@ -744,8 +795,9 @@ export default function SearchPage() {
                         trainer.services.length +
                         trainer.age_specialties.length +
                         trainer.behavior_issues.length
-                      const trainerHref = flowSource
-                        ? `/trainers/${trainer.business_id}?flow_source=${encodeURIComponent(flowSource)}`
+                      const trainerQueryString = trainerProfileParams.toString()
+                      const trainerHref = trainerQueryString
+                        ? `/trainers/${trainer.business_id}?${trainerQueryString}`
                         : `/trainers/${trainer.business_id}`
 
                       return (

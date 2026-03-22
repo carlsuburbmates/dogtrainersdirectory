@@ -138,15 +138,15 @@ export function getSearchLandingContent(params: URLSearchParams): SearchLandingC
     : 'Use the filters to tighten fit, then move quickly into a profile with clearer trust cues and direct contact options.'
 
   const description = isTriageFlow
-    ? `${focusSentence} This shortlist started from guided triage and still uses the usual search route and ranking. Compare a few profiles, then open one to confirm fit and contact options.`
-    : `${focusSentence} Review verification, ratings, and direct contact options before you reach out.`
+    ? `${focusSentence} This shortlist started from guided triage and still uses the usual search route and ranking. Compare a few profiles, then open one to confirm fit, any missing details, and the best contact option.`
+    : `${focusSentence} Review verification, ratings, listed fit details, and direct contact options before you reach out.`
   const resultsDescription = isTriageFlow
     ? contextLabel
-      ? `This shortlist started from guided triage for ${lowerFirst(contextLabel)}. Compare a few profiles first, then open one to confirm fit and contact details.`
-      : 'This shortlist started from guided triage. Compare a few profiles first, then open one to confirm fit and contact details.'
+      ? `This shortlist started from guided triage for ${lowerFirst(contextLabel)}. Compare a few profiles first, then open one to confirm fit, any gaps, and contact details.`
+      : 'This shortlist started from guided triage. Compare a few profiles first, then open one to confirm fit, any gaps, and contact details.'
     : contextLabel
-      ? `This shortlist is already filtered for ${lowerFirst(contextLabel)}. Prioritise verified fit, then move to a full profile for proof and contact details.`
-      : 'Prioritise verified fit, then move to a full profile for contact details and proof.'
+      ? `This shortlist is already filtered for ${lowerFirst(contextLabel)}. Prioritise verified fit, then move to a full profile for proof, any gaps, and contact details.`
+      : 'Prioritise verified fit, then move to a full profile for contact details, proof, and any missing details.'
   const metadataTitle = contextLabel
     ? `${contextLabel} | Dog Trainers Directory Melbourne`
     : query
