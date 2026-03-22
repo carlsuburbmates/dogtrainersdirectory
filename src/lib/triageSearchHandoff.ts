@@ -1,3 +1,7 @@
+import {
+  AGE_SPECIALTY_LABELS,
+  BEHAVIOR_ISSUE_LABELS
+} from '@/lib/constants/taxonomies'
 import type { AgeSpecialty, BehaviorIssue } from '@/types/database'
 
 export type TriageSearchHandoffSuburb = {
@@ -56,6 +60,44 @@ export function buildTriageSearchHandoffParams(
   qs.set('flow_source', 'triage')
 
   return qs
+}
+
+function summariseIssueLabels(issues: BehaviorIssue[]) {
+  const labels = issues.map((issue) => BEHAVIOR_ISSUE_LABELS[issue])
+
+  if (labels.length === 0) {
+    return null
+  }
+
+  if (labels.length === 1) {
+    return labels[0]
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`
+  }
+
+  return `${labels[0]}, ${labels[1]}, and ${labels.length - 2} more`
+}
+
+export function buildTriageSearchHandoffPreview(
+  input: TriageSearchHandoffInput
+): string {
+  const focusAreas = [
+    `${input.suburb.name} within ${input.radius} km`,
+    AGE_SPECIALTY_LABELS[input.age]
+  ]
+  const issueSummary = summariseIssueLabels(input.issues)
+
+  if (issueSummary) {
+    focusAreas.push(issueSummary)
+  }
+
+  return `Your shortlist will open with filters for ${focusAreas.join(', ')}.`
+}
+
+export function getTriageSearchHandoffGuardrailNote(): string {
+  return 'This keeps the usual search route and ranking. It does not contact trainers or change your selections without you.'
 }
 
 export function buildTriageShadowEvaluationPrompt(

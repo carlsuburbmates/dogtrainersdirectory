@@ -74,6 +74,7 @@ export function getSearchLandingContent(params: URLSearchParams): SearchLandingC
   const query = (params.get('q') || params.get('query') || '').trim()
   const suburbName = (params.get('suburbName') || '').trim()
   const serviceType = params.get('service_type') || ''
+  const flowSource = (params.get('flow_source') || '').trim()
   const ageSpecialties = parseAllowedList(params, 'age_specialties', ageSpecialtySet)
   const behaviorIssues = parseAllowedList(params, 'behavior_issues', behaviorIssueSet)
 
@@ -105,16 +106,21 @@ export function getSearchLandingContent(params: URLSearchParams): SearchLandingC
   }
 
   const contextLabel = hasLandingIntent ? contextParts.join(' ') : null
-  const eyebrow = suburbName
-    ? `${suburbName} search`
-    : serviceLabel
-      ? `${serviceLabel} search`
-      : topicSummary
-        ? 'Needs-based search'
-        : 'Trainer discovery'
+  const isTriageFlow = flowSource === 'triage'
+  const eyebrow = isTriageFlow
+    ? 'Guided triage shortlist'
+    : suburbName
+      ? `${suburbName} search`
+      : serviceLabel
+        ? `${serviceLabel} search`
+        : topicSummary
+          ? 'Needs-based search'
+          : 'Trainer discovery'
   const heading = query
     ? `Search results for "${query}"`
-    : contextLabel || 'Compare Melbourne trainers with your shortlist already narrowed.'
+    : isTriageFlow && contextLabel
+      ? `Triage narrowed this shortlist to ${lowerFirst(contextLabel)}`
+      : contextLabel || 'Compare Melbourne trainers with your shortlist already narrowed.'
 
   const detailParts: string[] = []
   if (suburbName) {
@@ -131,10 +137,16 @@ export function getSearchLandingContent(params: URLSearchParams): SearchLandingC
     ? `This page is already focused ${detailParts.join(' ')}.`
     : 'Use the filters to tighten fit, then move quickly into a profile with clearer trust cues and direct contact options.'
 
-  const description = `${focusSentence} Review verification, ratings, and direct contact options before you reach out.`
-  const resultsDescription = contextLabel
-    ? `This shortlist is already filtered for ${lowerFirst(contextLabel)}. Prioritise verified fit, then move to a full profile for proof and contact details.`
-    : 'Prioritise verified fit, then move to a full profile for contact details and proof.'
+  const description = isTriageFlow
+    ? `${focusSentence} This shortlist started from guided triage and still uses the usual search route and ranking. Compare a few profiles, then open one to confirm fit and contact options.`
+    : `${focusSentence} Review verification, ratings, and direct contact options before you reach out.`
+  const resultsDescription = isTriageFlow
+    ? contextLabel
+      ? `This shortlist started from guided triage for ${lowerFirst(contextLabel)}. Compare a few profiles first, then open one to confirm fit and contact details.`
+      : 'This shortlist started from guided triage. Compare a few profiles first, then open one to confirm fit and contact details.'
+    : contextLabel
+      ? `This shortlist is already filtered for ${lowerFirst(contextLabel)}. Prioritise verified fit, then move to a full profile for proof and contact details.`
+      : 'Prioritise verified fit, then move to a full profile for contact details and proof.'
   const metadataTitle = contextLabel
     ? `${contextLabel} | Dog Trainers Directory Melbourne`
     : query

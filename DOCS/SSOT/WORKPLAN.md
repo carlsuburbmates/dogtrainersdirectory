@@ -79,7 +79,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `AO-914` is now complete: `/admin` now starts from one exceptions-first weekly action strip, links directly to the resolving queue or action, and keeps lower-priority diagnostics available without letting them dominate the operator pass.
 - Phase 14 - Operator Burden Reduction is complete for the current planned slice.
 - Phase 15 - Owner Low-Touch Guidance is now open as the next governed delivery slice.
-- Current top priority: `OW-921`.
+- `OW-921` is now complete: the deterministic `/triage -> /search` handoff now previews what the shortlist will do, carries a clear guardrail note about unchanged route truth and ranking, and explains on `/search` that guided triage started the shortlist without claiming that it still defines the owner's refined filters.
+- Current top priority: `OW-922`.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -862,7 +863,24 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No contact, submit, save, or search-changing outcome happens without explicit owner confirmation.
   - `/admin/ai-health` and related audit traces remain truthful about the owner workflow ceiling, kill-switch state, and advisory-versus-visible output.
 
+**OW-922: Add deterministic search and trainer-fit explanation without changing ranking**
+- Purpose: make `/search` and trainer profiles explain shortlist fit, gaps, and next-step checks more clearly while keeping deterministic ranking, route truth, and contact behaviour canonical.
+- Definition of done:
+  - `/search` explains what the shortlist already reflects and what the owner still needs to confirm, using current deterministic filter context only.
+  - `/trainers/[id]` can echo deterministic fit or checklist context without changing ranking, route params, or contact flow.
+  - No search ordering, ranking input, contact automation, or emergency-path behaviour changes.
+  - Any touched supervision surface remains truthful about advisory versus visible owner output.
+
+**OW-923: Harden owner workflow supervision truth and ceiling visibility**
+- Purpose: make `/admin/ai-health` clearer about owner workflow ceilings, kill-switch guidance, and the difference between visible deterministic triage behaviour and audit-only shadow handoff traces.
+- Definition of done:
+  - The owner workflow cards distinguish visible deterministic outcome, shadow advisory traces, and any degraded or paused state truthfully.
+  - Kill-switch and ceiling guidance for owner-facing guidance is explicit and non-misleading.
+  - No live owner automation path is implied or enabled.
+  - No search, ranking, emergency, or contact behaviour changes occur in this task.
+
 ## Execution Log
+- 2026-03-23: `OW-921` completed by adding a deterministic handoff preview and guardrail note to the triage review step, plus triage-origin explanatory copy on `/search` that tells owners the shortlist started from guided triage without overstating that triage still defines their refined filters. Route truth, ranking, emergency escalation, and contact behaviour remain unchanged, focused verification stayed green, and `OW-922` is now the active priority to improve search and trainer-fit explanation without changing ranking.
 - 2026-03-23: `AO-914` completed by re-aligning `/admin` around one exceptions-first weekly action strip that orders the operator pass, links directly to the resolving queue or action, removes duplicated moderation content from the landing page, and demotes the noisy `EnhancedAdminDashboard` into a lower-priority diagnostics `<details>` block. No protected operator, moderation, verification, publication, ranking, billing, or business-owned state was auto-changed. Phase 14 is now complete for the current planned slice, and `OW-921` is now the active priority to improve the owner triage-to-search handoff without changing ranking or route truth.
 - 2026-03-19: `AO-913` completed by surfacing the existing scaffold-review shadow guidance directly on the operator decision surface instead of leaving it buried in background traces. `/api/admin/scaffolded` now returns advisory checklist and `next_action` fields derived from the existing shadow-guidance model, and the scaffolded queue on `/admin` renders that bounded assistive context alongside the existing explicit approve/reject controls. No scaffolded listing was auto-approved or auto-rejected, no publication, verification, featured, billing, or ranking boundary was widened, and `AO-914` is now the active priority to reduce dashboard noise by re-aligning `/admin` around exceptions-first operator flows.
 - 2026-03-19: `AO-911` completed by turning `/admin/reviews` into an explicit weekly moderation loop with ordered queue priority, visible stage labels (`Reject-ready draft`, `Approve-ready draft`, `Shadow review`, `Manual check`, `Completed`), and per-item `Next safe action` guidance derived from the existing moderation recommendation metadata. Final moderation outcomes remain explicit operator actions through the existing admin route, `/admin/ai-health` truth semantics were unchanged, and `AO-913` is now the active priority so scaffold-review burden is reduced next without breaking the agreed Phase 14 order.

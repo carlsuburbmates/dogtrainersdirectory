@@ -25,6 +25,24 @@ describe('search landing helpers', () => {
     expect(String(metadata.description)).not.toContain('price')
   })
 
+  it('explains triage-carried shortlist context without changing route semantics', () => {
+    const params = new URLSearchParams({
+      flow_source: 'triage',
+      suburbName: 'Richmond',
+      age_specialties: 'puppies_0_6m',
+      behavior_issues: 'separation_anxiety'
+    })
+
+    const landing = getSearchLandingContent(params)
+
+    expect(landing.eyebrow).toBe('Guided triage shortlist')
+    expect(landing.heading).toContain('Triage narrowed this shortlist')
+    expect(landing.description).toContain('started from guided triage')
+    expect(landing.description).toContain('usual search route and ranking')
+    expect(landing.resultsDescription).toContain('started from guided triage')
+    expect(landing.description).not.toContain('current suburb')
+  })
+
   it('removes placeholder offer pricing from structured data', () => {
     const params = new URLSearchParams({
       suburbName: 'Richmond',

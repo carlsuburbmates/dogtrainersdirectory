@@ -15,7 +15,11 @@ import {
   parseCanonicalSuburbId,
   rehydrateTriageLocation
 } from '@/lib/triageLocation'
-import { buildTriageSearchHandoffParams } from '@/lib/triageSearchHandoff'
+import {
+  buildTriageSearchHandoffParams,
+  buildTriageSearchHandoffPreview,
+  getTriageSearchHandoffGuardrailNote
+} from '@/lib/triageSearchHandoff'
 import {
   Badge,
   Capsule,
@@ -162,6 +166,15 @@ function TriageContent() {
   const canContinueFromAge = !!age
   const canContinueFromIssues = true // optional
   const canContinueFromLocation = selectedSuburb !== null && radius >= 5
+  const handoffPreview =
+    age && selectedSuburb
+      ? buildTriageSearchHandoffPreview({
+          age,
+          issues,
+          radius,
+          suburb: selectedSuburb
+        })
+      : null
 
   const submit = async () => {
     setError(null)
@@ -403,6 +416,19 @@ function TriageContent() {
                   <li><span className="font-medium">Radius:</span> {radius} km</li>
                 </ul>
               </Card>
+              {handoffPreview ? (
+                <Card tone="info" padding="sm" className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    What happens next
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">
+                    {handoffPreview}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {getTriageSearchHandoffGuardrailNote()}
+                  </p>
+                </Card>
+              ) : null}
               <Divider className="my-5" />
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => goToStep('location')} className="min-h-[44px]">

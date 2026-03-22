@@ -396,6 +396,7 @@ export default function SearchPage() {
   }
   const landingContent = getSearchLandingContent(landingParams)
   const discoveryLinks = getSearchDiscoveryLinks(landingParams)
+  const isTriageFlow = flowSource === 'triage'
   const activeServiceLabel = serviceTypeSet.has(filters.service_type)
     ? SERVICE_TYPE_LABELS[filters.service_type as keyof typeof SERVICE_TYPE_LABELS]
     : null
@@ -497,13 +498,26 @@ export default function SearchPage() {
 
             <Card tone="muted" className="px-5 py-5">
               <p className="text-sm font-semibold text-slate-900">
-                {landingContent.hasLandingIntent ? 'Current focus' : 'Need a clearer starting point?'}
+                {isTriageFlow
+                  ? 'From guided triage'
+                  : landingContent.hasLandingIntent
+                    ? 'Current focus'
+                    : 'Need a clearer starting point?'}
               </p>
               <p className="mt-4 text-sm leading-6 text-slate-600">
-                {landingContent.hasLandingIntent
+                {isTriageFlow
+                  ? `This shortlist started from guided triage, and you can keep refining it here without changing the usual search order.${landingContent.contextLabel ? ` Current focus: ${landingContent.contextLabel}.` : ''}`
+                  : landingContent.hasLandingIntent
                   ? `You are already viewing a narrower shortlist.${landingContent.contextLabel ? ` Current focus: ${landingContent.contextLabel}.` : ''}`
                   : 'Use search when you know what to compare. Use triage if you need help narrowing the right type of support first.'}
               </p>
+              {isTriageFlow ? (
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Compare two or three profiles first, then open one full profile to confirm fit,
+                  credibility, and the best contact path. You can still widen filters or return to
+                  triage without changing the usual search order.
+                </p>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 {discoveryLinks.map((link) => (
                   <Link
