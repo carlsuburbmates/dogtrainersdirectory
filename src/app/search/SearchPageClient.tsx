@@ -26,6 +26,7 @@ import {
 import { parseCanonicalSuburbId } from '@/lib/triageLocation'
 import {
   buildOwnerSearchExplanation,
+  buildOwnerSearchRefinementSuggestions,
   buildTrainerProfileSearchParams,
   getOwnerSearchContext
 } from '@/lib/ownerGuidance'
@@ -372,6 +373,28 @@ export default function SearchPage() {
     setIsFilterSheetOpen(false)
   }
 
+  const handleApplyRefinementSuggestion = (
+    patch: Partial<
+      Pick<
+        SearchFilters,
+        'distance' | 'age_specialties' | 'behavior_issues' | 'service_type' | 'verified_only' | 'rescue_only'
+      >
+    >
+  ) => {
+    const nextFilters: SearchFilters = {
+      ...filters,
+      distance: patch.distance ?? filters.distance,
+      age_specialties: patch.age_specialties ?? filters.age_specialties,
+      behavior_issues: patch.behavior_issues ?? filters.behavior_issues,
+      service_type: patch.service_type ?? filters.service_type,
+      verified_only: patch.verified_only ?? filters.verified_only,
+      rescue_only: patch.rescue_only ?? filters.rescue_only
+    }
+
+    setFilters(nextFilters)
+    runSearch(1, nextFilters, selectedSuburb, flowSource, canonicalSuburbId)
+  }
+
   const toggleArrayFilter = (filterName: 'age_specialties' | 'behavior_issues', value: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -425,6 +448,16 @@ export default function SearchPage() {
   const ownerSearchExplanation = buildOwnerSearchExplanation(ownerSearchContext)
   const discoveryLinks = getSearchDiscoveryLinks(landingParams)
   const trainerProfileParams = buildTrainerProfileSearchParams(landingParams)
+  const verifiedResultCount = results.filter((trainer) => trainer.abn_verified).length
+  const unverifiedResultCount = results.filter((trainer) => !trainer.abn_verified).length
+  const refinementSuggestions = buildOwnerSearchRefinementSuggestions({
+    ...ownerSearchContext,
+    resultCount: results.length,
+    hasMoreResults: hasMore,
+    hasSelectedLocation: Boolean(selectedSuburb || (filters.lat && filters.lng) || canonicalSuburbId !== null),
+    verifiedResultCount,
+    unverifiedResultCount
+  })
   const isTriageFlow = flowSource === 'triage'
   const activeServiceLabel = serviceTypeSet.has(filters.service_type)
     ? SERVICE_TYPE_LABELS[filters.service_type as keyof typeof SERVICE_TYPE_LABELS]
@@ -752,6 +785,56 @@ export default function SearchPage() {
                     )}
                   </div>
                 </Card>
+
+                {refinementSuggestions.length > 0 && (
+                  <Card className="p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      Suggested next refinements
+                    </p>
+                    <h3 className="mt-2 text-xl font-bold text-slate-950">
+                      Nothing changes until you apply one
+                    </h3>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                      These suggestions use the current shortlist only. Each one explains the exact filter change before you apply it.
+                    </p>
+
+                    <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                      {refinementSuggestions.map((suggestion) => (
+                        <Card key={suggestion.id} tone="muted" className="p-4">
+                          <p className="text-sm font-semibold text-slate-950">{suggestion.title}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">
+                            {suggestion.reason}
+                          </p>
+                          <Card tone="info" padding="sm" className="mt-3 rounded-2xl shadow-none">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                              What will change
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-slate-700">
+                              {suggestion.changeSummary}
+                            </p>
+                          </Card>
+                          <Button
+                            type="button"
+                            onClick={() =>
+                              handleApplyRefinementSuggestion({
+                                distance: suggestion.patch.distance,
+                                age_specialties: suggestion.patch.ageSpecialties,
+                                behavior_issues: suggestion.patch.behaviorIssues,
+                                service_type: suggestion.patch.serviceType,
+                                verified_only: suggestion.patch.verifiedOnly,
+                                rescue_only: suggestion.patch.rescueOnly
+                              })
+                            }
+                            variant="outline"
+                            className="mt-4 min-h-[44px] w-full"
+                          >
+                            {suggestion.actionLabel}
+                          </Button>
+                        </Card>
+                      ))}
+                    </div>
+                  </Card>
+                )}
 
                 {results.length === 0 && !loading && (
                   <StateCard

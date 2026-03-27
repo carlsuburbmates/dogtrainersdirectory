@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildOwnerSearchExplanation,
+  buildOwnerSearchRefinementSuggestions,
   buildTrainerFitGuidance,
   buildTrainerProfileSearchParams,
   getOwnerSearchContext
@@ -54,6 +55,59 @@ describe('owner guidance helpers', () => {
     expect(guidance.confirmNext).toContain('Pricing is not shown here, so confirm cost and session format before you commit.')
     expect(guidance.confirmNext).toContain('There are no public reviews here yet, so use profile detail and direct conversation as your proof points.')
     expect(guidance.confirmNext).toContain('Direct phone, email, or website details are not shown, so use the enquiry form if the fit still looks right.')
+  })
+
+  it('suggests broader distance and fewer fit filters when nothing matches', () => {
+    const params = new URLSearchParams({
+      suburbName: 'Richmond',
+      distance: '0-5',
+      service_type: 'private_training',
+      age_specialties: 'puppies_0_6m',
+      behavior_issues: 'separation_anxiety',
+      verified_only: 'true'
+    })
+
+    const context = getOwnerSearchContext(params)
+    const suggestions = buildOwnerSearchRefinementSuggestions({
+      ...context,
+      resultCount: 0,
+      hasMoreResults: false,
+      hasSelectedLocation: true,
+      verifiedResultCount: 0,
+      unverifiedResultCount: 0
+    })
+
+    expect(suggestions.map((suggestion) => suggestion.id)).toEqual([
+      'broaden-distance',
+      'clear-extra-filters'
+    ])
+    expect(suggestions[0]?.changeSummary).toContain('remove the distance cap')
+    expect(suggestions[1]?.changeSummary).toContain(
+      'clear service, age, behaviour, verified-only, and rescue-only filters'
+    )
+  })
+
+  it('suggests narrowing a broad shortlist and reviewing verified listings first', () => {
+    const params = new URLSearchParams({
+      suburbName: 'Carlton'
+    })
+
+    const context = getOwnerSearchContext(params)
+    const suggestions = buildOwnerSearchRefinementSuggestions({
+      ...context,
+      resultCount: 12,
+      hasMoreResults: true,
+      hasSelectedLocation: true,
+      verifiedResultCount: 4,
+      unverifiedResultCount: 8
+    })
+
+    expect(suggestions.map((suggestion) => suggestion.id)).toEqual([
+      'narrow-distance',
+      'verified-only'
+    ])
+    expect(suggestions[0]?.patch.distance).toBe('5-15')
+    expect(suggestions[1]?.patch.verifiedOnly).toBe(true)
   })
 
   it('keeps trainer profile search params truthfully restorable for location-filtered shortlists', () => {

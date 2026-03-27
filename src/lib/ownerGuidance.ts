@@ -75,6 +75,32 @@ export type OwnerSearchExplanation = {
   confirmNext: string[]
 }
 
+export type OwnerSearchRefinementPatch = {
+  distance?: string
+  ageSpecialties?: string[]
+  behaviorIssues?: string[]
+  serviceType?: string
+  verifiedOnly?: boolean
+  rescueOnly?: boolean
+}
+
+export type OwnerSearchRefinementSuggestion = {
+  id: string
+  title: string
+  reason: string
+  changeSummary: string
+  actionLabel: string
+  patch: OwnerSearchRefinementPatch
+}
+
+export type OwnerSearchRefinementInput = OwnerSearchContext & {
+  resultCount: number
+  hasMoreResults: boolean
+  hasSelectedLocation: boolean
+  verifiedResultCount: number
+  unverifiedResultCount: number
+}
+
 export type TrainerGuidanceInput = {
   services?: string[] | null
   ageSpecialties?: string[] | null
@@ -179,6 +205,80 @@ export function buildOwnerSearchExplanation(context: OwnerSearchContext): OwnerS
   }
 
   return { reflected, confirmNext }
+}
+
+export function buildOwnerSearchRefinementSuggestions(
+  input: OwnerSearchRefinementInput
+): OwnerSearchRefinementSuggestion[] {
+  const suggestions: OwnerSearchRefinementSuggestion[] = []
+  const hasTopicRefinements =
+    Boolean(input.serviceType) ||
+    input.ageSpecialties.length > 0 ||
+    input.behaviorIssues.length > 0 ||
+    input.verifiedOnly ||
+    input.rescueOnly
+  const shortlistIsBroad = input.hasMoreResults || input.resultCount >= 8
+
+  if (input.resultCount === 0) {
+    if (input.hasSelectedLocation && input.distanceLabel && input.distanceLabel !== 'any distance') {
+      suggestions.push({
+        id: 'broaden-distance',
+        title: 'Broaden the distance first',
+        reason: 'Nothing matched inside the current distance band.',
+        changeSummary: 'Keep the current suburb and topic filters, but remove the distance cap.',
+        actionLabel: 'Apply broader distance',
+        patch: { distance: 'any' }
+      })
+    }
+
+    if (hasTopicRefinements) {
+      suggestions.push({
+        id: 'clear-extra-filters',
+        title: 'Keep the suburb, remove extra filters',
+        reason: 'The current fit filters may be too tight for this location.',
+        changeSummary:
+          'Keep the current suburb and search text, but clear service, age, behaviour, verified-only, and rescue-only filters.',
+        actionLabel: 'Clear extra filters',
+        patch: {
+          ageSpecialties: [],
+          behaviorIssues: [],
+          serviceType: '',
+          verifiedOnly: false,
+          rescueOnly: false
+        }
+      })
+    }
+
+    return suggestions.slice(0, 2)
+  }
+
+  if (!shortlistIsBroad) {
+    return suggestions
+  }
+
+  if (input.hasSelectedLocation && (!input.distanceLabel || input.distanceLabel === 'any distance')) {
+    suggestions.push({
+      id: 'narrow-distance',
+      title: 'Start with closer trainers',
+      reason: 'This shortlist is broad enough to focus nearby first.',
+      changeSummary: 'Keep the current focus, but show trainers within 15 km first.',
+      actionLabel: 'Limit to 15 km',
+      patch: { distance: '5-15' }
+    })
+  }
+
+  if (!input.verifiedOnly && input.verifiedResultCount > 0 && input.unverifiedResultCount > 0) {
+    suggestions.push({
+      id: 'verified-only',
+      title: 'Review verified listings first',
+      reason: 'This shortlist already includes verified options.',
+      changeSummary: 'Keep the current focus, but hide unverified listings for the first review pass.',
+      actionLabel: 'Show verified only',
+      patch: { verifiedOnly: true }
+    })
+  }
+
+  return suggestions.slice(0, 2)
 }
 
 export function buildTrainerFitGuidance(
