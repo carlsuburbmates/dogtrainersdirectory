@@ -83,7 +83,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `OW-922` is now complete: `/search` and `/trainers/[id]` now explain what the shortlist already reflects, what the owner still needs to confirm, and how profile fit compares against the current deterministic filter context without changing ranking, route truth, or contact behaviour.
 - `OW-923` is now complete: `/admin/ai-health` now makes the owner workflow ceiling, kill-switch guidance, and shadow-versus-visible triage output explicit without implying live owner automation or changing owner-facing behaviour.
 - Phase 15 - Owner Low-Touch Guidance is complete for the current planned slice.
-- The roadmap now returns to awaiting prioritisation.
+- Phase 16 - Confirmed Owner Action Automation is now open as the next governed delivery slice.
+- `OW-924` is now the active priority: `/search` should surface owner-approved refinement suggestions that explain what will change before any refinement is applied.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -99,6 +100,8 @@ Anything not listed here is **not worked on** (to prevent drift).
   12. Supervised Automation Operations
   13. Controlled Live Proof And Burden Baseline
   14. Operator Burden Reduction
+  15. Owner Low-Touch Guidance
+  16. Confirmed Owner Action Automation
 
 ## Completed Foundation Milestones
 
@@ -882,7 +885,52 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No live owner automation path is implied or enabled.
   - No search, ranking, emergency, or contact behaviour changes occur in this task.
 
+### Phase 16 - Confirmed Owner Action Automation
+
+**Phase rule**
+- This phase reduces owner action friction by letting AI prepare deterministic next actions, suggested search refinements, shortlist comparisons, and enquiry drafts while keeping the owner in explicit control of any search-changing or send-like action.
+- Owner-facing AI in this phase must not silently rewrite search intent, bypass emergency escalation, trigger contact actions, or change ranking.
+- Any AI-generated search refinement, shortlist recommendation, or enquiry draft must remain confirm-before-apply or confirm-before-send.
+- No owner-facing workflow may be treated as live-capable until deployment SSOT defines the dedicated owner-workflow overrides and `/admin/ai-health` reports the ceiling, kill-switch state, and advisory-versus-visible behaviour truthfully.
+
+**OW-924: Add explicit owner-approved search refinement suggestions**
+- Purpose: let `/search` surface bounded AI-suggested filter or shortlist refinements that the owner can explicitly accept when they want help tightening or widening the search.
+- Definition of done:
+  - `/search` can present one or more suggested next shortlist refinements using the current deterministic route/filter context only.
+  - Each suggestion explains why it may help and what will change if applied.
+  - Applying a suggestion requires explicit owner confirmation; no silent search-intent rewrite or hidden ranking change occurs.
+  - Ranking, route truth, emergency behaviour, and trainer contact behaviour remain unchanged unless the owner explicitly approves the refinement.
+  - `/admin/ai-health` and related audit traces remain truthful about advisory-versus-visible owner output for this workflow.
+
+**OW-925: Add owner enquiry draft and question-builder support**
+- Purpose: reduce owner friction at the point of contact by preparing a draft enquiry and suggested questions for the selected trainer without sending anything automatically.
+- Definition of done:
+  - `/trainers/[id]` can show an AI-assisted draft enquiry and/or suggested question checklist based on the owner's current deterministic context and visible trainer/profile fields.
+  - The owner can edit, discard, or use the draft; no message is sent without explicit owner action.
+  - No trainer contact automation, no hidden send path, and no change to canonical contact routes occur in this task.
+  - Emergency, ranking, and search behaviour remain unchanged.
+  - `/admin/ai-health` and related audit traces remain truthful about advisory, draft, and visible owner output.
+
+**OW-926: Add bounded shortlist comparison and next-best-action support**
+- Purpose: help owners compare shortlisted trainers and decide whether to contact now, keep comparing, or refine the shortlist first.
+- Definition of done:
+  - The owner can view bounded comparison guidance that explains fit, gaps, and next-step considerations across shortlisted trainers or profiles.
+  - The guidance remains explanation-first and deterministic-context-bound; it must not overstate fit beyond visible listing/profile fields.
+  - No autonomous trainer selection, no hidden ranking rewrite, and no automatic contact action occur in this task.
+  - The output makes the next safe owner action clearer without changing route truth or contact flow.
+  - `/admin/ai-health` and related audit traces remain truthful about advisory output versus visible deterministic product behaviour.
+
+**OW-927: Add the owner workflow control substrate for bounded future live-readiness**
+- Purpose: establish the configuration, supervision, and truthfulness substrate required before any future owner-facing workflow can be considered live-capable.
+- Definition of done:
+  - Deployment SSOT defines the dedicated owner-workflow overrides required for future owner-facing live-capable workflows.
+  - `/admin/ai-health` clearly reports owner-workflow ceiling, effective mode, kill-switch state, and advisory-versus-visible output truth for the owner guidance families touched in this phase.
+  - Audit traces, pause/disable guidance, and rollback semantics are explicit enough for bounded supervised review.
+  - No owner-facing workflow is auto-promoted to `controlled_live` in this task.
+  - No search, ranking, emergency, or contact behaviour changes occur in this task unless already explicitly approved in earlier bounded owner tasks.
+
 ## Execution Log
+- 2026-03-27: Opened `Phase 16 - Confirmed Owner Action Automation` and set `OW-924` as the single active priority. The next slice adds explicit owner-approved search refinement suggestions on `/search` while keeping route truth, ranking, emergency behaviour, and contact actions deterministic until the owner explicitly confirms a refinement.
 - 2026-03-27: `OW-923` completed by making `/admin/ai-health` explicit about the owner workflow ceiling, kill-switch guidance, and the difference between visible deterministic triage behaviour and audit-only shadow handoff traces. The triage card now carries an `Owner workflow truth` section and workflow-specific rollback guidance, focused ai-health verification stayed green, and no owner-facing search, ranking, emergency, or contact behaviour changed. Phase 15 is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.
 - 2026-03-23: `OW-922` completed by adding deterministic shortlist explanation on `/search`, carrying display-only shortlist context into `/trainers/[id]`, and rendering a fit-check card that compares the current shortlist focus against explicitly listed profile fields. The correction cycle preserved `suburbId`, `suburbName`, `postcode`, `lat`, `lng`, and `councilId` in the trainer-profile back-link so location-filtered shortlists restore truthfully on `/search`. Ranking, route truth, emergency escalation, and contact behaviour remain unchanged, focused verification stayed green, and `OW-923` is now the active priority to harden owner workflow supervision truth and ceiling visibility.
 - 2026-03-23: `OW-921` completed by adding a deterministic handoff preview and guardrail note to the triage review step, plus triage-origin explanatory copy on `/search` that tells owners the shortlist started from guided triage without overstating that triage still defines their refined filters. Route truth, ranking, emergency escalation, and contact behaviour remain unchanged, focused verification stayed green, and `OW-922` is now the active priority to improve search and trainer-fit explanation without changing ranking.
