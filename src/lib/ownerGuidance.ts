@@ -286,9 +286,9 @@ export function buildOwnerSearchRefinementSuggestions(
       id: 'narrow-distance',
       title: 'Start with closer trainers',
       reason: 'This shortlist is broad enough to focus nearby first.',
-      changeSummary: 'Keep the current focus, but show trainers within 15 km first.',
-      actionLabel: 'Limit to 15 km',
-      patch: { distance: '5-15' }
+      changeSummary: 'Keep the current focus, but show trainers within 5 km first.',
+      actionLabel: 'Limit to 5 km',
+      patch: { distance: '0-5' }
     })
   }
 

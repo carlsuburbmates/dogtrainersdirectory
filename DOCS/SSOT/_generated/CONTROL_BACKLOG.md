@@ -125,6 +125,7 @@
 - `OW-925` is now complete: `/trainers/[id]` prepares editable owner enquiry drafts and question checklists without any automatic send path.
 - `OW-926` is now complete: `/search` adds bounded shortlist comparison guidance that clarifies whether to contact now, keep comparing, or refine first.
 - `OW-927` is now the active priority: owner-workflow future live-readiness boundaries and ai-health truth should be made explicit before any later owner-live proposal.
+- Phase 16 now continues under tighter single-writer control after main-control corrected a premature implementation-lane sync and re-audited the landed owner-workflow slice.
 - `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.

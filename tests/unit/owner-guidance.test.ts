@@ -108,7 +108,8 @@ describe('owner guidance helpers', () => {
       'narrow-distance',
       'verified-only'
     ])
-    expect(suggestions[0]?.patch.distance).toBe('5-15')
+    expect(suggestions[0]?.changeSummary).toContain('within 5 km')
+    expect(suggestions[0]?.patch.distance).toBe('0-5')
     expect(suggestions[1]?.patch.verifiedOnly).toBe(true)
   })
 
