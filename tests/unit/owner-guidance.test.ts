@@ -3,6 +3,7 @@ import {
   buildOwnerEnquiryDraftGuidance,
   buildOwnerSearchExplanation,
   buildOwnerSearchRefinementSuggestions,
+  buildOwnerShortlistComparisonGuidance,
   buildTrainerFitGuidance,
   buildTrainerProfileSearchParams,
   getOwnerSearchContext
@@ -136,6 +137,32 @@ describe('owner guidance helpers', () => {
     expect(guidance.suggestedQuestions).toContain(
       'What does the first session cost, and what is included?'
     )
+  })
+
+  it('recommends contacting now when the shortlist already has enough visible proof', () => {
+    const guidance = buildOwnerShortlistComparisonGuidance({
+      resultCount: 4,
+      verifiedCount: 3,
+      reviewedCount: 2,
+      directContactCount: 4,
+      detailedProfileCount: 4
+    })
+
+    expect(guidance.summary).toContain('enough visible proof')
+    expect(guidance.nextAction).toContain('Contact two or three trainers now')
+  })
+
+  it('recommends refining first when the shortlist is still too narrow', () => {
+    const guidance = buildOwnerShortlistComparisonGuidance({
+      resultCount: 1,
+      verifiedCount: 0,
+      reviewedCount: 0,
+      directContactCount: 0,
+      detailedProfileCount: 0
+    })
+
+    expect(guidance.summary).toContain('still narrow enough')
+    expect(guidance.nextAction).toContain('Refine first')
   })
 
   it('keeps trainer profile search params truthfully restorable for location-filtered shortlists', () => {

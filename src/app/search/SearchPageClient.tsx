@@ -26,6 +26,7 @@ import {
 import { parseCanonicalSuburbId } from '@/lib/triageLocation'
 import {
   buildOwnerSearchExplanation,
+  buildOwnerShortlistComparisonGuidance,
   buildOwnerSearchRefinementSuggestions,
   buildTrainerProfileSearchParams,
   getOwnerSearchContext
@@ -450,6 +451,22 @@ export default function SearchPage() {
   const trainerProfileParams = buildTrainerProfileSearchParams(landingParams)
   const verifiedResultCount = results.filter((trainer) => trainer.abn_verified).length
   const unverifiedResultCount = results.filter((trainer) => !trainer.abn_verified).length
+  const reviewedResultCount = results.filter((trainer) => {
+    const rating = Number(trainer.average_rating || 0)
+    const reviewCount = Number(trainer.review_count || 0)
+    return rating > 0 && reviewCount > 0
+  }).length
+  const directContactResultCount = results.filter(
+    (trainer) => Boolean(trainer.business_phone || trainer.business_email)
+  ).length
+  const detailedProfileCount = results.filter((trainer) => {
+    const listedScopeCount =
+      trainer.services.length +
+      trainer.age_specialties.length +
+      trainer.behavior_issues.length
+
+    return listedScopeCount > 0
+  }).length
   const refinementSuggestions = buildOwnerSearchRefinementSuggestions({
     ...ownerSearchContext,
     resultCount: results.length,
@@ -457,6 +474,13 @@ export default function SearchPage() {
     hasSelectedLocation: Boolean(selectedSuburb || (filters.lat && filters.lng) || canonicalSuburbId !== null),
     verifiedResultCount,
     unverifiedResultCount
+  })
+  const shortlistComparisonGuidance = buildOwnerShortlistComparisonGuidance({
+    resultCount: results.length,
+    verifiedCount: verifiedResultCount,
+    reviewedCount: reviewedResultCount,
+    directContactCount: directContactResultCount,
+    detailedProfileCount
   })
   const isTriageFlow = flowSource === 'triage'
   const activeServiceLabel = serviceTypeSet.has(filters.service_type)
@@ -830,6 +854,27 @@ export default function SearchPage() {
                           >
                             {suggestion.actionLabel}
                           </Button>
+                        </Card>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {results.length > 0 && (
+                  <Card className="p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">
+                      Shortlist decision help
+                    </p>
+                    <h3 className="mt-2 text-xl font-bold text-slate-950">
+                      {shortlistComparisonGuidance.summary}
+                    </h3>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                      {shortlistComparisonGuidance.nextAction}
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {shortlistComparisonGuidance.comparisonPoints.map((point) => (
+                        <Card key={point} tone="muted" padding="sm" className="rounded-2xl shadow-none">
+                          <p className="text-sm leading-6 text-slate-700">{point}</p>
                         </Card>
                       ))}
                     </div>

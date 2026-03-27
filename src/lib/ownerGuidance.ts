@@ -127,6 +127,20 @@ export type OwnerEnquiryDraftGuidance = {
   suggestedQuestions: string[]
 }
 
+export type OwnerShortlistComparisonInput = {
+  resultCount: number
+  verifiedCount: number
+  reviewedCount: number
+  directContactCount: number
+  detailedProfileCount: number
+}
+
+export type OwnerShortlistComparisonGuidance = {
+  summary: string
+  nextAction: string
+  comparisonPoints: string[]
+}
+
 export function getOwnerSearchContext(params: URLSearchParams): OwnerSearchContext {
   const serviceType = params.get('service_type')
   const ageSpecialties = parseAllowedList(params, 'age_specialties', ageSpecialtySet)
@@ -350,6 +364,47 @@ export function buildOwnerEnquiryDraftGuidance(
   return {
     draftMessage: openingParts.join('\n'),
     suggestedQuestions
+  }
+}
+
+export function buildOwnerShortlistComparisonGuidance(
+  input: OwnerShortlistComparisonInput
+): OwnerShortlistComparisonGuidance {
+  const comparisonPoints = [
+    `${input.verifiedCount} ${input.verifiedCount === 1 ? 'listing is' : 'listings are'} verified.`,
+    `${input.reviewedCount} ${input.reviewedCount === 1 ? 'profile has' : 'profiles have'} public reviews.`,
+    `${input.directContactCount} ${input.directContactCount === 1 ? 'profile shows' : 'profiles show'} a direct contact path.`,
+    `${input.detailedProfileCount} ${input.detailedProfileCount === 1 ? 'profile lists' : 'profiles list'} fit details.`
+  ]
+
+  if (
+    input.resultCount >= 2 &&
+    input.verifiedCount >= 2 &&
+    input.directContactCount >= 2 &&
+    (input.reviewedCount >= 1 || input.detailedProfileCount >= 2)
+  ) {
+    return {
+      summary: 'You already have enough visible proof to contact a short shortlist now.',
+      nextAction:
+        'Contact two or three trainers now, then compare their response speed, fit, and pricing before you decide.',
+      comparisonPoints
+    }
+  }
+
+  if (input.resultCount >= 3) {
+    return {
+      summary: 'This shortlist is broad enough to compare before you reach out.',
+      nextAction:
+        'Keep comparing for now. Open two or three profiles with the clearest fit signals, then decide who is worth contacting first.',
+      comparisonPoints
+    }
+  }
+
+  return {
+    summary: 'This shortlist is still narrow enough that one more refinement may help before contact.',
+    nextAction:
+      'Refine first if the fit still feels uncertain. If one profile already looks right, use the full profile to confirm the missing details before you contact.',
+    comparisonPoints
   }
 }
 
