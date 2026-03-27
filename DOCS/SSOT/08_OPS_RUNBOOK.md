@@ -1,8 +1,8 @@
 # Ops Runbook — Post-launch Operations (Reality)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.3
-**Last Updated:** 2026-03-19
+**Version:** v1.4
+**Last Updated:** 2026-03-28
 
 ## 1. Operating model (canonical)
 Ops is **pull-based**:
@@ -18,6 +18,198 @@ Canonical operator expectations:
 - review exceptions, audit trails, and bounded overrides rather than clearing routine AI queues
 - keep supervision mobile-friendly and low-noise by default
 - rely on off-dashboard escalation only for critical exceptions, blocked review states, or explicit disable events
+
+### 1.2 Verification playbook (canonical)
+DTD verification is reusable at the method level, even when the exact routes and risks differ by phase.
+
+The reusable rule is:
+- every accepted slice must verify code truth, runtime truth, visible truth, boundary truth, and supervision truth
+- phase-specific matrices define which routes, risks, and negative-path checks apply for that slice
+- future phases should add a new matrix instead of inventing a new verification method
+
+#### 1.2.1 Core acceptance gates
+Every governed slice must pass all of the following before main-control accepts it:
+
+1. Code truth
+- `npm run type-check`
+- `npm run lint`
+- focused automated tests for the touched slice
+- `npm run docs:guard` whenever canonical docs, deployment docs, or control docs change
+
+2. Runtime truth
+- affected routes or admin surfaces render successfully in the real local app
+- expected state transitions and request parameters stay truthful
+- no hidden route, param, or mutation drift appears at runtime
+
+3. Visible truth
+- the visible copy says the truth about what the feature is doing
+- the layout makes the next safe action clear for the intended actor
+- key visible states are captured by browser evidence, screenshot evidence, or equivalent rendered proof
+
+4. Boundary truth
+- blocked actions stay blocked
+- approval boundaries remain explicit
+- no silent ranking, verification, moderation, billing, publication, or contact mutation is introduced
+
+5. Supervision truth
+- `/admin/ai-health` must match the real workflow ceiling, kill-switch semantics, and advisory-versus-visible behaviour for any touched automation family
+- shadow, draft, deterministic visible behaviour, disabled, paused, and controlled-live states must remain distinguishable
+
+#### 1.2.2 Required acceptance evidence
+Every accepted slice must produce an evidence packet that includes:
+- command evidence for required static verification
+- focused route evidence for the affected public or admin surfaces
+- at least one explicit negative-path check for the primary risk in that slice
+- ai-health or control-plane evidence whenever automation truth, rollout ceiling, or kill-switch semantics are touched
+- main-control audit output that either accepts or rejects the slice
+
+Static green checks are necessary but not sufficient. A slice is not accepted only because code compiles or tests pass.
+
+#### 1.2.3 Verification roles
+- Implementation lane: writes the bounded slice and its focused tests
+- Browser-verification lane or equivalent local runtime check: verifies the affected routes and visible states when the task materially changes user-visible or operator-visible behaviour
+- Review lane: checks the produced diff for truthfulness drift, missing tests, and approval-boundary regressions
+- Main-control: remains the only acceptance gate and the only authority that syncs SSOT or control-state changes
+
+If coordination overhead or boundary drift becomes worse than the parallelism benefit, revert immediately to tighter single-writer execution while keeping the same acceptance gates.
+
+#### 1.2.4 Phase-specific verification matrices
+The following matrices are the current reusable examples for the recent AI automation phases. Future phases should add a new matrix under this section.
+
+### 1.3 Phase 14 verification matrix — Operator Burden Reduction
+Goal: prove that the operator-facing weekly loop is clearer without silently mutating protected outcomes.
+
+| Area | Required route or surface | Pass condition |
+|---|---|---|
+| Exceptions-first admin overview | `/admin` | weekly operator order is obvious and actionable loops are prioritised over passive diagnostics |
+| Moderation loop | `/admin/reviews` | reject-ready, approve-ready, shadow, manual, and completed states remain visibly distinct |
+| Verification and ABN loop | `/admin` + `/api/admin/queues` | explicit next-safe-action guidance exists without auto-changing verification or ABN state |
+| Scaffold review | `/admin` + `/api/admin/scaffolded` | checklist and next-safe-action guidance are visible at decision time |
+| Protected operator actions | relevant `/api/admin/**` routes | no moderation, verification, ABN, publication, ranking, billing, or business-owned state auto-mutates |
+| Supervision truth | `/admin/ai-health` | bounded, paused, disabled, advisory, draft, and controlled-live states remain truthful |
+
+Phase 14 required negative checks:
+- no auto-approve review
+- no auto-verify resource
+- no auto-approve ABN
+- no hidden publication, ranking, or billing side effect
+
+### 1.4 Phase 15 verification matrix — Owner Low-Touch Guidance
+Goal: prove that owner guidance is clearer without changing deterministic route truth, ranking, emergency escalation, or contact behaviour.
+
+| Area | Required route or surface | Pass condition |
+|---|---|---|
+| Triage handoff clarity | `/triage` | owner can tell what happens next before leaving triage |
+| Search explanation | `/search` | shortlist meaning is clearer without overstating what triage or AI currently controls |
+| Trainer-fit explanation | `/trainers/[id]` | fit and gap guidance uses deterministic visible context only |
+| Search restoration truth | `/search` and `/trainers/[id]` | returning from profile to search preserves truthful shortlist context |
+| Emergency safety | `/triage`, `/emergency`, `/search` | no wording or behaviour weakens the urgent-first path |
+| Supervision truth | `/admin/ai-health` | visible behaviour is not misrepresented as live owner AI |
+
+Phase 15 required negative checks:
+- no ranking change
+- no hidden search rewrite
+- no automatic contact or send
+- no emergency downgrade
+- no fake claim that AI made the owner decision for them
+
+### 1.5 Phase 16 verification matrix — Confirmed Owner Action Automation
+Goal: prove that owner-action assistance is explicit, confirm-before-apply or confirm-before-send, and truthfully supervised.
+
+| Area | Required route or surface | Pass condition |
+|---|---|---|
+| Refinement suggestions | `/search` | every suggestion explains what changes and only applies after explicit owner action |
+| Shortlist comparison guidance | `/search` | next-best-action guidance stays bounded and does not alter ranking |
+| Enquiry draft assistance | `/trainers/[id]` | draft or question-builder support remains insert-only and does not send automatically |
+| Owner-action substrate | `/admin/ai-health`, automation substrate, deployment docs | dedicated owner-action ceiling and override exist without implying current live owner automation |
+| Rollback and kill-switch truth | `/admin/ai-health` | owner-action disable path and ceiling are explicit and non-misleading |
+| Protected owner behaviour | `/search`, `/trainers/[id]` | no hidden search rewrite, no hidden ranking change, no send-like action without owner confirmation |
+
+Phase 16 required negative checks:
+- no automatic apply without confirmation
+- no automatic send
+- no ranking rewrite
+- no hidden search-param mutation
+- no implication that current owner-visible helpers are proof of live owner-action AI
+
+### 1.6 Future-phase rule
+When a new phase opens:
+- reuse the core acceptance gates and evidence rules above
+- add one new phase matrix under this section
+- do not lower the acceptance bar just because the routes or actor class change
+
+### 1.7 Agent workflow policy (canonical)
+DTD should use multi-agent execution only when it improves delivery without weakening truthfulness or control.
+
+#### 1.7.1 Control authority
+- Main-control remains the only authority that may:
+  - open or close a governed task
+  - accept or reject a produced slice
+  - sync `DOCS/SSOT/**`
+  - sync `_generated/CONTROL_*` state
+  - declare a phase complete
+- Implementation, review, and exploration lanes do not decide roadmap state or acceptance.
+
+#### 1.7.2 Default lane roles
+- Implementation lane:
+  - writes the active slice
+  - owns the bounded file set for that slice
+  - returns verification output, risks, and boundary notes
+- Browser-verification lane:
+  - checks the real local route behaviour for materially visible changes
+  - captures the key visible states or equivalent evidence
+- Review lane:
+  - audits the produced diff for truthfulness drift, approval-boundary regressions, and missing tests
+- Explorer lane:
+  - may prepare candidate future task scope, risks, or file sets
+  - remains read-only and candidate-only
+
+#### 1.7.3 Default execution model
+Unless a tighter or looser mode is explicitly justified, the canonical execution flow is:
+1. main-control opens one active task
+2. one implementation lane executes that task
+3. one review lane audits the produced diff
+4. one browser-verification lane checks the affected routes when the slice materially changes visible behaviour
+5. main-control accepts or rejects
+6. only after acceptance may SSOT and control-state sync occur
+
+This is the default because it keeps responsibility clear and avoids speculative parallel writes on overlapping surfaces.
+
+#### 1.7.4 Parallelism rules
+Parallelism is allowed only when the write scopes are genuinely disjoint or when the extra lane is read-only.
+
+Allowed:
+- one implementation lane plus one review lane
+- one implementation lane plus one browser-verification lane
+- one implementation lane plus one or more read-only explorers for future-task prep
+- multiple write-capable lanes only when main-control can defend a truly disjoint file scope and independent acceptance path
+
+Not allowed:
+- two write-capable lanes editing the same route family or shared helper set without an explicit main-control exception
+- review or explorer lanes editing SSOT or control docs
+- speculative roadmap advancement by implementation lanes
+- acceptance or control-state sync before main-control audit
+
+#### 1.7.5 Start gates
+Before a lane begins work:
+- confirm the expected branch and current HEAD when that matters for the slice
+- inspect `git status --short --branch`
+- stop if the worktree contains overlapping dirty files in the active task scope
+- unrelated local-only dirt may be allowed only when main-control says so explicitly and the overlap risk is nil
+
+#### 1.7.6 Reversion rule
+If any of the following happens, main-control must revert immediately to tighter single-writer execution for the remainder of the active governed slice:
+- implementation lanes push or sync control state before main-control acceptance
+- two lanes collide on overlapping write scope
+- reviewer findings show truthfulness drift or boundary-breaking output
+- coordination overhead becomes higher than the speed gained from parallelism
+- the produced evidence packet is incomplete or unreliable
+
+#### 1.7.7 Acceptance rule
+- main-control must review every completed slice against the verification playbook above
+- findings come first when the slice is not acceptable
+- no slice is accepted because a worker declared success
+- only accepted work may be committed as canonical SSOT or control truth
 
 ## 2. Admin surfaces (canonical)
 - `/admin` — overview
