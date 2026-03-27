@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
+  buildOwnerEnquiryDraftGuidance,
   buildTrainerFitGuidance,
   buildTrainerProfileSearchParams,
   getOwnerSearchContext
@@ -282,6 +283,11 @@ export default async function TrainerPage({
     reviewCount,
     abnVerified: trainer.abn_verified,
     contactMethodCount
+  })
+  const enquiryGuidance = buildOwnerEnquiryDraftGuidance(searchContext, {
+    trainerName: trainer.business_name,
+    trainerSuburb: trainer.suburb_name,
+    pricing: trainer.pricing
   })
   const listedFitSignals =
     (trainer.services?.length || 0) +
@@ -790,6 +796,8 @@ export default async function TrainerPage({
                   trainerId={id}
                   trainerName={trainer.business_name}
                   trainerEmail={trainer.email}
+                  draftMessage={enquiryGuidance.draftMessage}
+                  suggestedQuestions={enquiryGuidance.suggestedQuestions}
                 />
               </div>
             </Card>

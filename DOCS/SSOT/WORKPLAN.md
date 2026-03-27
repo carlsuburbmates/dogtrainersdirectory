@@ -85,7 +85,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Phase 15 - Owner Low-Touch Guidance is complete for the current planned slice.
 - Phase 16 - Confirmed Owner Action Automation is now open as the next governed delivery slice.
 - `OW-924` is now complete: `/search` now surfaces explicit owner-approved refinement suggestions that explain the exact filter change before anything is applied, while keeping ranking, route truth, emergency behaviour, and contact behaviour canonical.
-- `OW-925` is now the active priority: `/trainers/[id]` should prepare an owner enquiry draft and suggested questions without sending anything automatically.
+- `OW-925` is now complete: `/trainers/[id]` now prepares an editable owner enquiry draft and suggested questions without changing the existing send path or creating any automatic contact action.
+- `OW-926` is now the active priority: shortlisted trainers should gain bounded comparison guidance that helps owners decide whether to contact now, keep comparing, or refine the shortlist first.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -931,6 +932,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No search, ranking, emergency, or contact behaviour changes occur in this task unless already explicitly approved in earlier bounded owner tasks.
 
 ## Execution Log
+- 2026-03-27: `OW-925` completed by adding an editable owner enquiry draft and suggested question checklist on `/trainers/[id]`. The trainer profile now derives a deterministic first-message draft from the visible shortlist context and profile fields, lets the owner explicitly insert that draft or the suggested questions into the existing enquiry form, and keeps the current mailto-based contact flow unchanged. Focused verification stayed green, no automatic send path was added, and `OW-926` is now the active priority to add bounded shortlist comparison and next-best-action guidance.
 - 2026-03-27: `OW-924` completed by adding deterministic owner-approved search refinement suggestions on `/search`. The page now surfaces bounded next-step suggestions derived from the current shortlist state, explains the exact filter change before anything happens, and only applies a refinement when the owner explicitly clicks the action. Focused verification stayed green, no backend contract changed, and ranking, route truth, emergency behaviour, and contact behaviour remain unchanged. `OW-925` is now the active priority to prepare owner enquiry drafts and question checklists without adding any automatic send path.
 - 2026-03-27: Opened `Phase 16 - Confirmed Owner Action Automation` and set `OW-924` as the single active priority. The next slice adds explicit owner-approved search refinement suggestions on `/search` while keeping route truth, ranking, emergency behaviour, and contact actions deterministic until the owner explicitly confirms a refinement.
 - 2026-03-27: `OW-923` completed by making `/admin/ai-health` explicit about the owner workflow ceiling, kill-switch guidance, and the difference between visible deterministic triage behaviour and audit-only shadow handoff traces. The triage card now carries an `Owner workflow truth` section and workflow-specific rollback guidance, focused ai-health verification stayed green, and no owner-facing search, ranking, emergency, or contact behaviour changed. Phase 15 is now complete for the current planned slice and the roadmap returns to awaiting prioritisation.

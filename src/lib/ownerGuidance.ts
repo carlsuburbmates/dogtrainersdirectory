@@ -116,6 +116,17 @@ export type TrainerFitGuidance = {
   confirmNext: string[]
 }
 
+export type OwnerEnquiryDraftInput = {
+  trainerName: string
+  trainerSuburb?: string | null
+  pricing?: string | null
+}
+
+export type OwnerEnquiryDraftGuidance = {
+  draftMessage: string
+  suggestedQuestions: string[]
+}
+
 export function getOwnerSearchContext(params: URLSearchParams): OwnerSearchContext {
   const serviceType = params.get('service_type')
   const ageSpecialties = parseAllowedList(params, 'age_specialties', ageSpecialtySet)
@@ -279,6 +290,67 @@ export function buildOwnerSearchRefinementSuggestions(
   }
 
   return suggestions.slice(0, 2)
+}
+
+export function buildOwnerEnquiryDraftGuidance(
+  context: OwnerSearchContext,
+  input: OwnerEnquiryDraftInput
+): OwnerEnquiryDraftGuidance {
+  const ageSummary = buildListSummary(context.ageLabels.map(lowerFirst))
+  const behaviourSummary = buildListSummary(context.behaviorLabels.map(lowerFirst))
+  const focusParts = [context.serviceLabel, ageSummary, behaviourSummary]
+    .filter((value): value is string => Boolean(value))
+    .map(lowerFirst)
+  const focusSummary = buildListSummary(focusParts)
+  const locationPhrase = input.trainerSuburb
+    ? ` in or near ${input.trainerSuburb}`
+    : context.suburbName
+      ? ` in or near ${context.suburbName}`
+      : ''
+
+  const openingParts = [
+    `Hi ${input.trainerName},`,
+    '',
+    `I am looking for help${locationPhrase}${
+      focusSummary ? ` with ${focusSummary}` : ''
+    }${context.query ? `, especially around "${context.query}"` : ''}.`,
+    'I found your profile on Dog Trainers Directory and I am comparing a few options.',
+    '',
+    `Could you let me know whether this sounds like a good fit, what the first step would look like${
+      input.pricing ? '' : ', and what your pricing looks like'
+    }?`,
+    '',
+    'Thanks,'
+  ]
+
+  const suggestedQuestions: string[] = []
+
+  if (context.query) {
+    suggestedQuestions.push(`Have you worked with dogs needing help with "${context.query}"?`)
+  }
+
+  if (context.serviceLabel) {
+    suggestedQuestions.push(`Do you offer ${lowerFirst(context.serviceLabel)} for cases like this?`)
+  }
+
+  if (ageSummary) {
+    suggestedQuestions.push(`How do you tailor the work for ${ageSummary}?`)
+  }
+
+  if (behaviourSummary) {
+    suggestedQuestions.push(`What approach do you use for ${behaviourSummary}?`)
+  }
+
+  if (!input.pricing) {
+    suggestedQuestions.push('What does the first session cost, and what is included?')
+  }
+
+  suggestedQuestions.push('What should I prepare before the first session?')
+
+  return {
+    draftMessage: openingParts.join('\n'),
+    suggestedQuestions
+  }
 }
 
 export function buildTrainerFitGuidance(

@@ -6,9 +6,17 @@ interface ContactFormProps {
   trainerId: number
   trainerName: string
   trainerEmail?: string
+  draftMessage: string
+  suggestedQuestions: string[]
 }
 
-export default function ContactForm({ trainerId, trainerName, trainerEmail }: ContactFormProps) {
+export default function ContactForm({
+  trainerId,
+  trainerName,
+  trainerEmail,
+  draftMessage,
+  suggestedQuestions
+}: ContactFormProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -49,12 +57,83 @@ export default function ContactForm({ trainerId, trainerName, trainerEmail }: Co
     }
   }
 
+  const questionBlock = suggestedQuestions.map((question) => `- ${question}`).join('\n')
+
+  const handleUseDraft = () => {
+    setMessage(draftMessage)
+  }
+
+  const handleAddQuestions = () => {
+    setMessage((current) => {
+      if (!questionBlock) {
+        return current
+      }
+
+      if (current.includes(questionBlock)) {
+        return current
+      }
+
+      if (!current.trim()) {
+        return questionBlock
+      }
+
+      return `${current.trim()}\n\nQuestions to confirm:\n${questionBlock}`
+    })
+  }
+
+  const guidancePanel = (
+    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+        Suggested first draft
+      </p>
+      <p className="mt-2 text-sm leading-6 text-slate-700">
+        Use this as a starting point, then edit it before you send anything.
+      </p>
+      <pre className="mt-3 whitespace-pre-wrap rounded-md bg-white p-3 text-sm leading-6 text-slate-700">
+        {draftMessage}
+      </pre>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleUseDraft}
+          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        >
+          Use suggested draft
+        </button>
+        {suggestedQuestions.length > 0 && (
+          <button
+            type="button"
+            onClick={handleAddQuestions}
+            className="rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100"
+          >
+            Add suggested questions
+          </button>
+        )}
+      </div>
+      {suggestedQuestions.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Suggested questions to include
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
+            {suggestedQuestions.map((question) => (
+              <li key={question}>{question}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+
   if (!trainerEmail) {
     return (
-      <div className="text-center p-4 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-600">
-          Please use the phone number or other contact methods above to reach this trainer.
-        </p>
+      <div className="space-y-4">
+        {guidancePanel}
+        <div className="text-center p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600">
+            Please use the phone number or other contact methods above to reach this trainer.
+          </p>
+        </div>
       </div>
     )
   }
@@ -77,6 +156,7 @@ export default function ContactForm({ trainerId, trainerName, trainerEmail }: Co
 
   return (
     <div>
+      {guidancePanel}
       <h4 className="text-sm font-semibold text-gray-900 mb-3">Send a Message</h4>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>

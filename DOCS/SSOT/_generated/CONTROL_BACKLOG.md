@@ -102,8 +102,8 @@
 | OW-922 | Owner Low-Touch Guidance | Add deterministic search and trainer-fit explanation without changing ranking | completed | frontend + backend + main-control | `WORKPLAN` `OW-922` | improves shortlist fit and next-step explanation on `/search` and trainer profile surfaces while keeping deterministic ranking, route truth, contact behaviour, and back-link restoration canonical |
 | OW-923 | Owner Low-Touch Guidance | Harden owner workflow supervision truth and ceiling visibility | completed | backend + main-control | `WORKPLAN` `OW-923` | makes owner workflow ceiling, kill-switch guidance, and shadow-versus-visible owner output clearer on `/admin/ai-health` without implying or enabling live owner automation |
 | OW-924 | Confirmed Owner Action Automation | Add explicit owner-approved search refinement suggestions | completed | frontend + backend + main-control | `WORKPLAN` `OW-924` | `/search` surfaces bounded search-refinement suggestions that explain what will change and require explicit owner confirmation before any refinement is applied |
-| OW-925 | Confirmed Owner Action Automation | Add owner enquiry draft and question-builder support | in_progress | frontend + backend + main-control | `WORKPLAN` `OW-925` | `/trainers/[id]` can prepare an editable owner enquiry draft and suggested questions without sending anything automatically |
-| OW-926 | Confirmed Owner Action Automation | Add bounded shortlist comparison and next-best-action support | pending | frontend + backend + main-control | `WORKPLAN` `OW-926` | owners can compare shortlisted trainers with bounded fit-gap guidance that clarifies the next safe action without changing ranking or contact flow |
+| OW-925 | Confirmed Owner Action Automation | Add owner enquiry draft and question-builder support | completed | frontend + backend + main-control | `WORKPLAN` `OW-925` | `/trainers/[id]` can prepare an editable owner enquiry draft and suggested questions without sending anything automatically |
+| OW-926 | Confirmed Owner Action Automation | Add bounded shortlist comparison and next-best-action support | in_progress | frontend + backend + main-control | `WORKPLAN` `OW-926` | owners can compare shortlisted trainers with bounded fit-gap guidance that clarifies the next safe action without changing ranking or contact flow |
 | OW-927 | Confirmed Owner Action Automation | Add the owner workflow control substrate for bounded future live-readiness | pending | backend + main-control | `WORKPLAN` `OW-927` | owner-workflow supervision truth, kill-switch visibility, and dedicated future live-readiness substrate are explicit before any later owner-facing live proposal |
 
 ## Current status
@@ -122,7 +122,8 @@
 - `OW-923` is now complete: `/admin/ai-health` now makes the owner workflow ceiling, kill-switch guidance, and shadow-versus-visible triage output explicit without implying live owner automation or changing owner-facing behaviour.
 - Phase 16 - Confirmed Owner Action Automation is now open for the current planned slice.
 - `OW-924` is now complete: `/search` surfaces explicit owner-approved refinement suggestions that explain what will change before anything is applied.
-- `OW-925` is now the active priority: `/trainers/[id]` should prepare owner enquiry drafts and question checklists without any automatic send path.
+- `OW-925` is now complete: `/trainers/[id]` prepares editable owner enquiry drafts and question checklists without any automatic send path.
+- `OW-926` is now the active priority: shortlisted trainers should gain bounded comparison guidance that clarifies whether to contact now, keep comparing, or refine first.
 - `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildOwnerEnquiryDraftGuidance,
   buildOwnerSearchExplanation,
   buildOwnerSearchRefinementSuggestions,
   buildTrainerFitGuidance,
@@ -108,6 +109,33 @@ describe('owner guidance helpers', () => {
     ])
     expect(suggestions[0]?.patch.distance).toBe('5-15')
     expect(suggestions[1]?.patch.verifiedOnly).toBe(true)
+  })
+
+  it('builds an editable enquiry draft and suggested questions from deterministic context', () => {
+    const params = new URLSearchParams({
+      q: 'lead pulling',
+      suburbName: 'Carlton',
+      service_type: 'private_training',
+      behavior_issues: 'pulling_on_lead'
+    })
+
+    const context = getOwnerSearchContext(params)
+    const guidance = buildOwnerEnquiryDraftGuidance(context, {
+      trainerName: 'Calm Dogs',
+      trainerSuburb: 'Carlton',
+      pricing: null
+    })
+
+    expect(guidance.draftMessage).toContain('Hi Calm Dogs,')
+    expect(guidance.draftMessage).toContain('in or near Carlton')
+    expect(guidance.draftMessage).toContain('private training')
+    expect(guidance.draftMessage).toContain('"lead pulling"')
+    expect(guidance.suggestedQuestions).toContain(
+      'Have you worked with dogs needing help with "lead pulling"?'
+    )
+    expect(guidance.suggestedQuestions).toContain(
+      'What does the first session cost, and what is included?'
+    )
   })
 
   it('keeps trainer profile search params truthfully restorable for location-filtered shortlists', () => {
