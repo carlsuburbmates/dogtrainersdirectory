@@ -84,101 +84,126 @@ const baseResolution = {
   updatedAt: null
 }
 
+function buildRuntimeResolutions() {
+  return [
+    {
+      ...baseResolution,
+      workflow: 'triage',
+      label: 'Emergency Triage',
+      actorClass: 'owner',
+      overrideEnvVar: 'TRIAGE_AI_MODE',
+      usesLlm: true,
+      auditStorage: 'emergency_triage_logs',
+      evidenceMode: 'request_driven'
+    },
+    {
+      ...baseResolution,
+      workflow: 'moderation',
+      label: 'Review Moderation',
+      actorClass: 'operator',
+      overrideEnvVar: 'MODERATION_AI_MODE',
+      auditStorage: 'ai_review_decisions'
+    },
+    {
+      ...baseResolution,
+      workflow: 'verification',
+      label: 'Resource Verification',
+      actorClass: 'operator',
+      overrideEnvVar: 'VERIFICATION_AI_MODE',
+      usesLlm: true,
+      auditStorage: 'emergency_resource_verification_events'
+    },
+    {
+      ...baseResolution,
+      workflow: 'ops_digest',
+      label: 'Ops Digest',
+      actorClass: 'operator',
+      overrideEnvVar: 'DIGEST_AI_MODE',
+      usesLlm: true,
+      controlledLiveCandidate: true,
+      auditStorage: 'daily_ops_digests'
+    },
+    {
+      ...baseResolution,
+      workflow: 'onboarding',
+      label: 'Business Onboarding',
+      actorClass: 'business',
+      maxMode: 'shadow',
+      evidenceMode: 'request_driven',
+      controlledLiveCandidate: false,
+      shadowCapped: true,
+      liveCapable: false,
+      liveCapableButShadowed: false,
+      implicitRolloutState: 'shadow_only',
+      rolloutState: 'shadow_only',
+      rolloutStateSource: 'implicit_default'
+    },
+    {
+      ...baseResolution,
+      workflow: 'business_listing_quality',
+      label: 'Business Listing Quality',
+      actorClass: 'business',
+      maxMode: 'shadow',
+      evidenceMode: 'request_driven',
+      controlledLiveCandidate: false,
+      shadowCapped: true,
+      liveCapable: false,
+      liveCapableButShadowed: false,
+      implicitRolloutState: 'shadow_only',
+      rolloutState: 'shadow_only',
+      rolloutStateSource: 'implicit_default'
+    },
+    {
+      ...baseResolution,
+      workflow: 'scaffold_review_guidance',
+      label: 'Scaffold Review Guidance',
+      actorClass: 'operator',
+      maxMode: 'shadow',
+      evidenceMode: 'request_driven',
+      controlledLiveCandidate: false,
+      shadowCapped: true,
+      liveCapable: false,
+      liveCapableButShadowed: false,
+      implicitRolloutState: 'shadow_only',
+      rolloutState: 'shadow_only',
+      rolloutStateSource: 'implicit_default'
+    }
+  ]
+}
+
 describe('/admin/ai-health rollout truthfulness', () => {
   it('shows registry-unavailable state instead of presenting it as an ordinary implicit shadow', async () => {
-    mocks.getAiAutomationRuntimeResolutions.mockResolvedValue([
-      {
-        ...baseResolution,
-        workflow: 'triage',
-        label: 'Emergency Triage',
-        actorClass: 'owner',
-        overrideEnvVar: 'TRIAGE_AI_MODE',
-        usesLlm: true,
-        auditStorage: 'emergency_triage_logs',
-        evidenceMode: 'request_driven'
-      },
-      {
-        ...baseResolution,
-        workflow: 'moderation',
-        label: 'Review Moderation',
-        actorClass: 'operator',
-        overrideEnvVar: 'MODERATION_AI_MODE',
-        auditStorage: 'ai_review_decisions'
-      },
-      {
-        ...baseResolution,
-        workflow: 'verification',
-        label: 'Resource Verification',
-        actorClass: 'operator',
-        overrideEnvVar: 'VERIFICATION_AI_MODE',
-        usesLlm: true,
-        auditStorage: 'emergency_resource_verification_events'
-      },
-      {
-        ...baseResolution,
-        workflow: 'ops_digest',
-        label: 'Ops Digest',
-        actorClass: 'operator',
-        overrideEnvVar: 'DIGEST_AI_MODE',
-        usesLlm: true,
-        controlledLiveCandidate: true,
-        auditStorage: 'daily_ops_digests',
-        rolloutRegistryStatus: 'read_failed',
-        rolloutRegistryNote:
-          'The rollout registry could not be read. Showing the implicit fallback state only until registry access is restored.',
-        rolloutStateSource: 'registry_unavailable'
-      },
-      {
-        ...baseResolution,
-        workflow: 'onboarding',
-        label: 'Business Onboarding',
-        actorClass: 'business',
-        maxMode: 'shadow',
-        evidenceMode: 'request_driven',
-        controlledLiveCandidate: false,
-        shadowCapped: true,
-        liveCapable: false,
-        liveCapableButShadowed: false,
-        implicitRolloutState: 'shadow_only',
-        rolloutState: 'shadow_only',
-        rolloutStateSource: 'implicit_default'
-      },
-      {
-        ...baseResolution,
-        workflow: 'business_listing_quality',
-        label: 'Business Listing Quality',
-        actorClass: 'business',
-        maxMode: 'shadow',
-        evidenceMode: 'request_driven',
-        controlledLiveCandidate: false,
-        shadowCapped: true,
-        liveCapable: false,
-        liveCapableButShadowed: false,
-        implicitRolloutState: 'shadow_only',
-        rolloutState: 'shadow_only',
-        rolloutStateSource: 'implicit_default'
-      },
-      {
-        ...baseResolution,
-        workflow: 'scaffold_review_guidance',
-        label: 'Scaffold Review Guidance',
-        actorClass: 'operator',
-        maxMode: 'shadow',
-        evidenceMode: 'request_driven',
-        controlledLiveCandidate: false,
-        shadowCapped: true,
-        liveCapable: false,
-        liveCapableButShadowed: false,
-        implicitRolloutState: 'shadow_only',
-        rolloutState: 'shadow_only',
-        rolloutStateSource: 'implicit_default'
-      }
-    ])
+    mocks.getAiAutomationRuntimeResolutions.mockResolvedValue(
+      buildRuntimeResolutions().map((resolution) =>
+        resolution.workflow === 'ops_digest'
+          ? {
+              ...resolution,
+              rolloutRegistryStatus: 'read_failed',
+              rolloutRegistryNote:
+                'The rollout registry could not be read. Showing the implicit fallback state only until registry access is restored.',
+              rolloutStateSource: 'registry_unavailable'
+            }
+          : resolution
+      )
+    )
 
     const element = await AIHealthPage()
     const html = renderToStaticMarkup(element)
 
     expect(html).toContain('Registry unavailable')
     expect(html).toContain('implicit fallback state only')
+  })
+
+  it('makes the owner workflow ceiling and rollback guidance explicit for triage', async () => {
+    mocks.getAiAutomationRuntimeResolutions.mockResolvedValue(buildRuntimeResolutions())
+
+    const element = await AIHealthPage()
+    const html = renderToStaticMarkup(element)
+
+    expect(html).toContain('Owner workflow truth')
+    expect(html).toContain('Under the current owner ceiling, visible owner behaviour stays deterministic.')
+    expect(html).toContain('Shadow emergency-triage traces and triage-to-search advisory traces stay audit-only here.')
+    expect(html).toContain('set TRIAGE_AI_MODE=disabled or AI_GLOBAL_MODE=disabled')
+    expect(html).toContain('Shadow triage guidance does not become owner-visible live automation here.')
   })
 })

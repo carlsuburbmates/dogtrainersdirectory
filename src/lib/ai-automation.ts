@@ -514,6 +514,14 @@ export function getAiAutomationOperatorControl(
   workflow: AiAutomationWorkflow
 ): AiAutomationOperatorControl | null {
   switch (workflow) {
+    case 'triage':
+      return {
+        outputLabel: 'Audit-only shadow guidance',
+        approvalBoundaryLabel:
+          'Under the current owner ceiling, visible owner behaviour stays deterministic. Shadow triage guidance does not become owner-visible live automation here.',
+        rollbackLabel:
+          'Pause or disable from /admin/ai-health, or set TRIAGE_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Emergency triage shadow traces and triage-to-search advisory traces remain audit-only until canon explicitly allows otherwise.'
+      }
     case 'moderation':
       return {
         outputLabel: 'Draft recommendation',

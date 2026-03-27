@@ -686,6 +686,18 @@ export default async function AIHealthPage() {
                   </div>
                 </div>
 
+                {card.workflow === 'triage' ? (
+                  <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+                    <div className="font-semibold text-gray-950">Owner workflow truth</div>
+                    <p className="mt-2">
+                      Under the current owner ceiling, visible owner behaviour stays deterministic. Emergency triage classifications and triage-to-search handoff shown to owners do not come from shadow advisory traces.
+                    </p>
+                    <p className="mt-2 text-gray-600">
+                      Shadow emergency-triage traces and triage-to-search advisory traces stay audit-only here. Use the shadow counts and note above for review evidence, not as proof of owner-visible live behaviour.
+                    </p>
+                  </div>
+                ) : null}
+
                 <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
                   <div className="font-semibold text-gray-950">Rollback and operator boundary</div>
                   <p className="mt-2">{operatorControl?.approvalBoundaryLabel}</p>

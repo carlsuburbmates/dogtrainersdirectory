@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Owner:** Main control chat session  
-**Last Updated:** 2026-03-17
+**Last Updated:** 2026-03-27
 
 ## Board rules
 - This file tracks session execution against `DOCS/SSOT/WORKPLAN.md`; it is not a second product backlog.
@@ -100,7 +100,7 @@
 | AO-914 | Operator Burden Reduction | Re-align admin to exceptions-first and reduce dashboard noise | completed | backend + frontend + main-control | `WORKPLAN` `AO-914` | reorders `/admin` around one exceptions-first weekly action strip, removes duplicated moderation content from the landing page, and demotes lower-priority diagnostics without widening protected state changes |
 | OW-921 | Owner Low-Touch Guidance | Complete deterministic what-happens-next triage-to-search framing without changing ranking | completed | frontend + backend + main-control | `WORKPLAN` `OW-921` | adds a truthful triage-to-search handoff preview plus search-step explanatory copy that clarifies the shortlist origin without changing route truth, ranking, emergency escalation, or owner confirmation boundaries |
 | OW-922 | Owner Low-Touch Guidance | Add deterministic search and trainer-fit explanation without changing ranking | completed | frontend + backend + main-control | `WORKPLAN` `OW-922` | improves shortlist fit and next-step explanation on `/search` and trainer profile surfaces while keeping deterministic ranking, route truth, contact behaviour, and back-link restoration canonical |
-| OW-923 | Owner Low-Touch Guidance | Harden owner workflow supervision truth and ceiling visibility | in_progress | backend + main-control | `WORKPLAN` `OW-923` | makes owner workflow ceiling, kill-switch guidance, and shadow-versus-visible owner output clearer on `/admin/ai-health` without implying or enabling live owner automation |
+| OW-923 | Owner Low-Touch Guidance | Harden owner workflow supervision truth and ceiling visibility | completed | backend + main-control | `WORKPLAN` `OW-923` | makes owner workflow ceiling, kill-switch guidance, and shadow-versus-visible owner output clearer on `/admin/ai-health` without implying or enabling live owner automation |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -114,13 +114,13 @@
 - Supervised Automation Operations is complete for the current planned slice.
 - Controlled Live Proof And Burden Baseline is complete for the current planned slice.
 - Phase 14 - Operator Burden Reduction is complete for the current planned slice.
-- Phase 15 - Owner Low-Touch Guidance is now open as the next governed delivery slice.
-- `OW-922` is now complete: `/search` and `/trainers/[id]` now explain shortlist fit and next-step checks using deterministic context only, while the trainer-profile back-link preserves truthful restoration of location-filtered shortlists.
+- Phase 15 - Owner Low-Touch Guidance is complete for the current planned slice.
+- `OW-923` is now complete: `/admin/ai-health` now makes the owner workflow ceiling, kill-switch guidance, and shadow-versus-visible triage output explicit without implying live owner automation or changing owner-facing behaviour.
+- The roadmap now returns to awaiting prioritisation.
 - `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.
 - Phase 7 non-goals are locked: no new routes, no API/schema changes, no monetisation-model changes, no SEO scope expansion.
-- Current active priority: `OW-923`.
 
 ## Recently completed sync cycle (archived)
 - `S-200`: frontend callers aligned to backend contracts
