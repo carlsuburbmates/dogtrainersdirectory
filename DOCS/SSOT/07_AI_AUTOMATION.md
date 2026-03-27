@@ -30,7 +30,9 @@ Owner-facing automation is in scope when it helps a dog owner decide what to do 
 - emergency and behaviour triage guidance on `/triage` and `/emergency`
 - triage-to-search handoff support, including issue framing and suggested next-step context
 - search and trainer-profile interpretation support, where DTD explains fit, gaps, or next-step considerations
-- optional draft assistance for owner-written requests or enquiries, if a future route supports it
+- owner-approved shortlist refinement suggestions on `/search`
+- owner-visible shortlist comparison and next-best-action support on `/search`
+- owner-visible draft assistance for enquiries or questions on the existing trainer contact surface, while send-like actions remain explicitly owner-confirmed
 
 Owner-facing automation must remain subordinate to DTD's existing safety-first public journey:
 - urgent flows still prioritise `/emergency` resources and explicit escalation paths
@@ -170,6 +172,7 @@ Per-workflow overrides take precedence over `AI_GLOBAL_MODE`.
 
 Current canonical overrides already present in deployment SSOT:
 - `TRIAGE_AI_MODE`
+- `OWNER_ACTION_AI_MODE`
 - `MODERATION_AI_MODE`
 - `DIGEST_AI_MODE`
 - `VERIFICATION_AI_MODE`
@@ -298,6 +301,7 @@ These families define the intended DTD programme surface. They are not all live 
 | Emergency and behaviour triage guidance | Dog owner | advisory -> assistive | partially implemented family | must preserve `/emergency` escalation and owner confirmation |
 | Triage-to-search handoff guidance | Dog owner | advisory | defined for rollout | may explain or suggest, but must not silently rewrite search intent |
 | Search and trainer-fit explanation | Dog owner | advisory | defined for rollout | cannot change ranking or contact a trainer |
+| Owner action guidance | Dog owner | advisory -> assistive | defined for rollout | may suggest refinements, shortlist comparisons, or enquiry drafts, but search-changing or send-like actions still require explicit owner confirmation and the family remains capped below `live` until canon widens it |
 | Onboarding completion guidance | Business | assistive | defined for rollout | no auto-submit or public publish |
 | Listing-quality and trust-signal guidance | Business | assistive | partially implemented family | must bind to the authenticated `/account/business/**` business profile-management surface, currently through the deterministic business-owned profile save path with shadow-only audit traces; not `/onboarding`, `/promote`, or `/admin/**` |
 | Promotion-support guidance | Business | advisory | defined for rollout | no checkout initiation or featured/spotlight state change |

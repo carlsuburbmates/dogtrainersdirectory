@@ -45,6 +45,19 @@ describe('ai automation substrate', () => {
     expect(resolution.usesGlobalDefault).toBe(true)
   })
 
+  it('clamps owner action guidance to shadow even when the dedicated override requests live', () => {
+    const resolution = resolveAiAutomationMode('owner_action_guidance', env({
+      AI_GLOBAL_MODE: 'live',
+      OWNER_ACTION_AI_MODE: 'live'
+    }))
+
+    expect(resolution.overrideMode).toBe('live')
+    expect(resolution.overrideEnvVar).toBe('OWNER_ACTION_AI_MODE')
+    expect(resolution.effectiveMode).toBe('shadow')
+    expect(resolution.actorClass).toBe('owner')
+    expect(resolution.auditStorage).toBeNull()
+  })
+
   it('clamps business listing quality guidance to shadow even when the global mode is live', () => {
     const resolution = resolveAiAutomationMode('business_listing_quality', env({
       AI_GLOBAL_MODE: 'live'
@@ -103,6 +116,7 @@ describe('ai automation substrate', () => {
 
   it('uses shadow_only as the implicit rollout state for canonically shadow-capped workflows', () => {
     expect(getImplicitAiAutomationRolloutState('onboarding')).toBe('shadow_only')
+    expect(getImplicitAiAutomationRolloutState('owner_action_guidance')).toBe('shadow_only')
     expect(getImplicitAiAutomationRolloutState('business_listing_quality')).toBe('shadow_only')
   })
 

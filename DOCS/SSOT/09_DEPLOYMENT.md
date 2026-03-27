@@ -43,6 +43,7 @@ From `package.json` and CI:
 - `AI_GLOBAL_MODE` (server + admin UI)
 - `DIGEST_AI_MODE` (server + admin UI)
 - `MODERATION_AI_MODE` (server + admin UI)
+- `OWNER_ACTION_AI_MODE` (server + admin UI; dedicated owner-action ceiling, currently shadow-capped)
 - `TRIAGE_AI_MODE` (server + admin UI)
 - `VERIFICATION_AI_MODE` (server + admin UI)
 

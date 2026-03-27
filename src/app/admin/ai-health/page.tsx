@@ -163,7 +163,7 @@ function buildReadiness(
     return {
       label: 'Shadow-capped by canon',
       tone: 'neutral',
-      note: 'This workflow cannot move beyond shadow in Phase 12.',
+      note: 'This workflow cannot move beyond shadow under the current canon.',
       observed: 0,
       required: 0
     }
@@ -418,6 +418,21 @@ async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
               : 'Need at least 25 recent shadow traces before triage can be reviewed for any future live change.'
         }
       : null),
+    buildCard('owner_action_guidance', 'Owner Action Guidance', {
+      counts: {
+        aiDecisions: 0,
+        deterministicDecisions: 0,
+        manualOverrides: 0
+      },
+      shadowTraceCount: 0,
+      errors24h: 0,
+      lastTrace: null,
+      note:
+        'Current /search refinements, shortlist comparison guidance, and enquiry drafts are deterministic owner-visible helpers. Audit-backed owner action AI is not wired on this surface yet.',
+      auditConnected: false,
+      readinessNote:
+        'The dedicated owner-action override now exists, but this family remains capped below live until canon explicitly widens it and audit traces are wired.'
+    }),
     buildCard('moderation', 'Review Moderation', moderationSummary
       ? {
           counts: moderationSummary.counts,
@@ -536,7 +551,7 @@ export default async function AIHealthPage() {
           <div className="rounded-lg border border-gray-200 p-4">
             <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Shadow-capped</div>
             <div className="mt-2 text-2xl font-semibold text-gray-950">{summaryCounts.shadowCapped}</div>
-            <p className="mt-1 text-sm text-gray-600">Canon keeps these workflows below live in Phase 12.</p>
+            <p className="mt-1 text-sm text-gray-600">Canon keeps these workflows below live under the current workflow ceilings.</p>
           </div>
           <div className="rounded-lg border border-gray-200 p-4">
             <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Ready for review</div>
@@ -694,6 +709,18 @@ export default async function AIHealthPage() {
                     </p>
                     <p className="mt-2 text-gray-600">
                       Shadow emergency-triage traces and triage-to-search advisory traces stay audit-only here. Use the shadow counts and note above for review evidence, not as proof of owner-visible live behaviour.
+                    </p>
+                  </div>
+                ) : null}
+
+                {card.workflow === 'owner_action_guidance' ? (
+                  <div className="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
+                    <div className="font-semibold text-gray-950">Owner action workflow truth</div>
+                    <p className="mt-2">
+                      Visible refinement suggestions, shortlist comparison guidance, and enquiry drafts on /search and /trainers/[id] currently come from deterministic product logic. They are not proof of live owner-action AI.
+                    </p>
+                    <p className="mt-2 text-gray-600">
+                      This card is the supervision ceiling for any future audit-backed owner action guidance. Search-changing refinements and send-like actions still require explicit owner confirmation.
                     </p>
                   </div>
                 ) : null}

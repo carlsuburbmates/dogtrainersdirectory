@@ -104,7 +104,7 @@
 | OW-924 | Confirmed Owner Action Automation | Add explicit owner-approved search refinement suggestions | completed | frontend + backend + main-control | `WORKPLAN` `OW-924` | `/search` surfaces bounded search-refinement suggestions that explain what will change and require explicit owner confirmation before any refinement is applied |
 | OW-925 | Confirmed Owner Action Automation | Add owner enquiry draft and question-builder support | completed | frontend + backend + main-control | `WORKPLAN` `OW-925` | `/trainers/[id]` can prepare an editable owner enquiry draft and suggested questions without sending anything automatically |
 | OW-926 | Confirmed Owner Action Automation | Add bounded shortlist comparison and next-best-action support | completed | frontend + backend + main-control | `WORKPLAN` `OW-926` | owners can compare shortlisted trainers with bounded fit-gap guidance that clarifies the next safe action without changing ranking or contact flow |
-| OW-927 | Confirmed Owner Action Automation | Add the owner workflow control substrate for bounded future live-readiness | in_progress | backend + main-control | `WORKPLAN` `OW-927` | owner-workflow supervision truth, kill-switch visibility, and dedicated future live-readiness substrate are explicit before any later owner-facing live proposal |
+| OW-927 | Confirmed Owner Action Automation | Add the owner workflow control substrate for bounded future live-readiness | completed | backend + main-control | `WORKPLAN` `OW-927` | owner-workflow supervision truth, kill-switch visibility, and dedicated future live-readiness substrate are explicit before any later owner-facing live proposal |
 
 ## Current status
 - `AUD-001` reopened Product Completion Recovery from verified audit findings.
@@ -124,8 +124,10 @@
 - `OW-924` is now complete: `/search` surfaces explicit owner-approved refinement suggestions that explain what will change before anything is applied.
 - `OW-925` is now complete: `/trainers/[id]` prepares editable owner enquiry drafts and question checklists without any automatic send path.
 - `OW-926` is now complete: `/search` adds bounded shortlist comparison guidance that clarifies whether to contact now, keep comparing, or refine first.
-- `OW-927` is now the active priority: owner-workflow future live-readiness boundaries and ai-health truth should be made explicit before any later owner-live proposal.
-- Phase 16 now continues under tighter single-writer control after main-control corrected a premature implementation-lane sync and re-audited the landed owner-workflow slice.
+- `OW-927` is now complete: owner-action workflow future live-readiness boundaries, dedicated override, and ai-health truth are now explicit without implying current live owner automation.
+- Phase 16 is complete for the current planned slice.
+- The roadmap returns to awaiting prioritisation.
+- Phase 16 closed under tighter single-writer control after main-control corrected the earlier premature implementation-lane sync and accepted the owner-workflow control substrate directly.
 - `AS-801` to `AS-805` are complete for the current Phase 12 control-plane slice.
 - `DOCS/SSOT/12_DESIGN_SYSTEM.md` governs the public UX tasks in this slice; it is not a separate implementation task.
 - `DS-301` is an enforcement gate; `DS-302` to `DS-305` must not start until `DS-301` is accepted.

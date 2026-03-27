@@ -2,6 +2,7 @@ import type { DecisionMode, DecisionSource } from './ai-types'
 
 export type AiAutomationWorkflow =
   | 'triage'
+  | 'owner_action_guidance'
   | 'moderation'
   | 'verification'
   | 'ops_digest'
@@ -75,7 +76,11 @@ type WorkflowConfig = {
   actorClass: AiAutomationActorClass
   overrideEnvVar: keyof Pick<
     NodeJS.ProcessEnv,
-    'TRIAGE_AI_MODE' | 'MODERATION_AI_MODE' | 'VERIFICATION_AI_MODE' | 'DIGEST_AI_MODE'
+    | 'TRIAGE_AI_MODE'
+    | 'OWNER_ACTION_AI_MODE'
+    | 'MODERATION_AI_MODE'
+    | 'VERIFICATION_AI_MODE'
+    | 'DIGEST_AI_MODE'
   > | null
   usesLlm: boolean
   auditStorage: string | null
@@ -88,6 +93,7 @@ const DEFAULT_MODE: DecisionMode = 'live'
 
 const AI_AUTOMATION_WORKFLOWS: AiAutomationWorkflow[] = [
   'triage',
+  'owner_action_guidance',
   'moderation',
   'verification',
   'ops_digest',
@@ -113,6 +119,16 @@ const WORKFLOW_CONFIG: Record<AiAutomationWorkflow, WorkflowConfig> = {
     usesLlm: true,
     auditStorage: 'emergency_triage_logs',
     maxMode: 'live',
+    evidenceMode: 'request_driven',
+    controlledLiveCandidate: false
+  },
+  owner_action_guidance: {
+    label: 'Owner Action Guidance',
+    actorClass: 'owner',
+    overrideEnvVar: 'OWNER_ACTION_AI_MODE',
+    usesLlm: true,
+    auditStorage: null,
+    maxMode: 'shadow',
     evidenceMode: 'request_driven',
     controlledLiveCandidate: false
   },
@@ -521,6 +537,14 @@ export function getAiAutomationOperatorControl(
           'Under the current owner ceiling, visible owner behaviour stays deterministic. Shadow triage guidance does not become owner-visible live automation here.',
         rollbackLabel:
           'Pause or disable from /admin/ai-health, or set TRIAGE_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Emergency triage shadow traces and triage-to-search advisory traces remain audit-only until canon explicitly allows otherwise.'
+      }
+    case 'owner_action_guidance':
+      return {
+        outputLabel: 'Deterministic visible guidance',
+        approvalBoundaryLabel:
+          'Search refinements, shortlist comparison guidance, and enquiry drafts may prepare the next step, but any search-changing or send-like action still requires explicit owner confirmation.',
+        rollbackLabel:
+          'Set OWNER_ACTION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled to keep any future audit-backed owner action AI shadowed or off. Current visible guidance on /search and /trainers/[id] remains deterministic until canon explicitly widens it.'
       }
     case 'moderation':
       return {

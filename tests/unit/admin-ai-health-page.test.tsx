@@ -98,6 +98,26 @@ function buildRuntimeResolutions() {
     },
     {
       ...baseResolution,
+      workflow: 'owner_action_guidance',
+      label: 'Owner Action Guidance',
+      actorClass: 'owner',
+      effectiveMode: 'shadow',
+      overrideEnvVar: 'OWNER_ACTION_AI_MODE',
+      usesLlm: true,
+      auditStorage: null,
+      maxMode: 'shadow',
+      evidenceMode: 'request_driven',
+      controlledLiveCandidate: false,
+      shadowCapped: true,
+      liveCapable: false,
+      liveCapableButShadowed: false,
+      implicitRolloutState: 'shadow_only',
+      rolloutState: 'shadow_only',
+      rolloutStateSource: 'implicit_default',
+      finalRuntimeMode: 'shadow'
+    },
+    {
+      ...baseResolution,
       workflow: 'moderation',
       label: 'Review Moderation',
       actorClass: 'operator',
@@ -205,5 +225,19 @@ describe('/admin/ai-health rollout truthfulness', () => {
     expect(html).toContain('Shadow emergency-triage traces and triage-to-search advisory traces stay audit-only here.')
     expect(html).toContain('set TRIAGE_AI_MODE=disabled or AI_GLOBAL_MODE=disabled')
     expect(html).toContain('Shadow triage guidance does not become owner-visible live automation here.')
+  })
+
+  it('makes owner action guidance truth and ceiling explicit without implying live automation', async () => {
+    mocks.getAiAutomationRuntimeResolutions.mockResolvedValue(buildRuntimeResolutions())
+
+    const element = await AIHealthPage()
+    const html = renderToStaticMarkup(element)
+
+    expect(html).toContain('Owner Action Guidance')
+    expect(html).toContain('Current /search refinements, shortlist comparison guidance, and enquiry drafts are deterministic owner-visible helpers.')
+    expect(html).toContain('Owner action workflow truth')
+    expect(html).toContain('They are not proof of live owner-action AI.')
+    expect(html).toContain('Search-changing refinements and send-like actions still require explicit owner confirmation.')
+    expect(html).toContain('Set OWNER_ACTION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled')
   })
 })
