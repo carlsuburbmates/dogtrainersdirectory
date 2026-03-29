@@ -1,8 +1,8 @@
 # Ops Runbook — Post-launch Operations (Reality)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.4
-**Last Updated:** 2026-03-28
+**Version:** v1.5
+**Last Updated:** 2026-03-29
 
 ## 1. Operating model (canonical)
 Ops is **pull-based**:
@@ -281,6 +281,49 @@ Canonical alert posture:
 - Remote apply helper (ops-only): `scripts/try_remote_apply.sh` (prefer CI or Supabase dashboard).
 - Data import validator: `npm run validate-import` (checks `supabase/schema.sql` and `supabase/data-import.sql`).
 - Suburb/council source data lives in `data/suburbs_councils_mapping.csv` (regenerate from SQL via `npm run data:refresh`).
+
+### 8.1 Database alignment policy for AI agents (canonical)
+When an AI agent handles database-related work, the default objective is:
+- **schema parity**
+- **controlled verification-fixture parity**
+
+It is **not** full bidirectional local/remote data sync.
+
+Canonical database-handling rules:
+- Remote dev/staging is the operational source of truth for daily development and verification.
+- `supabase/migrations/` remains the schema source of truth.
+- `supabase/schema.sql` remains a derived snapshot used to bootstrap or rebuild disposable local databases.
+- Local databases are disposable rebuild targets, not long-lived sources of operational truth.
+- AI agents must not perform broad local-to-remote or remote-to-local data mirroring unless an operator explicitly requests it.
+- AI agents must not replay large imports or broad seed files into hosted environments unless that write scope is explicitly approved.
+
+Tables and records that must **not** be treated as routine sync targets include:
+- automation/control-plane tables
+- moderation recommendations and AI review traces
+- digest evidence rows
+- telemetry, latency, alert, and error logs
+- emergency triage logs
+- webhook, billing, and monetisation event history
+- arbitrary live business or user content outside the controlled verification fixture set
+
+### 8.2 Required clean sequence for DB work
+When database parity is needed for engineering or verification, the clean order is:
+1. apply explicit migrations to the remote dev/staging database
+2. refresh `supabase/schema.sql` from the remote database
+3. rebuild the local database from the refreshed schema snapshot
+4. apply only the narrow controlled fixture set required for verification
+5. verify routes, RPCs, and browser flows against that rebuilt baseline
+
+Do **not** invert that order by treating a local database as the authority for hosted environments.
+
+### 8.3 Encryption and fixture portability
+Encrypted contact and other protected fields depend on `SUPABASE_PGCRYPTO_KEY`.
+
+Therefore:
+- ciphertext is environment-bound unless the same key is intentionally shared
+- AI agents must not assume encrypted fixture values are portable across local and hosted environments
+- if controlled verification fixtures need to exist in multiple environments, they must be encrypted or re-encrypted using the target environment's active key
+- a decryption failure such as `Wrong key or corrupt data` should be treated as an environment/key or fixture-state mismatch first, not as automatic proof of an application regression
 
 ## 9. Local DB helpers (optional)
 - `npm run db:start` — start local Postgres and apply migrations.

@@ -1,8 +1,8 @@
 # Deployment - Vercel, Cron, Environments
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.3
-**Last Updated:** 2026-03-17
+**Version:** v1.4
+**Last Updated:** 2026-03-29
 
 ## 1. Hosting
 - Deploy on Vercel using Next.js build.
@@ -38,6 +38,12 @@ From `package.json` and CI:
 - `SUPABASE_PGCRYPTO_KEY` (server)
 - `SUPABASE_SERVICE_ROLE_KEY` (server + edge functions)
 - `SUPABASE_URL` (server + edge functions)
+
+**Canonical DB environment rule:**
+- hosted dev/staging remains the operational DB source of truth
+- local DB instances are disposable rebuild targets created from the refreshed `supabase/schema.sql` snapshot
+- agents must prefer migration-driven schema alignment plus narrow controlled fixture parity over broad local/remote data sync
+- encrypted fixture data is only portable when the destination environment uses the matching `SUPABASE_PGCRYPTO_KEY`
 
 ### 4.3 AI modes
 - `AI_GLOBAL_MODE` (server + admin UI)
