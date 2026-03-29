@@ -1,18 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  from: vi.fn(),
-  moderatePendingReviews: vi.fn()
+  from: vi.fn()
 }))
 
 vi.mock('@/lib/supabase', () => ({
   supabaseAdmin: {
     from: mocks.from
   }
-}))
-
-vi.mock('@/lib/moderation', () => ({
-  moderatePendingReviews: mocks.moderatePendingReviews
 }))
 
 import { GET } from '@/app/api/admin/queues/route'
@@ -122,8 +117,6 @@ function createVerificationEventsQuery(rows: unknown[]) {
 describe('/api/admin/queues verification + ABN loop', () => {
   beforeEach(() => {
     mocks.from.mockReset()
-    mocks.moderatePendingReviews.mockReset()
-    mocks.moderatePendingReviews.mockResolvedValue(undefined)
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role'
     process.env.OPENAI_API_KEY = 'test-openai-key'
   })

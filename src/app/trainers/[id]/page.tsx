@@ -793,7 +793,6 @@ export default async function TrainerPage({
               <Divider className="mt-5" />
               <div className="pt-5">
                 <ContactForm
-                  trainerId={id}
                   trainerName={trainer.business_name}
                   trainerEmail={trainer.email}
                   draftMessage={enquiryGuidance.draftMessage}

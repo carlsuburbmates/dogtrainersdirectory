@@ -324,10 +324,10 @@ export default function AdminQueuesPage() {
                 resolveHref="#scaffolded"
                 resolveLabel="Jump to queue"
                 title="Scaffolded Listings"
-                description="Use the recorded scaffold-review guidance at the point of decision. Guidance is assistive only; final approval or rejection still requires an explicit operator action."
+                description="Use the recorded scaffold-review guidance at the point of decision. Guidance is assistive only; final approval or rejection still requires an explicit operator action, and approval may also trigger the standard owner email when delivery is configured."
                 summary={
                   scaffolded.length > 0
-                    ? `Start with the listings that still look incomplete or placeholder-like, then clear the remainder. Shadow guidance stays visible here, but it does not change publication or verification state by itself.`
+                    ? `Start with the listings that still look incomplete or placeholder-like, then clear the remainder. Shadow guidance stays visible here, but it does not change publication or verification state by itself. Approving a listing also attempts the standard owner email when outbound delivery is configured.`
                     : undefined
                 }
                 items={scaffolded.map((item) => ({
@@ -337,9 +337,15 @@ export default function AdminQueuesPage() {
                   body: item.bio || 'Scaffolded listing with limited source content.',
                   kindLabel: item.guidance_source === 'shadow_trace' ? 'Shadow guidance' : undefined,
                   advisoryNote:
-                    item.guidance_source === 'shadow_trace'
-                      ? 'Shadow guidance only. Approval or rejection still requires your explicit operator action.'
-                      : undefined,
+                    [
+                      item.guidance_source === 'shadow_trace'
+                        ? 'Shadow guidance only.'
+                        : null,
+                      'Approval or rejection still requires your explicit operator action.',
+                      'Approving also attempts the standard owner email when outbound delivery is configured.'
+                    ]
+                      .filter(Boolean)
+                      .join(' '),
                   checks: item.guidance_checks,
                   nextAction:
                     item.next_action ||

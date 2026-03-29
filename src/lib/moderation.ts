@@ -65,6 +65,17 @@ type ModeratePendingReviewsOptions = {
 
 const MODERATION_PROMPT_VERSION = 'moderation-rules-v1'
 
+function buildEmptyModerationSummary() {
+  return {
+    processed: 0,
+    autoApproved: 0,
+    autoRejected: 0,
+    recommendedApprove: 0,
+    recommendedReject: 0,
+    manualFlagged: 0
+  }
+}
+
 export async function moderatePendingReviews(
   limit = 30,
   options: ModeratePendingReviewsOptions = {}
@@ -73,18 +84,19 @@ export async function moderatePendingReviews(
   // (this can happen in developer machines pointing to remote Supabase without a service-role).
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('moderatePendingReviews: SUPABASE_SERVICE_ROLE_KEY not set — skipping moderation operations')
-    return {
-      processed: 0,
-      autoApproved: 0,
-      autoRejected: 0,
-      recommendedApprove: 0,
-      recommendedReject: 0,
-      manualFlagged: 0
-    }
+    return buildEmptyModerationSummary()
+  }
+
+  if (options.mode === 'disabled') {
+    return buildEmptyModerationSummary()
   }
 
   const rolloutResolution = await getAiAutomationRuntimeResolution('moderation')
   const effectiveMode = options.mode ?? rolloutResolution.finalRuntimeMode
+
+  if (effectiveMode === 'disabled') {
+    return buildEmptyModerationSummary()
+  }
 
   const { data: reviews, error } = await supabaseAdmin
     .from('reviews')
@@ -95,14 +107,7 @@ export async function moderatePendingReviews(
     .limit(limit)
 
   if (error || !reviews?.length) {
-    return {
-      processed: 0,
-      autoApproved: 0,
-      autoRejected: 0,
-      recommendedApprove: 0,
-      recommendedReject: 0,
-      manualFlagged: 0
-    }
+    return buildEmptyModerationSummary()
   }
 
   const reviewsTyped = reviews as ReviewRecord[]

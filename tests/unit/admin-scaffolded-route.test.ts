@@ -21,6 +21,7 @@ describe('admin scaffolded route', () => {
   beforeEach(() => {
     mocks.from.mockReset()
     mocks.recordLatencyMetric.mockClear()
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://dogtrainersdirectory.com.au'
   })
 
   it('returns a stable scaffolded envelope on GET failures', async () => {
@@ -237,6 +238,12 @@ describe('admin scaffolded route', () => {
         verification_status: 'verified',
         abn_verified: true,
       })
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      const [, options] = fetchMock.mock.calls[0]
+      const body = JSON.parse(options.body)
+      expect(body.html).toContain(
+        'https://dogtrainersdirectory.com.au/login?redirectTo=%2Faccount%2Fbusiness'
+      )
     } finally {
       global.fetch = fetchBackup
     }

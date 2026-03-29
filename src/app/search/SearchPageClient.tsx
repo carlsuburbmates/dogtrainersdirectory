@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import {
   Badge,
@@ -35,18 +35,14 @@ import {
   getSearchDiscoveryLinks,
   getSearchLandingContent
 } from './landing'
+import {
+  buildSearchRouteHref,
+  buildSearchRouteParams,
+  hasSearchRouteCriteria,
+  type SearchRouteFilters
+} from './searchRouteState'
 
-interface SearchFilters {
-  query: string
-  lat: string
-  lng: string
-  distance: string
-  age_specialties: string[]
-  behavior_issues: string[]
-  service_type: string
-  verified_only: boolean
-  rescue_only: boolean
-}
+type SearchFilters = SearchRouteFilters
 
 interface SearchResult {
   business_id: number
@@ -92,6 +88,7 @@ const distanceLabels = Object.fromEntries(distanceOptions.map((option) => [optio
 const ageSpecialtySet = new Set<string>(AGE_SPECIALTIES)
 const behaviorIssueSet = new Set<string>(BEHAVIOR_ISSUES)
 const serviceTypeSet = new Set<string>(SERVICE_TYPES)
+const distanceValueSet = new Set<string>(distanceOptions.map((option) => option.value))
 
 const parseAllowedList = (value: string | null, allowedValues: Set<string>) => {
   if (!value) {
@@ -138,6 +135,7 @@ const getActiveFilterCount = (filters: SearchFilters, selectedSuburb: SuburbResu
 }
 
 export default function SearchPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [flowSource, setFlowSource] = useState('')
   const [filters, setFilters] = useState<SearchFilters>({
@@ -177,34 +175,12 @@ export default function SearchPage() {
       setError(null)
 
       try {
-        const params = new URLSearchParams()
-
-        if (activeFilters.query) params.append('q', activeFilters.query)
-        if (activeCanonicalSuburbId !== null) {
-          params.append('suburbId', String(activeCanonicalSuburbId))
-        }
-        if (activeSuburb) {
-          params.append('lat', String(activeSuburb.latitude))
-          params.append('lng', String(activeSuburb.longitude))
-          params.append('suburbName', activeSuburb.name)
-          params.append('postcode', activeSuburb.postcode)
-          params.append('councilId', String(activeSuburb.council_id))
-        } else if (activeCanonicalSuburbId === null && activeFilters.lat && activeFilters.lng) {
-          params.append('lat', activeFilters.lat)
-          params.append('lng', activeFilters.lng)
-        }
-        if (activeFilters.distance !== 'any') params.append('distance', activeFilters.distance)
-        if (activeFilters.age_specialties.length > 0) {
-          params.append('age_specialties', activeFilters.age_specialties.join(','))
-        }
-        if (activeFilters.behavior_issues.length > 0) {
-          params.append('behavior_issues', activeFilters.behavior_issues.join(','))
-        }
-        if (activeFilters.service_type) params.append('service_type', activeFilters.service_type)
-        if (activeFilters.verified_only) params.append('verified_only', 'true')
-        if (activeFilters.rescue_only) params.append('rescue_only', 'true')
-        if (activeFlowSource) params.append('flow_source', activeFlowSource)
-
+        const params = buildSearchRouteParams({
+          filters: activeFilters,
+          selectedSuburb: activeSuburb,
+          flowSource: activeFlowSource,
+          canonicalSuburbId: activeCanonicalSuburbId
+        })
         params.append('limit', limit.toString())
         params.append('page', nextPage.toString())
 
@@ -237,11 +213,32 @@ export default function SearchPage() {
     [limit]
   )
 
-  const handleSearch = useCallback(
-    (nextPage = 1) => {
-      return runSearch(nextPage, filters, selectedSuburb, flowSource, canonicalSuburbId)
+  const syncCanonicalRoute = useCallback(
+    (
+      nextFilters: SearchFilters,
+      nextSuburb: SuburbResult | null,
+      nextFlowSource: string,
+      nextCanonicalSuburbId: number | null
+    ) => {
+      const nextRouteState = {
+        filters: nextFilters,
+        selectedSuburb: nextSuburb,
+        flowSource: nextFlowSource,
+        canonicalSuburbId: nextCanonicalSuburbId
+      }
+
+      setFilters(nextFilters)
+      setSelectedSuburb(nextSuburb)
+      setFlowSource(nextFlowSource)
+      setCanonicalSuburbId(nextCanonicalSuburbId)
+
+      if (buildSearchRouteParams(nextRouteState).toString() === searchParams.toString()) {
+        return runSearch(1, nextFilters, nextSuburb, nextFlowSource, nextCanonicalSuburbId)
+      }
+
+      router.push(buildSearchRouteHref(nextRouteState))
     },
-    [canonicalSuburbId, filters, flowSource, runSearch, selectedSuburb]
+    [router, runSearch, searchParams]
   )
 
   useEffect(() => {
@@ -260,7 +257,6 @@ export default function SearchPage() {
       const flowSourceParam = searchParams.get('flow_source') || ''
       const nextCanonicalSuburbId = parseCanonicalSuburbId(searchParams.get('suburbId'))
 
-      const distanceValues = new Set(['any', '0-5', '5-15', 'greater'])
       let resolvedSuburb: SuburbResult | null = null
 
       if (nextCanonicalSuburbId !== null) {
@@ -287,7 +283,7 @@ export default function SearchPage() {
           : nextCanonicalSuburbId === null
             ? lngParam
             : '',
-        distance: distanceValues.has(distanceParam) ? distanceParam : 'any',
+        distance: distanceValueSet.has(distanceParam) ? distanceParam : 'any',
         age_specialties: parseAllowedList(ageParam, ageSpecialtySet),
         behavior_issues: parseAllowedList(behaviorParam, behaviorIssueSet),
         service_type: serviceTypeSet.has(serviceTypeParam) ? serviceTypeParam : '',
@@ -300,21 +296,19 @@ export default function SearchPage() {
       setCanonicalSuburbId(nextCanonicalSuburbId)
       setSelectedSuburb(resolvedSuburb)
 
-      const shouldAutoSearch = Boolean(
-        queryParam ||
-          resolvedSuburb ||
-          (nextCanonicalSuburbId === null && latParam && lngParam) ||
-          nextFilters.age_specialties.length > 0 ||
-          nextFilters.behavior_issues.length > 0 ||
-          nextFilters.service_type ||
-          nextFilters.verified_only ||
-          nextFilters.rescue_only ||
-          nextFilters.distance !== 'any'
-      )
+      const shouldAutoSearch = hasSearchRouteCriteria({
+        filters: nextFilters,
+        selectedSuburb: resolvedSuburb,
+        canonicalSuburbId: nextCanonicalSuburbId
+      })
 
       if (shouldAutoSearch) {
         runSearch(1, nextFilters, resolvedSuburb, flowSourceParam, nextCanonicalSuburbId)
       } else {
+        setResults([])
+        setHasMore(false)
+        setPage(1)
+        setError(null)
         setHasSearched(false)
       }
     }
@@ -328,11 +322,11 @@ export default function SearchPage() {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    handleSearch(1)
+    syncCanonicalRoute(filters, selectedSuburb, flowSource, canonicalSuburbId)
   }
 
   const handleLoadMore = () => {
-    handleSearch(page + 1)
+    runSearch(page + 1, filters, selectedSuburb, flowSource, canonicalSuburbId)
   }
 
   const handleOpenFilterSheet = () => {
@@ -344,7 +338,7 @@ export default function SearchPage() {
   }
 
   const handleApplyFilterSheet = () => {
-    handleSearch(1)
+    syncCanonicalRoute(filters, selectedSuburb, flowSource, canonicalSuburbId)
     setIsFilterSheetOpen(false)
   }
 
@@ -354,8 +348,7 @@ export default function SearchPage() {
       distance: 'any'
     }
 
-    setFilters(broadenedFilters)
-    runSearch(1, broadenedFilters, selectedSuburb, flowSource, canonicalSuburbId)
+    syncCanonicalRoute(broadenedFilters, selectedSuburb, flowSource, canonicalSuburbId)
   }
 
   const handleClearRefinements = () => {
@@ -369,8 +362,7 @@ export default function SearchPage() {
       rescue_only: false
     }
 
-    setFilters(clearedFilters)
-    runSearch(1, clearedFilters, selectedSuburb, flowSource, canonicalSuburbId)
+    syncCanonicalRoute(clearedFilters, selectedSuburb, flowSource, canonicalSuburbId)
     setIsFilterSheetOpen(false)
   }
 
@@ -392,8 +384,7 @@ export default function SearchPage() {
       rescue_only: patch.rescue_only ?? filters.rescue_only
     }
 
-    setFilters(nextFilters)
-    runSearch(1, nextFilters, selectedSuburb, flowSource, canonicalSuburbId)
+    syncCanonicalRoute(nextFilters, selectedSuburb, flowSource, canonicalSuburbId)
   }
 
   const toggleArrayFilter = (filterName: 'age_specialties' | 'behavior_issues', value: string) => {
@@ -406,44 +397,12 @@ export default function SearchPage() {
   }
 
   const activeFilterCount = getActiveFilterCount(filters, selectedSuburb)
-  const landingParams = new URLSearchParams()
-  if (filters.query) {
-    landingParams.set('q', filters.query)
-  }
-  if (flowSource) {
-    landingParams.set('flow_source', flowSource)
-  }
-  if (canonicalSuburbId !== null) {
-    landingParams.set('suburbId', String(canonicalSuburbId))
-  }
-  if (selectedSuburb) {
-    landingParams.set('suburbName', selectedSuburb.name)
-    landingParams.set('postcode', selectedSuburb.postcode)
-    landingParams.set('lat', String(selectedSuburb.latitude))
-    landingParams.set('lng', String(selectedSuburb.longitude))
-    landingParams.set('councilId', String(selectedSuburb.council_id))
-  } else if (filters.lat && filters.lng) {
-    landingParams.set('lat', filters.lat)
-    landingParams.set('lng', filters.lng)
-  }
-  if (filters.distance !== 'any') {
-    landingParams.set('distance', filters.distance)
-  }
-  if (filters.age_specialties.length > 0) {
-    landingParams.set('age_specialties', filters.age_specialties.join(','))
-  }
-  if (filters.behavior_issues.length > 0) {
-    landingParams.set('behavior_issues', filters.behavior_issues.join(','))
-  }
-  if (filters.service_type) {
-    landingParams.set('service_type', filters.service_type)
-  }
-  if (filters.verified_only) {
-    landingParams.set('verified_only', 'true')
-  }
-  if (filters.rescue_only) {
-    landingParams.set('rescue_only', 'true')
-  }
+  const landingParams = buildSearchRouteParams({
+    filters,
+    selectedSuburb,
+    flowSource,
+    canonicalSuburbId
+  })
   const landingContent = getSearchLandingContent(landingParams)
   const ownerSearchContext = getOwnerSearchContext(landingParams)
   const ownerSearchExplanation = buildOwnerSearchExplanation(ownerSearchContext)
@@ -769,7 +728,7 @@ export default function SearchPage() {
                   <>
                     <Button
                       type="button"
-                      onClick={() => handleSearch(1)}
+                      onClick={() => runSearch(1, filters, selectedSuburb, flowSource, canonicalSuburbId)}
                       className="min-h-[44px]"
                     >
                       Retry current search

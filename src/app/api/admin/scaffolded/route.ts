@@ -9,6 +9,13 @@ import {
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 
+function getScaffoldApprovalLoginHref() {
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://dogtrainersdirectory.com.au').replace(/\/$/, '')
+  const loginUrl = new URL('/login', `${baseUrl}/`)
+  loginUrl.searchParams.set('redirectTo', '/account/business')
+  return loginUrl.toString()
+}
+
 type ScaffoldedListing = {
   id: number
   name: string
@@ -156,7 +163,7 @@ export async function POST(request: NextRequest) {
         .single()
       const email = businessData?.email
       if (email) {
-        await fetch('https://api.resend.com/emails', {
+        const resendResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -169,11 +176,15 @@ export async function POST(request: NextRequest) {
             html: `
 <p>Hi ${businessData.name},</p>
 <p>Your scaffolded listing has now been approved and appears live on dogtrainersdirectory.com.au.</p>
-<p>If you haven’t already, <a href="https://dogtrainersdirectory.com/trainer">log in to your dashboard</a> to confirm your profile details and share your availability.</p>
+<p>If you haven’t already, <a href="${getScaffoldApprovalLoginHref()}">sign in to your business dashboard</a> to confirm your profile details and share your availability.</p>
 <p>Thanks,<br/>dogtrainersdirectory</p>
 `
           })
         })
+
+        if (!resendResponse.ok) {
+          console.warn('Scaffold approval email failed to send', await resendResponse.text())
+        }
       }
     }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getAiAutomationRuntimeResolution } from '@/lib/ai-rollouts'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export async function POST(request: Request) {
@@ -10,6 +11,8 @@ export async function POST(request: Request) {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json({ error: 'Server service role key required' }, { status: 401 })
     }
+
+    const moderationResolution = await getAiAutomationRuntimeResolution('moderation')
 
     // Build query based on filters
     let query = supabaseAdmin
@@ -115,18 +118,41 @@ export async function POST(request: Request) {
               typeof d.metadata.aiAutomationAudit === 'object'
                 ? d.metadata.aiAutomationAudit
                 : null
+            const outputType = operatorVisibleState?.outputType ?? null
+            const hasStoredDraftOutput = Boolean(
+              recommendation?.action ??
+                d.ai_decision ??
+                recommendation?.reason ??
+                d.reason
+            )
+            const suppressStoredRecommendation =
+              moderationResolution.finalRuntimeMode === 'disabled' &&
+              outputType !== 'final_approved_action' &&
+              hasStoredDraftOutput
 
-            acc[d.review_id] = {
-              ai_decision: recommendation?.action ?? d.ai_decision,
-              ai_confidence: recommendation?.confidence ?? d.confidence,
-              ai_reason: recommendation?.reason ?? d.reason,
-              ai_mode: d.ai_mode,
-              ai_decision_source: recommendation?.source ?? d.decision_source,
-              ai_approval_state: audit?.approvalState ?? null,
-              ai_output_type: operatorVisibleState?.outputType ?? null,
-              ai_final_action: finalAction?.action ?? null,
-              ai_final_reason: finalAction?.reason ?? null
-            }
+            acc[d.review_id] = suppressStoredRecommendation
+              ? {
+                  ai_decision: null,
+                  ai_confidence: null,
+                  ai_reason: null,
+                  ai_mode: null,
+                  ai_decision_source: null,
+                  ai_approval_state: null,
+                  ai_output_type: null,
+                  ai_final_action: null,
+                  ai_final_reason: null
+                }
+              : {
+                  ai_decision: recommendation?.action ?? d.ai_decision,
+                  ai_confidence: recommendation?.confidence ?? d.confidence,
+                  ai_reason: recommendation?.reason ?? d.reason,
+                  ai_mode: d.ai_mode,
+                  ai_decision_source: recommendation?.source ?? d.decision_source,
+                  ai_approval_state: audit?.approvalState ?? null,
+                  ai_output_type: outputType,
+                  ai_final_action: finalAction?.action ?? null,
+                  ai_final_reason: finalAction?.reason ?? null
+                }
             return acc
           }, {} as Record<number, any>)
         }

@@ -552,7 +552,7 @@ export function getAiAutomationOperatorControl(
         approvalBoundaryLabel:
           'Final review approval or rejection still requires an operator action.',
         rollbackLabel:
-          'Pause or disable from /admin/ai-health, or set MODERATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Existing recommendations remain drafts until an operator acts.'
+          'Pause or disable from /admin/ai-health, or set MODERATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled. Disabled mode hides operator-visible draft recommendations and stops new moderation traces from being recorded until moderation is re-enabled.'
       }
     case 'verification':
       return {

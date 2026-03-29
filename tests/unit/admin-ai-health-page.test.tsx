@@ -240,4 +240,14 @@ describe('/admin/ai-health rollout truthfulness', () => {
     expect(html).toContain('Search-changing refinements and send-like actions still require explicit owner confirmation.')
     expect(html).toContain('Set OWNER_ACTION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled')
   })
+
+  it('describes disabled moderation as hiding visible draft output until re-enabled', async () => {
+    mocks.getAiAutomationRuntimeResolutions.mockResolvedValue(buildRuntimeResolutions())
+
+    const element = await AIHealthPage()
+    const html = renderToStaticMarkup(element)
+
+    expect(html).toContain('Disabled mode hides operator-visible draft recommendations')
+    expect(html).toContain('MODERATION_AI_MODE=disabled or AI_GLOBAL_MODE=disabled')
+  })
 })

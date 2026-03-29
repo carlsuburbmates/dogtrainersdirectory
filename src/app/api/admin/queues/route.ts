@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
-import { moderatePendingReviews } from '@/lib/moderation'
 
 const WEEKLY_EXCEPTION_WINDOW_HOURS = 7 * 24
 
@@ -245,12 +244,6 @@ export async function GET() {
         },
         aiEnabled
       })
-    }
-
-    try {
-      await moderatePendingReviews()
-    } catch (modErr) {
-      console.warn('moderatePendingReviews failed (continuing):', modErr)
     }
 
     const [reviewsRes, abnRes, flaggedRes, emergencyRes] = await Promise.all([

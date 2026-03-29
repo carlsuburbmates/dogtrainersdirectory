@@ -1,9 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import {
+  buildContactMailtoLink,
+  insertSuggestedDraft
+} from './contactFormHelpers'
 
 interface ContactFormProps {
-  trainerId: number
   trainerName: string
   trainerEmail?: string
   draftMessage: string
@@ -11,7 +14,6 @@ interface ContactFormProps {
 }
 
 export default function ContactForm({
-  trainerId,
   trainerName,
   trainerEmail,
   draftMessage,
@@ -22,31 +24,28 @@ export default function ContactForm({
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [emailDraftOpened, setEmailDraftOpened] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
-    setSuccess(false)
+    setEmailDraftOpened(false)
 
     try {
-      // For now, just show success message with mailto link
-      // In production, this would send via API or email service
       if (trainerEmail) {
-        const subject = encodeURIComponent(`Inquiry about ${trainerName}`)
-        const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\nMessage:\n${message}`)
-        const mailtoLink = `mailto:${trainerEmail}?subject=${subject}&body=${body}`
-        
-        // Open mailto link
+        const mailtoLink = buildContactMailtoLink({
+          trainerEmail,
+          trainerName,
+          name,
+          email,
+          phone,
+          message
+        })
+
         window.location.href = mailtoLink
-        
-        setSuccess(true)
-        setName('')
-        setEmail('')
-        setPhone('')
-        setMessage('')
+        setEmailDraftOpened(true)
       } else {
         setError('No contact email available for this trainer')
       }
@@ -60,7 +59,7 @@ export default function ContactForm({
   const questionBlock = suggestedQuestions.map((question) => `- ${question}`).join('\n')
 
   const handleUseDraft = () => {
-    setMessage(draftMessage)
+    setMessage((current) => insertSuggestedDraft(current, draftMessage))
   }
 
   const handleAddQuestions = () => {
@@ -98,7 +97,7 @@ export default function ContactForm({
           onClick={handleUseDraft}
           className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         >
-          Use suggested draft
+          Insert suggested draft
         </button>
         {suggestedQuestions.length > 0 && (
           <button
@@ -134,22 +133,6 @@ export default function ContactForm({
             Please use the phone number or other contact methods above to reach this trainer.
           </p>
         </div>
-      </div>
-    )
-  }
-
-  if (success) {
-    return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <p className="text-sm text-green-800 font-medium">
-          ✓ Your email client should have opened. If not, please contact the trainer directly.
-        </p>
-        <button
-          onClick={() => setSuccess(false)}
-          className="mt-2 text-sm text-green-700 hover:text-green-900 underline"
-        >
-          Send another message
-        </button>
       </div>
     )
   }
@@ -221,16 +204,24 @@ export default function ContactForm({
           </div>
         )}
 
+        {emailDraftOpened && (
+          <div className="rounded-md border border-green-200 bg-green-50 p-3">
+            <p className="text-xs text-green-800">
+              Your email app was asked to open a draft. Nothing has been sent yet. Review and send it there, or keep editing here and open the draft again.
+            </p>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={submitting}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
         >
-          {submitting ? 'Sending...' : 'Send Message'}
+          {submitting ? 'Opening draft...' : 'Open Email Draft'}
         </button>
 
         <p className="text-xs text-gray-500 text-center">
-          This will open your email client
+          This only opens your email client. Nothing is sent until you confirm there.
         </p>
       </form>
     </div>
