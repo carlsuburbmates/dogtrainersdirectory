@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { hasConfiguredLlmProvider } from '@/lib/llm'
 import { supabaseAdmin } from '@/lib/supabase'
 
 const WEEKLY_EXCEPTION_WINDOW_HOURS = 7 * 24
@@ -221,7 +222,7 @@ function buildWeeklyLoopNote(summary: VerificationAbnSummary) {
 }
 
 export async function GET() {
-  const aiEnabled = Boolean(process.env.OPENAI_API_KEY)
+  const aiEnabled = hasConfiguredLlmProvider()
 
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {

@@ -9,9 +9,9 @@ describe('admin dashboard smoke render', () => {
   it('renders AI health dashboard without crashing', () => {
     const html = renderToString(
       <AiHealthDashboard
-        providerName="zai"
-        baseUrl="https://api.z.ai/test"
-        model="glm-4.6"
+        providerName="openai"
+        baseUrl="https://api.openai.com/v1"
+        model="gpt-5-mini"
         initialSnapshot={{
           status: 'healthy',
           message: 'All systems nominal',

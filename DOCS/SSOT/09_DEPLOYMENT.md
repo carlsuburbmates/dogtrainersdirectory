@@ -53,18 +53,31 @@ From `package.json` and CI:
 - `TRIAGE_AI_MODE` (server + admin UI)
 - `VERIFICATION_AI_MODE` (server + admin UI)
 
+### 4.4 LLM provider configuration
+- `OPENAI_API_KEY` (server; primary provider)
+- `OPENAI_BASE_URL` (server; optional override, defaults to `https://api.openai.com/v1`)
+- `LLM_DEFAULT_MODEL` (server; primary OpenAI model, defaults to `gpt-5-mini`)
+- `GEMINI_API_KEY` (server; fallback provider)
+- `GEMINI_BASE_URL` (server; optional override, defaults to `https://generativelanguage.googleapis.com/v1beta`)
+- `GEMINI_FALLBACK_MODEL` (server; fallback Gemini model, defaults to `gemini-2.5-flash`)
+
+**Canonical LLM provider rule:**
+- runtime attempts OpenAI first and only falls back to Gemini if OpenAI is unavailable or misconfigured
+- admin and health surfaces must report the same provider truth as the runtime path
+- `.env.example` is the only committed env template and must stay aligned with the live runtime contract
+
 **Rollout control rule:**
 - Env modes remain the hard ceiling for automation.
 - Phase 12 rollout controls are persisted in Supabase and may only narrow, pause, disable, or stage rollout inside the env ceiling.
 - No rollout-control record may widen a workflow beyond canonical ceilings or env-derived mode.
 
-### 4.4 ABN and ABR
+### 4.5 ABN and ABR
 - `ABN_FALLBACK_MAX_RATE_24H` (staging/prod checks)
 - `ABN_FALLBACK_MIN_SAMPLE_24H` (staging/prod checks)
 - `ABR_GUID` (server)
 - `AUTO_APPLY` (server)
 
-### 4.5 Admin and ops alerts
+### 4.6 Admin and ops alerts
 - `ALERT_WEBHOOK_URL` (server)
 - `ALERTS_EMAIL_FROM` (ops script)
 - `ALERTS_EMAIL_TO` (ops script)

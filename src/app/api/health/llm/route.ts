@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
+import {
+  generateLLMResponse,
+  getConfiguredLlmProviderNames,
+  getPrimaryLlmProviderLabel
+} from '@/lib/llm'
 import { recordLatencyMetric } from '@/lib/telemetryLatency'
 
 // GET /api/health/llm - Returns LLM provider health status
 export async function GET() {
   const start = Date.now()
-  const finish = async (payload: any, status = 200) => {
+  const finish = async (payload: unknown, status = 200) => {
     await recordLatencyMetric({
       area: 'ai_health_endpoint',
       route: '/api/health/llm',
@@ -16,71 +21,53 @@ export async function GET() {
   }
 
   try {
-    const llmProvider = process.env.LLM_PROVIDER || 'zai'
-    const baseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai/v1/chat/completions'
-    const apiKey = process.env.ZAI_API_KEY
-    const model = process.env.LLM_DEFAULT_MODEL || 'glm-4.6'
-    
-    if (!apiKey) {
+    const configuredProviders = getConfiguredLlmProviderNames()
+    const llmProvider = getPrimaryLlmProviderLabel()
+    const model = process.env.LLM_DEFAULT_MODEL || 'gpt-5-mini'
+
+    if (configuredProviders.length === 0) {
       return finish(
         { error: 'LLM not configured', status: 'misconfigured' },
         503
       )
     }
-    
-    // Simple health check by calling the LLM API
-    const testPrompt = "Health check"
-    let latency = 0
-    let success = false
-    
+
+    const testPrompt = 'Health check'
+
     try {
       const startTime = Date.now()
-      const response = await fetch(baseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: testPrompt }],
-          model: model
-        }),
-        signal: undefined
+      const response = await generateLLMResponse({
+        userPrompt: testPrompt,
+        maxTokens: 16
       })
-      
-      latency = Date.now() - startTime
-      success = response.ok
-      
-      // Extract token usage if available from the response
-      let tokenCount = 0
-      let usage = response.headers.get('x-use')
-      
-      try {
-        if (usage && typeof usage === 'string') {
-          const tokenMatch = usage.match(/token usage:\s+\d+}/g)
-          if (tokenMatch && tokenMatch.length) {
-            tokenCount = parseInt(tokenMatch[1])
-          }
-        }
-      } catch {
-        // No token information available
-        tokenCount = 0
-      }
-      
+
+      const latency = Date.now() - startTime
+      const success = response.provider !== 'deterministic'
+      const activeProvider = response.provider || llmProvider
+      const usedFallback =
+        success &&
+        activeProvider === 'gemini' &&
+        configuredProviders.includes('openai')
+
       return finish({
-        status: success ? 'healthy' : 'unhealthy',
+        status: success ? (usedFallback ? 'degraded' : 'healthy') : 'down',
         metrics: {
           successRate: success ? 100 : 0,
-          avgLatency: latency ? latency : 0,
+          avgLatency: latency,
           errorTrend: 0,
-          totalCalls: tokenCount
+          totalCalls: 0
         },
-        provider: llmProvider,
-        tokenUsage: tokenCount,
+        provider: activeProvider,
+        configuredProviders,
+        tokenUsage: 0,
+        model: success ? response.model || model : model,
         lastCheck: new Date().toISOString(),
-        message: 'Health check successful'
+        message: success
+          ? usedFallback
+            ? 'OpenAI unavailable; Gemini fallback operational'
+            : 'Health check successful'
+          : response.text
       })
-      
     } catch (error) {
       console.error('LLM health check failed:', error)
       return finish(
@@ -88,8 +75,8 @@ export async function GET() {
         503
       )
     }
-  } catch (e) {
-    console.error('Unexpected error in LLM health check:', e)
+  } catch (error) {
+    console.error('Unexpected error in LLM health check:', error)
     return finish(
       { error: 'Service unavailable', status: '503' },
       503

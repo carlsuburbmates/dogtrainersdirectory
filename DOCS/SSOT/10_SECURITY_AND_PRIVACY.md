@@ -1,8 +1,8 @@
 # Security & Privacy — Auth, Data Protection, Secrets
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.3  
-**Last Updated:** 2026-03-10
+**Version:** v1.4  
+**Last Updated:** 2026-03-29
 
 ## 1. Secret handling
 - Never commit real secrets. Use `.env.example` as the only env template.
@@ -14,6 +14,8 @@
   - `SUPABASE_PGCRYPTO_KEY` (server-only, field decryption)
   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (server-only)
   - `ABR_GUID` (server-only, ABN verification)
+  - `OPENAI_API_KEY` (server-only, primary LLM provider)
+  - `GEMINI_API_KEY` (server-only, fallback LLM provider)
 
 ## 2. Supabase access
 - Use anon key on client.

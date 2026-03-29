@@ -8,6 +8,7 @@ import {
   type AiAutomationVisibility,
   type AiAutomationWorkflow
 } from '@/lib/ai-automation'
+import { hasConfiguredLlmProvider } from '@/lib/llm'
 import { getAiAutomationRuntimeResolutions } from '@/lib/ai-rollouts'
 import {
   summarizeBusinessListingQualityHealth,
@@ -262,7 +263,7 @@ function buildReadiness(
 
 async function buildWorkflowStatusCards(): Promise<WorkflowStatusCard[]> {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  const llmConfigured = Boolean(process.env.ZAI_API_KEY)
+  const llmConfigured = hasConfiguredLlmProvider()
   const resolutions = new Map(
     (await getAiAutomationRuntimeResolutions()).map((resolution) => [resolution.workflow, resolution])
   )
