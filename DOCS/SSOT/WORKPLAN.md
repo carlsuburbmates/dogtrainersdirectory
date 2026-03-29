@@ -13,7 +13,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - If a new issue is discovered, add it to the correct phase at the bottom (no inline fixes).
 - Definition of done must be explicit and testable.
 
-## Current State (as of 2026-03-13)
+## Current State (as of 2026-03-29)
 - Canonical repo path: `/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal`
 - Local `main` is kept synced to `origin/main` between task commits; the `MO-302 -> PH-205` recovery cycle is complete.
 - Cross-layer sync is complete: frontend callers, backend contracts, edge functions, SSOT refresh, and targeted Playwright coverage are aligned.
@@ -89,6 +89,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `OW-926` is now complete: `/search` now adds bounded shortlist comparison guidance that helps owners decide whether to contact now, keep comparing, or refine first without changing ranking or contact flow.
 - `OW-927` is now complete: the owner-action workflow family now has a dedicated override, truthful ai-health supervision card, and explicit shadow-capped ceiling so future owner-live proposals have a real control substrate without implying current live owner automation.
 - Phase 16 - Confirmed Owner Action Automation is complete for the current planned slice.
+- Phases 14, 15, and 16 have been re-verified against the canonical verification playbook in `08_OPS_RUNBOOK.md`; the stricter runtime, boundary, and supervision checks now clear on the repaired local verification baseline.
 - The roadmap returns to awaiting prioritisation.
 - The current delivery sequence is:
   1. Build Completion

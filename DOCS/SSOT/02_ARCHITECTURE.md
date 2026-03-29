@@ -1,16 +1,16 @@
 # Architecture — Runtime, Services, Boundaries
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1  
-**Last Updated:** Phase 1 Batch 3 - Documentation Updates
+**Version:** v1.2  
+**Last Updated:** 2026-03-29
 
 ## 1. Runtime
 - **Framework:** Next.js 14 (App Router)
 - **Hosting:** Vercel (see `09_DEPLOYMENT.md`)
 - **Images:** remote patterns allow `supabase.co` and `localhost` (see `next.config.js`)
-- **Middleware:** Next.js middleware for route protection (see `src/middleware.ts`)
+- **Admin route protection:** Next.js proxy enforcement for `/admin/**` and `/api/admin/**` (see `src/proxy.ts`)
 
-## 2. Authentication & Authorization — ✅ Implemented (Phase 1 Batch 1)
+## 2. Authentication & Authorization
 - **Authentication provider:** Supabase Auth
 - **Authorization layer:** Role-based access control via `profiles.role` field
 
@@ -19,9 +19,9 @@
   - `isAdmin(userId)` — Checks admin role in profiles table
   - `getAuthenticatedUser()` — Extracts user from Supabase session
   - `requireAdmin()` — Combined auth + admin verification for API routes
-  - `checkAdminAuthFromRequest()` — Middleware-compatible auth check
+  - `checkAdminAuthFromRequest()` — Proxy-compatible auth check
 
-- `src/middleware.ts` — Route protection middleware
+- `src/proxy.ts` — Route protection proxy
   - Protects all `/admin/**` pages
   - Protects all `/api/admin/**` endpoints
   - Redirects non-admin users to `/login` (pages)
@@ -50,11 +50,11 @@
 
 ## 5. Automation
 - Vercel cron triggers call specific API endpoints (see `09_DEPLOYMENT.md`)
-- AI automation is mode-gated (disabled/shadow/live + per-pipeline overrides) (see `07_AI_AUTOMATION.md`)
+- AI automation is mode-gated by shared workflow families, rollout state, and per-workflow overrides (see `07_AI_AUTOMATION.md`)
 
 ## 6. Key boundaries
-- Admin UI must stay under `/admin/**` ✅ **Enforced by middleware**
-- Admin APIs must stay under `/api/admin/**` ✅ **Enforced by middleware**
+- Admin UI must stay under `/admin/**` and is enforced by proxy protection plus admin-role checks
+- Admin APIs must stay under `/api/admin/**` and are enforced by proxy protection, with route-level admin checks where required
 - Public endpoints are explicitly listed in `04_API_CONTRACTS.md`
 
 ## 7. API architecture
@@ -71,4 +71,4 @@
 - **Health:** `/api/admin/health`, `/api/admin/errors` — System monitoring
 - **ABN:** `/api/admin/abn/**` — ABN verification management
 
-All admin APIs protected by middleware with automatic 401 rejection for unauthorized requests.
+All admin APIs are protected by proxy enforcement with automatic 401 rejection for unauthorized requests.

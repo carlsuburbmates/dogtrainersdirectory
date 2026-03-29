@@ -30,6 +30,7 @@ must follow this protocol.
 ## 4. Documentation authority rules
 - Canonical documentation lives in `DOCS/SSOT/` only.
 - `README.md`, `README_DEVELOPMENT.md`, and `supabase/LOCAL_SETUP.md` are pointer-only summaries.
+- Product roadmap and active-task authority belong in `WORKPLAN.md`.
 - Operational procedures belong in `08_OPS_RUNBOOK.md`.
 - Deployment and environment details belong in `09_DEPLOYMENT.md`.
 

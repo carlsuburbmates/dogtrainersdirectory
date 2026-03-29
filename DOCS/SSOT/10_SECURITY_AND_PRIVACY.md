@@ -24,14 +24,14 @@
 - Public browser clients use the anon key with RLS.
 - Server-side public endpoints may use service-role-backed RPCs or controlled reads when needed for canonical search behaviour, decryption, or integrity checks, but secrets and decryption keys must remain server-only.
 
-## 3. Admin boundary — ✅ RESOLVED (Phase 1 Batch 1)
+## 3. Admin boundary
 
 ### 3.1 Route Structure
 - All admin pages under `/admin/**`.
 - All admin APIs under `/api/admin/**`.
 
-### 3.2 Proxy Protection (IMPLEMENTED)
-**Status:** ✅ **Inconsistent admin auth RESOLVED**
+### 3.2 Proxy Protection
+**Status:** Implemented and canonical
 
 **Implementation files:**
 - `src/proxy.ts` — Next.js proxy enforcement for route protection
@@ -52,7 +52,7 @@
 - `isAdmin(userId)` — Checks if user has admin role
 - `getAuthenticatedUser()` — Extracts user ID from Supabase session
 - `requireAdmin()` — Combined auth check + admin verification for API routes
-- `checkAdminAuthFromRequest()` — Middleware-compatible auth check
+- `checkAdminAuthFromRequest()` — Proxy-compatible auth check
 
 **Enforcement:**
 - ✅ All `/admin/**` pages protected by proxy enforcement
@@ -102,7 +102,7 @@ Bundle indicates encrypted columns exist for contact fields and are decrypted vi
 
 ## 6. Security hardening checklist
 
-### Completed (Phase 1)
+### Completed
 - ✅ Admin authentication proxy implementation
 - ✅ Consistent admin auth enforcement across all `/admin/**` and `/api/admin/**` routes
 - ✅ Server-side decryption of sensitive fields with proper key management

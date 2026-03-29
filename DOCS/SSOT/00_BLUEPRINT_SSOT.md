@@ -67,3 +67,4 @@ The input bundle indicated references in code to tables/RPCs not present in the 
 - `12_DESIGN_SYSTEM.md`
 - `FILE_MANIFEST.md`
 - `CHANGE_PROTOCOL.md`
+- `WORKPLAN.md`
