@@ -368,6 +368,21 @@ The only required manual steps for MVP concierge seeding are:
 
 Humans should not manually format descriptions, assemble relational inserts, or hand-build publish payloads unless the automated path is blocked.
 
+#### 13.2.1 Canonical manual seed contract
+The canonical manual seed queue for MVP concierge sourcing is a CSV with these columns:
+- `source_url` (required)
+- `business_name_hint` (required)
+- `suburb_hint` (required)
+- `service_hint` (optional)
+- `notes` (optional)
+
+Rules:
+- one business candidate per row
+- `source_url` must be the approved public source URL for that business
+- `business_name_hint` is a human-supplied fallback for weak or ambiguous source titles
+- `suburb_hint` must be one of the currently approved MVP catchment suburbs
+- optional hint columns are routing aids for the automated pipeline only; they are not canonical publish truth by themselves
+
 ### 13.3 Automated stages
 Once a source URL is approved by a human, the pipeline may automate:
 - page fetch and extraction
@@ -411,9 +426,12 @@ The manual pre-publish review artifact must expose enough signal to catch bad au
 
 It must show, at minimum:
 - source URL
+- human business-name hint
 - extracted business name
 - extracted contact fields if present
 - resolved suburb and any locality warning
+- resolved `suburb_id`
+- resolved council
 - mapped specialization, service, and behaviour-issue tags
 - duplicate or conflict warnings
 - publish-readiness or missing-field warnings
