@@ -349,9 +349,85 @@ Therefore:
 - Offline evaluation: `scripts/evaluate_ai.ts` (reads golden sets, prints metrics).
 - Optional DB persistence when service role key is present.
 
-## 13. Phase 2 scraper inputs (optional)
-- Inputs live in `data/phase2_scraper_targets.csv`.
-- Generator: `scripts/run_phase2_scraper.py` (writes `supabase/phase2_scraped.json`).
+## 13. Concierge seeding and scraping (canonical MVP launch model)
+
+### 13.1 Operating posture
+- The MVP launch inventory uses a **hybrid concierge pipeline**:
+  - manual lead sourcing
+  - automated scrape and normalization
+  - manual review of the pre-publish seed artifact
+  - automated relational publish into the canonical listing model
+- AI agents and scripts must not decide **who** should be listed.
+- Blind web acquisition is not allowed for MVP launch inventory.
+- Every candidate listing must originate from a human-approved source URL.
+
+### 13.2 Manual stages
+The only required manual steps for MVP concierge seeding are:
+- lead sourcing
+- review of the seed or publish-ready CSV before publish
+
+Humans should not manually format descriptions, assemble relational inserts, or hand-build publish payloads unless the automated path is blocked.
+
+### 13.3 Automated stages
+Once a source URL is approved by a human, the pipeline may automate:
+- page fetch and extraction
+- structured candidate-field extraction from the public source
+- canonical suburb resolution to `suburb_id`
+- taxonomy mapping to `trainer_specializations`, `trainer_services`, and `trainer_behavior_issues`
+- duplicate and conflict checks
+- publish-ready artifact generation
+- relational import generation
+- scaffolded publish
+- later claim handover support
+
+### 13.4 Canonical guardrails
+- No AI sourcing: automation may process only human-approved URLs.
+- No blind scraping: broad open-web acquisition is out of scope for MVP launch inventory.
+- No publish without canonical geography: a listing must resolve to a valid `suburb_id` before publish.
+- No publish of `resource_type='trainer'` without at least one specialization row; this must remain aligned to the schema trigger.
+- No listing may be presented as owner-verified or business-managed unless the real ownership and verification path has occurred.
+- Concierge-seeded MVP listings may be publicly visible while still being scaffolded and unclaimed, but that state must stay truthful.
+
+### 13.5 Launch inventory requirements
+The launch objective is to avoid a ghost-town directory while keeping the source path reviewable and truthful.
+
+The concierge pipeline must therefore produce inventory that is:
+- sourced from real businesses, not placeholders
+- geographically valid under the canonical suburb/council model
+- sufficiently complete to feel like a real directory result
+- reviewable before publish
+- reproducible through a bounded import path
+
+At minimum, a publish-ready trainer listing must have:
+- business name
+- source URL
+- resolved `suburb_id`
+- `resource_type`
+- at least one specialization
+- a truthful contact path or clearly bounded fallback
+
+### 13.6 Review artifact requirements
+The manual pre-publish review artifact must expose enough signal to catch bad automation output before publish.
+
+It must show, at minimum:
+- source URL
+- extracted business name
+- extracted contact fields if present
+- resolved suburb and any locality warning
+- mapped specialization, service, and behaviour-issue tags
+- duplicate or conflict warnings
+- publish-readiness or missing-field warnings
+
+### 13.7 Legacy phase2 pipeline status
+- `data/phase2_scraper_targets.csv`
+- `scripts/run_phase2_scraper.py`
+- `supabase/phase2_scraped.json`
+- `scripts/apply_phase2_scaffolded.py`
+- `supabase/phase2_scaffolded.sql`
+- `scripts/scrape_qa_runner_stub.py`
+
+These artifacts are legacy placeholder or demo scaffolding only.
+They are not the canonical MVP launch pipeline for real trainer inventory and must not be treated as sufficient launch-gate evidence on their own.
 
 ## 14. Commercial Funnel Baseline (2026-03-01)
 - Baseline type: controlled engineering sample, not organic production traffic.

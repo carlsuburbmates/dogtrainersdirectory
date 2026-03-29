@@ -90,7 +90,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - `OW-927` is now complete: the owner-action workflow family now has a dedicated override, truthful ai-health supervision card, and explicit shadow-capped ceiling so future owner-live proposals have a real control substrate without implying current live owner automation.
 - Phase 16 - Confirmed Owner Action Automation is complete for the current planned slice.
 - Phases 14, 15, and 16 have been re-verified against the canonical verification playbook in `08_OPS_RUNBOOK.md`; the stricter runtime, boundary, and supervision checks now clear on the repaired local verification baseline.
-- The roadmap returns to awaiting prioritisation.
+- Phase 17 - Concierge Seeding & Scraping is now open as the next governed delivery slice.
+- `CS-1001` is now the active priority.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -108,6 +109,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   14. Operator Burden Reduction
   15. Owner Low-Touch Guidance
   16. Confirmed Owner Action Automation
+  17. Concierge Seeding & Scraping
 
 ## Completed Foundation Milestones
 
@@ -935,7 +937,57 @@ Anything not listed here is **not worked on** (to prevent drift).
   - No owner-facing workflow is auto-promoted to `controlled_live` in this task.
   - No search, ranking, emergency, or contact behaviour changes occur in this task unless already explicitly approved in earlier bounded owner tasks.
 
+### Phase 17 - Concierge Seeding & Scraping
+
+**Phase rule**
+- The MVP launch inventory uses a hybrid concierge pipeline: manual lead sourcing, automated scrape and normalization, manual review of the pre-publish seed artifact, and automated relational publish.
+- AI and automation may not decide who should be listed; they may only process human-approved source URLs.
+- No blind scraping, no broad data mirroring, and no launch claim based on placeholder/demo listings.
+- No listing may publish without canonical `suburb_id` resolution, and no `resource_type='trainer'` listing may publish without at least one specialization row.
+- Publicly visible concierge-seeded listings may be scaffolded and unclaimed for MVP, but they must not be presented as owner-verified unless the real ownership or verification path has occurred.
+
+**CS-1001: Define the canonical concierge seed contract and review artifact**
+- Purpose: replace the legacy phase2 placeholder path with one canonical, reviewable input and pre-publish artifact for real trainer inventory.
+- Definition of done:
+  - The repo defines the canonical manual input contract for concierge seed candidates.
+  - The repo defines the canonical pre-publish review artifact shape, including extracted contact fields, suburb resolution, taxonomy mapping, duplicate warnings, and publish-readiness warnings.
+  - The old phase2 placeholder artifacts are explicitly non-canonical for launch inventory.
+  - SSOT and implementation entry points agree on the contract shape.
+
+**CS-1002: Build the approved-source scrape and normalization pipeline**
+- Purpose: automate enrichment from human-approved trainer source URLs into a schema-aligned, publish-ready candidate payload.
+- Definition of done:
+  - Automation fetches only human-approved source URLs and extracts the trainer fields needed for MVP launch inventory.
+  - The normalization path resolves canonical `suburb_id`, strips unsafe or low-signal formatting noise, and maps trainer content into the DTD taxonomy shape without inventing unsupported claims.
+  - Output is deterministic and reviewable enough to support the manual pre-publish checkpoint.
+  - No blind discovery or open-web sourcing behaviour is introduced.
+
+**CS-1003: Add duplicate checks and relational mapping for publish-ready trainer candidates**
+- Purpose: prevent low-quality or duplicate inventory from entering the live directory and align the concierge pipeline to the current DTD schema.
+- Definition of done:
+  - Candidate processing checks for duplicate or conflicting listings using stable public-business signals such as domain, phone, name, and location evidence.
+  - Publish-ready candidates map cleanly into `businesses`, `trainer_specializations`, `trainer_services`, and `trainer_behavior_issues`.
+  - `trainer` publish candidates satisfy the current specialization requirement before import.
+  - Missing or conflicting data is surfaced as a review warning rather than silently guessed.
+
+**CS-1004: Add the scaffolded launch publish path and truthful claim handover**
+- Purpose: let the directory launch with real concierge-seeded listings while keeping ownership, verification, and claim state truthful.
+- Definition of done:
+  - The publish path can insert real concierge-seeded trainer listings into the live directory without frontend onboarding.
+  - Published records remain explicitly scaffolded and unclaimed until the later ownership handover occurs.
+  - Contact and verification signals remain truthful; no listing is implied to be owner-verified if it is only concierge-seeded.
+  - The claim handover path remains compatible with later owner takeover without requiring manual re-entry of the listing.
+
+**CS-1005: Add the MVP launch-gate inventory verifier**
+- Purpose: prevent launch with a ghost-town directory by making inventory depth and coverage a governed launch requirement rather than an informal judgment.
+- Definition of done:
+  - Launch verification includes explicit inventory thresholds for real searchable trainer listings.
+  - Launch verification includes explicit minimum geography and taxonomy coverage rules that match the intended launch area.
+  - Placeholder/demo-only baselines do not satisfy the launch gate.
+  - The launch verifier reports whether concierge-seeded inventory is sufficient for MVP launch.
+
 ## Execution Log
+- 2026-03-29: Opened `Phase 17 - Concierge Seeding & Scraping` and set `CS-1001` as the active priority. The next governed slice replaces the legacy phase2 placeholder path with a canonical hybrid concierge pipeline: manual lead sourcing, automated scrape and normalization, manual pre-publish review, and automated relational publish for real trainer inventory.
 - 2026-03-27: `OW-927` completed by adding the dedicated `OWNER_ACTION_AI_MODE` override to SSOT and the AI automation substrate, introducing a truthful `Owner Action Guidance` supervision card on `/admin/ai-health`, and explicitly capping that workflow family below `live` until canon widens it later. The card now states that visible refinement suggestions, shortlist comparison guidance, and enquiry drafts on `/search` and `/trainers/[id]` remain deterministic product logic today, while any future audit-backed owner-action AI is separately supervised and kill-switchable. Focused verification stayed green, no search, ranking, emergency, or contact behaviour changed, and Phase 16 is now complete for the current planned slice.
 - 2026-03-27: Main-control corrected a premature Phase 16 sync after the implementation lane wrote `OW-924` to `OW-926` acceptance state before review. The post-push audit found and fixed the `narrow-distance` refinement truth mismatch (`0-5` versus `5-15` semantics), re-ran focused verification, and keeps `OW-927` as the single active priority under tighter single-writer control for the remainder of Phase 16.
 - 2026-03-27: `OW-926` completed by adding bounded shortlist comparison guidance on `/search`. The shortlist now summarises visible proof points across verified listings, reviewed profiles, direct contact paths, and disclosed fit details, then recommends whether the owner should contact now, keep comparing, or refine first. Focused verification stayed green, no ranking or contact flow changed, and `OW-927` is now the active priority to harden the owner-workflow control substrate before any future live-readiness proposal.
