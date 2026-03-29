@@ -1,8 +1,8 @@
 # Routes and Navigation - Intent and Boundaries
 
 **Status:** Canonical (Tier-1)
-**Version:** v1.12
-**Last Updated:** 2026-03-10
+**Version:** v1.13
+**Last Updated:** 2026-03-29
 
 ## 1. Inventory source
 Implementation-discovered route inventory is generated and versioned at:
@@ -19,8 +19,10 @@ This file defines navigation intent, canonical route decisions, and separation r
 - `/search` is the shortlist refinement surface: filters and results must coexist in a way that keeps the next move to a trainer profile obvious and low-friction.
 - `/search` is also the canonical first-slice landing surface for locality and service intent. When canonical query params are present (`suburbName`, `service_type`, `age_specialties`, `behavior_issues`, `q/query`), page heading, metadata, structured data, and internal discovery links should reflect that context without requiring a second route family.
 - In `/search`, `suburbId` is the canonical location identity when present. Mutable location snapshot fields may remain as display/cache hints, but they must not override canonical suburb resolution for search correctness.
+- `/search` may surface deterministic shortlist explanation, owner-approved refinement suggestions, and bounded shortlist comparison guidance, but those helpers must not silently change ranking, route truth, or contact behaviour.
 - `/directory` and `/trainers/[id]` are discovery and profile surfaces.
 - `/trainers/[id]` is the trust and contact decision surface: it must make fit, proof, and direct contact options visible before the user leaves the directory, and it should prioritise the fastest available direct contact path while retaining the enquiry form as a written fallback.
+- `/trainers/[id]` may prepare an owner-visible enquiry draft or suggested questions, but any send-like action remains explicitly user-controlled.
 - If `/trainers/[id]` cannot resolve to a live profile, the failure state must provide clear recovery actions back to search, directory, or home instead of ending in a hard stop.
 - `/trainer/[id]` exists for backward compatibility and must redirect to `/trainers/[id]`.
 - `/trainer/[id]` compatibility redirects must preserve meaningful query-string context when forwarding to `/trainers/[id]`.
@@ -41,7 +43,7 @@ This file defines navigation intent, canonical route decisions, and separation r
 ## 4. Admin separation
 - Admin surfaces are under `/admin/**` only.
 - `/emergency` is a public surface and must not be repurposed as an admin console.
-- Admin pages must be protected by middleware and role checks (see `DOCS/SSOT/10_SECURITY_AND_PRIVACY.md`).
+- Admin pages must be protected by proxy enforcement and role checks (see `DOCS/SSOT/10_SECURITY_AND_PRIVACY.md`).
 - Admin pages must render inside an operator-specific shell and navigation model, not the public marketing shell.
 - Public acquisition CTAs and the public footer chrome must not be shown on `/admin/**` routes.
 - Scaffold-review queue routes under `/admin/**` and `/api/admin/**`, including `/api/admin/scaffolded`, are operator-only workflows. They are not business-owned listing-management routes.

@@ -1,8 +1,8 @@
 # Product Context - Dog Trainers Directory (DTD)
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.3  
-**Last Updated:** 2026-03-11
+**Version:** v1.4  
+**Last Updated:** 2026-03-29
 
 ## 1. What this app is
 DTD is a mobile-first dog trainer discovery and guidance platform.
@@ -11,7 +11,7 @@ In plain English, it does four jobs:
 - helps dog owners find a suitable trainer
 - helps dog owners decide what kind of help they need through triage
 - helps dog owners access emergency resources when the situation is urgent
-- helps trainer businesses join the directory and pay for featured visibility
+- helps trainer businesses join the directory, maintain their profile, and pay for featured visibility
 
 It also includes a separate admin operations surface used to run and govern the platform.
 
@@ -33,7 +33,7 @@ This document is a plain-English product model. It summarises how the current pr
 1. **Direct discovery**
    - User starts on `/`, `/search`, or `/directory`
    - User filters by location, service type, behaviour issue, age need, and related search filters
-   - User compares listings
+   - User compares listings, shortlist explanations, and bounded next-step guidance
    - User opens `/trainers/[id]`
    - User contacts a trainer by phone, email, website, or enquiry form
 
@@ -42,15 +42,21 @@ This document is a plain-English product model. It summarises how the current pr
    - User selects age and issue context
    - If the issue maps to emergency escalation, the emergency gate appears
    - If urgent, user is routed to `/emergency?flow=medical|stray|crisis`
-   - If not urgent, user is routed to `/search` with relevant filters pre-applied
+   - If not urgent, user is routed to `/search` with relevant filters pre-applied and deterministic shortlist context explained clearly
 
-3. **Emergency help**
+3. **Owner decision support**
+   - User stays on `/search` or `/trainers/[id]`
+   - The product may explain shortlist fit, suggest a refinement, compare shortlisted trainers, or prepare an enquiry draft
+   - Any refinement apply or send-like action still requires explicit owner action
+   - Ranking, route truth, and emergency escalation remain deterministic
+
+4. **Emergency help**
    - User starts on `/emergency`
    - User can browse emergency resources
    - User can submit a triage description
    - The system classifies the situation and returns guidance
 
-4. **Failure recovery**
+5. **Failure recovery**
    - If a trainer profile cannot be loaded, the user sees a clear unavailable state
    - The user can recover via `Back to search`, `Browse directory`, or `Go home`
 
@@ -76,15 +82,15 @@ This document is a plain-English product model. It summarises how the current pr
 ### 3.3 Admin/operator workflows
 1. **Platform oversight**
    - Operator starts on `/admin`
-   - Operator reviews status, queues, summaries, and monetisation visibility
+   - Operator reviews the exceptions-first weekly action strip, verification/ABN loop, scaffold-review loop, summaries, and monetisation visibility
 
 2. **Moderation**
    - Operator uses `/admin/reviews`
-   - Operator reviews pending items and approves or rejects reviews
+   - Operator works the weekly moderation loop with explicit approve/reject actions and draft/shadow context kept distinct from final state
 
 3. **Monitoring**
    - Operator uses `/admin/ai-health`, `/admin/cron-health`, `/admin/errors`, and `/admin/triage`
-   - Operator monitors platform health, errors, triage activity, rollout readiness, and AI-related status through a dashboard-first, low-noise supervision model
+   - Operator monitors platform health, errors, triage activity, rollout readiness, workflow ceilings, and AI-related status through a dashboard-first, low-noise supervision model
 
 **Source:** `DOCS/SSOT/01_SYSTEM_MODEL.md`, `DOCS/SSOT/05_ROUTES_AND_NAV.md`, `DOCS/SSOT/06_MONETISATION.md`
 
@@ -208,6 +214,7 @@ The platform relies on these main business and operating entities:
 - There is no support inbox model in code
 - Featured placement uses Stripe Checkout `mode: payment` (one-time payment) unless Tier-0 changes
 - Sensitive fields are decrypted server-side only
+- Owner decision-support helpers may prepare guidance, refinements, comparisons, and enquiry drafts, but they do not silently change route state or send messages
 - Database identifiers remain in canonical schema form even when user-facing copy uses Australian English
 
 **Source:** `DOCS/SSOT/00_BLUEPRINT_SSOT.md`, `DOCS/SSOT/03_DATA_CONTRACTS.md`, `DOCS/SSOT/06_MONETISATION.md`, `DOCS/SSOT/10_SECURITY_AND_PRIVACY.md`
@@ -219,10 +226,11 @@ That means:
 - core public discovery works
 - trainer profile and failure recovery paths work
 - triage and emergency escalation logic are aligned
+- owner low-touch guidance and confirmed owner action-preparation flows are present without widening control boundaries
 - onboarding and promotion flows are present
 - the first business-owned post-onboarding profile-management slice is present under `/account/business/**`
 - featured placement no longer exposes a broken checkout path
-- admin monitoring and moderation surfaces are operationally separated and functionally usable for the audited scope
+- admin monitoring, moderation, and supervision surfaces are operationally separated and functionally usable for the audited scope
 
 This does **not** imply that the product is already a fully mature or fully scaled marketplace. For example:
 - live directory inventory is still a controlled baseline rather than a large real-world marketplace dataset

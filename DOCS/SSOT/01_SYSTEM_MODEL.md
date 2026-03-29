@@ -1,27 +1,27 @@
 # System Model — Actors, Workflows, State
 
 **Status:** Canonical (Tier-1)  
-**Version:** v1.1  
-**Last Updated:** Phase 1 Batch 3 - Documentation Updates
+**Version:** v1.2  
+**Last Updated:** 2026-03-29
 
 ## 1. Users and roles
 - **Public user:** no login required; uses search/triage/emergency.
-- **Business operator:** creates/maintains a listing via onboarding flows (may require verification).
-- **Admin/operator:** monitors health, runs queues, verifies ABN and emergency resources, moderates reviews. ✅ Protected by authentication middleware.
+- **Business operator:** creates and maintains a listing via onboarding and the owned `/account/business/**` profile-management surface (may require verification).
+- **Admin/operator:** monitors health, runs weekly exception loops, verifies ABN and emergency resources, moderates reviews, and supervises automation ceilings.
 
 ## 2. Core public workflows
-### 2.1 Directory discovery — ✅ Implemented (Phase 1 Batch 1)
+### 2.1 Directory discovery
 - Entry points: `/`, `/search`, `/directory`, `/trainers`
-- Inputs: suburb, council context, needs (behaviour issue/service type), distance.
-- Outputs: businesses (trainers) with verification badges, review counts, featured placement surfacing.
+- Inputs: canonical suburb/location context, needs (behaviour issue/service type), distance, and text query.
+- Outputs: businesses (trainers) with verification badges, review counts, featured placement surfacing, and bounded shortlist guidance.
 
 **Implementation details:**
 - **Search API:** `/api/public/search` with 11+ filter parameters
-- **UI:** Full search form with location, service type, behavior issue, age specialty, certifications, availability, ratings, pricing filters
-- **Results:** Grid display with trainer cards, contact information, pagination
+- **UI:** Search form with canonical suburb state, service, behaviour, age, query, and refinement controls
+- **Results:** Grid display with trainer cards, trust details, direct-contact context, pagination, owner-approved refinement suggestions, and shortlist comparison guidance
 - **Backend:** Calls `search_trainers` RPC with decryption key for sensitive fields
 
-### 2.2 Trainer profile — ✅ Enhanced (Phase 1 Batch 2)
+### 2.2 Trainer profile
 - Pages: `/trainers/[id]` and `/trainer/[id]` (must resolve to the same profile experience).
 - Contract: profile data is derived from **businesses-centric schema** (via RPC `get_trainer_profile(...)` where available).
 
@@ -30,10 +30,10 @@
 - **Profile sections:** About/bio, services offered, behavior issues addressed, age specialties
 - **Reviews:** Display up to 10 approved reviews with ratings and content
 - **Contact sidebar:** Phone, email, website, physical address with icons
-- **Contact form:** Integrated ContactForm component for direct inquiries
+- **Contact form:** Integrated ContactForm component for direct enquiries plus insert-only owner draft/question assistance
 - **Redirect handler:** `/trainer/[id]` → 301 redirect to `/trainers/[id]` for backward compatibility
 
-### 2.3 Emergency flow — ✅ Enhanced (Phase 1 Batch 2)
+### 2.3 Emergency flow
 - Page: `/emergency` (public)
 - Capabilities:
   - emergency resource lookup ✅ **Implemented**
@@ -60,6 +60,11 @@
   - Emergency hotline list (police, RSPCA, poisons hotline)
   - Crisis resource links
 
+### 2.4 Triage-led owner assistance
+- `/triage -> /search` remains deterministic and safety-first.
+- `/search` may explain the shortlist, suggest bounded refinements, and compare shortlisted trainers, but any search-changing action still requires explicit owner action.
+- `/trainers/[id]` may prepare an enquiry draft or suggested questions, but the current contact/send path remains explicit and user-controlled.
+
 ## 3. Business workflows
 ### 3.1 Onboarding
 - Page: `/onboarding`
@@ -73,32 +78,40 @@
 - Server: `/api/stripe/create-checkout-session`
 - Outcome: featured placement entitlement recorded and surfaced (see `06_MONETISATION.md`)
 
-## 4. Admin workflows (pull-based) — ✅ Auth Protected (Phase 1 Batch 1)
+### 3.3 Profile management
+- Pages: `/account/business`, `/account/business/[businessId]`
+- Outcome: business-owned listing/profile maintenance and deterministic completeness review, with shadow-only listing-quality guidance attached to the owned record
+- Boundary: this surface does not grant operator verification, publication, moderation, or monetisation powers
+
+## 4. Admin workflows (pull-based)
 Admin pages: /admin, /admin/ai-health, /admin/cron-health, /admin/errors, /admin/reviews, /admin/triage
 
-**Authentication:** All admin routes protected by Next.js middleware (`src/middleware.ts`)
+**Authentication:** All admin routes are protected by proxy enforcement and admin-role checks (`src/proxy.ts`, `src/lib/auth.ts`).
 
 Admins operate via:
-- **Status strip:** health/alerts/summary (pull)
+- **Exceptions-first dashboard:** weekly action strip, verification/ABN loop, scaffold-review loop, and lower-priority diagnostics
 - **Queues:** review moderation, ABN manual review, emergency verification, scaffolded listing verification
-- **Health pages:** cron health, errors, AI health
+- **Health pages:** cron health, errors, AI health, rollout and supervision truth
 
 There is **no inbox** concept in the codebase.
 
-### 4.1 Review moderation — ✅ Implemented (Phase 1 Batch 2)
+### 4.1 Review moderation
 - Page: `/admin/reviews`
 - API: `/api/admin/reviews/list` (fetch reviews), `/api/admin/reviews/[id]` (approve/reject)
 
 **Implementation details:**
 - **Filtering:** By status (pending/approved/rejected) and rating (1-5 stars)
 - **Search:** Client-side search across reviewer name, title, content, business name
-- **AI integration:** Display AI moderation suggestions (decision, confidence, reason)
+- **AI integration:** Display draft/shadow moderation context with explicit approval state and reason
 - **Actions:** 
-  - Approve review with one click
-  - Reject review with required reason
-  - Flag for review (placeholder)
+  - Approve review explicitly
+  - Reject review explicitly with reason
 - **Pagination:** 10 reviews per page with next/previous controls
 - **Real-time updates:** Status updates reflected immediately after actions
+
+### 4.2 Automation supervision
+- `/admin/ai-health` is the canonical automation supervision surface.
+- It shows workflow ceilings, rollout truth, kill-switch guidance, and the distinction between deterministic visible behaviour and any future audit-backed AI workflow families.
 
 ## 5. State transitions (high level)
 - Business verification: `verification_status` transitions (`pending` → `verified`/`rejected`/`manual_review`)
