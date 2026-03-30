@@ -417,6 +417,30 @@ The concierge pipeline must therefore produce inventory that is:
 - reviewable before publish
 - reproducible through a bounded import path
 
+For the current MVP launch gate, only listings that are live on the canonical public trainer search surface count toward launch readiness.
+Counted listings may still be scaffolded and unclaimed, but they must remain truthful about that state.
+The 19-row Inner Melbourne pilot queue is sufficient for pipeline proof only; it does not satisfy launch readiness on its own.
+
+Frozen MVP launch-gate thresholds for the current Inner Melbourne (`Inner City`) catchment:
+- at least `30` real searchable trainer listings
+- coverage across all `3` Inner City councils:
+  - `City of Melbourne`
+  - `City of Port Phillip`
+  - `City of Yarra`
+- coverage across at least `11` distinct Inner City suburbs
+- taxonomy coverage across the live searchable set of at least:
+  - `3` distinct `age_specialty` values
+  - `4` distinct `service_type` values
+  - `5` distinct `behavior_issue` values
+
+Rows do not count toward the launch gate if any of the following are true:
+- the listing is placeholder/demo-only inventory
+- the listing is not live on the canonical public trainer search surface
+- the listing lacks canonical geography (`suburb_id`)
+- the listing lacks the required trainer specialization linkage
+- the listing has no truthful contact path and no bounded fallback
+- the listing is blocked, rejected, or otherwise excluded from public launch inventory
+
 At minimum, a publish-ready trainer listing must have:
 - business name
 - source URL
