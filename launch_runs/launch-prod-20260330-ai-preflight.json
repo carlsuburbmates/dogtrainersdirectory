@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-03-30T18:39:14.794Z",
+  "sha": "77fae39c347619bc0caf86cc11c178143760bdab",
+  "target": "staging",
+  "envTarget": "staging",
+  "dnsStatus": "PASS",
+  "counts": {
+    "pass": 1,
+    "warn": 0,
+    "skip": 0,
+    "fail": 1
+  },
+  "results": [
+    {
+      "name": "DB target",
+      "status": "PASS",
+      "durationMs": 94,
+      "details": {
+        "urlHost": "db.xqytwtmdilipxnjetvoe.supabase.co",
+        "urlDatabase": "postgres",
+        "resolvedHost": "db.xqytwtmdilipxnjetvoe.supabase.co",
+        "runtimeHost": "2406:da18:243:7421:1653:2d92:a846:1e55/128",
+        "runtimeDatabase": "postgres",
+        "runtimeRole": "postgres",
+        "runtimePort": 5432
+      }
+    },
+    {
+      "name": "Launch inventory gate",
+      "status": "FAIL",
+      "durationMs": 199,
+      "output": "counted=0 councils=0 suburbs=0 age=0 services=0 issues=0",
+      "details": {
+        "status": "FAIL",
+        "missingEnrichment": 0,
+        "source": {
+          "searchSurface": "public.search_trainers",
+          "failClosed": true,
+          "totalLiveSearchRows": 4,
+          "uniqueLiveSearchBusinesses": 4,
+          "enrichedBusinesses": 4
+        },
+        "thresholds": [
+          {
+            "name": "Minimum real searchable trainer listings",
+            "required": 30,
+            "actual": 0,
+            "passed": false
+          },
+          {
+            "name": "Required Inner City councils",
+            "required": [
+              "City of Melbourne",
+              "City of Port Phillip",
+              "City of Yarra"
+            ],
+            "actual": [],
+            "passed": false
+          },
+          {
+            "name": "Minimum distinct Inner City suburbs",
+            "required": 11,
+            "actual": 0,
+            "passed": false
+          },
+          {
+            "name": "Minimum distinct age specialties",
+            "required": 3,
+            "actual": 0,
+            "passed": false
+          },
+          {
+            "name": "Minimum distinct service types",
+            "required": 4,
+            "actual": 0,
+            "passed": false
+          },
+          {
+            "name": "Minimum distinct behavior issues",
+            "required": 5,
+            "actual": 0,
+            "passed": false
+          }
+        ]
+      }
+    }
+  ],
+  "launchInventoryGate": {
+    "status": "FAIL",
+    "source": {
+      "searchSurface": "public.search_trainers",
+      "failClosed": true,
+      "totalLiveSearchRows": 4,
+      "uniqueLiveSearchBusinesses": 4,
+      "enrichedBusinesses": 4
+    },
+    "summary": {
+      "countedListings": 0,
+      "representedCouncils": [],
+      "representedSuburbs": [],
+      "ageSpecialties": [],
+      "serviceTypes": [],
+      "behaviorIssues": []
+    },
+    "thresholds": [
+      {
+        "name": "Minimum real searchable trainer listings",
+        "required": 30,
+        "actual": 0,
+        "passed": false
+      },
+      {
+        "name": "Required Inner City councils",
+        "required": [
+          "City of Melbourne",
+          "City of Port Phillip",
+          "City of Yarra"
+        ],
+        "actual": [],
+        "passed": false
+      },
+      {
+        "name": "Minimum distinct Inner City suburbs",
+        "required": 11,
+        "actual": 0,
+        "passed": false
+      },
+      {
+        "name": "Minimum distinct age specialties",
+        "required": 3,
+        "actual": 0,
+        "passed": false
+      },
+      {
+        "name": "Minimum distinct service types",
+        "required": 4,
+        "actual": 0,
+        "passed": false
+      },
+      {
+        "name": "Minimum distinct behavior issues",
+        "required": 5,
+        "actual": 0,
+        "passed": false
+      }
+    ],
+    "exclusions": [
+      {
+        "businessId": 1,
+        "businessName": "DTD Verification Trainer PH205",
+        "resourceType": "trainer",
+        "suburbName": "Collingwood",
+        "councilName": "City of Yarra",
+        "region": "Inner City",
+        "verificationStatus": "verified",
+        "isScaffolded": false,
+        "isClaimed": false,
+        "counted": false,
+        "exclusionReasons": [
+          "placeholder_demo_only_inventory"
+        ]
+      },
+      {
+        "businessId": 2,
+        "businessName": "DTD Demo Trainer Carlton Foundation",
+        "resourceType": "trainer",
+        "suburbName": "Carlton",
+        "councilName": "City of Melbourne",
+        "region": "Inner City",
+        "verificationStatus": "verified",
+        "isScaffolded": false,
+        "isClaimed": false,
+        "counted": false,
+        "exclusionReasons": [
+          "placeholder_demo_only_inventory"
+        ]
+      },
+      {
+        "businessId": 3,
+        "businessName": "DTD Demo Trainer South Melbourne Reactive",
+        "resourceType": "behaviour_consultant",
+        "suburbName": "South Melbourne",
+        "councilName": "City of Port Phillip",
+        "region": "Inner City",
+        "verificationStatus": "verified",
+        "isScaffolded": false,
+        "isClaimed": false,
+        "counted": false,
+        "exclusionReasons": [
+          "placeholder_demo_only_inventory"
+        ]
+      },
+      {
+        "businessId": 4,
+        "businessName": "DTD Demo Trainer Fitzroy Social",
+        "resourceType": "trainer",
+        "suburbName": "Fitzroy",
+        "councilName": "City of Yarra",
+        "region": "Inner City",
+        "verificationStatus": "verified",
+        "isScaffolded": false,
+        "isClaimed": false,
+        "counted": false,
+        "exclusionReasons": [
+          "placeholder_demo_only_inventory"
+        ]
+      }
+    ],
+    "countedRecords": []
+  }
+}

@@ -10,6 +10,12 @@ import path from 'node:path'
 import { lookup } from 'node:dns/promises'
 import { pathToFileURL } from 'node:url'
 import { Client } from 'pg'
+import {
+  evaluateLaunchInventoryGate,
+  readLaunchInventoryEnrichment,
+  readLiveSearchInventory,
+  type LaunchInventoryGatePacket,
+} from './launch_inventory_gate'
 
 export type Status = 'PASS' | 'FAIL' | 'WARN' | 'SKIP'
 
@@ -26,6 +32,7 @@ const results: CheckResult[] = []
 let hasFailure = false
 let dnsStatus: 'PASS' | 'WARN' = 'PASS'
 const dnsEvidence: Record<string, string> = {}
+let launchInventoryGatePacket: LaunchInventoryGatePacket | null = null
 
 const WARN_ALLOWED = new Set(['DNS root → Vercel'])
 
@@ -69,6 +76,7 @@ const AI_CHECKS = new Set<string>([
   'check_env_ready staging',
   'alerts dry-run',
   'DB target',
+  'Launch inventory gate',
   'ABN fallback rate',
   'Database schema presence',
   'RLS status',
@@ -164,7 +172,7 @@ interface PgClientMeta {
   resolvedHost: string
 }
 
-async function runDbChecks() {
+async function runDbChecks(options: { inventoryOnly: boolean }) {
   const connString = process.env.SUPABASE_CONNECTION_STRING
   if (!connString) {
     addResult({ name: 'DB target', status: 'FAIL', durationMs: 0, output: 'SUPABASE_CONNECTION_STRING not set' })
@@ -183,13 +191,58 @@ async function runDbChecks() {
   }
 
   await reportDbTarget(client, pgMeta)
-  await checkAbnFallbackMetrics(client)
-  await checkTablePresence(client)
-  await checkRlsStatus(client)
-  await checkPolicyCoverage(client)
-  await checkMigrationParity(client)
+  await checkLaunchInventoryGate(client)
+  if (!options.inventoryOnly) {
+    await checkAbnFallbackMetrics(client)
+    await checkTablePresence(client)
+    await checkRlsStatus(client)
+    await checkPolicyCoverage(client)
+    await checkMigrationParity(client)
+  }
 
   await client.end().catch(() => {})
+}
+
+async function checkLaunchInventoryGate(client: Client) {
+  const start = Date.now()
+  try {
+    const pgcryptoKey = process.env.SUPABASE_PGCRYPTO_KEY ?? null
+    const liveRows = await readLiveSearchInventory(client, pgcryptoKey)
+    const businessIds = liveRows.map(row => row.business_id)
+    const enrichmentRows = await readLaunchInventoryEnrichment(client, businessIds)
+    launchInventoryGatePacket = evaluateLaunchInventoryGate(liveRows, enrichmentRows)
+
+    const missingEnrichment = launchInventoryGatePacket.exclusions.filter(record =>
+      record.exclusionReasons.includes('missing_inventory_enrichment'),
+    ).length
+
+    addResult({
+      name: 'Launch inventory gate',
+      status: launchInventoryGatePacket.status,
+      durationMs: Date.now() - start,
+      output:
+        `counted=${launchInventoryGatePacket.summary.countedListings} ` +
+        `councils=${launchInventoryGatePacket.summary.representedCouncils.length} ` +
+        `suburbs=${launchInventoryGatePacket.summary.representedSuburbs.length} ` +
+        `age=${launchInventoryGatePacket.summary.ageSpecialties.length} ` +
+        `services=${launchInventoryGatePacket.summary.serviceTypes.length} ` +
+        `issues=${launchInventoryGatePacket.summary.behaviorIssues.length}`,
+      details: {
+        status: launchInventoryGatePacket.status,
+        missingEnrichment,
+        source: launchInventoryGatePacket.source,
+        thresholds: launchInventoryGatePacket.thresholds,
+      },
+    })
+  } catch (error) {
+    launchInventoryGatePacket = null
+    addResult({
+      name: 'Launch inventory gate',
+      status: 'FAIL',
+      durationMs: Date.now() - start,
+      output: `Live searchable inventory read failed: ${(error as Error).message}`,
+    })
+  }
 }
 
 function parseConnectionTarget(connectionString: string) {
@@ -620,6 +673,7 @@ function writeArtifacts() {
   const runsDir = getLaunchRunsDir()
   const mdPath = path.join(runsDir, `launch-prod-${date}-ai-preflight.md`)
   const jsonPath = path.join(runsDir, `launch-prod-${date}-ai-preflight.json`)
+  const inventoryGatePath = path.join(runsDir, `launch-inventory-gate-${date}.json`)
   const sha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim()
   const counts = getStatusCounts()
   const envTarget = process.env.ENV_TARGET ?? 'staging'
@@ -666,12 +720,17 @@ function writeArtifacts() {
         envTarget,
         dnsStatus,
         counts,
-        results
+        results,
+        launchInventoryGate: launchInventoryGatePacket,
       },
       null,
       2
     )
   )
+
+  if (launchInventoryGatePacket) {
+    fs.writeFileSync(inventoryGatePath, JSON.stringify(launchInventoryGatePacket, null, 2))
+  }
 
   // Write DNS evidence artifact if we captured any dig outputs
   if (Object.keys(dnsEvidence).length > 0) {
@@ -681,9 +740,13 @@ function writeArtifacts() {
       .map(([d, v]) => `### ${d}\n\n${v}`)
       .join('\n\n')
     fs.writeFileSync(dnsPath, dnsLines)
-    console.log(`\nArtifacts updated:\n- ${mdPath}\n- ${jsonPath}\n- ${dnsPath}`)
+    console.log(
+      `\nArtifacts updated:\n- ${mdPath}\n- ${jsonPath}${launchInventoryGatePacket ? `\n- ${inventoryGatePath}` : ''}\n- ${dnsPath}`,
+    )
   } else {
-    console.log(`\nArtifacts updated:\n- ${mdPath}\n- ${jsonPath}`)
+    console.log(
+      `\nArtifacts updated:\n- ${mdPath}\n- ${jsonPath}${launchInventoryGatePacket ? `\n- ${inventoryGatePath}` : ''}`,
+    )
   }
 }
 
@@ -706,9 +769,28 @@ function printSummary() {
   console.log(`  ⚠️ WARNINGS: ${warnings.length ? warnings.join(', ') : 'None'}`)
   console.log(`  ⏳ OPERATOR-ONLY: ${operatorOnly.length ? operatorOnly.join(', ') : 'None'}`)
   console.log(`  🔒 MCP-ONLY: ${mcpOnly.length ? mcpOnly.join(', ') : 'None'}`)
+
+  if (launchInventoryGatePacket) {
+    console.log('\nLaunch inventory gate:')
+    console.log(`  STATUS: ${launchInventoryGatePacket.status}`)
+    console.log(`  Counted listings: ${launchInventoryGatePacket.summary.countedListings}`)
+    console.log(`  Councils: ${launchInventoryGatePacket.summary.representedCouncils.join(', ') || 'None'}`)
+    console.log(`  Suburbs: ${launchInventoryGatePacket.summary.representedSuburbs.length}`)
+    console.log(`  Age specialties: ${launchInventoryGatePacket.summary.ageSpecialties.length}`)
+    console.log(`  Service types: ${launchInventoryGatePacket.summary.serviceTypes.length}`)
+    console.log(`  Behavior issues: ${launchInventoryGatePacket.summary.behaviorIssues.length}`)
+  }
+}
+
+function getCliFlags() {
+  const args = new Set(process.argv.slice(2))
+  return {
+    inventoryOnly: args.has('--inventory-only'),
+  }
 }
 
 async function main() {
+  const flags = getCliFlags()
   const commandChecks: Array<{ name: string; command: string; env?: Record<string, string> }> = [
     { name: 'verify:phase9b', command: 'npm run verify:phase9b' },
     { name: 'lint', command: 'npm run lint' },
@@ -724,14 +806,18 @@ async function main() {
     }
   ]
 
-  for (const item of commandChecks) {
-    runCommandCheck(item.name, item.command, item.env ?? {})
+  if (!flags.inventoryOnly) {
+    for (const item of commandChecks) {
+      runCommandCheck(item.name, item.command, item.env ?? {})
+    }
   }
 
-  await runDbChecks()
-  runDnsChecks()
-  checkMonetizationFlags()
-  recordManualChecks()
+  await runDbChecks({ inventoryOnly: flags.inventoryOnly })
+  if (!flags.inventoryOnly) {
+    runDnsChecks()
+    checkMonetizationFlags()
+    recordManualChecks()
+  }
   writeArtifacts()
   printSummary()
   const counts = getStatusCounts()
