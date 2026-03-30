@@ -383,6 +383,10 @@ Rules:
 - `suburb_hint` must be one of the currently approved MVP catchment suburbs
 - optional hint columns are routing aids for the automated pipeline only; they are not canonical publish truth by themselves
 
+Current MVP clarification:
+- the approved Inner Melbourne catchment is the current `Inner City` suburb set in `data/suburbs_councils_mapping.csv`
+- the canonical pilot queue is `data/concierge_seed_queue_inner_melbourne_pilot_19.csv` with `19` approved rows for the bounded Phase 17 pipeline proof
+
 ### 13.3 Automated stages
 Once a source URL is approved by a human, the pipeline may automate:
 - page fetch and extraction

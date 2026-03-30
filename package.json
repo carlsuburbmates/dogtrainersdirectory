@@ -18,6 +18,7 @@
     "db:start": "bash ./scripts/local_db_start_apply.sh --reset",
     "db:seed": "bash ./scripts/local_db_start_apply.sh --seed-only",
     "data:refresh": "python3 scripts/refresh_suburbs_csv.py",
+    "concierge:pilot": "python3 scripts/concierge_pipeline.py",
     "schema:refresh": "bash ./scripts/refresh_schema.sh",
     "dev:local": "npm run db:start & sleep 1 && next dev",
     "allowlist:staging": "python3 scripts/generate_allowlist.py staging",
