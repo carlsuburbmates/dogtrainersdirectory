@@ -127,10 +127,10 @@ export async function POST(request: NextRequest) {
     const updates =
       action === 'approve'
         ? {
-            is_scaffolded: false,
-            is_claimed: true,
-            verification_status: 'verified',
-            abn_verified: true,
+            is_scaffolded: true,
+            is_claimed: false,
+            verification_status: 'pending',
+            abn_verified: false,
           }
         : {
             verification_status: 'manual_review',

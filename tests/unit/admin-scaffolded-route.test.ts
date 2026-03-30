@@ -204,7 +204,7 @@ describe('admin scaffolded route', () => {
     expect(payload.scaffolded[0].next_action).toContain('Reject it or keep it pending')
   })
 
-  it('keeps scaffold approval writes deterministic and unchanged', async () => {
+  it('keeps scaffold approval truthful for concierge-seeded listings', async () => {
     const fetchBackup = global.fetch
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ id: 'email-ok' }), { status: 200 })
@@ -233,10 +233,10 @@ describe('admin scaffolded route', () => {
       const response = await POST(request as any)
       expect(response.status).toBe(200)
       expect(update).toHaveBeenCalledWith({
-        is_scaffolded: false,
-        is_claimed: true,
-        verification_status: 'verified',
-        abn_verified: true,
+        is_scaffolded: true,
+        is_claimed: false,
+        verification_status: 'pending',
+        abn_verified: false,
       })
       expect(fetchMock).toHaveBeenCalledTimes(1)
       const [, options] = fetchMock.mock.calls[0]
