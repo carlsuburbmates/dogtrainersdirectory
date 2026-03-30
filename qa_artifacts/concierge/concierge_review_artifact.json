@@ -1,9 +1,16 @@
 {
   "pipeline": "concierge_seed_pipeline",
   "phase": "17",
-  "task": "CS-1002",
-  "generated_at": "2026-03-30T18:42:59.096876+11:00",
+  "task": "CS-1003",
+  "generated_at": "2026-03-31T01:16:50.553564+11:00",
   "input_csv": "/Users/carlg/Documents/AI-Coding/New project/dogtrainersdirectorylocal/data/concierge_seed_queue_inner_melbourne_pilot_19.csv",
+  "inventory_duplicate_check": {
+    "source": "supabase_rpc:search_trainers",
+    "status": "available",
+    "record_count": 4,
+    "contact_signals_decrypted": true,
+    "warning": ""
+  },
   "approved_source_only": true,
   "manual_steps": [
     "lead sourcing",
@@ -11,6 +18,12 @@
   ],
   "review_counts": {
     "ready": 5,
+    "needs_review": 12,
+    "blocked": 2,
+    "total": 19
+  },
+  "mapping_counts": {
+    "mapping_ready": 5,
     "needs_review": 12,
     "blocked": 2,
     "total": 19
@@ -82,12 +95,68 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 95
+      "review_score": 95,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Joni & Co",
+        "website": "https://www.joniandco.com.au/",
+        "address": null,
+        "suburb_id": 14,
+        "bio": null,
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://www.joniandco.com.au/",
+        "phone_plaintext": "0390699907",
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": null,
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "private_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 2,
@@ -162,13 +231,80 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope",
         "trainer/service signal is weak in source copy"
       ],
       "publish_status": "needs_review",
-      "review_score": 95
+      "review_score": 95,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope",
+        "trainer/service signal is weak in source copy"
+      ],
+      "businesses_payload": {
+        "name": "Good Dog Behaviour",
+        "website": "https://jsvet.com.au/",
+        "address": null,
+        "suburb_id": 14,
+        "bio": null,
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://jsvet.com.au/",
+        "phone_plaintext": "0394163788",
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": null,
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "private_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 3,
@@ -179,7 +315,7 @@
       "notes": "",
       "fetch": {
         "http_status": 200,
-        "final_url": "https://hoochypoochy.com.au/premium-dog-training/?doing_wp_cron=1774856548.7432498931884765625000",
+        "final_url": "https://hoochypoochy.com.au/premium-dog-training/?doing_wp_cron=1774880178.2778100967407226562500",
         "content_type": "text/html; charset=UTF-8",
         "charset": "utf-8",
         "error": "",
@@ -237,10 +373,64 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [],
       "publish_status": "ready",
-      "review_score": 95
+      "review_score": 95,
+      "mapping_status": "mapping_ready",
+      "mapping_blockers": [],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "Command Dog Training (Hoochy Poochy)",
+        "website": "https://hoochypoochy.com.au/premium-dog-training/",
+        "address": null,
+        "suburb_id": 12,
+        "bio": "Unlock your dog's full potential with our premium dog training program. Hoochy Poochy offers comprehensive and customized training solutions to help your canine companion develop obedience, behavior, and advanced skills. Our experienced trainers employ positive reinforcement techniques, tailored to your dog's unique needs, to foster a harmonious bond and unleash their true abilities.",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://hoochypoochy.com.au/premium-dog-training/",
+        "phone_plaintext": "0394283497",
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": null,
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 4,
@@ -310,13 +500,70 @@
           "barking keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope",
         "trainer/service signal is weak in source copy"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope",
+        "trainer/service signal is weak in source copy"
+      ],
+      "businesses_payload": {
+        "name": "Port Phillip Animal Hospital",
+        "website": "https://www.ppah.com.au/",
+        "address": null,
+        "suburb_id": 7,
+        "bio": null,
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://www.ppah.com.au/",
+        "phone_plaintext": "0396868838",
+        "email_plaintext": "info@ppah.com.au",
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "excessive_barking"
+        }
+      ]
     },
     {
       "input_row_index": 5,
@@ -394,12 +641,82 @@
           "socialisation keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Puppy Preschool - Richmond Vet",
+        "website": "https://richmondvetclinic.com.au/services/puppy-preschool/",
+        "address": "9428 2220 259 Church Street, Richmond, VIC 3121",
+        "suburb_id": 15,
+        "bio": null,
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://richmondvetclinic.com.au/services/puppy-preschool/",
+        "phone_plaintext": "03 9428 2220",
+        "email_plaintext": "info@richmondvetclinic.com.au <br> While we endeavour to respond to emails promptly, please call us if your enquiry is urgent.  If all our lines are busy, please leave a message and we will return your call.",
+        "address": "9428 2220 259 Church Street, Richmond, VIC 3121"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "adolescent_6_18m"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "private_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "socialisation"
+        }
+      ]
     },
     {
       "input_row_index": 6,
@@ -481,12 +798,87 @@
           "socialisation keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Kensington Vet",
+        "website": "https://www.kensingtonvet.com.au/pet-advice/new-puppy/",
+        "address": "45 Epsom Road, Kensington, VIC 3031",
+        "suburb_id": 4,
+        "bio": "Caring for your new puppy Congratulations on your new puppy! We have put together a few useful tips and information to help you in the first few months with your new family member. Please do not hesitate to call or drop into the clinic if you have any questions or issues you would like to",
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://www.kensingtonvet.com.au/pet-advice/new-puppy/",
+        "phone_plaintext": "03 9372 2733",
+        "email_plaintext": "care@kensingtonvet.com.au",
+        "address": "45 Epsom Road, Kensington, VIC 3031"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "dog_aggression"
+        },
+        {
+          "behavior_issue": "destructive_behaviour"
+        },
+        {
+          "behavior_issue": "anxiety_general"
+        },
+        {
+          "behavior_issue": "mouthing_nipping_biting"
+        },
+        {
+          "behavior_issue": "socialisation"
+        }
+      ]
     },
     {
       "input_row_index": 7,
@@ -581,12 +973,106 @@
           "socialisation keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 95
+      "review_score": 95,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "The Lost Dogs\u2019 Home",
+        "website": "https://dogshome.com/behaviour",
+        "address": null,
+        "suburb_id": 5,
+        "bio": "Professional pet behavior training services to help your dog or cat overcome behavioral challenges and build a stronger bond.",
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://dogshome.com/behaviour",
+        "phone_plaintext": "0393292755",
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": null,
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "rescue_dogs"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "private_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "separation_anxiety"
+        },
+        {
+          "behavior_issue": "excessive_barking"
+        },
+        {
+          "behavior_issue": "dog_aggression"
+        },
+        {
+          "behavior_issue": "jumping_up"
+        },
+        {
+          "behavior_issue": "destructive_behaviour"
+        },
+        {
+          "behavior_issue": "recall_issues"
+        },
+        {
+          "behavior_issue": "mouthing_nipping_biting"
+        },
+        {
+          "behavior_issue": "rescue_dog_support"
+        },
+        {
+          "behavior_issue": "socialisation"
+        }
+      ]
     },
     {
       "input_row_index": 8,
@@ -674,10 +1160,92 @@
           "rescue keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [],
       "publish_status": "ready",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "mapping_ready",
+      "mapping_blockers": [],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "Four Legs K9 Training Academy",
+        "website": "https://www.fourlegsk9trainingacademy.com.au",
+        "address": "38 Bank Street South Melbourne, VIC, 3205 Australia",
+        "suburb_id": 11,
+        "bio": "Leading dog behaviourist in Melbourne with 40 years\u2019 experience. Anxiety, aggression, reactivity, and training solutions. Book a consultation today.",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://www.fourlegsk9trainingacademy.com.au",
+        "phone_plaintext": "0413 297 053",
+        "email_plaintext": "mattfourlegs@gmail.com",
+        "address": "38 Bank Street South Melbourne, VIC, 3205 Australia"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "rescue_dogs"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "separation_anxiety"
+        },
+        {
+          "behavior_issue": "excessive_barking"
+        },
+        {
+          "behavior_issue": "dog_aggression"
+        },
+        {
+          "behavior_issue": "leash_reactivity"
+        },
+        {
+          "behavior_issue": "anxiety_general"
+        },
+        {
+          "behavior_issue": "resource_guarding"
+        },
+        {
+          "behavior_issue": "mouthing_nipping_biting"
+        },
+        {
+          "behavior_issue": "rescue_dog_support"
+        }
+      ]
     },
     {
       "input_row_index": 9,
@@ -758,10 +1326,81 @@
           "aggression keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [],
       "publish_status": "ready",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "mapping_ready",
+      "mapping_blockers": [],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "Melanie Scott K9 Training",
+        "website": "https://melaniescottk9training.com/",
+        "address": null,
+        "suburb_id": 8,
+        "bio": null,
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://melaniescottk9training.com/",
+        "phone_plaintext": "+61%20448%20395%20797",
+        "email_plaintext": "melanie@melaniescottk9training.com",
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "private_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "excessive_barking"
+        },
+        {
+          "behavior_issue": "dog_aggression"
+        }
+      ]
     },
     {
       "input_row_index": 10,
@@ -835,10 +1474,71 @@
           "socialisation keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [],
       "publish_status": "ready",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "mapping_ready",
+      "mapping_blockers": [],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "Dogs HQ",
+        "website": "https://dogshq.com.au/",
+        "address": "86-88 Hoddle Street, Abbotsford, Victoria, 3067",
+        "suburb_id": 12,
+        "bio": "Doggy daycare Melbourne",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://dogshq.com.au/",
+        "phone_plaintext": "<p>Abbotsford (03) 9415 8885</p> South Melbourne (03) 9043 4927",
+        "email_plaintext": "<p>abbotsford@dogshq.com.au</p><p>southmelbourne@dogshq.com.au</p>info@dogshq.com.au (for general enquiries)",
+        "address": "86-88 Hoddle Street, Abbotsford, Victoria, 3067"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "socialisation"
+        }
+      ]
     },
     {
       "input_row_index": 11,
@@ -902,6 +1602,13 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "URLError: [Errno 8] nodename nor servname provided, or not known",
@@ -910,7 +1617,51 @@
         "trainer/service signal is weak in source copy"
       ],
       "publish_status": "blocked",
-      "review_score": 55
+      "review_score": 55,
+      "mapping_status": "blocked",
+      "mapping_blockers": [
+        "URLError: [Errno 8] nodename nor servname provided, or not known",
+        "no page body could be fetched",
+        "no direct contact fields extracted from source",
+        "trainer/service signal is weak in source copy"
+      ],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "The Dog Hub",
+        "website": "https://thedoghub.com.au/",
+        "address": null,
+        "suburb_id": 13,
+        "bio": null,
+        "resource_type": "trainer",
+        "service_type_primary": "group_classes"
+      },
+      "contact_evidence": {
+        "website": "https://thedoghub.com.au/",
+        "phone_plaintext": null,
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": null,
+        "email_encrypted_source": null,
+        "requires_encryption": false
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "group_classes",
+          "is_primary": true
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 12,
@@ -982,12 +1733,74 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Fitzroy Vet Hospital",
+        "website": "https://fitzroyvet.com.au/",
+        "address": "115 Scotchmer Street , Fitzroy North , VIC 3068",
+        "suburb_id": 14,
+        "bio": "Our vet clinic offers comprehensive and affordable pet care services. Discover our wide range of vet services tailored to your pet's needs.",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://fitzroyvet.com.au/",
+        "phone_plaintext": "(03) 9489 2195",
+        "email_plaintext": "reception@fitzroyvet.com.au",
+        "address": "115 Scotchmer Street , Fitzroy North , VIC 3068"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 13,
@@ -1051,6 +1864,13 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "URLError: [Errno 8] nodename nor servname provided, or not known",
@@ -1059,7 +1879,51 @@
         "trainer/service signal is weak in source copy"
       ],
       "publish_status": "blocked",
-      "review_score": 55
+      "review_score": 55,
+      "mapping_status": "blocked",
+      "mapping_blockers": [
+        "URLError: [Errno 8] nodename nor servname provided, or not known",
+        "no page body could be fetched",
+        "no direct contact fields extracted from source",
+        "trainer/service signal is weak in source copy"
+      ],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "Canine Life",
+        "website": "https://www.caninelife.com.au/",
+        "address": null,
+        "suburb_id": 1,
+        "bio": null,
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "obedience_training"
+      },
+      "contact_evidence": {
+        "website": "https://www.caninelife.com.au/",
+        "phone_plaintext": null,
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": null,
+        "email_encrypted_source": null,
+        "requires_encryption": false
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "obedience_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 14,
@@ -1137,12 +2001,81 @@
           "rescue keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Lort Smith Melbourne Animal Hospital",
+        "website": "https://lortsmith.com/",
+        "address": "24 Villiers Street, North Melbourne, Victoria, 3051",
+        "suburb_id": 5,
+        "bio": "Lort Smith is Melbourne's world-class animal hospital. We provide exceptional animal healthcare and adoption services with 60 vets, 90 nurses and 11 wards.",
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://lortsmith.com/",
+        "phone_plaintext": "0393283021",
+        "email_plaintext": "info@lortsmith.com",
+        "address": "24 Villiers Street, North Melbourne, Victoria, 3051"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "rescue_dogs"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "rescue_dog_support"
+        }
+      ]
     },
     {
       "input_row_index": 15,
@@ -1210,13 +2143,65 @@
           "mouthing/nipping/biting keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope",
         "trainer/service signal is weak in source copy"
       ],
       "publish_status": "needs_review",
-      "review_score": 95
+      "review_score": 95,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope",
+        "trainer/service signal is weak in source copy"
+      ],
+      "businesses_payload": {
+        "name": "Southern Cross Vet",
+        "website": "https://southerncrossvet.com.au/",
+        "address": "60 Princes Hwy, St Peters NSW 2044",
+        "suburb_id": 11,
+        "bio": "Looking for compassionate, expert care for your dog or cat? We offer modern facilities, personalised treatment, & experienced vets who treat your pets like family.",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://southerncrossvet.com.au/",
+        "phone_plaintext": "0295160234",
+        "email_plaintext": null,
+        "address": "60 Princes Hwy, St Peters NSW 2044"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": null,
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "mouthing_nipping_biting"
+        }
+      ]
     },
     {
       "input_row_index": 16,
@@ -1290,12 +2275,74 @@
           "socialisation keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "source looks like a veterinary business; confirm training listing scope"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Veterinary Clinic | Greencross Vets Williamstown",
+        "website": "https://www.greencrossvets.com.au/vets/williamstown/",
+        "address": null,
+        "suburb_id": 11,
+        "bio": "Williamstown are passionate about pets and we value your bond with your pet. We provide a comprehensive array of professional vet services for all pets.",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://www.greencrossvets.com.au/vets/williamstown/",
+        "phone_plaintext": "0393978002",
+        "email_plaintext": "greencross.williamstown@greencrossvet.com.au",
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "socialisation"
+        }
+      ]
     },
     {
       "input_row_index": 17,
@@ -1364,13 +2411,70 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [
         "no direct contact fields extracted from source",
         "trainer/service signal is weak in source copy"
       ],
       "publish_status": "needs_review",
-      "review_score": 80
+      "review_score": 80,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "no direct contact fields extracted from source",
+        "trainer/service signal is weak in source copy"
+      ],
+      "businesses_payload": {
+        "name": "St Kilda Animal Hospital",
+        "website": "https://stkildavet.com.au/puppy-school/",
+        "address": null,
+        "suburb_id": 10,
+        "bio": null,
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://stkildavet.com.au/puppy-school/",
+        "phone_plaintext": null,
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": null,
+        "email_encrypted_source": null,
+        "requires_encryption": false
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 18,
@@ -1443,6 +2547,21 @@
         ],
         "behavior_issues": []
       },
+      "duplicate_assessment": {
+        "status": "conflicting_duplicate",
+        "matched_rows": [
+          12
+        ],
+        "matched_inventory_ids": [],
+        "signals": [
+          "email",
+          "phone"
+        ],
+        "warnings": [
+          "phone duplicates row 12 (0394892195)",
+          "email duplicates row 12 (reception@fitzroyvet.com.au)"
+        ]
+      },
       "duplicate_warnings": [
         "phone duplicates row 12 (0394892195)",
         "email duplicates row 12 (reception@fitzroyvet.com.au)"
@@ -1453,7 +2572,64 @@
         "email duplicates row 12 (reception@fitzroyvet.com.au)"
       ],
       "publish_status": "needs_review",
-      "review_score": 100
+      "review_score": 100,
+      "mapping_status": "needs_review",
+      "mapping_blockers": [],
+      "mapping_warnings": [
+        "phone duplicates row 12 (0394892195)",
+        "email duplicates row 12 (reception@fitzroyvet.com.au)",
+        "source looks like a veterinary business; confirm training listing scope"
+      ],
+      "businesses_payload": {
+        "name": "Carlton Veterinary Clinic",
+        "website": "https://fitzroyvet.com.au/",
+        "address": "115 Scotchmer Street , Fitzroy North , VIC 3068",
+        "suburb_id": 1,
+        "bio": "Our vet clinic offers comprehensive and affordable pet care services. Discover our wide range of vet services tailored to your pet's needs.",
+        "resource_type": "trainer",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://fitzroyvet.com.au/",
+        "phone_plaintext": "(03) 9489 2195",
+        "email_plaintext": "reception@fitzroyvet.com.au",
+        "address": "115 Scotchmer Street , Fitzroy North , VIC 3068"
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": "contact_evidence.email_plaintext",
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "senior_7y_plus"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": []
     },
     {
       "input_row_index": 19,
@@ -1537,10 +2713,87 @@
           "socialisation keyword"
         ]
       },
+      "duplicate_assessment": {
+        "status": "no_duplicate_concern",
+        "matched_rows": [],
+        "matched_inventory_ids": [],
+        "signals": [],
+        "warnings": []
+      },
       "duplicate_warnings": [],
       "publish_readiness_warnings": [],
       "publish_status": "ready",
-      "review_score": 95
+      "review_score": 95,
+      "mapping_status": "mapping_ready",
+      "mapping_blockers": [],
+      "mapping_warnings": [],
+      "businesses_payload": {
+        "name": "Kira Canine Code",
+        "website": "https://caninecode.com.au/puppy-school/",
+        "address": null,
+        "suburb_id": 9,
+        "bio": "Canine Code uses up-to-date and gentle but efficient training methods that your puppy will love and respond to rapidly",
+        "resource_type": "behaviour_consultant",
+        "service_type_primary": "puppy_training"
+      },
+      "contact_evidence": {
+        "website": "https://caninecode.com.au/puppy-school/",
+        "phone_plaintext": "0400354092",
+        "email_plaintext": null,
+        "address": null
+      },
+      "sensitive_contact_payload": {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext",
+        "email_encrypted_source": null,
+        "requires_encryption": true
+      },
+      "trainer_specializations_rows": [
+        {
+          "age_specialty": "puppies_0_6m"
+        },
+        {
+          "age_specialty": "adult_18m_7y"
+        }
+      ],
+      "trainer_services_rows": [
+        {
+          "service_type": "puppy_training",
+          "is_primary": true
+        },
+        {
+          "service_type": "private_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "group_classes",
+          "is_primary": false
+        },
+        {
+          "service_type": "obedience_training",
+          "is_primary": false
+        },
+        {
+          "service_type": "behaviour_consultations",
+          "is_primary": false
+        }
+      ],
+      "trainer_behavior_issues_rows": [
+        {
+          "behavior_issue": "separation_anxiety"
+        },
+        {
+          "behavior_issue": "dog_aggression"
+        },
+        {
+          "behavior_issue": "jumping_up"
+        },
+        {
+          "behavior_issue": "mouthing_nipping_biting"
+        },
+        {
+          "behavior_issue": "socialisation"
+        }
+      ]
     }
   ]
 }

@@ -93,7 +93,8 @@ Anything not listed here is **not worked on** (to prevent drift).
 - Phase 17 - Concierge Seeding & Scraping is now open as the next governed delivery slice.
 - `CS-1001` is now complete and the canonical concierge seed contract plus approved 19-row Inner Melbourne pilot queue are in place for MVP launch seeding.
 - `CS-1002` is now complete and the approved-source concierge scrape/normalization pipeline produces deterministic JSON/CSV review artifacts for the 19-row pilot, with the current live review packet reporting `5 ready / 12 needs_review / 2 blocked`.
-- `CS-1003` is now the active priority.
+- `CS-1003` is now complete and the concierge pipeline performs inventory-aware duplicate assessment plus schema-aligned relational mapping for the 19-row pilot, with the current live mapping packet reporting `5 mapping_ready / 12 needs_review / 2 blocked`.
+- `CS-1004` is now the active priority.
 - The current delivery sequence is:
   1. Build Completion
   2. Production Hardening
@@ -964,7 +965,7 @@ Anything not listed here is **not worked on** (to prevent drift).
   - Output is deterministic and reviewable enough to support the manual pre-publish checkpoint.
   - No blind discovery or open-web sourcing behaviour is introduced.
 
-**CS-1003: Add duplicate checks and relational mapping for publish-ready trainer candidates**
+**CS-1003: Add duplicate checks and relational mapping for publish-ready trainer candidates (completed 2026-03-31)**
 - Purpose: prevent low-quality or duplicate inventory from entering the live directory and align the concierge pipeline to the current DTD schema.
 - Definition of done:
   - Candidate processing checks for duplicate or conflicting listings using stable public-business signals such as domain, phone, name, and location evidence.
@@ -991,6 +992,7 @@ Anything not listed here is **not worked on** (to prevent drift).
 ## Execution Log
 - 2026-03-29: Opened `Phase 17 - Concierge Seeding & Scraping` and set `CS-1001` as the active priority. The next governed slice replaces the legacy phase2 placeholder path with a canonical hybrid concierge pipeline: manual lead sourcing, automated scrape and normalization, manual pre-publish review, and automated relational publish for real trainer inventory.
 - 2026-03-30: `CS-1001` accepted in substance and `CS-1002` completed after the bounded concierge correction pass. The canonical Inner Melbourne pilot queue remains `19` approved rows, the deterministic approved-source pipeline now enforces catchment at the contract gate, records truthful artifact provenance, and emits locality-scoped multi-signal duplicate warnings. The verified live pilot review packet is `5 ready / 12 needs_review / 2 blocked`, and `CS-1003` is now the active priority for duplicate hardening and relational publish mapping.
+- 2026-03-31: `CS-1003` completed after the bounded inventory-aware duplicate correction pass. The concierge pipeline now compares candidates against both the current batch and the existing public directory inventory via the canonical Supabase `search_trainers` read path, keeps raw contact extraction separate from encryption-required write payloads, and emits truthful review plus mapping artifacts. The verified live pilot packet remains `5 ready / 12 needs_review / 2 blocked`, the live mapping packet is `5 mapping_ready / 12 needs_review / 2 blocked`, the inventory duplicate check was available with `4` existing inventory rows, and `CS-1004` is now the active priority.
 - 2026-03-27: `OW-927` completed by adding the dedicated `OWNER_ACTION_AI_MODE` override to SSOT and the AI automation substrate, introducing a truthful `Owner Action Guidance` supervision card on `/admin/ai-health`, and explicitly capping that workflow family below `live` until canon widens it later. The card now states that visible refinement suggestions, shortlist comparison guidance, and enquiry drafts on `/search` and `/trainers/[id]` remain deterministic product logic today, while any future audit-backed owner-action AI is separately supervised and kill-switchable. Focused verification stayed green, no search, ranking, emergency, or contact behaviour changed, and Phase 16 is now complete for the current planned slice.
 - 2026-03-27: Main-control corrected a premature Phase 16 sync after the implementation lane wrote `OW-924` to `OW-926` acceptance state before review. The post-push audit found and fixed the `narrow-distance` refinement truth mismatch (`0-5` versus `5-15` semantics), re-ran focused verification, and keeps `OW-927` as the single active priority under tighter single-writer control for the remainder of Phase 16.
 - 2026-03-27: `OW-926` completed by adding bounded shortlist comparison guidance on `/search`. The shortlist now summarises visible proof points across verified listings, reviewed profiles, direct contact paths, and disclosed fit details, then recommends whether the owner should contact now, keep comparing, or refine first. Focused verification stayed green, no ranking or contact flow changed, and `OW-927` is now the active priority to harden the owner-workflow control substrate before any future live-readiness proposal.

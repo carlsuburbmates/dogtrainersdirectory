@@ -14,6 +14,7 @@ import argparse
 import csv
 import html
 import json
+import os
 import re
 import ssl
 import sys
@@ -121,6 +122,18 @@ class SuburbRecord:
     region: str
 
 
+@dataclass(frozen=True)
+class ExistingInventoryRecord:
+    business_id: int
+    business_name: str
+    domain: str
+    phone: str
+    email: str
+    suburb_name: str
+    council_name: str
+    resource_type: str
+
+
 class SnapshotParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -215,6 +228,12 @@ def normalize_domain(url: str) -> str:
     if host.startswith("www."):
         host = host[4:]
     return host
+
+
+def locality_key(suburb_name: str, council_name: str = "") -> str:
+    if council_name:
+        return f"{norm(suburb_name)}:{norm(council_name)}"
+    return norm(suburb_name)
 
 
 def load_councils_and_suburbs() -> tuple[dict[str, CouncilRecord], dict[tuple[str, str], SuburbRecord], list[dict[str, str]]]:
@@ -798,6 +817,103 @@ def normalize_phone(value: str) -> str:
     return digits
 
 
+def load_existing_inventory_snapshot(page_size: int = 500) -> tuple[list[ExistingInventoryRecord], dict[str, Any]]:
+    supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+    service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or ""
+    decrypt_key = os.environ.get("SUPABASE_PGCRYPTO_KEY") or None
+
+    metadata = {
+        "source": "supabase_rpc:search_trainers",
+        "status": "available",
+        "record_count": 0,
+        "contact_signals_decrypted": bool(decrypt_key),
+        "warning": "",
+    }
+
+    if not supabase_url or not service_role_key:
+        metadata["status"] = "unavailable"
+        metadata["warning"] = (
+            "existing inventory duplicate check unavailable; SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL "
+            "and SUPABASE_SERVICE_ROLE_KEY are required for the canonical read path"
+        )
+        return [], metadata
+
+    endpoint = f"{supabase_url}/rest/v1/rpc/search_trainers"
+    headers = {
+        "apikey": service_role_key,
+        "Authorization": f"Bearer {service_role_key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    fetched_rows: list[dict[str, Any]] = []
+    offset = 0
+    while True:
+        payload = {
+            "user_lat": None,
+            "user_lng": None,
+            "age_filters": None,
+            "issue_filters": None,
+            "service_type_filter": None,
+            "verified_only": False,
+            "rescue_only": False,
+            "distance_filter": "any",
+            "price_max": None,
+            "search_term": None,
+            "result_limit": page_size,
+            "result_offset": offset,
+            "p_key": decrypt_key,
+        }
+        request = Request(endpoint, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+        context = ssl.create_default_context()
+        try:
+            with urlopen(request, timeout=20, context=context) as response:
+                page_rows = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            metadata["status"] = "error"
+            metadata["warning"] = f"existing inventory duplicate check failed: HTTPError {exc.code}: {exc.reason}"
+            return [], metadata
+        except URLError as exc:
+            metadata["status"] = "error"
+            metadata["warning"] = f"existing inventory duplicate check failed: URLError: {exc.reason}"
+            return [], metadata
+        except Exception as exc:
+            metadata["status"] = "error"
+            metadata["warning"] = f"existing inventory duplicate check failed: {type(exc).__name__}: {exc}"
+            return [], metadata
+
+        if not isinstance(page_rows, list):
+            metadata["status"] = "error"
+            metadata["warning"] = "existing inventory duplicate check failed: unexpected RPC payload shape"
+            return [], metadata
+
+        fetched_rows.extend(page_rows)
+        if len(page_rows) < page_size:
+            break
+        offset += page_size
+
+    records = [
+        ExistingInventoryRecord(
+            business_id=int(row["business_id"]),
+            business_name=str(row.get("business_name") or "").strip(),
+            domain=normalize_domain(str(row.get("business_website") or "").strip()),
+            phone=normalize_phone(str(row.get("business_phone") or "").strip()),
+            email=str(row.get("business_email") or "").strip().lower(),
+            suburb_name=str(row.get("suburb_name") or "").strip(),
+            council_name=str(row.get("council_name") or "").strip(),
+            resource_type="trainer_or_behaviour_consultant",
+        )
+        for row in fetched_rows
+        if row.get("business_id") is not None
+    ]
+    metadata["record_count"] = len(records)
+    if not decrypt_key:
+        metadata["warning"] = (
+            "existing inventory loaded without decrypted phone/email signals because SUPABASE_PGCRYPTO_KEY is not configured"
+        )
+    return records, metadata
+
+
 def compute_publish_status(blocked_issues: list[str], advisory_warnings: list[str]) -> str:
     if blocked_issues:
         return "blocked"
@@ -806,17 +922,178 @@ def compute_publish_status(blocked_issues: list[str], advisory_warnings: list[st
     return "ready"
 
 
+def build_duplicate_assessment(
+    signal_hits: list[dict[str, Any]],
+    current_name_key: str,
+    current_locality_key: str,
+) -> dict[str, Any]:
+    if not signal_hits:
+        return {
+            "status": "no_duplicate_concern",
+            "matched_rows": [],
+            "matched_inventory_ids": [],
+            "signals": [],
+            "warnings": [],
+        }
+
+    warnings: list[str] = []
+    signals_by_reference: dict[tuple[str, int], set[str]] = {}
+    blocked_duplicate = False
+    conflicting_duplicate = False
+
+    for hit in signal_hits:
+        reference_type = str(hit["reference_type"])
+        reference_id = int(hit["reference_id"])
+        signal = str(hit["signal"])
+        signals_by_reference.setdefault((reference_type, reference_id), set()).add(signal)
+        warnings.append(str(hit["warning"]))
+
+        same_name = hit.get("previous_name_key") == current_name_key
+        same_locality = hit.get("previous_locality_key") == current_locality_key
+
+        if signal in {"phone", "email"}:
+            if same_name and same_locality:
+                blocked_duplicate = True
+            else:
+                conflicting_duplicate = True
+
+    for reference_signals in signals_by_reference.values():
+        if {"domain_locality", "name_locality"}.issubset(reference_signals):
+            blocked_duplicate = True
+        if len(reference_signals) >= 2 and not blocked_duplicate:
+            conflicting_duplicate = True
+
+    if blocked_duplicate:
+        status = "blocked_duplicate"
+    elif conflicting_duplicate:
+        status = "conflicting_duplicate"
+    else:
+        status = "possible_duplicate"
+
+    return {
+        "status": status,
+        "matched_rows": sorted(reference_id for reference_type, reference_id in signals_by_reference if reference_type == "batch"),
+        "matched_inventory_ids": sorted(
+            reference_id for reference_type, reference_id in signals_by_reference if reference_type == "inventory"
+        ),
+        "signals": sorted({str(hit["signal"]) for hit in signal_hits}),
+        "warnings": warnings,
+    }
+
+
+def build_mapping_candidate(record: dict[str, Any]) -> dict[str, Any]:
+    extracted = record["extracted"]
+    locality = record["locality"]
+    taxonomy = record["taxonomy"]
+    duplicate_assessment = record["duplicate_assessment"]
+
+    businesses_payload = {
+        "name": extracted["business_name"] or record["business_name_hint"],
+        "website": extracted["website"] or None,
+        "address": extracted["address"] or None,
+        "suburb_id": locality["suburb_id"],
+        "bio": extracted["description"] or None,
+        "resource_type": taxonomy["resource_type"],
+        "service_type_primary": taxonomy["service_types"][0] if taxonomy["service_types"] else None,
+    }
+    contact_evidence = {
+        "website": extracted["website"] or None,
+        "phone_plaintext": extracted["phone"] or None,
+        "email_plaintext": extracted["email"] or None,
+        "address": extracted["address"] or None,
+    }
+    sensitive_contact_payload = {
+        "phone_encrypted_source": "contact_evidence.phone_plaintext" if extracted["phone"] else None,
+        "email_encrypted_source": "contact_evidence.email_plaintext" if extracted["email"] else None,
+        "requires_encryption": bool(extracted["phone"] or extracted["email"]),
+    }
+    trainer_specializations_rows = [
+        {"age_specialty": value}
+        for value in taxonomy["age_specialties"]
+    ]
+    trainer_services_rows = [
+        {"service_type": value, "is_primary": index == 0}
+        for index, value in enumerate(taxonomy["service_types"])
+    ]
+    trainer_behavior_issues_rows = [
+        {"behavior_issue": value}
+        for value in taxonomy["behavior_issues"]
+    ]
+
+    mapping_blockers: list[str] = []
+    mapping_warnings: list[str] = []
+
+    if duplicate_assessment["status"] == "blocked_duplicate":
+        mapping_blockers.extend(duplicate_assessment["warnings"])
+    elif duplicate_assessment["status"] in {"possible_duplicate", "conflicting_duplicate"}:
+        mapping_warnings.extend(duplicate_assessment["warnings"])
+
+    if not businesses_payload["name"]:
+        mapping_blockers.append("missing business name for businesses payload")
+    if businesses_payload["suburb_id"] is None:
+        mapping_blockers.append("missing suburb_id for businesses payload")
+    if businesses_payload["resource_type"] == "trainer" and not trainer_specializations_rows:
+        mapping_blockers.append("trainer candidate has no specialization rows")
+    if not (contact_evidence["website"] or contact_evidence["phone_plaintext"] or contact_evidence["email_plaintext"]):
+        mapping_warnings.append("no direct contact field extracted; source URL remains the fallback contact path")
+
+    for warning in record["publish_readiness_warnings"]:
+        if record["publish_status"] == "blocked":
+            if warning not in mapping_blockers:
+                mapping_blockers.append(warning)
+        elif warning not in mapping_warnings:
+            mapping_warnings.append(warning)
+
+    if mapping_blockers:
+        mapping_status = "blocked"
+    elif mapping_warnings:
+        mapping_status = "needs_review"
+    else:
+        mapping_status = "mapping_ready"
+
+    return {
+        "mapping_status": mapping_status,
+        "mapping_blockers": mapping_blockers,
+        "mapping_warnings": mapping_warnings,
+        "businesses_payload": businesses_payload,
+        "contact_evidence": contact_evidence,
+        "sensitive_contact_payload": sensitive_contact_payload,
+        "trainer_specializations_rows": trainer_specializations_rows,
+        "trainer_services_rows": trainer_services_rows,
+        "trainer_behavior_issues_rows": trainer_behavior_issues_rows,
+    }
+
+
 def build_review_artifact(
     input_rows: list[dict[str, str]],
     councils: dict[str, CouncilRecord],
     suburb_lookup: dict[tuple[str, str], SuburbRecord],
     input_csv_path: Path,
+    existing_inventory: list[ExistingInventoryRecord],
+    inventory_check: dict[str, Any],
 ) -> dict[str, Any]:
     results: list[dict[str, Any]] = []
     seen_domains_by_locality: dict[tuple[str, str], int] = {}
     seen_names_by_locality: dict[tuple[str, str], int] = {}
     seen_phones: dict[str, int] = {}
     seen_emails: dict[str, int] = {}
+    previous_candidate_signals: dict[int, dict[str, str]] = {}
+    inventory_domains_by_locality: dict[tuple[str, str], list[ExistingInventoryRecord]] = {}
+    inventory_names_by_locality: dict[tuple[str, str], list[ExistingInventoryRecord]] = {}
+    inventory_phones: dict[str, list[ExistingInventoryRecord]] = {}
+    inventory_emails: dict[str, list[ExistingInventoryRecord]] = {}
+
+    for record in existing_inventory:
+        record_locality_key = locality_key(record.suburb_name, record.council_name)
+        if record.domain:
+            inventory_domains_by_locality.setdefault((record.domain, record_locality_key), []).append(record)
+        normalized_inventory_name = norm(record.business_name)
+        if normalized_inventory_name:
+            inventory_names_by_locality.setdefault((normalized_inventory_name, record_locality_key), []).append(record)
+        if record.phone:
+            inventory_phones.setdefault(record.phone, []).append(record)
+        if record.email:
+            inventory_emails.setdefault(record.email, []).append(record)
 
     for index, row in enumerate(input_rows, start=1):
         source_url = row["source_url"].strip()
@@ -827,44 +1104,138 @@ def build_review_artifact(
         fetch = source_data["fetch"]
         snapshot = source_data["snapshot"]
         matched_suburb, suburb_warnings = resolve_suburb(suburb_hint, snapshot, suburb_lookup, councils)
-        duplicate_warnings: list[str] = []
-        locality_key = str(matched_suburb.id) if matched_suburb else norm(suburb_hint)
+        duplicate_signal_hits: list[dict[str, Any]] = []
+        current_locality_key = (
+            locality_key(matched_suburb.name, matched_suburb.council_name)
+            if matched_suburb
+            else locality_key(suburb_hint)
+        )
         locality_label = matched_suburb.name if matched_suburb else suburb_hint
 
         final_domain = fetch["domain"]
         normalized_name = norm(source_data["business_name"] or business_name_hint)
         if final_domain:
-            domain_key = (final_domain, locality_key)
+            domain_key = (final_domain, current_locality_key)
             previous = seen_domains_by_locality.get(domain_key)
             if previous is not None:
-                duplicate_warnings.append(
-                    f"domain+locality duplicates row {previous} ({final_domain} / {locality_label})"
+                previous_signals = previous_candidate_signals.get(previous, {})
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "batch",
+                        "reference_id": previous,
+                        "signal": "domain_locality",
+                        "warning": f"domain+locality duplicates row {previous} ({final_domain} / {locality_label})",
+                        "previous_name_key": previous_signals.get("name_key", ""),
+                        "previous_locality_key": previous_signals.get("locality_key", ""),
+                    }
                 )
             else:
                 seen_domains_by_locality[domain_key] = index
+            for inventory_record in inventory_domains_by_locality.get(domain_key, []):
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "inventory",
+                        "reference_id": inventory_record.business_id,
+                        "signal": "domain_locality",
+                        "warning": (
+                            f"domain+locality duplicates existing inventory business {inventory_record.business_id} "
+                            f"({inventory_record.domain} / {inventory_record.suburb_name})"
+                        ),
+                        "previous_name_key": norm(inventory_record.business_name),
+                        "previous_locality_key": locality_key(inventory_record.suburb_name, inventory_record.council_name),
+                    }
+                )
         if normalized_name:
-            name_key = (normalized_name, locality_key)
+            name_key = (normalized_name, current_locality_key)
             previous = seen_names_by_locality.get(name_key)
             if previous is not None:
-                duplicate_warnings.append(
-                    f"name+locality duplicates row {previous} ({business_name_hint} / {locality_label})"
+                previous_signals = previous_candidate_signals.get(previous, {})
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "batch",
+                        "reference_id": previous,
+                        "signal": "name_locality",
+                        "warning": f"name+locality duplicates row {previous} ({business_name_hint} / {locality_label})",
+                        "previous_name_key": previous_signals.get("name_key", ""),
+                        "previous_locality_key": previous_signals.get("locality_key", ""),
+                    }
                 )
             else:
                 seen_names_by_locality[name_key] = index
+            for inventory_record in inventory_names_by_locality.get(name_key, []):
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "inventory",
+                        "reference_id": inventory_record.business_id,
+                        "signal": "name_locality",
+                        "warning": (
+                            f"name+locality duplicates existing inventory business {inventory_record.business_id} "
+                            f"({inventory_record.business_name} / {inventory_record.suburb_name})"
+                        ),
+                        "previous_name_key": norm(inventory_record.business_name),
+                        "previous_locality_key": locality_key(inventory_record.suburb_name, inventory_record.council_name),
+                    }
+                )
         contact_phone = normalize_phone(source_data["contacts"]["phone"])
         contact_email = source_data["contacts"]["email"].strip().lower()
         if contact_phone:
             previous = seen_phones.get(contact_phone)
             if previous is not None:
-                duplicate_warnings.append(f"phone duplicates row {previous} ({contact_phone})")
+                previous_signals = previous_candidate_signals.get(previous, {})
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "batch",
+                        "reference_id": previous,
+                        "signal": "phone",
+                        "warning": f"phone duplicates row {previous} ({contact_phone})",
+                        "previous_name_key": previous_signals.get("name_key", ""),
+                        "previous_locality_key": previous_signals.get("locality_key", ""),
+                    }
+                )
             else:
                 seen_phones[contact_phone] = index
+            for inventory_record in inventory_phones.get(contact_phone, []):
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "inventory",
+                        "reference_id": inventory_record.business_id,
+                        "signal": "phone",
+                        "warning": (
+                            f"phone duplicates existing inventory business {inventory_record.business_id} ({contact_phone})"
+                        ),
+                        "previous_name_key": norm(inventory_record.business_name),
+                        "previous_locality_key": locality_key(inventory_record.suburb_name, inventory_record.council_name),
+                    }
+                )
         if contact_email:
             previous = seen_emails.get(contact_email)
             if previous is not None:
-                duplicate_warnings.append(f"email duplicates row {previous} ({contact_email})")
+                previous_signals = previous_candidate_signals.get(previous, {})
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "batch",
+                        "reference_id": previous,
+                        "signal": "email",
+                        "warning": f"email duplicates row {previous} ({contact_email})",
+                        "previous_name_key": previous_signals.get("name_key", ""),
+                        "previous_locality_key": previous_signals.get("locality_key", ""),
+                    }
+                )
             else:
                 seen_emails[contact_email] = index
+            for inventory_record in inventory_emails.get(contact_email, []):
+                duplicate_signal_hits.append(
+                    {
+                        "reference_type": "inventory",
+                        "reference_id": inventory_record.business_id,
+                        "signal": "email",
+                        "warning": (
+                            f"email duplicates existing inventory business {inventory_record.business_id} ({contact_email})"
+                        ),
+                        "previous_name_key": norm(inventory_record.business_name),
+                        "previous_locality_key": locality_key(inventory_record.suburb_name, inventory_record.council_name),
+                    }
+                )
 
         taxonomy = source_data["taxonomy"]
         if matched_suburb:
@@ -888,7 +1259,19 @@ def build_review_artifact(
                 "postcode": "",
             }
 
+        previous_candidate_signals[index] = {
+            "name_key": normalized_name,
+            "locality_key": current_locality_key,
+        }
+        duplicate_assessment = build_duplicate_assessment(
+            duplicate_signal_hits,
+            current_name_key=normalized_name,
+            current_locality_key=current_locality_key,
+        )
+        duplicate_warnings = list(duplicate_assessment["warnings"])
         publish_warnings = list(source_data["blocked_issues"]) + list(source_data["advisory_warnings"]) + suburb_warnings + duplicate_warnings
+        if inventory_check["status"] != "available":
+            publish_warnings.append(inventory_check["warning"])
         if matched_suburb is None:
             publish_warnings.append("canonical suburb_id not resolved")
         if not taxonomy["service_types"]:
@@ -938,29 +1321,41 @@ def build_review_artifact(
             "locality": locality,
             "taxonomy": taxonomy,
             "evidence": source_data["evidence"],
+            "duplicate_assessment": duplicate_assessment,
             "duplicate_warnings": duplicate_warnings,
             "publish_readiness_warnings": publish_warnings,
             "publish_status": publish_status,
             "review_score": review_score,
         }
+        result.update(build_mapping_candidate(result))
         results.append(result)
 
     ready = sum(1 for row in results if row["publish_status"] == "ready")
     needs_review = sum(1 for row in results if row["publish_status"] == "needs_review")
     blocked = sum(1 for row in results if row["publish_status"] == "blocked")
+    mapping_ready = sum(1 for row in results if row["mapping_status"] == "mapping_ready")
+    mapping_needs_review = sum(1 for row in results if row["mapping_status"] == "needs_review")
+    mapping_blocked = sum(1 for row in results if row["mapping_status"] == "blocked")
 
     return {
         "pipeline": "concierge_seed_pipeline",
         "phase": "17",
-        "task": "CS-1002",
+        "task": "CS-1003",
         "generated_at": None,
         "input_csv": str(input_csv_path.resolve()),
+        "inventory_duplicate_check": inventory_check,
         "approved_source_only": True,
         "manual_steps": ["lead sourcing", "pre-publish review"],
         "review_counts": {
             "ready": ready,
             "needs_review": needs_review,
             "blocked": blocked,
+            "total": len(results),
+        },
+        "mapping_counts": {
+            "mapping_ready": mapping_ready,
+            "needs_review": mapping_needs_review,
+            "blocked": mapping_blocked,
             "total": len(results),
         },
         "records": results,
@@ -993,9 +1388,14 @@ def write_csv(artifact: dict[str, Any], output_path: Path) -> None:
         "service_types",
         "age_specialties",
         "behavior_issues",
+        "duplicate_assessment_status",
+        "matched_inventory_ids",
         "duplicate_warnings",
         "publish_readiness_warnings",
         "publish_status",
+        "mapping_status",
+        "mapping_blockers",
+        "mapping_warnings",
         "review_score",
     ]
     with output_path.open("w", newline="", encoding="utf-8") as fh:
@@ -1026,12 +1426,106 @@ def write_csv(artifact: dict[str, Any], output_path: Path) -> None:
                 "service_types": format_list(record["taxonomy"]["service_types"]),
                 "age_specialties": format_list(record["taxonomy"]["age_specialties"]),
                 "behavior_issues": format_list(record["taxonomy"]["behavior_issues"]),
+                "duplicate_assessment_status": record["duplicate_assessment"]["status"],
+                "matched_inventory_ids": format_list(
+                    [str(value) for value in record["duplicate_assessment"]["matched_inventory_ids"]]
+                ),
                 "duplicate_warnings": format_list(record["duplicate_warnings"]),
                 "publish_readiness_warnings": format_list(record["publish_readiness_warnings"]),
                 "publish_status": record["publish_status"],
+                "mapping_status": record["mapping_status"],
+                "mapping_blockers": format_list(record["mapping_blockers"]),
+                "mapping_warnings": format_list(record["mapping_warnings"]),
                 "review_score": record["review_score"],
             }
             writer.writerow(row)
+
+
+def write_mapping_artifact_json(artifact: dict[str, Any], output_path: Path) -> None:
+    output_path.write_text(
+        json.dumps(
+            {
+                "pipeline": artifact["pipeline"],
+                "phase": artifact["phase"],
+                "task": artifact["task"],
+                "generated_at": artifact["generated_at"],
+                "input_csv": artifact["input_csv"],
+                "inventory_duplicate_check": artifact["inventory_duplicate_check"],
+                "mapping_counts": artifact["mapping_counts"],
+                "records": [
+                    {
+                        "input_row_index": record["input_row_index"],
+                        "source_url": record["source_url"],
+                        "business_name_hint": record["business_name_hint"],
+                        "duplicate_assessment": record["duplicate_assessment"],
+                        "mapping_status": record["mapping_status"],
+                        "mapping_blockers": record["mapping_blockers"],
+                        "mapping_warnings": record["mapping_warnings"],
+                        "businesses_payload": record["businesses_payload"],
+                        "contact_evidence": record["contact_evidence"],
+                        "sensitive_contact_payload": record["sensitive_contact_payload"],
+                        "trainer_specializations_rows": record["trainer_specializations_rows"],
+                        "trainer_services_rows": record["trainer_services_rows"],
+                        "trainer_behavior_issues_rows": record["trainer_behavior_issues_rows"],
+                    }
+                    for record in artifact["records"]
+                ],
+            },
+            indent=2,
+            ensure_ascii=True,
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def write_mapping_csv(artifact: dict[str, Any], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "input_row_index",
+        "source_url",
+        "business_name_hint",
+        "duplicate_assessment_status",
+        "matched_rows",
+        "matched_inventory_ids",
+        "mapping_status",
+        "business_name",
+        "suburb_id",
+        "resource_type",
+        "service_type_primary",
+        "specializations",
+        "services",
+        "behavior_issues",
+        "mapping_blockers",
+        "mapping_warnings",
+    ]
+    with output_path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        for record in artifact["records"]:
+            businesses_payload = record["businesses_payload"]
+            writer.writerow(
+                {
+                    "input_row_index": record["input_row_index"],
+                    "source_url": record["source_url"],
+                    "business_name_hint": record["business_name_hint"],
+                    "duplicate_assessment_status": record["duplicate_assessment"]["status"],
+                    "matched_rows": format_list([str(value) for value in record["duplicate_assessment"]["matched_rows"]]),
+                    "matched_inventory_ids": format_list(
+                        [str(value) for value in record["duplicate_assessment"]["matched_inventory_ids"]]
+                    ),
+                    "mapping_status": record["mapping_status"],
+                    "business_name": businesses_payload["name"],
+                    "suburb_id": businesses_payload["suburb_id"] or "",
+                    "resource_type": businesses_payload["resource_type"],
+                    "service_type_primary": businesses_payload["service_type_primary"] or "",
+                    "specializations": format_list([row["age_specialty"] for row in record["trainer_specializations_rows"]]),
+                    "services": format_list([row["service_type"] for row in record["trainer_services_rows"]]),
+                    "behavior_issues": format_list([row["behavior_issue"] for row in record["trainer_behavior_issues_rows"]]),
+                    "mapping_blockers": format_list(record["mapping_blockers"]),
+                    "mapping_warnings": format_list(record["mapping_warnings"]),
+                }
+            )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1040,23 +1534,52 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="Directory for review artifacts")
     parser.add_argument("--json-name", default="concierge_review_artifact.json", help="JSON output file name")
     parser.add_argument("--csv-name", default="concierge_review_artifact.csv", help="CSV output file name")
+    parser.add_argument("--mapping-json-name", default="concierge_mapping_artifact.json", help="JSON mapping output file name")
+    parser.add_argument("--mapping-csv-name", default="concierge_mapping_artifact.csv", help="CSV mapping output file name")
     args = parser.parse_args(argv)
 
     councils, suburb_lookup, _ = load_councils_and_suburbs()
     input_rows = parse_seed_queue(args.input)
-    artifact = build_review_artifact(input_rows, councils, suburb_lookup, args.input)
+    existing_inventory, inventory_check = load_existing_inventory_snapshot()
+    artifact = build_review_artifact(
+        input_rows,
+        councils,
+        suburb_lookup,
+        args.input,
+        existing_inventory,
+        inventory_check,
+    )
     artifact["generated_at"] = datetime.now().astimezone().isoformat()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     json_path = args.output_dir / args.json_name
     csv_path = args.output_dir / args.csv_name
+    mapping_json_path = args.output_dir / args.mapping_json_name
+    mapping_csv_path = args.output_dir / args.mapping_csv_name
 
     json_path.write_text(json.dumps(artifact, indent=2, ensure_ascii=True, sort_keys=False), encoding="utf-8")
     write_csv(artifact, csv_path)
+    write_mapping_artifact_json(artifact, mapping_json_path)
+    write_mapping_csv(artifact, mapping_csv_path)
 
     summary = artifact["review_counts"]
+    mapping_summary = artifact["mapping_counts"]
     print(f"Wrote JSON review artifact: {json_path}")
     print(f"Wrote CSV review artifact: {csv_path}")
+    print(f"Wrote JSON mapping artifact: {mapping_json_path}")
+    print(f"Wrote CSV mapping artifact: {mapping_csv_path}")
+    print(
+        "Inventory duplicate check: "
+        f"status={artifact['inventory_duplicate_check']['status']} "
+        f"records={artifact['inventory_duplicate_check']['record_count']}"
+    )
     print(f"Summary: ready={summary['ready']} needs_review={summary['needs_review']} blocked={summary['blocked']} total={summary['total']}")
+    print(
+        "Mapping summary: "
+        f"mapping_ready={mapping_summary['mapping_ready']} "
+        f"needs_review={mapping_summary['needs_review']} "
+        f"blocked={mapping_summary['blocked']} "
+        f"total={mapping_summary['total']}"
+    )
     return 0
 
 

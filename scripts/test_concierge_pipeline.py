@@ -72,6 +72,21 @@ def fake_extract_page_fields(url: str, business_name_hint: str, service_hint: st
     }
 
 
+def fake_inventory_snapshot(
+    records: list[concierge_pipeline.ExistingInventoryRecord] | None = None,
+    *,
+    status: str = "available",
+    warning: str = "",
+) -> tuple[list[concierge_pipeline.ExistingInventoryRecord], dict[str, object]]:
+    return records or [], {
+        "source": "supabase_rpc:search_trainers",
+        "status": status,
+        "record_count": len(records or []),
+        "contact_signals_decrypted": True,
+        "warning": warning,
+    }
+
+
 def test_canonical_pilot_rows():
     rows = load_csv_rows(PILOT_CSV)
     assert len(rows) == 19
@@ -173,7 +188,11 @@ def test_resolve_suburb_uses_council_evidence_for_ambiguous_localities():
 def test_pipeline_emits_review_artifact_for_the_canonical_pilot():
     with tempfile.TemporaryDirectory(prefix="dtd-concierge-") as tmp:
         output_dir = Path(tmp)
-        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=fake_extract_page_fields):
+        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=fake_extract_page_fields), patch.object(
+            concierge_pipeline,
+            "load_existing_inventory_snapshot",
+            return_value=fake_inventory_snapshot(),
+        ):
             exit_code = concierge_pipeline.main(
                 [
                     "--input",
@@ -187,17 +206,29 @@ def test_pipeline_emits_review_artifact_for_the_canonical_pilot():
 
         json_path = output_dir / "concierge_review_artifact.json"
         csv_path = output_dir / "concierge_review_artifact.csv"
+        mapping_json_path = output_dir / "concierge_mapping_artifact.json"
+        mapping_csv_path = output_dir / "concierge_mapping_artifact.csv"
 
         assert json_path.exists()
         assert csv_path.exists()
+        assert mapping_json_path.exists()
+        assert mapping_csv_path.exists()
 
         artifact = json.loads(json_path.read_text(encoding="utf-8"))
         assert artifact["pipeline"] == "concierge_seed_pipeline"
-        assert artifact["task"] == "CS-1002"
+        assert artifact["task"] == "CS-1003"
         assert artifact["approved_source_only"] is True
         assert artifact["input_csv"] == str(PILOT_CSV.resolve())
+        assert artifact["inventory_duplicate_check"]["status"] == "available"
+        assert artifact["inventory_duplicate_check"]["record_count"] == 0
         assert artifact["review_counts"] == {
             "ready": 19,
+            "needs_review": 0,
+            "blocked": 0,
+            "total": 19,
+        }
+        assert artifact["mapping_counts"] == {
+            "mapping_ready": 19,
             "needs_review": 0,
             "blocked": 0,
             "total": 19,
@@ -209,10 +240,30 @@ def test_pipeline_emits_review_artifact_for_the_canonical_pilot():
         assert richmond["locality"]["resolved_council"] == "City of Yarra"
         assert richmond["locality"]["suburb_id"] == 15
         assert richmond["publish_status"] == "ready"
+        assert richmond["duplicate_assessment"]["status"] == "no_duplicate_concern"
+        assert richmond["mapping_status"] == "mapping_ready"
+        assert richmond["businesses_payload"]["suburb_id"] == 15
+        assert richmond["businesses_payload"]["website"] == richmond["extracted"]["website"]
+        assert "phone" not in richmond["businesses_payload"]
+        assert "email" not in richmond["businesses_payload"]
+        assert richmond["contact_evidence"]["phone_plaintext"] == richmond["extracted"]["phone"]
+        assert richmond["sensitive_contact_payload"]["requires_encryption"] is True
+        assert richmond["trainer_specializations_rows"] == [{"age_specialty": "adult_18m_7y"}]
+        assert richmond["trainer_services_rows"] == [{"service_type": "private_training", "is_primary": True}]
+        assert richmond["trainer_behavior_issues_rows"] == [{"behavior_issue": "anxiety_general"}]
 
         written_rows = list(csv.DictReader(csv_path.read_text(encoding="utf-8").splitlines()))
         assert len(written_rows) == 19
         assert written_rows[0]["source_url"].startswith("https://")
+
+        mapping_artifact = json.loads(mapping_json_path.read_text(encoding="utf-8"))
+        assert mapping_artifact["mapping_counts"]["mapping_ready"] == 19
+        assert mapping_artifact["inventory_duplicate_check"]["status"] == "available"
+        assert len(mapping_artifact["records"]) == 19
+
+        mapping_rows = list(csv.DictReader(mapping_csv_path.read_text(encoding="utf-8").splitlines()))
+        assert len(mapping_rows) == 19
+        assert mapping_rows[0]["mapping_status"] == "mapping_ready"
 
 
 def test_pipeline_processes_only_manual_queue_urls():
@@ -233,7 +284,11 @@ def test_pipeline_processes_only_manual_queue_urls():
         input_path = tmp_path / "queue.csv"
         input_path.write_text(source_csv, encoding="utf-8")
 
-        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=record_extract):
+        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=record_extract), patch.object(
+            concierge_pipeline,
+            "load_existing_inventory_snapshot",
+            return_value=fake_inventory_snapshot(),
+        ):
             exit_code = concierge_pipeline.main(
                 [
                     "--input",
@@ -264,7 +319,11 @@ def test_duplicate_warnings_use_locality_scoped_multi_signal_matching():
         input_path = tmp_path / "queue.csv"
         input_path.write_text(source_csv, encoding="utf-8")
 
-        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=duplicate_extract):
+        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=duplicate_extract), patch.object(
+            concierge_pipeline,
+            "load_existing_inventory_snapshot",
+            return_value=fake_inventory_snapshot(),
+        ):
             exit_code = concierge_pipeline.main(
                 [
                     "--input",
@@ -277,10 +336,106 @@ def test_duplicate_warnings_use_locality_scoped_multi_signal_matching():
         assert exit_code == 0
         artifact = json.loads((tmp_path / "out" / "concierge_review_artifact.json").read_text(encoding="utf-8"))
         second = artifact["records"][1]
+        assert second["duplicate_assessment"]["status"] == "blocked_duplicate"
+        assert second["mapping_status"] == "blocked"
         assert any("domain+locality duplicates row 1" in warning for warning in second["duplicate_warnings"])
         assert any("name+locality duplicates row 1" in warning for warning in second["duplicate_warnings"])
         assert any("phone duplicates row 1" in warning for warning in second["duplicate_warnings"])
         assert any("email duplicates row 1" in warning for warning in second["duplicate_warnings"])
+
+
+def test_mapping_status_uses_possible_duplicate_without_blocking():
+    source_csv = "\n".join(
+        [
+            "source_url,business_name_hint,suburb_hint,service_hint,notes",
+            "https://example.com/a,Example Trainer,Carlton,private training,",
+            "https://example.com/b,Other Trainer,Carlton,private training,",
+        ]
+    )
+
+    def possible_duplicate_extract(url: str, business_name_hint: str, service_hint: str) -> dict[str, object]:
+        payload = fake_extract_page_fields(url, business_name_hint, service_hint)
+        if url.endswith("/b"):
+            payload["contacts"]["phone"] = "0411 111 111"
+            payload["contacts"]["email"] = "other@example.com"
+        return payload
+
+    with tempfile.TemporaryDirectory(prefix="dtd-concierge-possible-dupe-") as tmp:
+        tmp_path = Path(tmp)
+        input_path = tmp_path / "queue.csv"
+        input_path.write_text(source_csv, encoding="utf-8")
+
+        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=possible_duplicate_extract), patch.object(
+            concierge_pipeline,
+            "load_existing_inventory_snapshot",
+            return_value=fake_inventory_snapshot(),
+        ):
+            exit_code = concierge_pipeline.main(
+                [
+                    "--input",
+                    str(input_path),
+                    "--output-dir",
+                    str(tmp_path / "out"),
+                ]
+            )
+
+        assert exit_code == 0
+        artifact = json.loads((tmp_path / "out" / "concierge_review_artifact.json").read_text(encoding="utf-8"))
+        second = artifact["records"][1]
+        assert second["duplicate_assessment"]["status"] == "possible_duplicate"
+        assert second["mapping_status"] == "needs_review"
+        assert second["mapping_blockers"] == []
+        assert any("domain+locality duplicates row 1" in warning for warning in second["mapping_warnings"])
+
+
+def test_duplicate_detection_checks_existing_inventory():
+    source_csv = "\n".join(
+        [
+            "source_url,business_name_hint,suburb_hint,service_hint,notes",
+            "https://example.com/new,Example Trainer,Carlton,private training,",
+        ]
+    )
+    existing_inventory = [
+        concierge_pipeline.ExistingInventoryRecord(
+            business_id=77,
+            business_name="Example Trainer",
+            domain="example.com",
+            phone="0400010042",
+            email="hello+example-com@example.com",
+            suburb_name="Carlton",
+            council_name="City of Melbourne",
+            resource_type="trainer_or_behaviour_consultant",
+        )
+    ]
+
+    with tempfile.TemporaryDirectory(prefix="dtd-concierge-inventory-dupe-") as tmp:
+        tmp_path = Path(tmp)
+        input_path = tmp_path / "queue.csv"
+        input_path.write_text(source_csv, encoding="utf-8")
+
+        with patch.object(concierge_pipeline, "extract_page_fields", side_effect=fake_extract_page_fields), patch.object(
+            concierge_pipeline,
+            "load_existing_inventory_snapshot",
+            return_value=fake_inventory_snapshot(existing_inventory),
+        ):
+            exit_code = concierge_pipeline.main(
+                [
+                    "--input",
+                    str(input_path),
+                    "--output-dir",
+                    str(tmp_path / "out"),
+                ]
+            )
+
+        assert exit_code == 0
+        artifact = json.loads((tmp_path / "out" / "concierge_review_artifact.json").read_text(encoding="utf-8"))
+        record = artifact["records"][0]
+        assert artifact["inventory_duplicate_check"]["status"] == "available"
+        assert artifact["inventory_duplicate_check"]["record_count"] == 1
+        assert record["duplicate_assessment"]["status"] == "blocked_duplicate"
+        assert record["duplicate_assessment"]["matched_inventory_ids"] == [77]
+        assert record["mapping_status"] == "blocked"
+        assert any("existing inventory business 77" in warning for warning in record["duplicate_warnings"])
 
 
 if __name__ == "__main__":
@@ -292,4 +447,6 @@ if __name__ == "__main__":
     test_pipeline_emits_review_artifact_for_the_canonical_pilot()
     test_pipeline_processes_only_manual_queue_urls()
     test_duplicate_warnings_use_locality_scoped_multi_signal_matching()
+    test_mapping_status_uses_possible_duplicate_without_blocking()
+    test_duplicate_detection_checks_existing_inventory()
     print("OK test_concierge_pipeline.py")
