@@ -128,6 +128,24 @@ def test_rejects_out_of_catchment_suburb_hints_before_fetch():
             raise AssertionError("Expected parse_seed_queue to reject out-of-catchment suburb hints")
 
 
+def test_accepts_valid_inner_city_suburb_not_present_in_pilot_batch():
+    with tempfile.TemporaryDirectory(prefix="dtd-concierge-inner-city-") as tmp:
+        temp_csv = Path(tmp) / "queue.csv"
+        temp_csv.write_text(
+            "\n".join(
+                [
+                    "source_url,business_name_hint,suburb_hint,service_hint,notes",
+                    "https://example.com/listing,Example Trainer,Docklands,private training,",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        rows = concierge_pipeline.parse_seed_queue(temp_csv)
+        assert len(rows) == 1
+        assert rows[0]["suburb_hint"] == "Docklands"
+
+
 def test_resolve_suburb_uses_council_evidence_for_ambiguous_localities():
     councils, suburb_lookup, _ = concierge_pipeline.load_councils_and_suburbs()
     snapshot = {
@@ -269,6 +287,7 @@ if __name__ == "__main__":
     test_canonical_pilot_rows()
     test_rejects_non_http_source_urls_before_fetch()
     test_rejects_out_of_catchment_suburb_hints_before_fetch()
+    test_accepts_valid_inner_city_suburb_not_present_in_pilot_batch()
     test_resolve_suburb_uses_council_evidence_for_ambiguous_localities()
     test_pipeline_emits_review_artifact_for_the_canonical_pilot()
     test_pipeline_processes_only_manual_queue_urls()

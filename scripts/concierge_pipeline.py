@@ -35,12 +35,12 @@ SUBURB_MAPPING_CSV = REPO_ROOT / "data" / "suburbs_councils_mapping.csv"
 
 
 def load_approved_mvp_catchment_suburbs() -> frozenset[str]:
-    with DEFAULT_INPUT.open(encoding="utf-8") as fh:
+    with SUBURB_MAPPING_CSV.open(encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
     suburbs = {
-        row["suburb_hint"].strip()
+        row["suburb"].strip()
         for row in rows
-        if row.get("suburb_hint", "").strip()
+        if row.get("region", "").strip() == "Inner City" and row.get("suburb", "").strip()
     }
     return frozenset(suburbs)
 
