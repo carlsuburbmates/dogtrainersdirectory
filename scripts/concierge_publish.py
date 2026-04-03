@@ -25,6 +25,7 @@ from urllib.request import Request, urlopen
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MAPPING_JSON = REPO_ROOT / "qa_artifacts" / "concierge" / "concierge_mapping_artifact.json"
+DEFAULT_REVIEW_JSON = REPO_ROOT / "qa_artifacts" / "concierge" / "concierge_review_artifact.json"
 DEFAULT_REPORT_JSON = REPO_ROOT / "qa_artifacts" / "concierge" / "concierge_publish_report.json"
 
 
@@ -33,6 +34,8 @@ class PreparedPublishCandidate:
     input_row_index: int
     source_url: str
     business_name_hint: str
+    resolved_suburb: str
+    resolved_council: str
     businesses_payload: dict[str, Any]
     contact_evidence: dict[str, Any]
     sensitive_contact_payload: dict[str, Any]
@@ -130,6 +133,27 @@ class SupabaseRestPublisher:
             extra_headers={"Prefer": "return=minimal"},
         )
 
+    def resolve_live_suburb_id(self, suburb_name: str, council_name: str) -> int:
+        query = urlencode(
+            [
+                ("select", "id,councils!inner(name)"),
+                ("name", f"eq.{suburb_name}"),
+                ("councils.name", f"eq.{council_name}"),
+            ]
+        )
+        data = self._request("GET", f"/rest/v1/suburbs?{query}")
+        if not isinstance(data, list):
+            raise RuntimeError("live suburb resolution returned malformed response")
+        if not data:
+            raise RuntimeError(
+                f"live suburb resolution found no match for suburb '{suburb_name}' in council '{council_name}'"
+            )
+        if len(data) > 1:
+            raise RuntimeError(
+                f"live suburb resolution found multiple matches for suburb '{suburb_name}' in council '{council_name}'"
+            )
+        return int(data[0]["id"])
+
 
 def load_mapping_artifact(path: Path) -> dict[str, Any]:
     if not path.exists():
@@ -140,13 +164,37 @@ def load_mapping_artifact(path: Path) -> dict[str, Any]:
     return data
 
 
-def prepare_publish_candidate(record: dict[str, Any]) -> PreparedPublishCandidate:
+def load_review_artifact(path: Path) -> dict[int, dict[str, str]]:
+    if not path.exists():
+        raise SystemExit(f"Review artifact not found: {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or "records" not in data:
+        raise SystemExit(f"Review artifact is malformed: {path}")
+    locality_lookup: dict[int, dict[str, str]] = {}
+    for record in data["records"]:
+        locality = record.get("locality") or {}
+        locality_lookup[int(record["input_row_index"])] = {
+            "resolved_suburb": str(locality.get("resolved_suburb") or ""),
+            "resolved_council": str(locality.get("resolved_council") or ""),
+        }
+    return locality_lookup
+
+
+def prepare_publish_candidate(
+    record: dict[str, Any],
+    *,
+    locality_lookup: dict[int, dict[str, str]],
+) -> PreparedPublishCandidate:
     businesses_payload = dict(record.get("businesses_payload") or {})
     contact_evidence = dict(record.get("contact_evidence") or {})
     sensitive_contact_payload = dict(record.get("sensitive_contact_payload") or {})
     trainer_specializations_rows = list(record.get("trainer_specializations_rows") or [])
     trainer_services_rows = list(record.get("trainer_services_rows") or [])
     trainer_behavior_issues_rows = list(record.get("trainer_behavior_issues_rows") or [])
+    input_row_index = int(record["input_row_index"])
+    locality_identity = locality_lookup.get(input_row_index) or {}
+    resolved_suburb = str(locality_identity.get("resolved_suburb") or "")
+    resolved_council = str(locality_identity.get("resolved_council") or "")
 
     errors: list[str] = []
     if record.get("mapping_status") != "mapping_ready":
@@ -163,14 +211,18 @@ def prepare_publish_candidate(record: dict[str, Any]) -> PreparedPublishCandidat
         contact_evidence.get("phone_plaintext") or contact_evidence.get("email_plaintext")
     ):
         errors.append("sensitive contact payload requires encryption but no plaintext contact evidence is present")
+    if not resolved_suburb or not resolved_council:
+        errors.append("review artifact locality identity is required for live suburb resolution")
 
     if errors:
         raise ValueError("; ".join(errors))
 
     return PreparedPublishCandidate(
-        input_row_index=int(record["input_row_index"]),
+        input_row_index=input_row_index,
         source_url=str(record["source_url"]),
         business_name_hint=str(record["business_name_hint"]),
+        resolved_suburb=resolved_suburb,
+        resolved_council=resolved_council,
         businesses_payload=businesses_payload,
         contact_evidence=contact_evidence,
         sensitive_contact_payload=sensitive_contact_payload,
@@ -183,6 +235,7 @@ def prepare_publish_candidate(record: dict[str, Any]) -> PreparedPublishCandidat
 def build_business_insert_payload(
     candidate: PreparedPublishCandidate,
     *,
+    live_suburb_id: int,
     encrypted_phone: str | None,
     encrypted_email: str | None,
 ) -> dict[str, Any]:
@@ -193,7 +246,7 @@ def build_business_insert_payload(
         "email": None,
         "website": candidate.businesses_payload.get("website"),
         "address": candidate.businesses_payload.get("address"),
-        "suburb_id": candidate.businesses_payload["suburb_id"],
+        "suburb_id": live_suburb_id,
         "bio": candidate.businesses_payload.get("bio"),
         "pricing": None,
         "abn": None,
@@ -228,6 +281,7 @@ def publish_mapping_artifact(
     artifact: dict[str, Any],
     *,
     apply: bool,
+    locality_lookup: dict[int, dict[str, str]],
     publisher: SupabaseRestPublisher | Any | None = None,
 ) -> dict[str, Any]:
     inventory_status = ((artifact.get("inventory_duplicate_check") or {}).get("status")) or "unknown"
@@ -257,7 +311,7 @@ def publish_mapping_artifact(
             continue
 
         try:
-            candidate = prepare_publish_candidate(record)
+            candidate = prepare_publish_candidate(record, locality_lookup=locality_lookup)
         except ValueError as exc:
             failed += 1
             results.append(
@@ -298,9 +352,16 @@ def publish_mapping_artifact(
                     "reasons": [],
                     "business_insert_preview": build_business_insert_payload(
                         candidate,
+                        live_suburb_id=-1,
                         encrypted_phone="ENCRYPT_ON_APPLY" if candidate.contact_evidence.get("phone_plaintext") else None,
                         encrypted_email="ENCRYPT_ON_APPLY" if candidate.contact_evidence.get("email_plaintext") else None,
                     ),
+                    "locality_resolution_preview": {
+                        "resolved_suburb": candidate.resolved_suburb,
+                        "resolved_council": candidate.resolved_council,
+                        "artifact_suburb_id": candidate.businesses_payload["suburb_id"],
+                        "live_suburb_id": "RESOLVE_ON_APPLY",
+                    },
                 }
             )
             continue
@@ -317,8 +378,10 @@ def publish_mapping_artifact(
                 if candidate.contact_evidence.get("email_plaintext")
                 else None
             )
+            live_suburb_id = publisher.resolve_live_suburb_id(candidate.resolved_suburb, candidate.resolved_council)
             business_payload = build_business_insert_payload(
                 candidate,
+                live_suburb_id=live_suburb_id,
                 encrypted_phone=encrypted_phone,
                 encrypted_email=encrypted_email,
             )
@@ -381,6 +444,12 @@ def publish_mapping_artifact(
                     "verification_status": "pending",
                     "abn_verified": False,
                 },
+                "locality_resolution": {
+                    "resolved_suburb": candidate.resolved_suburb,
+                    "resolved_council": candidate.resolved_council,
+                    "artifact_suburb_id": candidate.businesses_payload["suburb_id"],
+                    "live_suburb_id": business_payload["suburb_id"],
+                },
             }
         )
 
@@ -405,12 +474,14 @@ def publish_mapping_artifact(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Publish mapping-ready concierge candidates as scaffolded listings.")
     parser.add_argument("--mapping-json", type=Path, default=DEFAULT_MAPPING_JSON, help="Concierge mapping artifact JSON path")
+    parser.add_argument("--review-json", type=Path, default=DEFAULT_REVIEW_JSON, help="Concierge review artifact JSON path")
     parser.add_argument("--report-json", type=Path, default=DEFAULT_REPORT_JSON, help="Publish report JSON path")
     parser.add_argument("--apply", action="store_true", help="Apply live inserts instead of producing a dry-run report")
     args = parser.parse_args(argv)
 
     artifact = load_mapping_artifact(args.mapping_json)
-    report = publish_mapping_artifact(artifact, apply=args.apply)
+    locality_lookup = load_review_artifact(args.review_json)
+    report = publish_mapping_artifact(artifact, apply=args.apply, locality_lookup=locality_lookup)
     args.report_json.parent.mkdir(parents=True, exist_ok=True)
     args.report_json.write_text(json.dumps(report, indent=2, ensure_ascii=True, sort_keys=False), encoding="utf-8")
     print(f"Wrote concierge publish report: {args.report_json}")

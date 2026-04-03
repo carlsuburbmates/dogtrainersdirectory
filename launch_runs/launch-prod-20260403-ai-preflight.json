@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-04-03T01:35:35.376Z",
-  "sha": "d142fa5d7996438c5f1953994f99389645f4cb22",
+  "timestamp": "2026-04-03T01:44:00.476Z",
+  "sha": "658b706c86f62fbf3cfc2db171f7c4c9a1b22c45",
   "target": "staging",
   "envTarget": "staging",
   "dnsStatus": "PASS",
@@ -14,7 +14,7 @@
     {
       "name": "DB target",
       "status": "PASS",
-      "durationMs": 104,
+      "durationMs": 100,
       "details": {
         "urlHost": "db.xqytwtmdilipxnjetvoe.supabase.co",
         "urlDatabase": "postgres",
@@ -28,23 +28,23 @@
     {
       "name": "Launch inventory gate",
       "status": "FAIL",
-      "durationMs": 295,
-      "output": "counted=0 councils=0 suburbs=0 age=0 services=0 issues=0",
+      "durationMs": 228,
+      "output": "counted=1 councils=1 suburbs=1 age=2 services=5 issues=5",
       "details": {
         "status": "FAIL",
         "missingEnrichment": 0,
         "source": {
           "searchSurface": "public.search_trainers",
           "failClosed": true,
-          "totalLiveSearchRows": 4,
-          "uniqueLiveSearchBusinesses": 4,
-          "enrichedBusinesses": 4
+          "totalLiveSearchRows": 5,
+          "uniqueLiveSearchBusinesses": 5,
+          "enrichedBusinesses": 5
         },
         "thresholds": [
           {
             "name": "Minimum real searchable trainer listings",
             "required": 30,
-            "actual": 0,
+            "actual": 1,
             "passed": false
           },
           {
@@ -54,32 +54,34 @@
               "City of Port Phillip",
               "City of Yarra"
             ],
-            "actual": [],
+            "actual": [
+              "City of Port Phillip"
+            ],
             "passed": false
           },
           {
             "name": "Minimum distinct Inner City suburbs",
             "required": 11,
-            "actual": 0,
+            "actual": 1,
             "passed": false
           },
           {
             "name": "Minimum distinct age specialties",
             "required": 3,
-            "actual": 0,
+            "actual": 2,
             "passed": false
           },
           {
             "name": "Minimum distinct service types",
             "required": 4,
-            "actual": 0,
-            "passed": false
+            "actual": 5,
+            "passed": true
           },
           {
             "name": "Minimum distinct behavior issues",
             "required": 5,
-            "actual": 0,
-            "passed": false
+            "actual": 5,
+            "passed": true
           }
         ]
       }
@@ -90,23 +92,42 @@
     "source": {
       "searchSurface": "public.search_trainers",
       "failClosed": true,
-      "totalLiveSearchRows": 4,
-      "uniqueLiveSearchBusinesses": 4,
-      "enrichedBusinesses": 4
+      "totalLiveSearchRows": 5,
+      "uniqueLiveSearchBusinesses": 5,
+      "enrichedBusinesses": 5
     },
     "summary": {
-      "countedListings": 0,
-      "representedCouncils": [],
-      "representedSuburbs": [],
-      "ageSpecialties": [],
-      "serviceTypes": [],
-      "behaviorIssues": []
+      "countedListings": 1,
+      "representedCouncils": [
+        "City of Port Phillip"
+      ],
+      "representedSuburbs": [
+        "Elwood"
+      ],
+      "ageSpecialties": [
+        "adult_18m_7y",
+        "puppies_0_6m"
+      ],
+      "serviceTypes": [
+        "behaviour_consultations",
+        "group_classes",
+        "obedience_training",
+        "private_training",
+        "puppy_training"
+      ],
+      "behaviorIssues": [
+        "dog_aggression",
+        "jumping_up",
+        "mouthing_nipping_biting",
+        "separation_anxiety",
+        "socialisation"
+      ]
     },
     "thresholds": [
       {
         "name": "Minimum real searchable trainer listings",
         "required": 30,
-        "actual": 0,
+        "actual": 1,
         "passed": false
       },
       {
@@ -116,32 +137,34 @@
           "City of Port Phillip",
           "City of Yarra"
         ],
-        "actual": [],
+        "actual": [
+          "City of Port Phillip"
+        ],
         "passed": false
       },
       {
         "name": "Minimum distinct Inner City suburbs",
         "required": 11,
-        "actual": 0,
+        "actual": 1,
         "passed": false
       },
       {
         "name": "Minimum distinct age specialties",
         "required": 3,
-        "actual": 0,
+        "actual": 2,
         "passed": false
       },
       {
         "name": "Minimum distinct service types",
         "required": 4,
-        "actual": 0,
-        "passed": false
+        "actual": 5,
+        "passed": true
       },
       {
         "name": "Minimum distinct behavior issues",
         "required": 5,
-        "actual": 0,
-        "passed": false
+        "actual": 5,
+        "passed": true
       }
     ],
     "exclusions": [
@@ -206,6 +229,20 @@
         ]
       }
     ],
-    "countedRecords": []
+    "countedRecords": [
+      {
+        "businessId": 19,
+        "businessName": "Kira Canine Code",
+        "resourceType": "behaviour_consultant",
+        "suburbName": "Elwood",
+        "councilName": "City of Port Phillip",
+        "region": "Inner City",
+        "verificationStatus": "pending",
+        "isScaffolded": true,
+        "isClaimed": false,
+        "counted": true,
+        "exclusionReasons": []
+      }
+    ]
   }
 }

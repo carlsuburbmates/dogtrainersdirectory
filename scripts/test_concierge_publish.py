@@ -17,6 +17,7 @@ class FakePublisher:
         self.business_payloads: list[dict[str, object]] = []
         self.inserted_rows: dict[str, list[dict[str, object]]] = {}
         self.deleted_business_ids: list[int] = []
+        self.resolved_localities: list[tuple[str, str]] = []
         self._next_business_id = 501
 
     def encrypt_sensitive(self, value: str) -> str:
@@ -34,6 +35,10 @@ class FakePublisher:
 
     def delete_business(self, business_id: int) -> None:
         self.deleted_business_ids.append(business_id)
+
+    def resolve_live_suburb_id(self, suburb_name: str, council_name: str) -> int:
+        self.resolved_localities.append((suburb_name, council_name))
+        return 902
 
 
 def make_mapping_record(
@@ -103,6 +108,17 @@ def make_mapping_artifact(*records: dict[str, object], inventory_status: str = "
     }
 
 
+def make_locality_lookup(
+    *row_indexes: int,
+    suburb_name: str = "Abbotsford",
+    council_name: str = "City of Yarra",
+) -> dict[int, dict[str, str]]:
+    return {
+        row_index: {"resolved_suburb": suburb_name, "resolved_council": council_name}
+        for row_index in row_indexes
+    }
+
+
 def test_only_mapping_ready_candidates_publish():
     artifact = make_mapping_artifact(
         make_mapping_record(index=1, mapping_status="mapping_ready"),
@@ -110,7 +126,12 @@ def test_only_mapping_ready_candidates_publish():
     )
     publisher = FakePublisher()
 
-    report = concierge_publish.publish_mapping_artifact(artifact, apply=True, publisher=publisher)
+    report = concierge_publish.publish_mapping_artifact(
+        artifact,
+        apply=True,
+        locality_lookup=make_locality_lookup(1, 2),
+        publisher=publisher,
+    )
 
     assert report["counts"] == {
         "published": 1,
@@ -128,7 +149,12 @@ def test_published_rows_remain_scaffolded_and_unclaimed_with_encrypted_contacts(
     artifact = make_mapping_artifact(make_mapping_record(index=1))
     publisher = FakePublisher()
 
-    report = concierge_publish.publish_mapping_artifact(artifact, apply=True, publisher=publisher)
+    report = concierge_publish.publish_mapping_artifact(
+        artifact,
+        apply=True,
+        locality_lookup=make_locality_lookup(1, suburb_name="Balaclava", council_name="City of Port Phillip"),
+        publisher=publisher,
+    )
 
     business_payload = publisher.business_payloads[0]
     assert business_payload["profile_id"] is None
@@ -138,9 +164,11 @@ def test_published_rows_remain_scaffolded_and_unclaimed_with_encrypted_contacts(
     assert business_payload["abn_verified"] is False
     assert business_payload["phone"] is None
     assert business_payload["email"] is None
+    assert business_payload["suburb_id"] == 902
     assert business_payload["phone_encrypted"] == "enc::0400 111 111"
     assert business_payload["email_encrypted"] == "enc::hello@example.com"
     assert publisher.encrypted_inputs == ["0400 111 111", "hello@example.com"]
+    assert publisher.resolved_localities == [("Balaclava", "City of Port Phillip")]
     assert report["records"][0]["claim_state"] == {
         "profile_id": None,
         "is_scaffolded": True,
@@ -148,13 +176,24 @@ def test_published_rows_remain_scaffolded_and_unclaimed_with_encrypted_contacts(
         "verification_status": "pending",
         "abn_verified": False,
     }
+    assert report["records"][0]["locality_resolution"] == {
+        "resolved_suburb": "Balaclava",
+        "resolved_council": "City of Port Phillip",
+        "artifact_suburb_id": 15,
+        "live_suburb_id": 902,
+    }
 
 
 def test_linked_trainer_rows_insert_with_business_id():
     artifact = make_mapping_artifact(make_mapping_record(index=1))
     publisher = FakePublisher()
 
-    concierge_publish.publish_mapping_artifact(artifact, apply=True, publisher=publisher)
+    concierge_publish.publish_mapping_artifact(
+        artifact,
+        apply=True,
+        locality_lookup=make_locality_lookup(1),
+        publisher=publisher,
+    )
 
     assert publisher.inserted_rows["trainer_specializations"] == [
         {"business_id": 501, "age_specialty": "adult_18m_7y"}
@@ -171,7 +210,12 @@ def test_non_ready_candidates_are_not_silently_published():
     artifact = make_mapping_artifact(make_mapping_record(index=1, mapping_status="blocked"))
     publisher = FakePublisher()
 
-    report = concierge_publish.publish_mapping_artifact(artifact, apply=True, publisher=publisher)
+    report = concierge_publish.publish_mapping_artifact(
+        artifact,
+        apply=True,
+        locality_lookup=make_locality_lookup(1),
+        publisher=publisher,
+    )
 
     assert report["counts"]["published"] == 0
     assert report["counts"]["skipped_non_ready"] == 1
@@ -181,7 +225,11 @@ def test_non_ready_candidates_are_not_silently_published():
 def test_dry_run_report_keeps_publish_preview_without_writing():
     artifact = make_mapping_artifact(make_mapping_record(index=1))
 
-    report = concierge_publish.publish_mapping_artifact(artifact, apply=False)
+    report = concierge_publish.publish_mapping_artifact(
+        artifact,
+        apply=False,
+        locality_lookup=make_locality_lookup(1, suburb_name="Elwood", council_name="City of Port Phillip"),
+    )
 
     assert report["counts"] == {
         "published": 0,
@@ -195,6 +243,42 @@ def test_dry_run_report_keeps_publish_preview_without_writing():
     assert preview["is_claimed"] is False
     assert preview["phone_encrypted"] == "ENCRYPT_ON_APPLY"
     assert preview["email_encrypted"] == "ENCRYPT_ON_APPLY"
+    assert preview["suburb_id"] == -1
+    assert report["records"][0]["locality_resolution_preview"] == {
+        "resolved_suburb": "Elwood",
+        "resolved_council": "City of Port Phillip",
+        "artifact_suburb_id": 15,
+        "live_suburb_id": "RESOLVE_ON_APPLY",
+    }
+
+
+def test_publish_fails_cleanly_when_live_locality_cannot_be_resolved():
+    class MissingLocalityPublisher(FakePublisher):
+        def resolve_live_suburb_id(self, suburb_name: str, council_name: str) -> int:
+            raise RuntimeError(
+                f"live suburb resolution found no match for suburb '{suburb_name}' in council '{council_name}'"
+            )
+
+    artifact = make_mapping_artifact(make_mapping_record(index=1))
+    publisher = MissingLocalityPublisher()
+
+    report = concierge_publish.publish_mapping_artifact(
+        artifact,
+        apply=True,
+        locality_lookup=make_locality_lookup(1, suburb_name="Docklands", council_name="City of Melbourne"),
+        publisher=publisher,
+    )
+
+    assert report["counts"] == {
+        "published": 0,
+        "skipped_non_ready": 0,
+        "failed": 1,
+        "dry_run_ready": 0,
+        "total": 1,
+    }
+    assert report["records"][0]["publish_action"] == "failed"
+    assert "live suburb resolution found no match" in report["records"][0]["reasons"][0]
+    assert publisher.business_payloads == []
 
 
 if __name__ == "__main__":
@@ -203,4 +287,5 @@ if __name__ == "__main__":
     test_linked_trainer_rows_insert_with_business_id()
     test_non_ready_candidates_are_not_silently_published()
     test_dry_run_report_keeps_publish_preview_without_writing()
+    test_publish_fails_cleanly_when_live_locality_cannot_be_resolved()
     print("OK test_concierge_publish.py")
