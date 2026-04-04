@@ -357,6 +357,11 @@ Therefore:
   - automated scrape and normalization
   - manual review of the pre-publish seed artifact
   - automated relational publish into the canonical listing model
+- DTD is **directory-first**. Triage is a routing and guidance layer on top of the directory; it does not narrow directory inclusion by itself.
+- Concierge sourcing and publish decisions must therefore distinguish:
+  - directory inclusion
+  - resource-type validation
+  - trainer-launch counting
 - AI agents and scripts must not decide **who** should be listed.
 - Blind web acquisition is not allowed for MVP launch inventory.
 - Every candidate listing must originate from a human-approved source URL.
@@ -387,12 +392,26 @@ Current MVP clarification:
 - the approved Inner Melbourne catchment is the current `Inner City` suburb set in `data/suburbs_councils_mapping.csv`
 - the canonical pilot queue is `data/concierge_seed_queue_inner_melbourne_pilot_19.csv` with `19` approved rows for the bounded Phase 17 pipeline proof
 
+### 13.2 Directory-first listing policy
+The Listings Session and concierge pipeline must follow this inclusion model:
+
+- A candidate may belong in DTD if it is a real, public, dog-owner-relevant listing in scope for the directory.
+- In-scope listing classes include trainers, behaviour consultants, emergency vets, urgent care, emergency shelters, and other canonically supported `resource_type` values.
+- Vet, hospital, or emergency-capable source shape is not by itself a downgrade or exclusion reason.
+- Operator-verified concierge batches are treated as human-approved directory candidates first; automation acts as validation and normalization support rather than re-deciding whether the business belongs in DTD.
+
+This means:
+- directory inclusion is broader than the current trainer-specific launch gate
+- a valid directory listing may publish even if it does not count toward the current trainer-launch threshold
+- trainer-only rules must not be applied to every directory listing indiscriminately
+
 ### 13.3 Automated stages
 Once a source URL is approved by a human, the pipeline may automate:
 - page fetch and extraction
 - structured candidate-field extraction from the public source
 - canonical suburb resolution to `suburb_id`
-- taxonomy mapping to `trainer_specializations`, `trainer_services`, and `trainer_behavior_issues`
+- resource-type inference or confirmation
+- taxonomy mapping to `trainer_specializations`, `trainer_services`, and `trainer_behavior_issues` where that taxonomy truthfully applies
 - duplicate and conflict checks
 - publish-ready artifact generation
 - relational import generation
@@ -407,7 +426,45 @@ Once a source URL is approved by a human, the pipeline may automate:
 - No listing may be presented as owner-verified or business-managed unless the real ownership and verification path has occurred.
 - Concierge-seeded MVP listings may be publicly visible while still being scaffolded and unclaimed, but that state must stay truthful.
 
-### 13.5 Launch inventory requirements
+#### 13.4.1 Hard blockers vs warnings for operator-verified batches
+For operator-verified concierge batches, automation must distinguish hard blockers from non-blocking warnings.
+
+Hard blockers:
+- dead or unfetchable approved source URL
+- unresolvable canonical geography
+- true duplicate conflict that cannot be published safely without operator intervention
+- clearly unrelated or out-of-scope business
+
+Warnings or review signals, not auto-exclusion reasons by themselves:
+- vet-like or hospital-like source shape
+- mixed service model
+- weak trainer signal on a listing that still appears valid for another supported `resource_type`
+- sparse contact fields when a truthful fallback path exists
+- duplicate suspicion that is not yet a true conflict
+
+### 13.5 Listings Session workflow
+The Listings Session is an inventory-operations loop, not a feature-building loop.
+
+Canonical workflow:
+1. Human provides a new operator-verified seed CSV.
+2. The concierge pipeline processes only those approved source URLs.
+3. The pipeline emits review and mapping artifacts with per-row outcomes:
+   - publishable or mapping-ready
+   - needs review
+   - blocked
+4. Human reviews only rows that remain ambiguous, conflicting, or blocked.
+5. A bounded dry-run publish is prepared for explicitly approved rows only.
+6. Live publish applies only the approved rows and keeps scaffolded/unclaimed truth intact.
+7. The launch gate is rerun against the canonical live search surface.
+8. The sourcing gap is recalculated and the loop repeats.
+
+The Listings Session must not:
+- invent new listing contracts
+- publish non-approved `needs_review` rows automatically
+- treat trainer-launch counting as the same decision as directory inclusion
+- reopen Phase 17 engineering unless a real schema/runtime blocker is discovered
+
+### 13.6 Launch inventory requirements
 The launch objective is to avoid a ghost-town directory while keeping the source path reviewable and truthful.
 
 The concierge pipeline must therefore produce inventory that is:
@@ -416,6 +473,10 @@ The concierge pipeline must therefore produce inventory that is:
 - sufficiently complete to feel like a real directory result
 - reviewable before publish
 - reproducible through a bounded import path
+
+Important separation:
+- directory inclusion and live publish are broader than trainer-launch counting
+- the current launch gate is narrower than the total DTD directory scope
 
 For the current MVP launch gate, only listings that are live on the canonical public trainer search surface count toward launch readiness.
 Counted listings may still be scaffolded and unclaimed, but they must remain truthful about that state.
@@ -449,13 +510,18 @@ At minimum, a publish-ready trainer listing must have:
 - at least one specialization
 - a truthful contact path or clearly bounded fallback
 
-### 13.6 Review artifact requirements
+Directory listing clarification:
+- a listing may still be valid DTD inventory even if it does not count toward the current trainer launch gate
+- trainer-launch thresholds must not be used as a generic exclusion rule for emergency, urgent-care, or other supported non-trainer directory listings
+
+### 13.7 Review artifact requirements
 The manual pre-publish review artifact must expose enough signal to catch bad automation output before publish.
 
 It must show, at minimum:
 - source URL
 - human business-name hint
 - extracted business name
+- candidate `resource_type`
 - extracted contact fields if present
 - resolved suburb and any locality warning
 - resolved `suburb_id`
@@ -463,8 +529,9 @@ It must show, at minimum:
 - mapped specialization, service, and behaviour-issue tags
 - duplicate or conflict warnings
 - publish-readiness or missing-field warnings
+- whether the row counts toward the current trainer launch gate or is directory-valid but non-counting
 
-### 13.7 Legacy phase2 pipeline status
+### 13.8 Legacy phase2 pipeline status
 - `data/phase2_scraper_targets.csv`
 - `scripts/run_phase2_scraper.py`
 - `supabase/phase2_scraped.json`

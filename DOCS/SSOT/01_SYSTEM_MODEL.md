@@ -31,15 +31,17 @@
 - **Admin/operator:** monitors health, runs weekly exception loops, verifies ABN and emergency resources, moderates reviews, and supervises automation ceilings.
 
 ## 3. Core workflow families
-### 3.1 Public discovery and trainer selection
-- Public discovery spans the homepage, search, directory, and trainer-profile journey.
-- The public user can move from discovery to trainer evaluation and then to an explicit contact path without entering admin or business-owned surfaces.
-- Trainer selection may include bounded owner decision-support guidance, but public discovery remains deterministic in route and ranking behaviour.
+### 3.1 Public discovery and directory selection
+- Public discovery spans the homepage, search, directory, and listing-profile journey.
+- The public user can move from discovery to listing evaluation and then to an explicit contact path without entering admin or business-owned surfaces.
+- Discovery is directory-first: trainers, behaviour consultants, emergency vets, urgent care, and other in-scope directory listings can all appear truthfully according to the current public search/profile contracts.
+- Owner decision-support guidance may help narrow choices, but public discovery remains deterministic in route and ranking behaviour.
 
 ### 3.2 Emergency and triage
 - `/triage -> /search` remains deterministic and safety-first.
 - `/emergency` is the urgent public surface for emergency resources and emergency triage.
 - Emergency escalation remains higher priority than any AI-assisted interpretation or guidance.
+- Triage is a routing layer over the directory and emergency resources; it does not define directory inclusion by itself.
 
 ### 3.3 Owner guidance inside the public journey
 - `/triage -> /search` remains deterministic and safety-first.

@@ -27,19 +27,24 @@
 - `WORKPLAN.md`
 
 ## 2. What this app is
-DTD is a mobile-first dog trainer discovery and guidance platform.
+DTD is a mobile-first dog-owner directory and guidance platform.
 
 In plain English, it does four jobs:
-- helps dog owners find a suitable trainer
+- helps dog owners find suitable directory listings across training, behaviour, emergency, and urgent-care needs
 - helps dog owners decide what kind of help they need through triage
 - helps dog owners access emergency resources when the situation is urgent
-- helps trainer businesses join the directory, maintain their profile, and pay for featured visibility
+- helps relevant dog-service businesses join the directory, maintain their profile, and pay for featured visibility
 
 It also includes a separate admin operations surface used to run and govern the platform.
 
 Post-launch, the operating goal is a mostly self-running product where the owner supervises weekly exceptions, audits, and bounded overrides rather than doing routine daily queue babysitting.
 
 This document is a plain-English product model. It summarises how the current product is meant to work, but it does not override the route, API, data, monetisation, security, or operations contracts defined elsewhere in Tier-0/Tier-1 SSOT.
+
+Directory-first clarification:
+- DTD is a directory first; triage is a routing and guidance layer on top of the directory rather than a separate product that narrows directory scope.
+- A listing may be valid for DTD even if it does not count toward the current trainer-specific launch gate.
+- Resource types such as trainers, behaviour consultants, emergency vets, urgent care, and emergency shelters are all part of the directory model when they are truthful, geographically valid, and in scope.
 
 **Source:** `DOCS/SSOT/00_BLUEPRINT_SSOT.md`, `DOCS/SSOT/01_SYSTEM_MODEL.md`, `DOCS/SSOT/05_ROUTES_AND_NAV.md`, `DOCS/SSOT/FILE_MANIFEST.md`
 
@@ -55,13 +60,14 @@ This document is a plain-English product model. It summarises how the current pr
 1. **Direct discovery**
    - User starts the discovery journey from the public entry points
    - User filters and compares listings
-   - User opens a trainer profile
+   - User opens a listing profile
    - User chooses a direct contact path
 
 2. **Triage-led discovery**
    - User selects age and issue context
    - Urgent cases escalate to the emergency flow
    - Non-urgent cases continue into discovery with clearer shortlist context
+   - Triage may steer the user toward trainers, behaviour consultants, or emergency-capable listings, but it does not redefine what belongs in the directory
 
 3. **Owner decision support**
    - The product may explain shortlist fit, suggest a refinement, compare shortlisted trainers, or prepare an enquiry draft
@@ -72,6 +78,7 @@ This document is a plain-English product model. It summarises how the current pr
    - User can browse emergency resources
    - User can submit a triage description
    - The system classifies the situation and returns guidance
+   - Emergency-capable directory listings remain first-class inventory, not side-channel exceptions
 
 5. **Failure recovery**
    - If a trainer profile cannot be loaded, the user sees a clear unavailable state

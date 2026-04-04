@@ -13,10 +13,10 @@ This list is aligned to the current implementation (code + migrations), not just
 - `council_contacts`
 
 ### 1.2 Listings & reviews
-- `businesses` (canonical “listing” entity; no `trainers` table)
-- `trainer_services` (service types per business; primary/secondary)
-- `trainer_behavior_issues` (behaviour issues per business)
-- `trainer_specializations` (age specialties per business)
+- `businesses` (canonical directory listing entity for all in-scope resource types; there is no `trainers` table)
+- `trainer_services` (service types per business when the listing participates in trainer/behaviour taxonomy)
+- `trainer_behavior_issues` (behaviour issues per business when the listing participates in trainer/behaviour taxonomy)
+- `trainer_specializations` (age specialties per business when the listing participates in trainer/behaviour taxonomy)
 - `reviews`
 - `ai_review_decisions` (moderation metadata)
 
@@ -98,9 +98,12 @@ This list is aligned to the current implementation (code + migrations), not just
 
 ## 4. Contract rules
 - Code must query **`businesses`** (or RPCs built on it), not a non-existent `trainers` table.
+- Directory inclusion is determined at the `businesses` listing level first; trainer-only relation tables do not define the full directory scope by themselves.
 - Writes must use the correct identifiers:
   - `trainer_behavior_issues` (not “behaviours”)
   - `trainer_services.service_type`
+- `resource_type='trainer'` listings must satisfy the specialization linkage contract before they count as valid trainer inventory or publish successfully under the live schema trigger.
+- Non-trainer directory listings remain valid DTD inventory when their `resource_type` is truthful and their publish path satisfies the schema contracts that apply to that resource type.
 - Emergency verification state is stored on `businesses` for emergency resource listings.
 - `ai_automation_rollout_controls` is the canonical current-state registry for workflow rollout status. It must not be replaced by `ops_overrides` or inferred solely from env vars.
 - `ai_automation_rollout_events` is append-only rollout audit history. Each mutation must record workflow, state transition, reason, and acting admin identity.
