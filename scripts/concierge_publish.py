@@ -14,6 +14,7 @@ import argparse
 import json
 import os
 import ssl
+import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -48,13 +49,15 @@ class SupabaseRestPublisher:
     def __init__(self) -> None:
         supabase_url = (os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
         service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or ""
+        connection_string = os.environ.get("SUPABASE_CONNECTION_STRING") or ""
         encrypt_key = os.environ.get("SUPABASE_PGCRYPTO_KEY") or ""
-        if not supabase_url or not service_role_key:
+        if not supabase_url or not service_role_key or not connection_string:
             raise SystemExit(
-                "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for concierge publish apply mode"
+                "SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_CONNECTION_STRING are required for concierge publish apply mode"
             )
         self.supabase_url = supabase_url
         self.service_role_key = service_role_key
+        self.connection_string = connection_string
         self.encrypt_key = encrypt_key
         self.context = ssl.create_default_context()
 
@@ -153,6 +156,44 @@ class SupabaseRestPublisher:
                 f"live suburb resolution found multiple matches for suburb '{suburb_name}' in council '{council_name}'"
             )
         return int(data[0]["id"])
+
+    def publish_candidate_transaction(
+        self,
+        candidate: PreparedPublishCandidate,
+        *,
+        live_suburb_id: int,
+        encrypted_phone: str | None,
+        encrypted_email: str | None,
+    ) -> int:
+        business_payload = build_business_insert_payload(
+            candidate,
+            live_suburb_id=live_suburb_id,
+            encrypted_phone=encrypted_phone,
+            encrypted_email=encrypted_email,
+        )
+        sql = build_transaction_sql(candidate, business_payload)
+        process = subprocess.run(
+            [
+                "psql",
+                self.connection_string,
+                "-X",
+                "-q",
+                "-t",
+                "-A",
+                "-v",
+                "ON_ERROR_STOP=1",
+            ],
+            input=sql,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if process.returncode != 0:
+            raise RuntimeError(process.stderr.strip() or "transactional publish failed")
+        business_id_text = process.stdout.strip().splitlines()[-1].strip() if process.stdout.strip() else ""
+        if not business_id_text:
+            raise RuntimeError("transactional publish returned no business id")
+        return int(business_id_text)
 
 
 def load_mapping_artifact(path: Path) -> dict[str, Any]:
@@ -277,6 +318,93 @@ def build_relation_rows(table: str, business_id: int, rows: list[dict[str, Any]]
     return shaped
 
 
+def sql_literal(value: Any) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value).replace("'", "''")
+    return f"'{text}'"
+
+
+def build_values_clause(rows: list[tuple[Any, ...]]) -> str:
+    return ", ".join(f"({', '.join(sql_literal(value) for value in row)})" for row in rows)
+
+
+def build_transaction_sql(candidate: PreparedPublishCandidate, business_payload: dict[str, Any]) -> str:
+    ctes = [
+        f"""inserted_business AS (
+  INSERT INTO businesses (
+    profile_id, name, phone, email, website, address, suburb_id, bio, pricing, abn,
+    abn_verified, verification_status, resource_type, phone_encrypted, email_encrypted,
+    abn_encrypted, is_scaffolded, is_claimed, service_type_primary
+  ) VALUES (
+    {sql_literal(business_payload['profile_id'])},
+    {sql_literal(business_payload['name'])},
+    {sql_literal(business_payload['phone'])},
+    {sql_literal(business_payload['email'])},
+    {sql_literal(business_payload['website'])},
+    {sql_literal(business_payload['address'])},
+    {sql_literal(business_payload['suburb_id'])},
+    {sql_literal(business_payload['bio'])},
+    {sql_literal(business_payload['pricing'])},
+    {sql_literal(business_payload['abn'])},
+    {sql_literal(business_payload['abn_verified'])},
+    {sql_literal(business_payload['verification_status'])},
+    {sql_literal(business_payload['resource_type'])},
+    {sql_literal(business_payload['phone_encrypted'])},
+    {sql_literal(business_payload['email_encrypted'])},
+    {sql_literal(business_payload['abn_encrypted'])},
+    {sql_literal(business_payload['is_scaffolded'])},
+    {sql_literal(business_payload['is_claimed'])},
+    {sql_literal(business_payload['service_type_primary'])}
+  )
+  RETURNING id
+)"""
+    ]
+
+    if candidate.trainer_specializations_rows:
+        spec_rows = [(row["age_specialty"],) for row in candidate.trainer_specializations_rows]
+        ctes.append(
+            f"""insert_specializations AS (
+  INSERT INTO trainer_specializations (business_id, age_specialty)
+  SELECT inserted_business.id, spec.age_specialty::age_specialty
+  FROM inserted_business
+  JOIN (VALUES {build_values_clause(spec_rows)}) AS spec(age_specialty) ON TRUE
+)"""
+        )
+
+    if candidate.trainer_services_rows:
+        service_rows = [(row["service_type"], bool(row.get("is_primary", False))) for row in candidate.trainer_services_rows]
+        ctes.append(
+            f"""insert_services AS (
+  INSERT INTO trainer_services (business_id, service_type, is_primary)
+  SELECT inserted_business.id, svc.service_type::service_type, svc.is_primary
+  FROM inserted_business
+  JOIN (VALUES {build_values_clause(service_rows)}) AS svc(service_type, is_primary) ON TRUE
+)"""
+        )
+
+    if candidate.trainer_behavior_issues_rows:
+        issue_rows = [(row["behavior_issue"],) for row in candidate.trainer_behavior_issues_rows]
+        ctes.append(
+            f"""insert_behavior_issues AS (
+  INSERT INTO trainer_behavior_issues (business_id, behavior_issue)
+  SELECT inserted_business.id, issue.behavior_issue::behavior_issue
+  FROM inserted_business
+  JOIN (VALUES {build_values_clause(issue_rows)}) AS issue(behavior_issue) ON TRUE
+)"""
+        )
+
+    return (
+        "BEGIN;\nWITH\n"
+        + ",\n".join(ctes)
+        + "\nSELECT id FROM inserted_business;\nCOMMIT;\n"
+    )
+
+
 def publish_mapping_artifact(
     artifact: dict[str, Any],
     *,
@@ -366,7 +494,6 @@ def publish_mapping_artifact(
             )
             continue
 
-        business_id: int | None = None
         try:
             encrypted_phone = (
                 publisher.encrypt_sensitive(candidate.contact_evidence["phone_plaintext"])
@@ -385,36 +512,13 @@ def publish_mapping_artifact(
                 encrypted_phone=encrypted_phone,
                 encrypted_email=encrypted_email,
             )
-            business_id = publisher.insert_business(business_payload)
-            publisher.insert_rows(
-                "trainer_specializations",
-                build_relation_rows("trainer_specializations", business_id, candidate.trainer_specializations_rows),
-            )
-            publisher.insert_rows(
-                "trainer_services",
-                build_relation_rows("trainer_services", business_id, candidate.trainer_services_rows),
-            )
-            publisher.insert_rows(
-                "trainer_behavior_issues",
-                build_relation_rows("trainer_behavior_issues", business_id, candidate.trainer_behavior_issues_rows),
+            business_id = publisher.publish_candidate_transaction(
+                candidate,
+                live_suburb_id=live_suburb_id,
+                encrypted_phone=encrypted_phone,
+                encrypted_email=encrypted_email,
             )
         except Exception as exc:
-            if business_id is not None:
-                try:
-                    publisher.delete_business(business_id)
-                except Exception as rollback_exc:
-                    failed += 1
-                    results.append(
-                        {
-                            "input_row_index": input_row_index,
-                            "source_url": candidate.source_url,
-                            "mapping_status": record.get("mapping_status"),
-                            "publish_action": "failed_with_partial_rollback",
-                            "business_id": business_id,
-                            "reasons": [str(exc), f"rollback failed: {rollback_exc}"],
-                        }
-                    )
-                    continue
             failed += 1
             results.append(
                 {

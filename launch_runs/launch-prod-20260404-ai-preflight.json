@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-03T01:50:58.487Z",
+  "timestamp": "2026-04-04T01:02:34.547Z",
   "sha": "ba6ed111f97b908d559644c429f3feda4acf2174",
   "target": "staging",
   "envTarget": "staging",
@@ -14,7 +14,7 @@
     {
       "name": "DB target",
       "status": "PASS",
-      "durationMs": 135,
+      "durationMs": 107,
       "details": {
         "urlHost": "db.xqytwtmdilipxnjetvoe.supabase.co",
         "urlDatabase": "postgres",
@@ -28,7 +28,7 @@
     {
       "name": "Launch inventory gate",
       "status": "FAIL",
-      "durationMs": 251,
+      "durationMs": 426,
       "output": "counted=5 councils=2 suburbs=4 age=4 services=5 issues=10",
       "details": {
         "status": "FAIL",

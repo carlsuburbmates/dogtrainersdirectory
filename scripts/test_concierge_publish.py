@@ -16,7 +16,6 @@ class FakePublisher:
         self.encrypted_inputs: list[str] = []
         self.business_payloads: list[dict[str, object]] = []
         self.inserted_rows: dict[str, list[dict[str, object]]] = {}
-        self.deleted_business_ids: list[int] = []
         self.resolved_localities: list[tuple[str, str]] = []
         self._next_business_id = 501
 
@@ -24,17 +23,33 @@ class FakePublisher:
         self.encrypted_inputs.append(value)
         return f"enc::{value}"
 
-    def insert_business(self, payload: dict[str, object]) -> int:
+    def publish_candidate_transaction(
+        self,
+        candidate: concierge_publish.PreparedPublishCandidate,
+        *,
+        live_suburb_id: int,
+        encrypted_phone: str | None,
+        encrypted_email: str | None,
+    ) -> int:
+        payload = concierge_publish.build_business_insert_payload(
+            candidate,
+            live_suburb_id=live_suburb_id,
+            encrypted_phone=encrypted_phone,
+            encrypted_email=encrypted_email,
+        )
         self.business_payloads.append(payload)
         business_id = self._next_business_id
         self._next_business_id += 1
+        self.inserted_rows["trainer_specializations"] = concierge_publish.build_relation_rows(
+            "trainer_specializations", business_id, candidate.trainer_specializations_rows
+        )
+        self.inserted_rows["trainer_services"] = concierge_publish.build_relation_rows(
+            "trainer_services", business_id, candidate.trainer_services_rows
+        )
+        self.inserted_rows["trainer_behavior_issues"] = concierge_publish.build_relation_rows(
+            "trainer_behavior_issues", business_id, candidate.trainer_behavior_issues_rows
+        )
         return business_id
-
-    def insert_rows(self, table: str, rows: list[dict[str, object]]) -> None:
-        self.inserted_rows.setdefault(table, []).extend(rows)
-
-    def delete_business(self, business_id: int) -> None:
-        self.deleted_business_ids.append(business_id)
 
     def resolve_live_suburb_id(self, suburb_name: str, council_name: str) -> int:
         self.resolved_localities.append((suburb_name, council_name))
@@ -281,6 +296,29 @@ def test_publish_fails_cleanly_when_live_locality_cannot_be_resolved():
     assert publisher.business_payloads == []
 
 
+def test_transaction_sql_includes_specializations_before_commit():
+    record = make_mapping_record(index=1, suburb_id=17)
+    candidate = concierge_publish.prepare_publish_candidate(
+        record,
+        locality_lookup=make_locality_lookup(1, suburb_name="Abbotsford", council_name="City of Yarra"),
+    )
+    payload = concierge_publish.build_business_insert_payload(
+        candidate,
+        live_suburb_id=17,
+        encrypted_phone="enc::0400 111 111",
+        encrypted_email="enc::hello@example.com",
+    )
+
+    sql = concierge_publish.build_transaction_sql(candidate, payload)
+
+    assert "BEGIN;" in sql
+    assert "inserted_business AS" in sql
+    assert "insert_specializations AS" in sql
+    assert "INSERT INTO trainer_specializations" in sql
+    assert "SELECT id FROM inserted_business;" in sql
+    assert "COMMIT;" in sql
+
+
 if __name__ == "__main__":
     test_only_mapping_ready_candidates_publish()
     test_published_rows_remain_scaffolded_and_unclaimed_with_encrypted_contacts()
@@ -288,4 +326,5 @@ if __name__ == "__main__":
     test_non_ready_candidates_are_not_silently_published()
     test_dry_run_report_keeps_publish_preview_without_writing()
     test_publish_fails_cleanly_when_live_locality_cannot_be_resolved()
+    test_transaction_sql_includes_specializations_before_commit()
     print("OK test_concierge_publish.py")

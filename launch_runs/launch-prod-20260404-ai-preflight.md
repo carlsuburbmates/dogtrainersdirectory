@@ -1,0 +1,16 @@
+<!-- DOCS_DIVERGENCE_IGNORE: supporting index or changelog -->
+# Launch Run – production – 20260404
+
+---
+## AI Launch Gate – 2026-04-04T01:02:34.547Z (sha ba6ed111f97b908d559644c429f3feda4acf2174, target staging)
+- Commit: ba6ed111f97b908d559644c429f3feda4acf2174
+- Target: staging
+- DNS_STATUS: PASS
+- Result counts: PASS 1 / WARN 0 / SKIP 0 / FAIL 1
+- Remaining non-AI items: 4c, 8b, 9b, 10c, 10d, 10f, 11b, 11c (MCP pending: 10e, 11a)
+
+| Check | Status | Duration | Details |
+| --- | --- | --- | --- |
+| DB target | PASS | 0.1s | {"urlHost":"db.xqytwtmdilipxnjetvoe.supabase.co","urlDatabase":"postgres","resolvedHost":"db.xqytwtmdilipxnjetvoe.supabase.co","runtimeHost":"2406:da18:243:7421:1653:2d92:a846:1e55/128","runtimeDatabase":"postgres","runtimeRole":"postgres","runtimePort":5432} |
+| Launch inventory gate | FAIL | 0.4s | counted=5 councils=2 suburbs=4 age=4 services=5 issues=10 |
+
